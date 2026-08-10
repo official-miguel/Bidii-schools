@@ -27,7 +27,6 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  UserCircle2,
 } from "lucide-react";
 import MobileDrawer from "@/components/MobileDrawer";
 import type { NavHub } from "@/lib/permissions";
@@ -229,21 +228,6 @@ export default function HubSidebar({
             >
               My Profile
             </span>
-          </div>
-
-          {/* My Profile icon link */}
-          <div className="relative w-full flex justify-center group">
-            <Link
-              href={profileHref}
-              aria-label="My Profile"
-              className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
-                ${isOnProfile
-                  ? "bg-teal/10 text-teal"
-                  : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
-                }`}
-            >
-              <UserCircle2 className="h-5 w-5" strokeWidth={isOnProfile ? 2.2 : 1.8} aria-hidden="true" />
-            </Link>
           </div>
 
           {/* Sign out */}
