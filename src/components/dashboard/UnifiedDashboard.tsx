@@ -240,6 +240,7 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
           deptSubjects={hodData.deptSubjects}
           deptClasses={hodData.deptClasses}
           marksEntered={hodData.marksEntered}
+          totalDeptStudents={hodData.totalDeptStudents}
           activePeriods={assessmentPeriods}
         />
       )}
@@ -335,7 +336,7 @@ async function fetchSchoolOverview(schoolId: string, today: Date) {
 }
 
 async function fetchHODData(schoolId: string, departmentId: string) {
-  const [deptTeachers, deptSubjects, deptClasses, marksEntered] = await Promise.all([
+  const [deptTeachers, deptSubjects, deptClasses, marksEntered, totalDeptStudents] = await Promise.all([
     prisma.teacher.count({ where: { schoolId, primaryDepartmentId: departmentId, archivedAt: null } }),
     prisma.subject.count({ where: { schoolId, departmentId } }),
     prisma.schoolClass.findMany({
@@ -344,8 +345,15 @@ async function fetchHODData(schoolId: string, departmentId: string) {
       orderBy: [{ form: "asc" }, { name: "asc" }],
     }),
     prisma.assessmentItem.count({ where: { schoolId, subject: { departmentId } } }).catch(() => 0),
+    prisma.student.count({
+      where: {
+        schoolId,
+        archivedAt: null,
+        schoolClass: { subjectTeachers: { some: { subject: { departmentId } } } },
+      },
+    }).catch(() => 0),
   ]);
-  return { deptTeachers, deptSubjects, deptClasses, marksEntered };
+  return { deptTeachers, deptSubjects, deptClasses, marksEntered, totalDeptStudents };
 }
 
 async function fetchClassTeacherData(schoolId: string, classId: string, today: Date) {

@@ -9,18 +9,19 @@ interface AssessmentPeriod {
 }
 
 interface Props {
-  rolePrefix:     string;
-  derived:        HeadOfDeptRole | null;
-  deptTeachers:   number;
-  deptSubjects:   number;
-  marksEntered:   number;
-  activePeriods:  AssessmentPeriod[];
+  rolePrefix:         string;
+  derived:            HeadOfDeptRole | null;
+  deptTeachers:       number;
+  deptSubjects:       number;
+  marksEntered:       number;
+  totalDeptStudents:  number;
+  activePeriods:      AssessmentPeriod[];
   // deptClasses kept in signature for backwards-compat but no longer rendered
-  deptClasses?:   unknown[];
+  deptClasses?:       unknown[];
 }
 
 export default function HODSection({
-  rolePrefix, derived, deptTeachers, deptSubjects, marksEntered, activePeriods,
+  rolePrefix, derived, deptTeachers, deptSubjects, marksEntered, totalDeptStudents, activePeriods,
 }: Props) {
   if (!derived) return null;
 
@@ -42,7 +43,8 @@ export default function HODSection({
         <StatCard label="Dept teachers" value={deptTeachers} href={`/${rolePrefix === "teacher" ? "teacher" : "staff"}/directory`} icon={Users}    color="teal" />
         <StatCard label="Dept subjects" value={deptSubjects} href={assessmentsHref}                                                  icon={BookOpen} color="teal" />
         <StatCard label="Marks entered" value={marksEntered} href={assessmentsHref}                                                  icon={Clock}
-                  color={marksEntered > 0 ? "success" : "warn"} sub="this period" />
+                  color={marksEntered > 0 ? "success" : "warn"}
+                  sub={totalDeptStudents > 0 ? `/ ${totalDeptStudents} students` : "this period"} />
       </div>
 
       {activePeriods.length > 0 && (
