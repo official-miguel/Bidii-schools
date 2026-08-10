@@ -802,6 +802,8 @@ export default function MarksheetGrid({
   // Formula calculator state
   const [showFormula, setShowFormula] = useState(false);
   const [customFormula, setCustomFormula] = useState<string>("");
+  // Whether the current customFormula was auto-loaded from the dept config
+  const [formulaFromDept, setFormulaFromDept] = useState(false);
 
   // HOD/Principal/ExamOfficer gate — canUseFormula defaults to canManagePapers
   const formulaEnabled = canUseFormula ?? canManagePapers;
@@ -832,6 +834,35 @@ export default function MarksheetGrid({
   }, [periodId, classId, subjectId]);
 
   useEffect(() => { loadMarksheet(); }, [loadMarksheet]);
+
+  // -------------------------------------------------------------------------
+  // Auto-load department formula when marksheet data is ready
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!data) return;
+    const { frameworkId } = data.period;
+    const form = data.schoolClass.form;
+    const sid  = data.subject.id;
+    fetch(
+      `/api/assessments/department-formulas/for-marksheet?subjectId=${sid}&form=${form}&frameworkId=${frameworkId}`
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.formula && d.formula.trim()) {
+          setCustomFormula(d.formula);
+          setFormulaFromDept(true);
+        } else {
+          // Only reset to blank if no user override has been made yet
+          setFormulaFromDept((prev) => {
+            if (prev) setCustomFormula("");
+            return false;
+          });
+        }
+      })
+      .catch(() => { /* non-critical */ });
+  // Only re-run when the subject/class/framework changes, not on every edit
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.period.frameworkId, data?.schoolClass.form, data?.subject.id]);
 
   // -------------------------------------------------------------------------
   // Edit handler
@@ -1096,19 +1127,24 @@ export default function MarksheetGrid({
 
                     <th className="px-4 py-3 text-center whitespace-nowrap">
                       {formulaEnabled ? (
-                        <button
-                          type="button"
-                          title={customFormula ? "Edit % formula" : "Set % formula"}
-                          onClick={() => setShowFormula(true)}
-                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 ${
-                            customFormula
-                              ? "bg-teal text-white hover:bg-teal-dark"
-                              : "bg-slate-100 text-slate hover:bg-teal-50 hover:text-teal"
-                          }`}
-                        >
-                          %
-                          <Plus className="w-2.5 h-2.5 opacity-70" strokeWidth={2.5} aria-hidden="true" />
-                        </button>
+                        <div className="inline-flex flex-col items-center gap-0.5">
+                          <button
+                            type="button"
+                            title={customFormula ? "Edit % formula" : "Set % formula"}
+                            onClick={() => setShowFormula(true)}
+                            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 ${
+                              customFormula
+                                ? "bg-teal text-white hover:bg-teal-dark"
+                                : "bg-slate-100 text-slate hover:bg-teal-50 hover:text-teal"
+                            }`}
+                          >
+                            %
+                            <Plus className="w-2.5 h-2.5 opacity-70" strokeWidth={2.5} aria-hidden="true" />
+                          </button>
+                          {formulaFromDept && customFormula && (
+                            <span className="text-[9px] font-medium text-teal/80 leading-none">dept</span>
+                          )}
+                        </div>
                       ) : (
                         <span>%</span>
                       )}
