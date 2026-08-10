@@ -23,8 +23,10 @@ import type { User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeDerivedRoles } from "@/lib/derivedRoles";
 import { getEffectivePermissions, getAssignedRoleNames } from "@/lib/permissions";
-import { getUpcomingCalendarItems } from "@/lib/calendarUpcoming";
+import { getUpcomingCalendarItems, getPrincipalDeadlines } from "@/lib/calendarUpcoming";
+import type { DeadlineItem } from "@/components/dashboard/DeadlineCountdownBanner";
 import UpcomingCalendarWidget from "@/components/UpcomingCalendarWidget";
+import DeadlineCountdownBanner from "@/components/dashboard/DeadlineCountdownBanner";
 import QuickLinkGrid, { type QuickLink } from "@/components/dashboard/QuickLinkGrid";
 import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
 import SchoolOverviewSection from "@/components/dashboard/sections/SchoolOverviewSection";
@@ -145,6 +147,12 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
 
     // [7] Calendar
     getUpcomingCalendarItems(schoolId, { days: 14, limit: 8 }).catch(() => []),
+
+    // [8] Principal deadlines — visible to teachers and staff, not the principal
+    // (the principal sets them, not consumes them as reminders)
+    !isPrincipal
+      ? getPrincipalDeadlines(schoolId).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const unwrap = <T,>(r: PromiseSettledResult<T>): T | null =>
@@ -158,6 +166,18 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
   const dormData            = unwrap(results[5]);
   const assessmentPeriods   = (unwrap(results[6]) ?? []) as { id: string; name: string; closingDate?: Date | null }[];
   const calendarItems       = (unwrap(results[7]) ?? []) as Parameters<typeof UpcomingCalendarWidget>[0]["items"];
+
+  // Serialise Date → ISO string so the client component can consume them.
+  // Only shown when the viewer is NOT the principal (teachers / admin staff).
+  const principalDeadlines: DeadlineItem[] = !isPrincipal
+    ? ((unwrap(results[8]) ?? []) as Awaited<ReturnType<typeof getPrincipalDeadlines>>).map((d) => ({
+        id:          d.id,
+        title:       d.title,
+        description: d.description,
+        deadlineAt:  d.deadlineAt.toISOString(),
+        eventDate:   d.eventDate.toISOString(),
+      }))
+    : [];
 
   // ── Quick links — derived from visible sections ──────────────────────────
   const quickLinks: QuickLink[] = [];
@@ -213,6 +233,14 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
       </div>
 
       {setupAlerts.length > 0 && <AlertBanner alerts={setupAlerts} />}
+
+      {/* ── Principal deadlines (teachers / staff only) ───────────────────── */}
+      {!isPrincipal && principalDeadlines.length > 0 && (
+        <DeadlineCountdownBanner
+          deadlines={principalDeadlines}
+          calendarHref={calendarHref}
+        />
+      )}
 
       {/* ── School Overview (Principal / Deputy) ─────────────────────────── */}
       {showSchoolOverview && schoolOverview && (

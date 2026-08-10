@@ -8,6 +8,64 @@
 import { prisma } from "./prisma";
 import { getKenyaPublicHolidays } from "./kenyaHolidays";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Principal deadlines
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PrincipalDeadline = {
+  id:          string;
+  title:       string;
+  description: string | null;
+  deadlineAt:  Date;   // maps to CalendarEvent.closingDate
+  eventDate:   Date;   // maps to CalendarEvent.date (the event itself)
+  audience:    string;
+};
+
+/**
+ * Returns all school-set deadlines (CalendarEvents where closingDate is today
+ * or in the future) that are visible to teachers (audience EVERYONE or
+ * STAFF_ONLY). Sorted by deadline ascending — soonest first.
+ *
+ * A deadline is any calendar event the principal has given a closing date.
+ * The pattern mirrors how AssessmentPeriod.closingDate is surfaced: the
+ * closingDate IS the deadline; the event.date is when the event starts.
+ */
+export async function getPrincipalDeadlines(
+  schoolId: string
+): Promise<PrincipalDeadline[]> {
+  const now = new Date();
+  const todayUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+
+  const events = await prisma.calendarEvent.findMany({
+    where: {
+      schoolId,
+      closingDate: { gte: todayUtc },
+      audience:    { in: ["EVERYONE", "STAFF_ONLY"] },
+    },
+    orderBy: { closingDate: "asc" },
+    select: {
+      id:          true,
+      title:       true,
+      description: true,
+      closingDate: true,
+      date:        true,
+      audience:    true,
+    },
+  });
+
+  return events.map((e) => ({
+    id:          e.id,
+    title:       e.title,
+    description: e.description,
+    // closingDate is non-null here because the where clause filters for it
+    deadlineAt:  e.closingDate!,
+    eventDate:   e.date,
+    audience:    e.audience,
+  }));
+}
+
 export type UpcomingCalendarItem = {
   id: string;
   title: string;

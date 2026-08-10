@@ -34,6 +34,7 @@ import type { LocalCalendarEvent }       from "@/lib/stores/calendarStore";
 import { getKenyaPublicHolidaysForMonth } from "@/lib/kenyaHolidays";
 import { useProductivityStore }          from "@/lib/stores/productivityStore";
 import { useFormDraft }                  from "@/lib/hooks/useFormDraft";
+import DeadlineInlineCountdown           from "@/components/calendar/DeadlineInlineCountdown";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -240,18 +241,24 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
     formAudience:    "EVERYONE" as CalendarAudience,
     formOpeningDate: "",
     formClosingDate: "",
+    formIsDeadline:  false,
+    formDeadlineDate: "",
   });
 
   const [formType,         setFormType]         = useState<EventType>(calDraft.formType);
   const [formAudience,     setFormAudience]     = useState<CalendarAudience>(calDraft.formAudience);
   const [formOpeningDate,  setFormOpeningDate]  = useState(calDraft.formOpeningDate);
   const [formClosingDate,  setFormClosingDate]  = useState(calDraft.formClosingDate);
+  // isDeadline: true when the principal wants this event to show a countdown to all teachers
+  const [formIsDeadline,   setFormIsDeadline]   = useState(calDraft.formIsDeadline);
+  // The explicit deadline date the principal sets (stored as closingDate on the event)
+  const [formDeadlineDate, setFormDeadlineDate] = useState(calDraft.formDeadlineDate);
 
   // Persist when form is open
   useEffect(() => {
     if (!formOpen) return;
-    setCalDraft({ formType, formAudience, formOpeningDate, formClosingDate });
-  }, [formType, formAudience, formOpeningDate, formClosingDate, formOpen, setCalDraft]);
+    setCalDraft({ formType, formAudience, formOpeningDate, formClosingDate, formIsDeadline, formDeadlineDate });
+  }, [formType, formAudience, formOpeningDate, formClosingDate, formIsDeadline, formDeadlineDate, formOpen, setCalDraft]);
 
   // ── Today's-events notification (fires once per session on mount) ──────────
   const addNotification = useProductivityStore((s) => s.addNotification);
@@ -285,6 +292,8 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
     setFormAudience("EVERYONE");
     setFormOpeningDate("");
     setFormClosingDate("");
+    setFormIsDeadline(false);
+    setFormDeadlineDate("");
     setSelectedDate(date);
     setFormOpen(true);
   }
@@ -295,7 +304,13 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
     setFormType(e.type);
     setFormAudience(e.audience);
     setFormOpeningDate(e.openingDate ?? "");
-    setFormClosingDate(e.closingDate ?? "");
+    // For HOLIDAY/EXAM the closingDate is used as a range field, not a deadline.
+    // For all other types, a closingDate means this was set as a principal deadline.
+    const isDeadlineType = e.type !== "HOLIDAY" && e.type !== "EXAM";
+    const hasDeadline    = isDeadlineType && !!e.closingDate;
+    setFormIsDeadline(hasDeadline);
+    setFormDeadlineDate(hasDeadline ? (e.closingDate ?? "") : "");
+    setFormClosingDate(isDeadlineType ? "" : (e.closingDate ?? ""));
     setFormOpen(true);
   }
 
@@ -311,15 +326,25 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
         ? formClosingDate || formOpeningDate || selectedDate
         : (form.get("date") as string) || selectedDate;
 
+    // When "Set as deadline" is active, force the audience so all staff see it,
+    // and map the deadline date → closingDate on the event record.
+    const effectiveAudience: CalendarAudience =
+      formIsDeadline ? "STAFF_ONLY" : formAudience;
+
     const payload: Record<string, unknown> = {
       title:       form.get("title") as string,
       description: (form.get("description") as string) || "",
       date:        eventDate,
       type:        formType,
-      audience:    formAudience,
+      audience:    effectiveAudience,
     };
     if (formOpeningDate) payload.openingDate = formOpeningDate;
-    if (formClosingDate) payload.closingDate = formClosingDate;
+    if (formType !== "HOLIDAY" && formType !== "EXAM") {
+      // Deadline date goes into closingDate; clear it if the toggle is off.
+      payload.closingDate = formIsDeadline ? formDeadlineDate : "";
+    } else {
+      if (formClosingDate) payload.closingDate = formClosingDate;
+    }
 
     const res = await fetch(
       editing ? `/api/calendar/events/${editing.id}` : "/api/calendar/events",
@@ -349,17 +374,20 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
     useCalendarStore.getState().upsert(serverEvent);
 
     // ── In-app notification ──────────────────────────────────────────────────
-    const audienceLabel = AUDIENCE_LABELS[formAudience];
+    const audienceLabel = AUDIENCE_LABELS[effectiveAudience];
     const eventDateLabel = new Date(`${serverEvent.date}T00:00:00Z`).toLocaleDateString(
       "en-KE",
       { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }
     );
+    const deadlineNote = formIsDeadline && formDeadlineDate
+      ? ` Deadline: ${new Date(`${formDeadlineDate}T00:00:00Z`).toLocaleDateString("en-KE", { day: "numeric", month: "short", timeZone: "UTC" })}.`
+      : "";
     useProductivityStore.getState().addNotification({
       category: "administrative",
       title:    editing ? `📅 Event updated: ${data.title}` : `📅 New event: ${data.title}`,
       body:     editing
-        ? `"${data.title}" on ${eventDateLabel} was updated. Visible to: ${audienceLabel}.`
-        : `"${data.title}" added on ${eventDateLabel}. Visible to: ${audienceLabel}.`,
+        ? `"${data.title}" on ${eventDateLabel} was updated. Visible to: ${audienceLabel}.${deadlineNote}`
+        : `"${data.title}" added on ${eventDateLabel}. Visible to: ${audienceLabel}.${deadlineNote}`,
       href: "/principal/calendar",
     });
 
@@ -370,6 +398,8 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
     setFormAudience("EVERYONE");
     setFormOpeningDate("");
     setFormClosingDate("");
+    setFormIsDeadline(false);
+    setFormDeadlineDate("");
   }
 
   async function handleDelete(e: CalendarEventItem) {
@@ -503,6 +533,12 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                       <div key={e.id} className="flex items-center gap-1 truncate">
                         <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${TYPE_DOT[e.type]}`} />
                         <span className="text-[11px] text-ink truncate">{e.title}</span>
+                        {/* Small clock icon for deadline events */}
+                        {e.source === "SCHOOL" && e.closingDate &&
+                          e.type !== "HOLIDAY" && e.type !== "EXAM" &&
+                          new Date(`${e.closingDate}T23:59:59Z`) >= new Date() && (
+                            <span className="text-[9px] shrink-0" title="Has deadline">⏰</span>
+                          )}
                       </div>
                     ))}
                     {dayEvents.length > 2 && (
@@ -536,7 +572,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                         <span className={`h-2 w-2 rounded-full ${TYPE_DOT[e.type]}`} />
                         {e.title}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <p className="text-xs text-slate">
                           {e.source === "KENYA_HOLIDAY" ? "Kenya public holiday" : TYPE_LABELS[e.type]}
                         </p>
@@ -545,6 +581,14 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                             {AUDIENCE_LABELS[e.audience]}
                           </span>
                         )}
+                        {/* Deadline countdown badge — shown when closingDate is in the future
+                            and the event is not a multi-day HOLIDAY/EXAM range */}
+                        {e.source === "SCHOOL" &&
+                          e.closingDate &&
+                          e.type !== "HOLIDAY" && e.type !== "EXAM" &&
+                          new Date(`${e.closingDate}T23:59:59Z`) >= new Date() && (
+                            <DeadlineInlineCountdown deadlineDate={e.closingDate} />
+                          )}
                       </div>
                       {e.description && (
                         <p className="text-sm text-slate mt-1">{e.description}</p>
@@ -598,15 +642,59 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
               <label className={labelClass}>Visible to</label>
               <select
                 name="audience"
-                value={formAudience}
+                value={formIsDeadline ? "STAFF_ONLY" : formAudience}
                 onChange={(e) => setFormAudience(e.target.value as CalendarAudience)}
-                className={inputClass}
+                disabled={formIsDeadline}
+                className={inputClass + (formIsDeadline ? " opacity-50 cursor-not-allowed" : "")}
               >
                 {(Object.keys(AUDIENCE_LABELS) as CalendarAudience[]).map((a) => (
                   <option key={a} value={a}>{AUDIENCE_LABELS[a]}</option>
                 ))}
               </select>
+              {formIsDeadline && (
+                <p className="text-xs text-slate mt-1">
+                  Locked to <strong>Staff only</strong> — deadlines are always visible to all teachers.
+                </p>
+              )}
             </div>
+
+            {/* ── Deadline toggle (only for non-range event types) ── */}
+            {formType !== "HOLIDAY" && formType !== "EXAM" && (
+              <div className="rounded-lg border border-line bg-paper px-4 py-3 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formIsDeadline}
+                    onChange={(ev) => {
+                      setFormIsDeadline(ev.target.checked);
+                      if (!ev.target.checked) setFormDeadlineDate("");
+                      // Force staff-only when enabling
+                      if (ev.target.checked) setFormAudience("STAFF_ONLY");
+                    }}
+                    className="h-4 w-4 rounded border-line text-teal focus:ring-teal"
+                  />
+                  <span className="text-sm font-medium text-ink">
+                    ⏰ Set as deadline for all teachers
+                  </span>
+                </label>
+                {formIsDeadline && (
+                  <div>
+                    <label className={labelClass}>Deadline date</label>
+                    <input
+                      type="date"
+                      value={formDeadlineDate}
+                      onChange={(ev) => setFormDeadlineDate(ev.target.value)}
+                      required={formIsDeadline}
+                      min={ymd(new Date())}
+                      className={inputClass}
+                    />
+                    <p className="text-xs text-slate mt-1">
+                      Teachers will see a live countdown on their dashboard until this date.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className={labelClass}>Title</label>
               <input
@@ -676,6 +764,8 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                   setFormAudience("EVERYONE");
                   setFormOpeningDate("");
                   setFormClosingDate("");
+                  setFormIsDeadline(false);
+                  setFormDeadlineDate("");
                 }}
               >
                 Cancel
