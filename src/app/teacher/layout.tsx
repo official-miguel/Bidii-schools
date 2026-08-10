@@ -33,6 +33,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   visibleHubs.add("calendar");
   visibleHubs.add("people");
 
+  // Teachers never get the "administration" hub in the main sidebar.
+  // HOD settings and exam setup live inside the academic inner sidebar.
+  visibleHubs.delete("administration");
+
   return (
     <MustChangePasswordGate mustChangePassword={user.mustChangePassword}>
       <DashboardShell
