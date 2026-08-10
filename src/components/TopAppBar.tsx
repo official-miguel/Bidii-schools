@@ -10,12 +10,18 @@
  *     MobileDrawerContext — no bottom nav bar any more.
  *   - All icon buttons enlarged to 44px tap targets (w-11 h-11).
  *   - Desktop search pill and profile chip remain unchanged.
+ *
+ * v3 changes:
+ *   - Accepts optional `avatarUrl` prop — shows user photo in the top-right
+ *     avatar button when available, falls back to initials.
+ *   - Profile dropdown now includes a "My Profile" link.
  */
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import { Search, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Search, ChevronDown, LogOut, Menu, UserCircle2 } from "lucide-react";
 import { useMobileDrawer } from "@/components/MobileDrawerContext";
 import GlobalSearchModal from "@/components/GlobalSearchModal";
 import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
@@ -32,6 +38,8 @@ interface Props {
   userEmail: string;
   roleLabel: string;
   userInitials: string;
+  /** Optional profile photo URL — shown in the avatar button when available. */
+  avatarUrl?: string | null;
   schoolName?: string;
   /** Routing role prefix: "principal" | "teacher" | "staff" | "parent" */
   role?: string;
@@ -43,6 +51,7 @@ export default function TopAppBar({
   userEmail,
   roleLabel,
   userInitials,
+  avatarUrl,
   schoolName,
   role = "principal",
   quickActions: _quickActions = [],
@@ -53,10 +62,14 @@ export default function TopAppBar({
   const [notifOpen,        setNotifOpen]        = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [profileOpen,      setProfileOpen]      = useState(false);
+  const [imgError,         setImgError]         = useState(false);
 
   const profileRef      = useRef<HTMLDivElement>(null);
   const notifRef        = useRef<HTMLDivElement>(null);
   const quickActionsRef = useRef<HTMLDivElement>(null);
+
+  // Reset img error when avatarUrl changes (new photo uploaded elsewhere)
+  useEffect(() => { setImgError(false); }, [avatarUrl]);
 
   /* ── Keyboard shortcuts ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -127,6 +140,9 @@ export default function TopAppBar({
     router.push("/login");
     router.refresh();
   }
+
+  const profileHref = `/${role}/profile`;
+  const showPhoto   = !!avatarUrl && !imgError;
 
   const iconBtn = `flex items-center justify-center w-11 h-11 rounded-lg
                    transition-colors duration-100
@@ -236,12 +252,23 @@ export default function TopAppBar({
                        hover:bg-teal-50 transition-colors group
                        dark:hover:bg-dark-border"
           >
-            <div
-              className="w-8 h-8 rounded-full bg-teal text-white text-xs font-semibold
-                         flex items-center justify-center select-none shrink-0"
-            >
-              {userInitials}
-            </div>
+            {/* Avatar: photo or initials */}
+            {showPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl!}
+                alt={roleLabel}
+                onError={() => setImgError(true)}
+                className="w-8 h-8 rounded-full object-cover border border-line shrink-0"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-full bg-teal text-white text-xs font-semibold
+                           flex items-center justify-center select-none shrink-0"
+              >
+                {userInitials}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
               <p className="text-xs font-medium text-ink leading-none dark:text-dark-text">
                 {roleLabel}
@@ -260,15 +287,46 @@ export default function TopAppBar({
                          dark:bg-dark-surface dark:border-dark-border
                          animate-scale-in origin-top-right z-50"
             >
-              <div className="px-4 py-3 border-b border-line dark:border-dark-border">
-                <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
-                  {roleLabel}
-                </p>
-                <p className="text-xs text-slate dark:text-dark-muted truncate mt-0.5">
-                  {userEmail}
-                </p>
+              {/* User info */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-line dark:border-dark-border">
+                {showPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl!}
+                    alt={roleLabel}
+                    className="w-9 h-9 rounded-full object-cover border border-line shrink-0"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-teal text-white text-sm font-semibold
+                                  flex items-center justify-center select-none shrink-0">
+                    {userInitials}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                    {roleLabel}
+                  </p>
+                  <p className="text-xs text-slate dark:text-dark-muted truncate mt-0.5">
+                    {userEmail}
+                  </p>
+                </div>
               </div>
-              <div className="p-1.5">
+
+              <div className="p-1.5 space-y-0.5">
+                {/* My Profile link */}
+                <Link
+                  href={profileHref}
+                  onClick={() => setProfileOpen(false)}
+                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5
+                             text-sm text-slate hover:bg-teal-50 hover:text-teal
+                             transition-colors dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-teal
+                             min-h-[44px]"
+                >
+                  <UserCircle2 className="h-4 w-4 shrink-0" />
+                  My Profile
+                </Link>
+
+                {/* Sign out */}
                 <button
                   type="button"
                   onClick={handleLogout}

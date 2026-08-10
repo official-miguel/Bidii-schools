@@ -21,7 +21,7 @@ import { useVirtualizer }   from "@tanstack/react-virtual";
 import { SkeletonTable }    from "@/components/ui/ProgressivePage";
 import ContextNavigation from "@/components/ContextNavigation";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
-import { Pencil, ExternalLink, UserPlus, UserMinus } from "lucide-react";
+import { Pencil, ExternalLink, UserPlus, UserMinus, Camera, X } from "lucide-react";
 import RemoveStudentDialog, { type RemoveStudentTarget } from "@/components/students/RemoveStudentDialog";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 import ClassWorkspaceDrawer from "@/components/entity-drawers/ClassWorkspaceDrawer";
@@ -368,6 +368,10 @@ export default function StudentsPage() {
   const [editing, setEditing]         = useState<Student | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [saving, setSaving]           = useState(false);
+  // Photo state for the edit modal — tracks the current/uploaded photo URL
+  const [editPhotoUrl, setEditPhotoUrl]     = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Draft for the "new student" form — only the controlled-state fields
   // (text inputs use defaultValue/FormData and survive within the session).
@@ -480,6 +484,7 @@ export default function StudentsPage() {
     setSelectedClassId("");
     setSelectedForm("");
     setSelectedElectives([]);
+    setEditPhotoUrl(null);
     setError(null);
     // Pre-set gender from school policy
     setSelectedGender(
@@ -499,14 +504,17 @@ export default function StudentsPage() {
   }, [schoolPolicy]);
   const openEdit = useCallback(async (s: Student) => {
     let electiveIds: string[] = [];
+    let currentPhotoUrl: string | null = null;
     try {
       const res = await fetch(`/api/students/${s.id}`);
       if (res.ok) {
         const full = await res.json();
         electiveIds = (full.electives ?? []).map((e: { subject: { id: string } }) => e.subject.id);
+        currentPhotoUrl = full.photoUrl ?? null;
       }
     } catch {}
     setEditing({ ...s, electiveIds });
+    setEditPhotoUrl(currentPhotoUrl);
     setSelectedClassId(s.classId);
     setSelectedElectives(electiveIds);
     setSelectedGender(s.gender ?? "");
@@ -1067,6 +1075,98 @@ export default function StudentsPage() {
                   );
                 })()}
               </div>
+            </div>
+
+            {/* ── Photo ── */}
+            <div className="form-section">
+              <div className="form-section-title">Photo <span className="font-normal text-slate">(optional)</span></div>
+              {editing ? (
+                <div className="flex items-center gap-4">
+                  {/* Preview circle */}
+                  <div className="relative group shrink-0">
+                    {editPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={editPhotoUrl}
+                        alt={editing.fullName}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-line"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal/10 to-royal/10 border border-line flex items-center justify-center text-2xl font-semibold text-ink">
+                        {editing.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </div>
+                    )}
+                    {/* Hover overlay */}
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={photoUploading}
+                      aria-label="Change photo"
+                      className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-wait"
+                    >
+                      {photoUploading
+                        ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        : <Camera className="w-5 h-5 text-white" />
+                      }
+                    </button>
+                    {/* Remove button */}
+                    {editPhotoUrl && !photoUploading && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setPhotoUploading(true);
+                          await fetch(`/api/students/${editing.id}/photo`, { method: "DELETE" });
+                          setEditPhotoUrl(null);
+                          setPhotoUploading(false);
+                        }}
+                        aria-label="Remove photo"
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-line flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-danger hover:border-danger hover:text-white text-slate"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-slate space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={photoUploading}
+                      className="text-royal hover:underline font-medium disabled:opacity-50"
+                    >
+                      {editPhotoUrl ? "Change photo" : "Upload photo"}
+                    </button>
+                    <p className="text-xs">PNG, JPG, or WebP · Max 2 MB</p>
+                  </div>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      e.target.value = "";
+                      setPhotoUploading(true);
+                      try {
+                        const fd = new FormData();
+                        fd.append("photo", file);
+                        const res = await fetch(`/api/students/${editing.id}/photo`, { method: "POST", body: fd });
+                        const json = await res.json();
+                        if (res.ok) setEditPhotoUrl(json.url);
+                      } finally {
+                        setPhotoUploading(false);
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-slate">
+                  A photo can be added from the student&apos;s profile page after registration.
+                </p>
+              )}
             </div>
 
             {/* ── Parent / Guardian ── */}

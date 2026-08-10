@@ -527,10 +527,12 @@ export const premiumTrClass =
 
 export function Avatar({
   name,
+  photoUrl,
   size = "md",
   className = "",
 }: {
   name: string;
+  photoUrl?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
@@ -546,6 +548,18 @@ export function Avatar({
     md: "h-10 w-10 text-sm",
     lg: "h-12 w-12 text-base",
   };
+
+  if (photoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photoUrl}
+        alt={name}
+        title={name}
+        className={`${sizeClasses[size]} rounded-full object-cover border border-line shrink-0 ${className}`}
+      />
+    );
+  }
 
   return (
     <div

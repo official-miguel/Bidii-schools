@@ -43,6 +43,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         role="teacher"
         roleLabel={roleLabel}
         userEmail={user.email}
+        avatarUrl={user.avatarUrl ?? null}
         schoolName={school?.name}
         motto={school?.motto}
         visibleHubs={visibleHubs as Parameters<typeof DashboardShell>[0]["visibleHubs"]}

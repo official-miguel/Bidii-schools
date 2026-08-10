@@ -8,6 +8,10 @@
  *    are hidden — no disabled states, no empty gaps.
  *  - Dashboard is always shown.
  *  - All gesture, focus-trap, keyboard, and animation behaviour unchanged.
+ *
+ * v3 changes:
+ *  - Accepts optional `avatarUrl` prop — shows photo in footer when available.
+ *  - Footer now includes a "My Profile" link above sign-out.
  */
 
 import { useEffect, useRef, useCallback, useState } from "react";
@@ -24,6 +28,7 @@ import {
   MessageSquare,
   Settings,
   LogOut,
+  UserCircle2,
 } from "lucide-react";
 import { useMobileDrawer } from "@/components/MobileDrawerContext";
 import { getActiveHub } from "@/components/HubSidebar";
@@ -51,6 +56,7 @@ interface MobileDrawerProps {
   roleLabel:    string;
   userEmail:    string;
   schoolName?:  string;
+  avatarUrl?:   string | null;
   visibleHubs?: Set<NavHub>;
 }
 
@@ -59,6 +65,7 @@ export default function MobileDrawer({
   roleLabel,
   userEmail,
   schoolName,
+  avatarUrl,
   visibleHubs,
 }: MobileDrawerProps) {
   const { isOpen, close } = useMobileDrawer();
@@ -67,12 +74,16 @@ export default function MobileDrawer({
   const panelRef   = useRef<HTMLDivElement>(null);
   const activeHub  = getActiveHub(pathname);
   const userInits  = initials(roleLabel, userEmail);
+  const profileHref = `/${role}/profile`;
 
   const shouldShow = (hubId: NavHub) =>
     !visibleHubs || hubId === "dashboard" || visibleHubs.has(hubId);
 
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [imgError,  setImgError]  = useState(false);
+
+  useEffect(() => { setImgError(false); }, [avatarUrl]);
 
   useEffect(() => {
     if (isOpen) {
@@ -138,9 +149,11 @@ export default function MobileDrawer({
   async function handleLogout() {
     close();
     await fetch("/api/auth/logout", { method: "POST" });
-       router.push("/login");
+    router.push("/login");
     router.refresh();
   }
+
+  const showPhoto = !!avatarUrl && !imgError;
 
   if (!isVisible) return null;
 
@@ -231,16 +244,41 @@ export default function MobileDrawer({
           className="shrink-0 border-t border-line dark:border-dark-border px-4 py-4"
           style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
         >
+          {/* User identity row */}
           <div className="flex items-center gap-3 mb-3 px-1">
-            <div className="w-9 h-9 rounded-full bg-teal/10 text-teal flex items-center justify-center
-                            text-xs font-semibold shrink-0 select-none">
-              {userInits}
-            </div>
+            {showPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl!}
+                alt={roleLabel}
+                onError={() => setImgError(true)}
+                className="w-9 h-9 rounded-full object-cover border border-line shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-teal/10 text-teal flex items-center justify-center
+                              text-xs font-semibold shrink-0 select-none">
+                {userInits}
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-sm font-medium text-ink dark:text-dark-text truncate leading-tight">{roleLabel}</p>
               <p className="text-xs text-slate dark:text-dark-muted truncate leading-tight">{userEmail}</p>
             </div>
           </div>
+
+          {/* My Profile link */}
+          <Link
+            href={profileHref}
+            onClick={handleNavClick}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl min-h-[44px]
+                       text-sm font-medium text-slate hover:bg-teal-50 hover:text-teal
+                       transition-colors dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-teal mb-1"
+          >
+            <UserCircle2 className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+            My Profile
+          </Link>
+
+          {/* Sign out */}
           <button
             type="button"
             onClick={handleLogout}

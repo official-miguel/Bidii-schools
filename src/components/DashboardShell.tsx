@@ -33,6 +33,8 @@ interface DashboardShellProps {
   role:          string;
   roleLabel:     string;
   userEmail:     string;
+  /** Optional profile photo URL for the current user. */
+  avatarUrl?:    string | null;
   schoolName?:   string;
   motto?:        string | null;
   /** Hubs this user may see. undefined = all (PRINCIPAL/TEACHER). */
@@ -45,6 +47,7 @@ export default function DashboardShell({
   role,
   roleLabel,
   userEmail,
+  avatarUrl,
   schoolName,
   motto,
   visibleHubs,
@@ -60,6 +63,7 @@ export default function DashboardShell({
             userEmail={userEmail}
             roleLabel={roleLabel}
             role={role}
+            avatarUrl={avatarUrl}
             schoolName={schoolName}
             visibleHubs={visibleHubs}
           />
@@ -67,6 +71,7 @@ export default function DashboardShell({
             userEmail={userEmail}
             roleLabel={roleLabel}
             userInitials={userInitials}
+            avatarUrl={avatarUrl}
             schoolName={schoolName}
             role={role}
           />

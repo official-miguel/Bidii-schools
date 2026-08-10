@@ -31,6 +31,7 @@ export default async function StaffPortalLayout({
         role="staff"
         roleLabel={roleLabel}
         userEmail={user.email}
+        avatarUrl={user.avatarUrl ?? null}
         schoolName={school?.name}
         motto={school?.motto}
         visibleHubs={visibleHubs}

@@ -9,6 +9,10 @@
  *    completely — no disabled states, no empty gaps.
  *  - Dashboard hub is always visible.
  *  - All other behaviour (tooltips, active pill, logout) unchanged.
+ *
+ * v3 changes:
+ *  - Accepts optional `avatarUrl` prop — shows photo when available, falls
+ *    back to initials circle. Avatar links to /<role>/profile.
  */
 
 import Link from "next/link";
@@ -23,6 +27,7 @@ import {
   MessageSquare,
   Settings,
   LogOut,
+  UserCircle2,
 } from "lucide-react";
 import MobileDrawer from "@/components/MobileDrawer";
 import type { NavHub } from "@/lib/permissions";
@@ -69,7 +74,7 @@ export function getActiveHub(pathname: string): NavHub {
   return HUB_SEG_MAP[segs[1]] ?? "dashboard";
 }
 
-function initials(email: string, label: string): string {
+function getInitials(email: string, label: string): string {
   const parts = label.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   if (parts[0]?.length >= 2) return parts[0].slice(0, 2).toUpperCase();
@@ -83,6 +88,7 @@ interface HubSidebarProps {
   roleLabel:    string;
   role:         string;
   schoolName?:  string;
+  avatarUrl?:   string | null;
   /** Hubs the user is permitted to see. Undefined = show all (PRINCIPAL). */
   visibleHubs?: Set<NavHub>;
 }
@@ -94,12 +100,15 @@ export default function HubSidebar({
   roleLabel,
   role,
   schoolName,
+  avatarUrl,
   visibleHubs,
 }: HubSidebarProps) {
-  const pathname    = usePathname();
-  const router      = useRouter();
-  const activeHub   = getActiveHub(pathname);
-  const userInitials = initials(userEmail, roleLabel);
+  const pathname     = usePathname();
+  const router       = useRouter();
+  const activeHub    = getActiveHub(pathname);
+  const userInitials = getInitials(userEmail, roleLabel);
+  const profileHref  = `/${role}/profile`;
+  const isOnProfile  = pathname === profileHref;
 
   // If visibleHubs is not provided, show everything (PRINCIPAL / TEACHER path).
   const shouldShow = (hubId: NavHub) =>
@@ -107,7 +116,7 @@ export default function HubSidebar({
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+    router.push("/login");
     router.refresh();
   }
 
@@ -118,6 +127,7 @@ export default function HubSidebar({
         role={role}
         roleLabel={roleLabel}
         userEmail={userEmail}
+        avatarUrl={avatarUrl}
         schoolName={schoolName}
         visibleHubs={visibleHubs}
       />
@@ -184,15 +194,59 @@ export default function HubSidebar({
           })}
         </nav>
 
-        {/* Bottom: avatar + logout */}
+        {/* Bottom: avatar (links to profile) + logout */}
         <div className="flex flex-col items-center gap-1 py-3 border-t border-line dark:border-dark-border">
-          <div
-            title={`${roleLabel} · ${userEmail}`}
-            className="w-9 h-9 rounded-full bg-teal/10 text-teal flex items-center justify-center
-                       text-xs font-semibold select-none cursor-default"
-          >
-            {userInitials}
+          {/* Avatar — photo or initials, links to My Profile */}
+          <div className="relative w-full flex justify-center group">
+            <Link
+              href={profileHref}
+              aria-label="My Profile"
+              title="My Profile"
+              className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center
+                          text-xs font-semibold select-none transition-opacity hover:opacity-80
+                          ring-2 ring-offset-1 ring-transparent
+                          ${isOnProfile ? "ring-teal" : ""}
+                          ${avatarUrl ? "" : "bg-teal/10 text-teal"}`}
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt={roleLabel}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                userInitials
+              )}
+            </Link>
+            {/* Tooltip */}
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2
+                         whitespace-nowrap rounded-md shadow-md bg-ink text-white text-xs font-medium
+                         px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100
+                         z-50 dark:bg-dark-text dark:text-ink"
+            >
+              My Profile
+            </span>
           </div>
+
+          {/* My Profile icon link */}
+          <div className="relative w-full flex justify-center group">
+            <Link
+              href={profileHref}
+              aria-label="My Profile"
+              className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
+                ${isOnProfile
+                  ? "bg-teal/10 text-teal"
+                  : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                }`}
+            >
+              <UserCircle2 className="h-5 w-5" strokeWidth={isOnProfile ? 2.2 : 1.8} aria-hidden="true" />
+            </Link>
+          </div>
+
+          {/* Sign out */}
           <button
             type="button"
             onClick={handleLogout}

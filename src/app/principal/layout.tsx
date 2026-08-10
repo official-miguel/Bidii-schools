@@ -27,6 +27,7 @@ export default async function PrincipalLayout({
         role="principal"
         roleLabel="Principal"
         userEmail={user.email}
+        avatarUrl={user.avatarUrl ?? null}
         schoolName={school?.name}
         motto={school?.motto}
       >
