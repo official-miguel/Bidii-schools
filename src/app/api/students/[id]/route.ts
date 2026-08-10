@@ -28,6 +28,7 @@ const updateSchema = z.object({
   boardingStatus:     z.enum(["DAY", "BOARDING"]).nullable().optional(),
   parentName:         z.string().trim().optional().or(z.literal("")),
   parentContact:      z.string().trim().optional().or(z.literal("")),
+  photoUrl:           z.string().url().nullable().optional().or(z.literal("")),
   electiveSubjectIds: z.array(z.string()).optional(),
 });
 
@@ -105,6 +106,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           ...rest,
           parentName: rest.parentName === "" ? null : rest.parentName,
           parentContact: rest.parentContact === "" ? null : rest.parentContact,
+          photoUrl: rest.photoUrl === "" ? null : rest.photoUrl,
           ...(dateOfBirth !== undefined
             ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null }
             : {}),

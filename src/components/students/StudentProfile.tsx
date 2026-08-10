@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_META,
   STATUS_BADGE,
@@ -11,6 +11,7 @@ import {
   initials,
 } from "@/components/records/shared";
 import AccommodationProfileCard from "@/components/students/AccommodationProfileCard";
+import { Camera, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,6 +26,7 @@ type StudentBio = {
   dateOfBirth: string | null;
   parentName: string | null;
   parentContact: string | null;
+  photoUrl: string | null;
   enrolledAt: string;
   schoolClass: { id: string; name: string; form: number; stream: string | null };
   subjects: SubjectEntry[];
@@ -73,16 +75,119 @@ type ProfileData = {
 // Small helpers
 // ---------------------------------------------------------------------------
 
-function Avatar({ name }: { name: string }) {
+/** Avatar with photo support — shows image if available, falls back to coloured initials. */
+function StudentAvatar({
+  name,
+  photoUrl,
+  studentId,
+  onPhotoChange,
+}: {
+  name: string;
+  photoUrl: string | null;
+  studentId: string;
+  onPhotoChange: (url: string | null) => void;
+}) {
   const COLORS = [
     "bg-royal-50 text-royal", "bg-amber-50 text-amber-700",
     "bg-success-bg text-success", "bg-purple-50 text-purple-700",
     "bg-cyan-50 text-cyan-700", "bg-rose-50 text-rose-600",
   ];
   const color = COLORS[name.charCodeAt(0) % COLORS.length];
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [imgError, setImgError]   = useState(false);
+
+  // Reset error state when photoUrl changes (new photo uploaded)
+  useEffect(() => { setImgError(false); }, [photoUrl]);
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+      const res = await fetch(`/api/students/${studentId}/photo`, { method: "POST", body: fd });
+      const json = await res.json();
+      if (res.ok) onPhotoChange(json.url);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setUploading(true);
+    try {
+      await fetch(`/api/students/${studentId}/photo`, { method: "DELETE" });
+      onPhotoChange(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const showPhoto = photoUrl && !imgError;
+
   return (
-    <div className={`w-16 h-16 ${color} rounded-full flex items-center justify-center font-display font-semibold text-2xl shrink-0`}>
-      {initials(name)}
+    <div className="relative group shrink-0">
+      {/* Photo or initials circle */}
+      {showPhoto ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt={name}
+          onError={() => setImgError(true)}
+          className="w-16 h-16 rounded-full object-cover border-2 border-line"
+        />
+      ) : (
+        <div className={`w-16 h-16 ${color} rounded-full flex items-center justify-center font-display font-semibold text-2xl`}>
+          {initials(name)}
+        </div>
+      )}
+
+      {/* Hover overlay — camera icon to upload */}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        title="Change photo"
+        aria-label="Change student photo"
+        className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center
+                   opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer
+                   disabled:cursor-wait"
+      >
+        {uploading ? (
+          <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        ) : (
+          <Camera className="w-5 h-5 text-white" />
+        )}
+      </button>
+
+      {/* Remove button — only shown when a photo exists */}
+      {showPhoto && !uploading && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          title="Remove photo"
+          aria-label="Remove student photo"
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-line
+                     flex items-center justify-center shadow-sm
+                     opacity-0 group-hover:opacity-100 transition-opacity
+                     hover:bg-danger hover:border-danger hover:text-white text-slate"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
@@ -125,9 +230,10 @@ export default function StudentProfile({
   studentId: string;
   role?: "principal" | "teacher" | "staff";
 }) {
-  const [data, setData]       = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [data, setData]         = useState<ProfileData | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -137,6 +243,7 @@ export default function StudentProfile({
         const json = await r.json();
         if (!r.ok) { setError(json.error ?? "Couldn't load profile."); return; }
         setData(json);
+        setPhotoUrl(json.student?.photoUrl ?? null);
       })
       .catch(() => setError("Couldn't load profile."))
       .finally(() => setLoading(false));
@@ -182,7 +289,12 @@ export default function StudentProfile({
 
         {/* Avatar + name block */}
         <div className="flex items-start gap-4">
-          <Avatar name={student.fullName} />
+          <StudentAvatar
+            name={student.fullName}
+            photoUrl={photoUrl}
+            studentId={student.id}
+            onPhotoChange={setPhotoUrl}
+          />
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-xl font-semibold text-ink leading-tight">{student.fullName}</h1>
             <p className="text-sm text-slate mt-0.5">

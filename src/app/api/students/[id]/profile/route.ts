@@ -45,7 +45,7 @@ export async function GET(
     select: {
       id: true, fullName: true, admissionNumber: true,
       dateOfBirth: true, parentName: true, parentContact: true,
-      classId: true, createdAt: true,
+      photoUrl: true, classId: true, createdAt: true,
       schoolClass: { select: { id: true, name: true, form: true, stream: true } },
       electives: {
         select: { subject: { select: { id: true, name: true, code: true, type: true } } },
@@ -251,6 +251,7 @@ export async function GET(
       admissionNumber: student.admissionNumber,
       dateOfBirth: student.dateOfBirth ? student.dateOfBirth.toISOString().slice(0, 10) : null,
       parentName: student.parentName, parentContact: student.parentContact,
+      photoUrl: student.photoUrl ?? null,
       enrolledAt: student.createdAt.toISOString().slice(0, 10),
       schoolClass: student.schoolClass,
       subjects,

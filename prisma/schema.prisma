@@ -140,6 +140,8 @@ model User {
   /// fixed capabilities (own class, own subjects, marks entry) unaffected by
   /// the RBAC system so nothing about the teacher flow changes.
   staffRoleId               String?
+  /// Optional profile photo URL (stored in /uploads/avatars/)
+  avatarUrl                 String?
   calendarEvents            CalendarEvent[]
   sessions                  Session[]
   student                   Student?
@@ -501,6 +503,8 @@ model Student {
   classId                  String
   parentName               String?
   parentContact            String?
+  /// Optional URL to the student's profile photo (stored in /uploads/students/)
+  photoUrl                 String?
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
   schoolId                 String

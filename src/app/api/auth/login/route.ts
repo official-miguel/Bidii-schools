@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
           where: { email, isActive: true },
           select: { id: true, email: true, passwordHash: true, role: true,
                     mustChangePassword: true, isActive: true, schoolId: true,
-                    staffRoleId: true, createdAt: true, updatedAt: true },
+                    staffRoleId: true, createdAt: true, updatedAt: true, avatarUrl: true },
         });
 
         if (candidates.length === 0) {
