@@ -1,10 +1,8 @@
+import { Users, BookOpen, Clock } from "lucide-react";
 import Link from "next/link";
-import { TrendingUp, Users, BookOpen, Clock } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import CountdownTimer from "@/components/dashboard/CountdownTimer";
 import type { HeadOfDeptRole } from "@/lib/derivedRoles";
-
-interface DeptClass { id: string; name: string; form: number }
 
 interface AssessmentPeriod {
   id: string; name: string; closingDate?: Date | string | null;
@@ -15,13 +13,14 @@ interface Props {
   derived:        HeadOfDeptRole | null;
   deptTeachers:   number;
   deptSubjects:   number;
-  deptClasses:    DeptClass[];
   marksEntered:   number;
   activePeriods:  AssessmentPeriod[];
+  // deptClasses kept in signature for backwards-compat but no longer rendered
+  deptClasses?:   unknown[];
 }
 
 export default function HODSection({
-  rolePrefix, derived, deptTeachers, deptSubjects, deptClasses, marksEntered, activePeriods,
+  rolePrefix, derived, deptTeachers, deptSubjects, marksEntered, activePeriods,
 }: Props) {
   if (!derived) return null;
 
@@ -39,11 +38,10 @@ export default function HODSection({
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Dept teachers"  value={deptTeachers}       href={`/${rolePrefix === "teacher" ? "teacher" : "staff"}/directory`} icon={Users}       color="teal" />
-        <StatCard label="Dept subjects"  value={deptSubjects}       href={assessmentsHref} icon={BookOpen}    color="teal" />
-        <StatCard label="Dept classes"   value={deptClasses.length} href={assessmentsHref} icon={TrendingUp}  color="teal" />
-        <StatCard label="Marks entered"  value={marksEntered}       href={assessmentsHref} icon={Clock}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <StatCard label="Dept teachers" value={deptTeachers} href={`/${rolePrefix === "teacher" ? "teacher" : "staff"}/directory`} icon={Users}    color="teal" />
+        <StatCard label="Dept subjects" value={deptSubjects} href={assessmentsHref}                                                  icon={BookOpen} color="teal" />
+        <StatCard label="Marks entered" value={marksEntered} href={assessmentsHref}                                                  icon={Clock}
                   color={marksEntered > 0 ? "success" : "warn"} sub="this period" />
       </div>
 
@@ -63,25 +61,6 @@ export default function HODSection({
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {deptClasses.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Classes in your department</p>
-            <span className="text-xs text-slate dark:text-dark-muted">{deptClasses.length} classes</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {deptClasses.map((c) => (
-              <Link key={c.id} href={`${assessmentsHref}?classId=${c.id}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line text-sm
-                           hover:border-teal/40 hover:bg-teal-50 transition-colors
-                           dark:border-dark-border dark:hover:border-teal/40 dark:hover:bg-teal/5">
-                <span className="text-ink dark:text-dark-text">{c.name}</span>
-              </Link>
-            ))}
-          </div>
         </div>
       )}
     </section>
