@@ -52,21 +52,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ formulas: [] });
   }
 
-  const formulas = await db.departmentFormulaConfig.findMany({
-    where: { schoolId: user.schoolId, departmentId },
-    orderBy: [{ subjectId: "asc" }, { form: "asc" }],
-    select: {
-      id: true,
-      subjectId: true,
-      form: true,
-      frameworkId: true,
-      formula: true,
-      updatedAt: true,
-      subject: { select: { id: true, name: true, code: true } },
-    },
-  });
-
-  return NextResponse.json({ formulas });
+  try {
+    const formulas = await db.departmentFormulaConfig.findMany({
+      where: { schoolId: user.schoolId, departmentId },
+      orderBy: [{ subjectId: "asc" }, { form: "asc" }],
+      select: {
+        id: true,
+        subjectId: true,
+        form: true,
+        frameworkId: true,
+        formula: true,
+        updatedAt: true,
+        subject: { select: { id: true, name: true, code: true } },
+      },
+    });
+    return NextResponse.json({ formulas });
+  } catch {
+    return NextResponse.json({ formulas: [] });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -161,6 +164,8 @@ export async function PUT(req: NextRequest) {
       formula: true,
       updatedAt: true,
     },
+  }).catch((e: Error) => {
+    throw new Error(e.message.includes("does not exist") ? "Database migration pending — run prisma db push." : e.message);
   });
 
   return NextResponse.json({ config });

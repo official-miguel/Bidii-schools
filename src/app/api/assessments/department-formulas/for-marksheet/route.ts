@@ -35,16 +35,20 @@ export async function GET(req: NextRequest) {
 
   if (!subject?.departmentId) return NextResponse.json({ formula: null });
 
-  const config = await db.departmentFormulaConfig.findFirst({
-    where: {
-      schoolId:     user.schoolId,
-      departmentId: subject.departmentId,
-      subjectId,
-      form,
-      frameworkId,
-    },
-    select: { formula: true },
-  });
-
-  return NextResponse.json({ formula: config?.formula ?? null });
+  try {
+    const config = await db.departmentFormulaConfig.findFirst({
+      where: {
+        schoolId:     user.schoolId,
+        departmentId: subject.departmentId,
+        subjectId,
+        form,
+        frameworkId,
+      },
+      select: { formula: true },
+    });
+    return NextResponse.json({ formula: config?.formula ?? null });
+  } catch {
+    // Table doesn't exist yet — migration pending
+    return NextResponse.json({ formula: null });
+  }
 }

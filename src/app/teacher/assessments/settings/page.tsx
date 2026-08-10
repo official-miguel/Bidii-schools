@@ -91,24 +91,31 @@ export default async function HODAssessmentSettingsPage() {
   }) as Array<{ id: string; type: string; label: string; academicYear: string; isActive: boolean }>;
 
   // ── Existing formula configs for this department ─────────────────────────
-  const existingFormulas = await db.departmentFormulaConfig.findMany({
-    where: { schoolId: user.schoolId, departmentId: department.id },
-    select: {
-      id: true,
-      subjectId: true,
-      form: true,
-      frameworkId: true,
-      formula: true,
-      updatedAt: true,
-    },
-  }) as Array<{
+  // Wrapped in try/catch: the DepartmentFormulaConfig table may not exist yet
+  // if the database migration hasn't been applied (prisma db push pending).
+  let existingFormulas: Array<{
     id: string;
     subjectId: string;
     form: number;
     frameworkId: string;
     formula: string;
     updatedAt: string;
-  }>;
+  }> = [];
+  try {
+    existingFormulas = await db.departmentFormulaConfig.findMany({
+      where: { schoolId: user.schoolId, departmentId: department.id },
+      select: {
+        id: true,
+        subjectId: true,
+        form: true,
+        frameworkId: true,
+        formula: true,
+        updatedAt: true,
+      },
+    });
+  } catch {
+    // Table doesn't exist yet — page still renders, formulas just start empty
+  }
 
   return (
     <div className="space-y-6 p-6">
