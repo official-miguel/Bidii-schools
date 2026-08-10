@@ -9,19 +9,18 @@ interface AssessmentPeriod {
 }
 
 interface Props {
-  rolePrefix:         string;
-  derived:            HeadOfDeptRole | null;
-  deptTeachers:       number;
-  deptSubjects:       number;
-  marksEntered:       number;
-  totalDeptStudents:  number;
-  activePeriods:      AssessmentPeriod[];
-  // deptClasses kept in signature for backwards-compat but no longer rendered
-  deptClasses?:       unknown[];
+  rolePrefix:          string;
+  derived:             HeadOfDeptRole | null;
+  deptTeachers:        number;
+  deptSubjects:        number;
+  marksEntered:        number;
+  totalMarksExpected:  number;
+  activePeriods:       AssessmentPeriod[];
+  deptClasses?:        unknown[];
 }
 
 export default function HODSection({
-  rolePrefix, derived, deptTeachers, deptSubjects, marksEntered, totalDeptStudents, activePeriods,
+  rolePrefix, derived, deptTeachers, deptSubjects, marksEntered, totalMarksExpected, activePeriods,
 }: Props) {
   if (!derived) return null;
 
@@ -44,7 +43,7 @@ export default function HODSection({
         <StatCard label="Dept subjects" value={deptSubjects} href={assessmentsHref}                                                  icon={BookOpen} color="teal" />
         <StatCard label="Marks entered" value={marksEntered} href={assessmentsHref}                                                  icon={Clock}
                   color={marksEntered > 0 ? "success" : "warn"}
-                  sub={totalDeptStudents > 0 ? `/ ${totalDeptStudents} students` : "this period"} />
+                  sub={totalMarksExpected > 0 ? `/ ${totalMarksExpected} expected` : "this period"} />
       </div>
 
       {activePeriods.length > 0 && (

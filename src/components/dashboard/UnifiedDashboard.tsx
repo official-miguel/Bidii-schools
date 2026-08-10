@@ -240,7 +240,7 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
           deptSubjects={hodData.deptSubjects}
           deptClasses={hodData.deptClasses}
           marksEntered={hodData.marksEntered}
-          totalDeptStudents={hodData.totalDeptStudents}
+          totalMarksExpected={hodData.totalMarksExpected}
           activePeriods={assessmentPeriods}
         />
       )}
@@ -336,7 +336,10 @@ async function fetchSchoolOverview(schoolId: string, today: Date) {
 }
 
 async function fetchHODData(schoolId: string, departmentId: string) {
-  const [deptTeachers, deptSubjects, deptClasses, marksEntered, totalDeptStudents] = await Promise.all([
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = prisma as any;
+
+  const [deptTeachers, deptSubjectsCount, deptClasses, marksEntered] = await Promise.all([
     prisma.teacher.count({ where: { schoolId, primaryDepartmentId: departmentId, archivedAt: null } }),
     prisma.subject.count({ where: { schoolId, departmentId } }),
     prisma.schoolClass.findMany({
@@ -345,15 +348,65 @@ async function fetchHODData(schoolId: string, departmentId: string) {
       orderBy: [{ form: "asc" }, { name: "asc" }],
     }),
     prisma.assessmentItem.count({ where: { schoolId, subject: { departmentId } } }).catch(() => 0),
-    prisma.student.count({
-      where: {
-        schoolId,
-        archivedAt: null,
-        schoolClass: { subjectTeachers: { some: { subject: { departmentId } } } },
-      },
-    }).catch(() => 0),
   ]);
-  return { deptTeachers, deptSubjects, deptClasses, marksEntered, totalDeptStudents };
+
+  // Total marks expected = Σ (students in class) × (papers for that subject in the current framework)
+  // Steps:
+  //  1. Find the current active framework
+  //  2. Count papers per dept subject in that framework
+  //  3. Count students per class that has a dept subject assignment
+  //  4. Multiply and sum
+  let totalMarksExpected = 0;
+  try {
+    const currentFramework = await db.assessmentFramework.findFirst({
+      where: { schoolId, isActive: true, type: "EIGHT_FOUR_FOUR" },
+      select: { id: true },
+    }) as { id: string } | null;
+
+    if (currentFramework) {
+      // Papers per subject in this dept × framework (fall back to 1 if no papers defined)
+      const deptSubjectList = await prisma.subject.findMany({
+        where: { schoolId, departmentId },
+        select: { id: true },
+      });
+      const deptSubjectIds = deptSubjectList.map((s) => s.id);
+
+      const paperCounts = await db.paper.groupBy({
+        by: ["subjectId"],
+        where: { schoolId, frameworkId: currentFramework.id, subjectId: { in: deptSubjectIds } },
+        _count: { id: true },
+      }) as Array<{ subjectId: string; _count: { id: number } }>;
+
+      const papersPerSubject = new Map(
+        paperCounts.map((r) => [r.subjectId, r._count.id])
+      );
+
+      // For each class-subject assignment in this dept, get student count × paper count
+      const assignments = await db.classSubjectTeacher.findMany({
+        where: { subjectId: { in: deptSubjectIds } },
+        select: { classId: true, subjectId: true },
+      }) as Array<{ classId: string; subjectId: string }>;
+
+      if (assignments.length > 0) {
+        const classIds = [...new Set(assignments.map((a) => a.classId))];
+
+        const studentCounts = await prisma.student.groupBy({
+          by: ["classId"],
+          where: { schoolId, classId: { in: classIds }, archivedAt: null },
+          _count: { id: true },
+        });
+        const studentsPerClass = new Map(studentCounts.map((r) => [r.classId, r._count.id]));
+
+        for (const { classId, subjectId } of assignments) {
+          const students = studentsPerClass.get(classId) ?? 0;
+          const papers   = papersPerSubject.get(subjectId) ?? 1; // 1 paper default
+          totalMarksExpected += students * papers;
+        }
+      }
+    }
+  } catch { /* non-critical — falls back to 0 */ }
+
+  return { deptTeachers, deptSubjects: deptSubjectsCount, deptClasses, marksEntered, totalMarksExpected };
 }
 
 async function fetchClassTeacherData(schoolId: string, classId: string, today: Date) {
