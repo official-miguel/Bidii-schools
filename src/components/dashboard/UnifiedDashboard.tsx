@@ -339,7 +339,7 @@ async function fetchHODData(schoolId: string, departmentId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = prisma as any;
 
-  const [deptTeachers, deptSubjectsCount, deptClasses, marksEntered] = await Promise.all([
+  const [deptTeachers, deptSubjectsCount, deptClasses] = await Promise.all([
     prisma.teacher.count({ where: { schoolId, primaryDepartmentId: departmentId, archivedAt: null } }),
     prisma.subject.count({ where: { schoolId, departmentId } }),
     prisma.schoolClass.findMany({
@@ -347,64 +347,87 @@ async function fetchHODData(schoolId: string, departmentId: string) {
       select: { id: true, name: true, form: true },
       orderBy: [{ form: "asc" }, { name: "asc" }],
     }),
-    prisma.assessmentItem.count({ where: { schoolId, subject: { departmentId } } }).catch(() => 0),
   ]);
 
-  // Total marks expected = Σ (students in class) × (papers for that subject in the current framework)
-  // Steps:
-  //  1. Find the current active framework
-  //  2. Count papers per dept subject in that framework
-  //  3. Count students per class that has a dept subject assignment
-  //  4. Multiply and sum
+  // ── Period-scoped marks stats ─────────────────────────────────────────────
+  // Both marksEntered and totalMarksExpected must be for the same current
+  // period so that entered can never exceed expected.
+  let marksEntered = 0;
   let totalMarksExpected = 0;
+
   try {
+    // 1. Resolve current framework + current period
     const currentFramework = await db.assessmentFramework.findFirst({
       where: { schoolId, isActive: true, type: "EIGHT_FOUR_FOUR" },
       select: { id: true },
     }) as { id: string } | null;
 
     if (currentFramework) {
-      // Papers per subject in this dept × framework (fall back to 1 if no papers defined)
+      const currentPeriod = await db.assessmentPeriod.findFirst({
+        where: { schoolId, frameworkId: currentFramework.id, isCurrent: true },
+        select: { id: true },
+      }) as { id: string } | null;
+
+      // 2. Dept subjects and their paper counts for this framework
       const deptSubjectList = await prisma.subject.findMany({
         where: { schoolId, departmentId },
         select: { id: true },
       });
       const deptSubjectIds = deptSubjectList.map((s) => s.id);
 
-      const paperCounts = await db.paper.groupBy({
-        by: ["subjectId"],
-        where: { schoolId, frameworkId: currentFramework.id, subjectId: { in: deptSubjectIds } },
-        _count: { id: true },
-      }) as Array<{ subjectId: string; _count: { id: number } }>;
-
-      const papersPerSubject = new Map(
-        paperCounts.map((r) => [r.subjectId, r._count.id])
-      );
-
-      // For each class-subject assignment in this dept, get student count × paper count
-      const assignments = await db.classSubjectTeacher.findMany({
-        where: { subjectId: { in: deptSubjectIds } },
-        select: { classId: true, subjectId: true },
-      }) as Array<{ classId: string; subjectId: string }>;
-
-      if (assignments.length > 0) {
-        const classIds = [...new Set(assignments.map((a) => a.classId))];
-
-        const studentCounts = await prisma.student.groupBy({
-          by: ["classId"],
-          where: { schoolId, classId: { in: classIds }, archivedAt: null },
+      if (deptSubjectIds.length > 0) {
+        const paperCounts = await db.paper.groupBy({
+          by: ["subjectId"],
+          where: { schoolId, frameworkId: currentFramework.id, subjectId: { in: deptSubjectIds } },
           _count: { id: true },
-        });
-        const studentsPerClass = new Map(studentCounts.map((r) => [r.classId, r._count.id]));
+        }) as Array<{ subjectId: string; _count: { id: number } }>;
 
-        for (const { classId, subjectId } of assignments) {
-          const students = studentsPerClass.get(classId) ?? 0;
-          const papers   = papersPerSubject.get(subjectId) ?? 1; // 1 paper default
-          totalMarksExpected += students * papers;
+        const papersPerSubject = new Map(
+          paperCounts.map((r) => [r.subjectId, r._count.id])
+        );
+
+        // 3. Class-subject assignments in this dept (scoped to this school)
+        const assignments = await db.classSubjectTeacher.findMany({
+          where: {
+            subjectId: { in: deptSubjectIds },
+            schoolClass: { schoolId },
+          },
+          select: { classId: true, subjectId: true },
+        }) as Array<{ classId: string; subjectId: string }>;
+
+        if (assignments.length > 0) {
+          const classIds = [...new Set(assignments.map((a) => a.classId))];
+
+          // 4. Student counts per class (non-archived)
+          const studentCounts = await prisma.student.groupBy({
+            by: ["classId"],
+            where: { schoolId, classId: { in: classIds }, archivedAt: null },
+            _count: { id: true },
+          });
+          const studentsPerClass = new Map(studentCounts.map((r) => [r.classId, r._count.id]));
+
+          // 5. totalMarksExpected = Σ students × papers per (class, subject) pair
+          for (const { classId, subjectId } of assignments) {
+            const students = studentsPerClass.get(classId) ?? 0;
+            const papers   = papersPerSubject.get(subjectId) ?? 1;
+            totalMarksExpected += students * papers;
+          }
+
+          // 6. marksEntered = distinct (studentId, paperId) entries for current period
+          if (currentPeriod) {
+            marksEntered = await prisma.assessmentItem.count({
+              where: {
+                schoolId,
+                periodId:  currentPeriod.id,
+                subjectId: { in: deptSubjectIds },
+                student:   { classId: { in: classIds } },
+              },
+            }).catch(() => 0);
+          }
         }
       }
     }
-  } catch { /* non-critical — falls back to 0 */ }
+  } catch { /* non-critical — both fall back to 0 */ }
 
   return { deptTeachers, deptSubjects: deptSubjectsCount, deptClasses, marksEntered, totalMarksExpected };
 }
