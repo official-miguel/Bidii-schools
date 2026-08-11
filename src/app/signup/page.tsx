@@ -1,10 +1,15 @@
 "use client";
 
+/**
+ * Signup page — OTP-only account creation.
+ * No password fields. After signup the principal signs in via OTP.
+ */
+
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { School, MapPin, Phone, User, Mail, Lock, Eye, EyeOff, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { School, MapPin, Phone, User, Mail, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
 const inputCls =
@@ -14,7 +19,7 @@ const inputCls =
   "transition-colors dark:bg-dark-surface dark:border-dark-border " +
   "dark:text-dark-text dark:placeholder:text-dark-muted/50";
 
-const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1.5";
+const labelCls        = "block text-sm font-medium text-ink dark:text-dark-text mb-1.5";
 const sectionTitleCls = "text-xs font-semibold uppercase tracking-wide text-slate dark:text-dark-muted mb-3";
 
 const DRAFT_DEFAULTS = {
@@ -28,7 +33,7 @@ const DRAFT_DEFAULTS = {
 
 export default function SignupPage() {
   const router = useRouter();
-  const [draft, setDraft, clearDraft] = useFormDraft("bidii_draft_signup_v2", DRAFT_DEFAULTS);
+  const [draft, setDraft, clearDraft] = useFormDraft("bidii_draft_signup_v3", DRAFT_DEFAULTS);
 
   const [schoolEmail,    setSchoolEmail]    = useState(draft.schoolEmail);
   const [schoolName,     setSchoolName]     = useState(draft.schoolName);
@@ -37,12 +42,7 @@ export default function SignupPage() {
   const [fullName,       setFullName]       = useState(draft.fullName);
   const [principalEmail, setPrincipalEmail] = useState(draft.principalEmail);
 
-  const [password,        setPassword]        = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword,    setShowPassword]    = useState(false);
-  const [showConfirm,     setShowConfirm]     = useState(false);
-
-  // School detection state
+  // School detection
   const [schoolExists,           setSchoolExists]           = useState<boolean | null>(null);
   const [existingSchoolName,     setExistingSchoolName]     = useState("");
   const [activePrincipalBlocked, setActivePrincipalBlocked] = useState(false);
@@ -68,7 +68,7 @@ export default function SignupPage() {
     setActivePrincipalBlocked(false);
 
     try {
-      const res = await fetch(`/api/auth/signup/check-school?email=${encodeURIComponent(trimmed)}`);
+      const res  = await fetch(`/api/auth/signup/check-school?email=${encodeURIComponent(trimmed)}`);
       if (res.ok) {
         const data = await res.json() as { exists: boolean; schoolName?: string; activePrincipal?: boolean };
         setSchoolExists(data.exists);
@@ -84,13 +84,8 @@ export default function SignupPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-
     if (activePrincipalBlocked) return;
 
-    if (password !== confirmPassword) {
-      setError("Passwords don't match.");
-      return;
-    }
     if (principalEmail.trim().toLowerCase() === schoolEmail.trim().toLowerCase()) {
       setError("Your personal login email must be different from the school email.");
       return;
@@ -99,23 +94,22 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          schoolEmail, schoolName, schoolAddress, schoolPhone,
-          fullName, principalEmail, password,
+        body:    JSON.stringify({
+          schoolEmail, schoolName, schoolAddress, schoolPhone, fullName, principalEmail,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.code === "PRINCIPAL_ALREADY_EXISTS") {
-          setActivePrincipalBlocked(true);
-        }
+        if (data.code === "PRINCIPAL_ALREADY_EXISTS") setActivePrincipalBlocked(true);
         setError(data.error || "Something went wrong. Try again.");
         return;
       }
       clearDraft();
-      router.push("/principal");
+      // Signup creates the account but doesn't log in automatically —
+      // redirect to login so the principal authenticates via OTP.
+      router.push("/login?notice=account-created");
       router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
@@ -124,21 +118,22 @@ export default function SignupPage() {
     }
   }
 
-  const isNewSchool = schoolExists === false;
+  const isNewSchool      = schoolExists === false;
   const isExistingSchool = schoolExists === true;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden
                     bg-gradient-to-br from-teal-50/60 via-white to-slate-50
                     dark:from-[#0A1628] dark:via-[#0D2035] dark:to-[#0A1628]">
+
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.04]"
         style={{ backgroundImage: "radial-gradient(circle, #2C7F7E 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
       <div aria-hidden="true" className="pointer-events-none absolute top-1/4 right-1/4 w-96 h-96 rounded-full opacity-0 dark:opacity-[0.07]"
         style={{ background: "radial-gradient(circle, #2C7F7E, transparent 70%)" }} />
-      <div aria-hidden="true" className="pointer-events-none absolute bottom-1/4 left-1/4 w-64 h-64 rounded-full opacity-0 dark:opacity-[0.05]"
-        style={{ background: "radial-gradient(circle, #3A9998, transparent 70%)" }} />
 
       <div className="w-full max-w-md relative z-10">
+
+        {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
           <div className="rounded-2xl bg-teal/10 dark:bg-white/10 ring-1 ring-teal/20 dark:ring-white/20 p-4 mb-5 shadow-md">
             <Image src="/logo.png" alt="Bidii" width={72} height={72} className="object-contain" priority />
@@ -153,18 +148,19 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {/* Card */}
         <div className="bg-white dark:bg-[#162233] rounded-2xl overflow-hidden shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
           <div className="h-0.5" style={{ background: "linear-gradient(90deg, #2C7F7E, #3A9998, #2C7F7E)" }} />
 
           <div className="p-7">
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
-              {/* ── Step 1: School identity ── */}
+              {/* ── School identity ── */}
               <div>
                 <p className={sectionTitleCls}>School identity</p>
                 <div className="space-y-3">
 
-                  {/* School email — always shown first */}
+                  {/* School email */}
                   <div>
                     <label htmlFor="schoolEmail" className={labelCls}>School email</label>
                     <div className="relative">
@@ -199,7 +195,7 @@ export default function SignupPage() {
                     </div>
                   )}
 
-                  {/* Active principal blocked banner */}
+                  {/* Blocked banner */}
                   {activePrincipalBlocked && (
                     <div className="flex items-start gap-3 rounded-xl bg-warn-bg border border-warn/20 px-4 py-3">
                       <AlertTriangle className="h-4 w-4 text-warn mt-0.5 shrink-0" aria-hidden="true" />
@@ -209,7 +205,7 @@ export default function SignupPage() {
                     </div>
                   )}
 
-                  {/* School name — only for new schools */}
+                  {/* School name — new schools only */}
                   {(isNewSchool || schoolExists === null) && (
                     <div>
                       <label htmlFor="schoolName" className={labelCls}>School name</label>
@@ -221,7 +217,7 @@ export default function SignupPage() {
                     </div>
                   )}
 
-                  {/* Address & phone — only for new schools */}
+                  {/* Address + phone — new schools only */}
                   {(isNewSchool || schoolExists === null) && (
                     <>
                       <div>
@@ -244,24 +240,22 @@ export default function SignupPage() {
                       </div>
                     </>
                   )}
-
                 </div>
               </div>
 
-              {/* ── Step 2: Principal login ── */}
+              {/* ── Principal login ── */}
               {!activePrincipalBlocked && (
                 <div>
                   <p className={sectionTitleCls}>Your Principal login</p>
                   <div className="space-y-3">
-
                     <div>
                       <label htmlFor="fullName" className={labelCls}>Your full name</label>
                       <div className="relative">
                         <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
-                        <input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} placeholder="Jane Wanjiru" />
+                        <input id="fullName" required value={fullName}
+                          onChange={(e) => setFullName(e.target.value)} className={inputCls} placeholder="Jane Wanjiru" />
                       </div>
                     </div>
-
                     <div>
                       <label htmlFor="principalEmail" className={labelCls}>Your personal email</label>
                       <div className="relative">
@@ -271,38 +265,9 @@ export default function SignupPage() {
                           placeholder="jane@gmail.com" className={inputCls} />
                       </div>
                       <p className="text-xs text-slate dark:text-dark-muted mt-1.5">
-                        Your personal login email — separate from the school email. Must be different from the school email above.
+                        Your personal login email — different from the school email. You&apos;ll sign in with a code sent here.
                       </p>
                     </div>
-
-                    <div>
-                      <label htmlFor="password" className={labelCls}>Password</label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
-                        <input id="password" type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password"
-                          value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputCls} pr-11`} placeholder="At least 8 characters" />
-                        <button type="button" onClick={() => setShowPassword((v) => !v)}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-slate hover:text-ink transition-colors dark:text-dark-muted dark:hover:text-dark-text" tabIndex={-1}>
-                          {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="confirmPassword" className={labelCls}>Confirm password</label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
-                        <input id="confirmPassword" type={showConfirm ? "text" : "password"} required autoComplete="new-password"
-                          value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`${inputCls} pr-11`} placeholder="Re-enter password" />
-                        <button type="button" onClick={() => setShowConfirm((v) => !v)}
-                          aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-                          className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-slate hover:text-ink transition-colors dark:text-dark-muted dark:hover:text-dark-text" tabIndex={-1}>
-                          {showConfirm ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-                        </button>
-                      </div>
-                    </div>
-
                   </div>
                 </div>
               )}
@@ -315,9 +280,14 @@ export default function SignupPage() {
 
               {!activePrincipalBlocked && (
                 <button type="submit" disabled={loading || checkingSchool}
-                  className="w-full rounded-xl text-white text-sm font-semibold py-3 transition-all duration-150 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-teal/40 focus:ring-offset-2"
-                  style={{ background: (loading || checkingSchool) ? "#2C7F7E" : "linear-gradient(135deg, #2C7F7E 0%, #1F5C5B 100%)" }}>
-                  {loading ? (isExistingSchool ? "Joining school…" : "Creating your school…") : (isExistingSchool ? "Join as Principal" : "Create school account")}
+                  className="w-full rounded-xl text-white text-sm font-semibold py-3 transition-all duration-150 shadow-lg
+                             disabled:opacity-60 disabled:cursor-not-allowed
+                             focus:outline-none focus:ring-2 focus:ring-teal/40 focus:ring-offset-2"
+                  style={{ background: (loading || checkingSchool) ? "#2C7F7E" : "linear-gradient(135deg, #2C7F7E 0%, #1F5C5B 100%)" }}
+                >
+                  {loading
+                    ? (isExistingSchool ? "Joining school…" : "Creating your school…")
+                    : (isExistingSchool ? "Join as Principal" : "Create school account")}
                 </button>
               )}
 

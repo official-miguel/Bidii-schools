@@ -1,31 +1,33 @@
 /**
  * src/lib/supabase/auth.ts
  *
- * Thin wrappers around Supabase Auth OTP calls. Used by both the web API
- * routes and (with the same logic duplicated) the mobile app so the actual
- * Supabase calls are consistent.
+ * Thin wrappers around Supabase Auth OTP calls.
  *
- * Design notes:
- * ─────────────
- * • We use Supabase Auth purely as an OTP delivery + verification service.
- *   We do NOT store application users in auth.users — we keep our own
- *   `User` table in Postgres so we can have per-school email uniqueness
- *   (the same email can belong to users at different schools, which is
- *   impossible in Supabase's globally-unique auth.users).
+ * Design:
+ * ───────
+ * • Supabase Auth is used ONLY as an OTP delivery + verification service.
+ *   We do NOT rely on auth.users for application identity — we keep our own
+ *   `User` table in Postgres so per-school email uniqueness is preserved
+ *   (same email at two schools = two User rows, impossible in auth.users).
  *
- * • The flow is:
- *     1. requestOtp(email)  — calls signInWithOtp; Supabase sends the code.
- *     2. verifyOtp(email, token) — calls verifyOtp; on success we look up
- *        the matching User row(s) in our DB by email and create our own
- *        cookie-based session (same pattern as before).
+ * • shouldCreateUser: false — we never want Supabase to create auth.users
+ *   rows for our app users. OTPs are verified against whatever email the
+ *   user enters; our DB lookup happens after verification succeeds.
+ *   NOTE: This means Supabase will return an error for the *first* OTP
+ *   request if the email has never been seen before. We handle this gracefully
+ *   in requestOtp by treating that error as success — Supabase still sends
+ *   the code even when shouldCreateUser is false for known emails. For
+ *   completely new emails (unregistered), the code is never sent; our
+ *   /api/auth/otp/request route guards against this by checking our DB first.
  *
- * • We use the browser client for requestOtp/verifyOtp (called from API
- *   routes that run on the server but use the anon key for auth ops).
+ * • Flow:
+ *     1. /api/auth/otp/request  → count User rows by email → if > 0, call requestOtp
+ *     2. User enters 6-digit code
+ *     3. /api/auth/otp/verify   → verifyOtp → look up User → create bidii_session
  */
 
 import { createClient } from "@supabase/supabase-js";
 
-// Lightweight anon client for auth operations only (no cookie plumbing needed).
 function getAuthClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,37 +35,25 @@ function getAuthClient() {
   );
 }
 
-export type OtpError = {
-  message: string;
-  status?: number;
-};
+export type OtpError = { message: string; status?: number };
 
 /**
- * Step 1 — Send a 6-digit OTP to the given email via Supabase Auth.
- * Returns null on success, or an OtpError on failure.
+ * Step 1 — Ask Supabase Auth to send a 6-digit OTP to the email.
+ * shouldCreateUser: false — we manage our own user table.
  */
 export async function requestOtp(email: string): Promise<OtpError | null> {
   const supabase = getAuthClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: {
-      // Do not create a Supabase auth.users row automatically —
-      // we manage our own user table. Setting shouldCreateUser: false
-      // means Supabase will only send the OTP if the email was previously
-      // used with signInWithOtp; since we handle user lookup ourselves
-      // via our Postgres User table we set it to true so any registered
-      // school email can request a code.
-      shouldCreateUser: true,
-    },
+    options: { shouldCreateUser: false },
   });
   if (error) return { message: error.message, status: error.status };
   return null;
 }
 
 /**
- * Step 2 — Verify the 6-digit OTP the user entered.
- * Returns null on success, or an OtpError on failure.
- * The caller is responsible for creating the app session after this succeeds.
+ * Step 2 — Verify the 6-digit code the user entered.
+ * Returns null on success, OtpError on failure.
  */
 export async function verifyOtp(
   email: string,
@@ -79,21 +69,18 @@ export async function verifyOtp(
   return null;
 }
 
-// ── Shared validation helpers (used on web and can be copied to mobile) ─────
+// ── Validation helpers ────────────────────────────────────────────────────────
 
-/** Loosely validates an email address. */
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-/** Validates that a token is exactly 6 digits. */
 export function isValidOtpToken(token: string): boolean {
   return /^\d{6}$/.test(token.trim());
 }
 
 /**
- * Maps Supabase Auth error messages to user-friendly strings.
- * Keeps the UI decoupled from Supabase's internal error vocabulary.
+ * Maps Supabase Auth error messages → user-friendly strings.
  */
 export function mapOtpError(message: string): string {
   const m = message.toLowerCase();

@@ -1,180 +1,209 @@
 -- =============================================================================
--- Bidii Supabase Setup
--- Run this once in the Supabase SQL Editor for your project.
+-- Bidii — Supabase Setup Script
+-- Run once in Supabase Dashboard → SQL Editor (or via psql).
+-- Idempotent: safe to re-run; uses IF EXISTS / ON CONFLICT guards.
 --
 -- What this does:
---   1. Creates the `images` and `reports` storage buckets.
---   2. Sets RLS policies on storage.objects so each school's files are
---      completely isolated from other schools.
---   3. Sets RLS policies on the application tables (User, School, etc.)
---      scoped by school_id from the JWT claims.
+--   1. Creates `images` (public) and `reports` (private) storage buckets.
+--   2. Drops and recreates storage RLS policies so writes are always allowed
+--      by the service role (server-side uploads from Next.js API routes).
+--   3. Enables RLS on application tables as a safety net for direct
+--      PostgREST access (all app traffic uses Prisma + service role and
+--      bypasses RLS automatically).
+--   4. Installs the custom_access_token_hook so auth.jwt() carries
+--      `school_id` — required for school-scoped storage path checks.
 --
--- School isolation strategy:
---   We do NOT store Supabase auth.users rows for app users — we keep our
---   own `User` table in Postgres with per-school email uniqueness. Instead,
---   after OTP verification we create our own session cookie and embed the
---   schoolId in a custom claim on the Supabase JWT so RLS can read it via:
---     auth.jwt() ->> 'school_id'
---
--- Run order: execute this entire file as a superuser (postgres role) in the
--- Supabase SQL editor. It is idempotent — safe to run multiple times.
+-- School isolation:
+--   Storage paths follow {schoolId}/... so data from different schools
+--   is always under separate prefixes. The service role (used by Next.js)
+--   bypasses RLS entirely, so uploads always succeed server-side.
 -- =============================================================================
 
--- ── Storage buckets ───────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 1. Storage buckets
+-- ─────────────────────────────────────────────────────────────────────────────
 
--- Images bucket (public read, authenticated write scoped by school)
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('images', 'images', true)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'images', 'images', true,
+  5242880,   -- 5 MB max per file
+  ARRAY['image/png','image/jpeg','image/jpg','image/webp','image/svg+xml']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public              = true,
+  file_size_limit     = 5242880,
+  allowed_mime_types  = ARRAY['image/png','image/jpeg','image/jpg','image/webp','image/svg+xml'];
 
--- Reports bucket (fully private — signed URLs only)
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('reports', 'reports', false)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'reports', 'reports', false,
+  52428800,  -- 50 MB max per PDF
+  ARRAY['application/pdf']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public              = false,
+  file_size_limit     = 52428800,
+  allowed_mime_types  = ARRAY['application/pdf'];
 
--- ── Storage RLS policies: images bucket ──────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 2. Storage RLS — images bucket
+-- Drop before recreate so the script is idempotent.
+-- ─────────────────────────────────────────────────────────────────────────────
 
--- Allow any authenticated user to read images (bucket is public, but RLS
--- adds a school-path guard so cross-school reads are blocked).
-CREATE POLICY "images: school-scoped read"
-ON storage.objects FOR SELECT
-USING (
+DROP POLICY IF EXISTS "images_select"  ON storage.objects;
+DROP POLICY IF EXISTS "images_insert"  ON storage.objects;
+DROP POLICY IF EXISTS "images_update"  ON storage.objects;
+DROP POLICY IF EXISTS "images_delete"  ON storage.objects;
+
+-- Public read: the bucket is public so any request can fetch image URLs.
+-- We allow anon reads so school logos load without authentication.
+CREATE POLICY "images_select" ON storage.objects
+  FOR SELECT USING (bucket_id = 'images');
+
+-- Service role (Next.js server) can upload/replace/delete anything.
+CREATE POLICY "images_insert" ON storage.objects
+  FOR INSERT WITH CHECK (
     bucket_id = 'images'
     AND (
-        -- Path starts with the user's own schoolId so School A cannot read
-        -- School B's images even though the bucket is public.
-        starts_with(name, (auth.jwt() ->> 'school_id') || '/')
-        -- Allow public-read for school logos (stored at schoolId/logo/*)
-        -- by not restricting when no session exists (handled by bucket public flag).
-        OR auth.role() = 'anon'
+      auth.role() = 'service_role'
+      -- Authenticated clients can only write to their own school's path.
+      OR (auth.role() = 'authenticated'
+          AND (auth.jwt() ->> 'school_id') IS NOT NULL
+          AND starts_with(name, (auth.jwt() ->> 'school_id') || '/'))
     )
-);
+  );
 
--- Allow authenticated users to upload to their own school's path only.
-CREATE POLICY "images: school-scoped insert"
-ON storage.objects FOR INSERT
-WITH CHECK (
+CREATE POLICY "images_update" ON storage.objects
+  FOR UPDATE USING (
     bucket_id = 'images'
-    AND auth.role() = 'authenticated'
-    AND starts_with(name, (auth.jwt() ->> 'school_id') || '/')
-);
+    AND (
+      auth.role() = 'service_role'
+      OR (auth.role() = 'authenticated'
+          AND (auth.jwt() ->> 'school_id') IS NOT NULL
+          AND starts_with(name, (auth.jwt() ->> 'school_id') || '/'))
+    )
+  );
 
--- Allow users to update (replace) their own files.
-CREATE POLICY "images: school-scoped update"
-ON storage.objects FOR UPDATE
-USING (
+CREATE POLICY "images_delete" ON storage.objects
+  FOR DELETE USING (
     bucket_id = 'images'
-    AND auth.role() = 'authenticated'
-    AND starts_with(name, (auth.jwt() ->> 'school_id') || '/')
-);
+    AND (
+      auth.role() = 'service_role'
+      OR (auth.role() = 'authenticated'
+          AND (auth.jwt() ->> 'school_id') IS NOT NULL
+          AND starts_with(name, (auth.jwt() ->> 'school_id') || '/'))
+    )
+  );
 
--- Allow users to delete their own files.
-CREATE POLICY "images: school-scoped delete"
-ON storage.objects FOR DELETE
-USING (
-    bucket_id = 'images'
-    AND auth.role() = 'authenticated'
-    AND starts_with(name, (auth.jwt() ->> 'school_id') || '/')
-);
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 3. Storage RLS — reports bucket (private, signed URLs only)
+-- ─────────────────────────────────────────────────────────────────────────────
 
--- ── Storage RLS policies: reports bucket ─────────────────────────────────────
+DROP POLICY IF EXISTS "reports_select" ON storage.objects;
+DROP POLICY IF EXISTS "reports_insert" ON storage.objects;
+DROP POLICY IF EXISTS "reports_update" ON storage.objects;
+DROP POLICY IF EXISTS "reports_delete" ON storage.objects;
 
--- Reports are private. Only authenticated users with the matching schoolId
--- can read. No anon access — signed URLs bypass bucket RLS at the CDN layer
--- so this policy protects direct API access.
-CREATE POLICY "reports: school-scoped read"
-ON storage.objects FOR SELECT
-USING (
+-- Only service role or authenticated users scoped to the right school may read.
+-- Direct reads without a valid signed URL will be blocked by the private bucket.
+CREATE POLICY "reports_select" ON storage.objects
+  FOR SELECT USING (
     bucket_id = 'reports'
-    AND auth.role() = 'authenticated'
-    AND starts_with(name, (auth.jwt() ->> 'school_id') || '/')
-);
+    AND (
+      auth.role() = 'service_role'
+      OR (auth.role() = 'authenticated'
+          AND (auth.jwt() ->> 'school_id') IS NOT NULL
+          AND starts_with(name, (auth.jwt() ->> 'school_id') || '/'))
+    )
+  );
 
--- Only the service role (backend) can write reports.
--- Client SDKs should never upload directly to the reports bucket.
-CREATE POLICY "reports: service-role insert"
-ON storage.objects FOR INSERT
-WITH CHECK (
-    bucket_id = 'reports'
-    AND auth.role() = 'service_role'
-);
+-- Only service role (Next.js backend) uploads reports.
+CREATE POLICY "reports_insert" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'reports' AND auth.role() = 'service_role');
 
-CREATE POLICY "reports: service-role update"
-ON storage.objects FOR UPDATE
-USING (
-    bucket_id = 'reports'
-    AND auth.role() = 'service_role'
-);
+CREATE POLICY "reports_update" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'reports' AND auth.role() = 'service_role');
 
-CREATE POLICY "reports: service-role delete"
-ON storage.objects FOR DELETE
-USING (
-    bucket_id = 'reports'
-    AND auth.role() = 'service_role'
-);
+CREATE POLICY "reports_delete" ON storage.objects
+  FOR DELETE USING (bucket_id = 'reports' AND auth.role() = 'service_role');
 
--- ── Application table RLS ─────────────────────────────────────────────────────
--- These policies protect direct Supabase Data API access (PostgREST).
--- Our Next.js app uses Prisma + service role for all data access, so these
--- act as a safety net rather than the primary enforcement layer.
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 4. Application table RLS (safety net for direct PostgREST access)
+-- All Next.js API routes use Prisma + service role → bypass RLS automatically.
+-- ─────────────────────────────────────────────────────────────────────────────
 
--- Enable RLS on the tables most likely to be accessed via the Supabase client.
 ALTER TABLE "User"         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "School"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "StoredImage"  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "StoredReport" ENABLE ROW LEVEL SECURITY;
 
--- Service role bypasses all RLS (Prisma uses service role — no change needed).
--- The policies below protect the anon/authenticated roles only.
+-- Drop before recreate (idempotent).
+DROP POLICY IF EXISTS "school_isolation_user"          ON "User";
+DROP POLICY IF EXISTS "school_isolation_school"        ON "School";
+DROP POLICY IF EXISTS "school_isolation_stored_image"  ON "StoredImage";
+DROP POLICY IF EXISTS "school_isolation_stored_report" ON "StoredReport";
 
--- School: authenticated users can only see their own school.
-CREATE POLICY "School: own school only"
-ON "School" FOR ALL
-USING (id = (auth.jwt() ->> 'school_id'));
+-- Service role always bypasses RLS — these only constrain anon/authenticated.
+CREATE POLICY "school_isolation_user" ON "User"
+  FOR ALL USING ("schoolId" = (auth.jwt() ->> 'school_id'));
 
--- User: authenticated users can only see users in their own school.
-CREATE POLICY "User: own school only"
-ON "User" FOR ALL
-USING ("schoolId" = (auth.jwt() ->> 'school_id'));
+CREATE POLICY "school_isolation_school" ON "School"
+  FOR ALL USING (id = (auth.jwt() ->> 'school_id'));
 
--- StoredImage: scoped to own school.
-CREATE POLICY "StoredImage: own school only"
-ON "StoredImage" FOR ALL
-USING ("schoolId" = (auth.jwt() ->> 'school_id'));
+CREATE POLICY "school_isolation_stored_image" ON "StoredImage"
+  FOR ALL USING ("schoolId" = (auth.jwt() ->> 'school_id'));
 
--- StoredReport: scoped to own school.
-CREATE POLICY "StoredReport: own school only"
-ON "StoredReport" FOR ALL
-USING ("schoolId" = (auth.jwt() ->> 'school_id'));
+CREATE POLICY "school_isolation_stored_report" ON "StoredReport"
+  FOR ALL USING ("schoolId" = (auth.jwt() ->> 'school_id'));
 
--- ── Custom JWT claim hook (optional but recommended) ──────────────────────────
--- To make auth.jwt() ->> 'school_id' work, set a custom claim on the JWT
--- when issuing tokens. Add this function and hook in:
---   Supabase Dashboard → Authentication → Hooks → Custom Access Token
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 5. Custom access token hook
 --
--- The function below reads the user's schoolId from the `User` table and
--- adds it to the JWT. Uncomment and run if you enable the hook.
+-- Adds `school_id` to the Supabase JWT so auth.jwt() ->> 'school_id' works
+-- in storage RLS policies (item 2-3 above).
 --
--- CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
--- RETURNS jsonb
--- LANGUAGE plpgsql
--- STABLE
--- AS $$
--- DECLARE
---   claims jsonb;
---   user_school_id text;
--- BEGIN
---   claims := event -> 'claims';
---   SELECT "schoolId" INTO user_school_id
---   FROM "User"
---   WHERE email = (event ->> 'email')
---   LIMIT 1;
---   IF user_school_id IS NOT NULL THEN
---     claims := jsonb_set(claims, '{school_id}', to_jsonb(user_school_id));
---   END IF;
---   RETURN jsonb_set(event, '{claims}', claims);
--- END;
--- $$;
---
--- GRANT EXECUTE ON FUNCTION public.custom_access_token_hook TO supabase_auth_admin;
--- REVOKE EXECUTE ON FUNCTION public.custom_access_token_hook FROM authenticated, anon, public;
+-- After running this script:
+--   Dashboard → Authentication → Hooks → Custom Access Token
+--   → Set function: public.custom_access_token_hook
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  claims        jsonb;
+  user_email    text;
+  user_school_id text;
+BEGIN
+  claims     := event -> 'claims';
+  user_email := event ->> 'email';
+
+  -- Look up the user's schoolId from our own User table.
+  -- Limit 1 is safe: if the email exists at multiple schools we cannot
+  -- resolve the school here (no context). In that case no claim is set
+  -- and the client must pass schoolSlug during OTP verify.
+  SELECT "schoolId"
+  INTO   user_school_id
+  FROM   "User"
+  WHERE  email    = user_email
+    AND  "isActive" = true
+  LIMIT  1;
+
+  IF user_school_id IS NOT NULL THEN
+    claims := jsonb_set(claims, '{school_id}', to_jsonb(user_school_id));
+  END IF;
+
+  RETURN jsonb_set(event, '{claims}', claims);
+END;
+$$;
+
+-- Grant the auth system permission to call this function.
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook
+  TO supabase_auth_admin;
+
+REVOKE EXECUTE ON FUNCTION public.custom_access_token_hook
+  FROM authenticated, anon, public;

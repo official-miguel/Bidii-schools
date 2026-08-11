@@ -2,11 +2,10 @@
  * src/lib/supabase/middleware.ts
  *
  * Middleware Supabase client — used exclusively in src/middleware.ts to
- * refresh the session cookie on every request. This is required by @supabase/ssr
- * so that server components always receive an up-to-date session.
+ * refresh the Supabase session cookie on every request.
  */
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
 
 export function createMiddlewareClient(
@@ -21,14 +20,13 @@ export function createMiddlewareClient(
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
-          // Write cookies to both the outgoing request (so server components
-          // can read them) and the response (so the browser stores them).
-          cookiesToSet.forEach(({ name, value }) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setAll(cookiesToSet: any[]) {
+          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
             request.cookies.set(name, value)
           );
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: object }) =>
+            response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
           );
         },
       },

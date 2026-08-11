@@ -1,90 +1,75 @@
 /**
  * src/lib/supabase/storage.ts
  *
- * Upload and signed-URL helpers for Supabase Storage.
+ * Upload and URL helpers for Supabase Storage.
  *
  * Bucket layout:
- *   images/  — profile avatars, school logos, stamps
- *              Path convention: {schoolId}/{userId}/{filename}
- *              Bucket policy: authenticated users can read/write their own path.
+ *   images/  — avatars, school logos, stamps, student photos.
+ *              Path: {schoolId}/{scope}/{id}/{timestamp}.{ext}
+ *              Public bucket — URLs resolved via getPublicUrl (no signing needed).
  *
- *   reports/ — generated PDF reports (private)
- *              Path convention: {schoolId}/{reportId}.pdf
- *              Bucket policy: private — only signed URLs work for reads.
+ *   reports/ — generated PDF reports. Private bucket.
+ *              Path: {schoolId}/{reportId}.pdf
+ *              Access only via short-lived signed URLs (10 min default).
  *
- * Design notes:
- * • Signed URLs are generated on-demand (never pre-fetched in list views).
- * • Default signed URL expiry is 10 minutes for reports (sensitive), 1 hour
- *   for images (less sensitive, changes rarely).
- * • Upload goes directly from client → Supabase Storage, bypassing the
- *   Next.js server to avoid unnecessary bandwidth.
+ * Rules:
+ *   • All operations use createAdminClient() (service role) so they work
+ *     regardless of whether a Supabase session exists in the current request.
+ *   • Signed URLs are generated on-demand — never pre-fetched in list views.
+ *   • Upload bypasses Next.js server for large files: client calls the
+ *     /api/me/photo route which pipes through the admin client server-side.
  */
 
-import { createClient } from "./client";
 import { createAdminClient } from "./server";
 
-const IMAGES_BUCKET =
-  process.env.SUPABASE_STORAGE_IMAGES_BUCKET ?? "images";
-const REPORTS_BUCKET =
-  process.env.SUPABASE_STORAGE_REPORTS_BUCKET ?? "reports";
+const IMAGES_BUCKET  = process.env.SUPABASE_STORAGE_IMAGES_BUCKET  ?? "images";
+const REPORTS_BUCKET = process.env.SUPABASE_STORAGE_REPORTS_BUCKET ?? "reports";
 
-// ── Image helpers ─────────────────────────────────────────────────────────────
+// ── Image helpers — all server-side via admin client ─────────────────────────
 
 /**
- * Upload an image file (browser-side).
+ * Upload an image buffer (server-side, called from API routes).
  * Returns the storage path on success, throws on failure.
  */
-export async function uploadImage(
-  file: File,
-  schoolId: string,
-  userId: string
+export async function uploadImageBuffer(
+  buffer: Buffer,
+  mimeType: string,
+  storagePath: string
 ): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${schoolId}/${userId}/${Date.now()}.${ext}`;
-
+  const supabase = createAdminClient();
   const { error } = await supabase.storage
     .from(IMAGES_BUCKET)
-    .upload(path, file, { upsert: true });
-
+    .upload(storagePath, buffer, { contentType: mimeType, upsert: true });
   if (error) throw new Error(`Image upload failed: ${error.message}`);
-  return path;
+  return storagePath;
 }
 
 /**
- * Get a public URL for an image (works when the bucket is public).
- * If the bucket is private, use getImageSignedUrl instead.
+ * Get the public URL for an image.
+ * Works because the images bucket is public-read.
  */
-export function getImagePublicUrl(path: string): string {
-  const supabase = createClient();
-  const { data } = supabase.storage.from(IMAGES_BUCKET).getPublicUrl(path);
+export function getImagePublicUrl(storagePath: string): string {
+  const supabase = createAdminClient();
+  const { data } = supabase.storage.from(IMAGES_BUCKET).getPublicUrl(storagePath);
   return data.publicUrl;
 }
 
 /**
- * Generate a signed URL for an image (for private buckets).
- * Expires in 1 hour by default.
+ * Delete a file from the images bucket.
+ * Non-fatal — logs but does not throw if the file is already gone.
  */
-export async function getImageSignedUrl(
-  path: string,
-  expiresInSeconds = 3600
-): Promise<string> {
-  const supabase = createClient();
-  const { data, error } = await supabase.storage
-    .from(IMAGES_BUCKET)
-    .createSignedUrl(path, expiresInSeconds);
-
-  if (error || !data?.signedUrl)
-    throw new Error(`Could not generate image URL: ${error?.message}`);
-  return data.signedUrl;
+export async function deleteImage(storagePath: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from(IMAGES_BUCKET).remove([storagePath]).catch((err) => {
+    console.warn("[storage] deleteImage failed (non-fatal):", err);
+  });
 }
 
-// ── Report helpers (server-side only — uses admin client) ─────────────────────
+// ── Report helpers — server-side only ────────────────────────────────────────
 
 /**
- * Upload a PDF report buffer from the server.
+ * Upload a PDF buffer from the server after report generation.
  * Returns the storage path on success, throws on failure.
- * Call this from an API route / server action after generating the PDF.
  */
 export async function uploadReport(
   buffer: Buffer,
@@ -93,47 +78,38 @@ export async function uploadReport(
 ): Promise<string> {
   const supabase = createAdminClient();
   const path = `${schoolId}/${reportId}.pdf`;
-
   const { error } = await supabase.storage
     .from(REPORTS_BUCKET)
-    .upload(path, buffer, {
-      contentType: "application/pdf",
-      upsert: true,
-    });
-
+    .upload(path, buffer, { contentType: "application/pdf", upsert: true });
   if (error) throw new Error(`Report upload failed: ${error.message}`);
   return path;
 }
 
 /**
  * Generate a short-lived signed URL for a private report.
- * Expires in 10 minutes by default — sufficient for a download/view action.
- * Call this only when the user actually opens a specific report.
+ * Call this only when the user actually opens a specific report, never
+ * during list-view rendering.
+ * Default expiry: 10 minutes.
  */
 export async function getReportSignedUrl(
-  path: string,
+  storagePath: string,
   expiresInSeconds = 600
 ): Promise<string> {
   const supabase = createAdminClient();
   const { data, error } = await supabase.storage
     .from(REPORTS_BUCKET)
-    .createSignedUrl(path, expiresInSeconds);
-
+    .createSignedUrl(storagePath, expiresInSeconds);
   if (error || !data?.signedUrl)
     throw new Error(`Could not generate report URL: ${error?.message}`);
   return data.signedUrl;
 }
 
 /**
- * Delete a file from storage (e.g. when a user replaces their avatar).
- * Safe to call with either bucket name.
+ * Delete a report file from storage.
  */
-export async function deleteStorageFile(
-  bucket: "images" | "reports",
-  path: string
-): Promise<void> {
+export async function deleteReport(storagePath: string): Promise<void> {
   const supabase = createAdminClient();
-  const bucketName = bucket === "images" ? IMAGES_BUCKET : REPORTS_BUCKET;
-  const { error } = await supabase.storage.from(bucketName).remove([path]);
-  if (error) throw new Error(`Storage delete failed: ${error.message}`);
+  await supabase.storage.from(REPORTS_BUCKET).remove([storagePath]).catch((err) => {
+    console.warn("[storage] deleteReport failed (non-fatal):", err);
+  });
 }

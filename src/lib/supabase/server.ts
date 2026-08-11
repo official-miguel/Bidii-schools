@@ -1,19 +1,15 @@
 /**
  * src/lib/supabase/server.ts
  *
- * Server-side Supabase client. Import this in Server Components, Route
- * Handlers, and Server Actions. Reads/writes session cookies via next/headers.
- *
- * Use createAdminClient() when you need to bypass RLS (e.g. creating a user
- * record during OTP verification). Never expose the service role key to the
- * browser.
+ * Server-side Supabase clients.
+ *   createClient()      — anon key, respects RLS. Server Components / Route Handlers.
+ *   createAdminClient() — service role, bypasses RLS. Server-only, never browser.
  */
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-/** Standard server client — uses the anon key, respects RLS. */
 export function createClient() {
   const cookieStore = cookies();
   return createServerClient(
@@ -24,14 +20,14 @@ export function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setAll(cookiesToSet: any[]) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: object }) =>
+              cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
             );
           } catch {
-            // setAll is called from Server Components where cookies cannot be
-            // mutated. The middleware client handles refresh in that case.
+            // Server Components cannot mutate cookies — middleware handles refresh.
           }
         },
       },
@@ -39,11 +35,6 @@ export function createClient() {
   );
 }
 
-/**
- * Admin (service-role) client — bypasses RLS.
- * Only call this server-side in tightly scoped places (e.g. OTP verify,
- * signup, admin operations). Never pass this client to the browser.
- */
 export function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

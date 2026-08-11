@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, createSession, SESSION_COOKIE } from "@/lib/auth";
+import { createSession, SESSION_COOKIE } from "@/lib/auth";
 
 function slugify(name: string) {
   return (
@@ -28,7 +28,9 @@ const schema = z.object({
   schoolPhone:    z.string().trim().optional().or(z.literal("")),
   fullName:       z.string().trim().min(2, "Enter your full name."),
   principalEmail: z.string().trim().email("Enter a valid personal email address."),
-  password:       z.string().min(8, "Password must be at least 8 characters.").max(200),
+  // password is now optional — signup creates OTP-only accounts.
+  // Kept in schema so the existing signup form still works if submitted with a value.
+  password:       z.string().optional().or(z.literal("")),
 }).refine(
   (d) => d.schoolEmail.toLowerCase() !== d.principalEmail.toLowerCase(),
   {
@@ -48,8 +50,6 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   try {
-    const passwordHash = await hashPassword(data.password);
-
     // ── Check if school email already exists ──────────────────────────────
     const existingSchool = await prisma.school.findFirst({
       where: { email: data.schoolEmail },
@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
 
     if (existingSchool) {
       // Path B — Incoming Principal for existing school
-      // Enforce one active Principal at a time
       const activePrincipal = await prisma.user.findFirst({
         where: { schoolId: existingSchool.id, role: "PRINCIPAL", isActive: true },
         select: { id: true },
@@ -75,7 +74,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Check personal email not already in use at this school
       const emailConflict = await prisma.user.findFirst({
         where: { schoolId: existingSchool.id, email: data.principalEmail, isActive: true },
         select: { id: true },
@@ -87,13 +85,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Create new Principal linked to existing school
+      // OTP-only account — no passwordHash
       const user = await prisma.user.create({
         data: {
-          schoolId:          existingSchool.id,
-          email:             data.principalEmail,
-          passwordHash,
-          role:              "PRINCIPAL",
+          schoolId:           existingSchool.id,
+          email:              data.principalEmail,
+          passwordHash:       null,
+          role:               "PRINCIPAL",
           mustChangePassword: false,
         },
       });
@@ -123,16 +121,17 @@ export async function POST(req: NextRequest) {
           slug,
           address: data.schoolAddress || null,
           phone:   data.schoolPhone   || null,
-          email:   data.schoolEmail,           // institutional email — permanent identifier
+          email:   data.schoolEmail,
         },
       });
 
+      // OTP-only account — no passwordHash
       const user = await tx.user.create({
         data: {
-          schoolId:          school.id,
-          email:             data.principalEmail, // personal login email — separate from school email
-          passwordHash,
-          role:              "PRINCIPAL",
+          schoolId:           school.id,
+          email:              data.principalEmail,
+          passwordHash:       null,
+          role:               "PRINCIPAL",
           mustChangePassword: false,
         },
       });

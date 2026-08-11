@@ -81,6 +81,12 @@ function EmailStep({
         </div>
       )}
 
+      {notice === "account-created" && (
+        <div className="mb-5 rounded-xl bg-teal/8 border border-teal/20 text-teal text-sm px-4 py-3">
+          Account created. Enter your email below to receive your sign-in code.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-ink dark:text-dark-text mb-1.5">
