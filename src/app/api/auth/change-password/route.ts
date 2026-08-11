@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
   const { currentPassword, newPassword } = parsed.data;
 
   // Verify the current (temporary) password
+  // passwordHash may be null for OTP-only accounts — they cannot use this route.
+  if (!user.passwordHash) {
+    return NextResponse.json(
+      { error: "Your account uses one-time code login and has no password to change." },
+      { status: 400 }
+    );
+  }
   const valid = await verifyPassword(currentPassword, user.passwordHash);
   if (!valid) {
     return NextResponse.json(

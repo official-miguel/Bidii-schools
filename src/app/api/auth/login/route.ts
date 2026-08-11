@@ -93,7 +93,8 @@ export async function POST(req: NextRequest) {
           where: { email, isActive: true },
           select: { id: true, email: true, passwordHash: true, role: true,
                     mustChangePassword: true, isActive: true, schoolId: true,
-                    staffRoleId: true, createdAt: true, updatedAt: true, avatarUrl: true },
+                    staffRoleId: true, createdAt: true, updatedAt: true,
+                    avatarUrl: true, avatarStoragePath: true },
         });
 
         if (candidates.length === 0) {
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
           const matched: typeof candidates = [];
           for (const candidate of candidates) {
             try {
+              if (!candidate.passwordHash) continue; // OTP-only account — skip
               const passwordMatches = await verifyPassword(password, candidate.passwordHash);
               if (passwordMatches) matched.push(candidate);
             } catch {
@@ -155,6 +157,13 @@ export async function POST(req: NextRequest) {
 
     // Verify password (skip if already verified during multi-candidate selection)
     if (!passwordAlreadyVerified) {
+      if (!user.passwordHash) {
+        // OTP-only account — redirect to OTP flow with a friendly message.
+        return NextResponse.json(
+          { error: "This account uses one-time code login. Please use the code-based sign-in flow." },
+          { status: 401 }
+        );
+      }
       let valid;
       try {
         valid = await verifyPassword(password, user.passwordHash);

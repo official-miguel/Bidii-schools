@@ -116,6 +116,9 @@ model School {
   electiveGroupTeachers    ElectiveGroupTeacher[]
   /// HOD formula configs
   departmentFormulaConfigs DepartmentFormulaConfig[]
+  /// Supabase Storage metadata
+  storedImages             StoredImage[]
+  storedReports            StoredReport[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -127,9 +130,13 @@ model School {
 model User {
   id                        String               @id @default(cuid())
   email                     String
-  passwordHash              String
+  /// Password hash kept for the signup / change-password flow.
+  /// OTP login no longer requires it — the field is nullable so existing
+  /// rows created before the OTP migration are not broken and can still
+  /// sign in via OTP without a password.
+  passwordHash              String?
   role                      Role
-  mustChangePassword        Boolean              @default(true)
+  mustChangePassword        Boolean              @default(false)
   isActive                  Boolean              @default(true)
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
@@ -140,8 +147,12 @@ model User {
   /// fixed capabilities (own class, own subjects, marks entry) unaffected by
   /// the RBAC system so nothing about the teacher flow changes.
   staffRoleId               String?
-  /// Optional profile photo URL (stored in /uploads/avatars/)
+  /// Profile photo — Supabase Storage path (images bucket), e.g.
+  /// "{schoolId}/{userId}/avatar.jpg". Use storage helpers to resolve to URL.
   avatarUrl                 String?
+  /// Supabase Storage path for the user's avatar (mirrors avatarUrl; kept
+  /// separate so the raw path is available without parsing the full URL).
+  avatarStoragePath         String?
   calendarEvents            CalendarEvent[]
   sessions                  Session[]
   student                   Student?
@@ -503,8 +514,11 @@ model Student {
   classId                  String
   parentName               String?
   parentContact            String?
-  /// Optional URL to the student's profile photo (stored in /uploads/students/)
+  /// Optional URL to the student's profile photo (Supabase Storage public URL)
   photoUrl                 String?
+  /// Raw Supabase Storage path for the student's photo (images bucket).
+  /// Used for deletes/replacements without parsing the URL.
+  photoStoragePath         String?
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
   schoolId                 String
@@ -1695,6 +1709,66 @@ enum AchievementCategory {
   ACADEMICS
   INNOVATION
   OTHER
+}
+
+// =============================================================================
+// Supabase Storage metadata — file records
+// =============================================================================
+//
+// We never store file bytes in Postgres. These models store only the
+// Supabase Storage path + metadata. Signed URLs are generated on-demand
+// from the path using the storage helpers in src/lib/supabase/storage.ts.
+//
+// Strict school isolation: every row carries schoolId so RLS policies and
+// application-layer checks always scope reads/writes to one school.
+// =============================================================================
+
+/// Metadata for an image stored in the Supabase `images` bucket.
+/// Covers profile avatars, school logos, stamps, and any other image asset.
+model StoredImage {
+  id            String   @id @default(cuid())
+  schoolId      String
+  /// Who owns this image (User.id). Null for school-level assets (logo, stamp).
+  ownerId       String?
+  /// Supabase Storage path, e.g. "{schoolId}/{userId}/{timestamp}.jpg"
+  storagePath   String   @unique
+  /// MIME type, e.g. "image/jpeg"
+  mimeType      String   @default("image/jpeg")
+  /// File size in bytes
+  sizeBytes     Int?
+  /// Human label, e.g. "Profile photo", "School logo"
+  label         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([ownerId])
+  @@index([schoolId, ownerId])
+}
+
+/// Metadata for a PDF report stored in the Supabase `reports` bucket.
+/// Reports are private — always accessed via short-lived signed URLs.
+model StoredReport {
+  id            String   @id @default(cuid())
+  schoolId      String
+  /// The user (student/teacher) this report belongs to, if applicable.
+  subjectUserId String?
+  /// Supabase Storage path, e.g. "{schoolId}/{reportId}.pdf"
+  storagePath   String   @unique
+  /// Human-readable report title, e.g. "Term 1 2026 Results — Jane Wanjiru"
+  title         String
+  /// Optional term / period label for quick filtering
+  periodLabel   String?
+  /// File size in bytes
+  sizeBytes     Int?
+  createdAt     DateTime @default(now())
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([subjectUserId])
+  @@index([schoolId, subjectUserId])
+  @@index([schoolId, createdAt(sort: Desc)])
 }
 
 enum Role {
