@@ -381,7 +381,6 @@ function StudentRow({
   student: AbsentStudent;
   showClass?: boolean;
 }) {
-  const trendRate = s.trend.rate;
   const trendDays = s.trend.present + s.trend.absent;
 
   return (

@@ -15,7 +15,7 @@ import Link                                  from "next/link";
 import {
   Building2, Users, GraduationCap, AlertTriangle,
   CheckCircle2, AlertCircle, XCircle, Search,
-  HardDrive, TrendingUp, RefreshCw, ArrowRight,
+  HardDrive, RefreshCw, ArrowRight,
 } from "lucide-react";
 import {
   Card, Badge, Spinner, ProgressBar, ErrorBanner, PageHeader,
@@ -154,8 +154,9 @@ export default function SuperAdminOverviewPage() {
       const res = await fetch("/api/super-admin/overview");
       if (!res.ok) throw new Error("Failed to load overview data");
       setData(await res.json());
-    } catch (e: any) {
-      setError(e.message ?? "Unknown error");
+    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((e as any).message ?? "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -171,6 +172,7 @@ export default function SuperAdminOverviewPage() {
       try {
         const res = await fetch(`/api/super-admin/schools?q=${encodeURIComponent(schoolSearch)}&limit=6`);
         const j   = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setSchoolResults((j.schools ?? []).map((s: any) => ({ id: s.id, name: s.name })));
       } finally {
         setSearchLoading(false);

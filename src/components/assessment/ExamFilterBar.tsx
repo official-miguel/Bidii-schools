@@ -158,7 +158,7 @@ export default function ExamFilterBar({
         const chosen = ps.find((p) => p.isCurrent) ?? ps[0];
         if (chosen) {
           setPeriodId(chosen.id);
-          const forms = [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b);
+          const _forms = [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b);
           let initialForm: number | "" = "";
           if (defaultClassId) {
             const match = classes.find((c) => c.id === defaultClassId);

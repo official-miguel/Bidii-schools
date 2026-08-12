@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, FormEvent, useCallback } from "react";
 import Modal from "@/components/Modal";
 import {
-  PageHeader, ErrorBanner, EmptyState, CredentialBox,
+  PageHeader, ErrorBanner, EmptyState,
   Avatar, Chip, ActionIconButton,
   inputClass, labelClass, primaryButtonClass, secondaryButtonClass,
   royalButtonClass, royalCardClass, dangerLinkClass,

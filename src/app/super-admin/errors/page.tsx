@@ -320,7 +320,7 @@ export default function ErrorsPage() {
       setTotal(j.total ?? 0);
       setPage(pg);
       setTrend(j.trend ?? []);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);

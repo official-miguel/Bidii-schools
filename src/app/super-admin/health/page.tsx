@@ -448,7 +448,7 @@ export default function HealthPage() {
       const res = await fetch("/api/super-admin/health");
       if (!res.ok) throw new Error("Failed to load health data");
       setData(await res.json());
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);

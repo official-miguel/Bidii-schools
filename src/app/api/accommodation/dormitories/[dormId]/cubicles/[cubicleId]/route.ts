@@ -53,6 +53,7 @@ export async function PATCH(
   }
 
   // Handle capacity changes: add/remove beds accordingly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
     ...(name !== undefined ? { name } : {}),
     ...(capacity !== undefined ? { capacity } : {}),

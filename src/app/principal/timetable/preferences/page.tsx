@@ -75,6 +75,7 @@ export default function PreferencesPage() {
       if (prefRes.ok) {
         const d = await prefRes.json();
         setPreferences(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (d.preferences ?? []).map((p: any) => ({
             id: p.id,
             subjectCode: p.subjectCode ?? "",

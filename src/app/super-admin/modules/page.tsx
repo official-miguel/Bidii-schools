@@ -149,7 +149,7 @@ export default function ModulesPage() {
       const j = await res.json();
       setSchools(j.schools ?? []);
       setToggles(j.toggles ?? []);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);
@@ -198,7 +198,7 @@ export default function ModulesPage() {
         return [...filtered, { schoolId, module, enabled }];
       });
       setSuccessMsg(null);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setBusyCell(null);

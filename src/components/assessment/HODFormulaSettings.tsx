@@ -22,7 +22,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   ChevronDown, ChevronRight, FileText, Delete, X,
-  CheckCircle2, Settings2, BookOpen, Plus,
+  CheckCircle2, Settings2, BookOpen,
 } from "lucide-react";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/ui";
 

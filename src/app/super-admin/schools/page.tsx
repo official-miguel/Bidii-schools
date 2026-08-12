@@ -17,7 +17,7 @@ import {
   Building2, MoreVertical, PauseCircle, PlayCircle, RefreshCw,
 } from "lucide-react";
 import {
-  PageHeader, Badge, Spinner, ErrorBanner, ProgressBar,
+  PageHeader, Spinner, ErrorBanner, ProgressBar,
   primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
 
@@ -170,7 +170,7 @@ export default function SchoolsPage() {
       setSchools(j.schools ?? []);
       setTotal(j.total ?? 0);
       setPage(pg);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);
@@ -194,7 +194,7 @@ export default function SchoolsPage() {
       });
       if (!res.ok) throw new Error("Action failed");
       await load(page);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setActionBusy(null);
