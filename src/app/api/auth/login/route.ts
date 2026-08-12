@@ -9,12 +9,12 @@
  *   • On first login the server authenticates normally, returns
  *     { mustChangePassword: true } so the client shows the set-password screen.
  *   • After the teacher sets a new password, mustChangePassword is cleared and
- *     the school slug is stored in usedSchoolSlug so it can NEVER be re-used
- *     as a password again (enforced in /api/auth/change-password).
+ *     the school slug can NEVER be re-used as a password again
+ *     (enforced in /api/auth/change-password).
  *
  * Per-school email model:
- *   Same email at two schools → same behaviour as before: if exactly one match,
- *   log in directly; if multiple, return requiresSchoolSlug=true.
+ *   Same email at two schools → if exactly one match, log in directly;
+ *   if multiple, return requiresSchoolSlug=true.
  *
  * Accepts email OR phone number as the identifier.
  */
@@ -28,6 +28,38 @@ import {
   SESSION_COOKIE,
   buildOfflineToken,
 } from "@/lib/auth";
+
+// ── Explicit user shape so candidates and user share the same type ────────────
+type UserRow = {
+  id:                 string;
+  email:              string;
+  passwordHash:       string | null;
+  role:               string;
+  mustChangePassword: boolean;
+  isActive:           boolean;
+  schoolId:           string;
+  staffRoleId:        string | null;
+  createdAt:          Date;
+  updatedAt:          Date;
+  avatarUrl:          string | null;
+  avatarStoragePath:  string | null;
+};
+
+// ── Prisma select shape ───────────────────────────────────────────────────────
+const userSelect = {
+  id:                 true,
+  email:              true,
+  passwordHash:       true,
+  role:               true,
+  mustChangePassword: true,
+  isActive:           true,
+  schoolId:           true,
+  staffRoleId:        true,
+  createdAt:          true,
+  updatedAt:          true,
+  avatarUrl:          true,
+  avatarStoragePath:  true,
+} as const;
 
 const schema = z.object({
   /** email address or phone number */
@@ -59,73 +91,57 @@ export async function POST(req: NextRequest) {
     NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
 
   // ── User lookup ────────────────────────────────────────────────────────────
-  // Match by email OR by phone (stored on the Teacher profile).
-  // We query User directly for email matches; for phone we join through Teacher.
   const isEmail = identifier.includes("@");
 
-  let user: {
-    id: string;
-    email: string;
-    passwordHash: string | null;
-    role: string;
-    mustChangePassword: boolean;
-    isActive: boolean;
-    schoolId: string;
-    staffRoleId: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    avatarUrl: string | null;
-    avatarStoragePath: string | null;
-  } | null = null;
-
+  let user: UserRow | null = null;
   let passwordAlreadyVerified = false;
 
   try {
     if (schoolSlug) {
       // ── Slug-scoped lookup ───────────────────────────────────────────────
       const school = await prisma.school.findUnique({
-        where: { slug: schoolSlug },
+        where:  { slug: schoolSlug },
         select: { id: true },
       });
       if (!school) return invalid();
 
       if (isEmail) {
         user = await prisma.user.findFirst({
-          where: { schoolId: school.id, email: identifier, isActive: true },
+          where:  { schoolId: school.id, email: identifier, isActive: true },
           select: userSelect,
         });
       } else {
-        // Phone: find Teacher by phone within school, then get the linked User
+        // Phone → find Teacher by phone, then get the linked User
         const teacher = await prisma.teacher.findFirst({
-          where: { schoolId: school.id, phone: identifier, archivedAt: null },
+          where:  { schoolId: school.id, phone: identifier, archivedAt: null },
           select: { userId: true },
         });
         if (teacher?.userId) {
           user = await prisma.user.findUnique({
-            where: { id: teacher.userId },
+            where:  { id: teacher.userId },
             select: userSelect,
           });
         }
       }
     } else {
-      // ── No slug — find all candidates, pick by password ──────────────────
-      let candidates: typeof user[] = [];
+      // ── No slug — find all candidates, disambiguate by password ──────────
+      let candidates: UserRow[] = [];
 
       if (isEmail) {
         candidates = await prisma.user.findMany({
-          where: { email: identifier, isActive: true },
+          where:  { email: identifier, isActive: true },
           select: userSelect,
         });
       } else {
         // Phone lookup: find all active teachers with this phone, get their users
         const teachers = await prisma.teacher.findMany({
-          where: { phone: identifier, archivedAt: null },
-          select: { userId: true, schoolId: true },
+          where:  { phone: identifier, archivedAt: null },
+          select: { userId: true },
         });
         const userIds = teachers.map((t) => t.userId).filter(Boolean) as string[];
         if (userIds.length > 0) {
           candidates = await prisma.user.findMany({
-            where: { id: { in: userIds }, isActive: true },
+            where:  { id: { in: userIds }, isActive: true },
             select: userSelect,
           });
         }
@@ -136,13 +152,15 @@ export async function POST(req: NextRequest) {
       } else if (candidates.length === 1) {
         user = candidates[0];
       } else {
-        // Multiple schools — verify password to find the right one before revealing ambiguity
-        const matched: typeof user[] = [];
+        // Multiple schools — verify password against each candidate before
+        // revealing that ambiguity exists.
+        const matched: UserRow[] = [];
         for (const candidate of candidates) {
-          if (!candidate?.passwordHash) {
-            // No password set — check against school slug (first-login path)
+          if (!candidate.passwordHash) {
+            // Hash not set — check against school slug (shouldn't happen in
+            // normal flow but guard gracefully)
             const school = await prisma.school.findUnique({
-              where: { id: candidate!.schoolId },
+              where:  { id: candidate.schoolId },
               select: { slug: true },
             });
             if (school) {
@@ -162,7 +180,7 @@ export async function POST(req: NextRequest) {
           user = matched[0];
           passwordAlreadyVerified = true;
         } else {
-          // Multiple schools, same password — ask for the slug
+          // Same password at multiple schools — ask for the slug
           return NextResponse.json(
             {
               error: "Your account is linked to more than one school. Please enter your school identifier to continue.",
@@ -185,15 +203,9 @@ export async function POST(req: NextRequest) {
 
   // ── Password verification ──────────────────────────────────────────────────
   if (!passwordAlreadyVerified) {
-    if (user.passwordHash) {
-      // Normal bcrypt check
-      const valid = await verifyPassword(password, user.passwordHash).catch(() => false);
-      if (!valid) return invalid();
-    } else {
-      // No hash set yet — this should not happen in normal flow (staff route sets
-      // the school slug as the hash on creation). Guard just in case.
-      return invalid();
-    }
+    if (!user.passwordHash) return invalid();
+    const valid = await verifyPassword(password, user.passwordHash).catch(() => false);
+    if (!valid) return invalid();
   }
 
   // ── Session + offline token ────────────────────────────────────────────────
@@ -226,19 +238,3 @@ export async function POST(req: NextRequest) {
 
   return res;
 }
-
-// ── Prisma select shape (shared across lookup paths) ─────────────────────────
-const userSelect = {
-  id:                 true,
-  email:              true,
-  passwordHash:       true,
-  role:               true,
-  mustChangePassword: true,
-  isActive:           true,
-  schoolId:           true,
-  staffRoleId:        true,
-  createdAt:          true,
-  updatedAt:          true,
-  avatarUrl:          true,
-  avatarStoragePath:  true,
-} as const;
