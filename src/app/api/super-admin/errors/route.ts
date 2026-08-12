@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const schoolId = sp.get("schoolId") ?? undefined;
   const severity = sp.get("severity") ?? undefined;
   const status   = sp.get("status")   ?? undefined;
-  const module   = sp.get("module")   ?? undefined;
+  const moduleName = sp.get("module")   ?? undefined;
   const from     = sp.get("from")     ?? undefined;
   const to       = sp.get("to")       ?? undefined;
   const page     = Math.max(1, parseInt(sp.get("page") ?? "1", 10));
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (schoolId) where.schoolId = schoolId;
   if (severity) where.severity = severity;
   if (status)   where.status   = status;
-  if (module)   where.module   = { contains: module, mode: "insensitive" };
+  if (moduleName)   where.module   = { contains: moduleName, mode: "insensitive" };
   if (from || to) {
     where.createdAt = {};
     if (from) (where.createdAt as any).gte = new Date(from);
