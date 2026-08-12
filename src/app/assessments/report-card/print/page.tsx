@@ -47,7 +47,7 @@ export default async function PrintPage({
     if (fwParam === "CBE") return "CBE";
     if (fwParam === "844") return "844";
     const sc = await prisma.schoolClass.findFirst({
-      where: { id: cid, schoolId: user!.schoolId },
+      where: { id: cid, schoolId: user!.schoolId! },
       select: { frameworkType: true },
     });
     return (sc?.frameworkType as string) === "CBE" ? "CBE" : "844";

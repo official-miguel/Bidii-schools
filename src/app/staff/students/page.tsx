@@ -11,7 +11,7 @@ export default async function StaffStudentsPage() {
   if (!perms.STUDENTS?.canView) redirect("/staff");
 
   const students = await prisma.student.findMany({
-    where: { schoolId: user!.schoolId },
+    where: { schoolId: user!.schoolId! },
     orderBy: { fullName: "asc" },
     include: { schoolClass: { select: { name: true, form: true } } },
   });
