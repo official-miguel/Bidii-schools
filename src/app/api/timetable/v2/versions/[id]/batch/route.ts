@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) {
     return NextResponse.json(

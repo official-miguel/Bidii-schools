@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const { versionId } = body.data;
 
   // Verify version ownership

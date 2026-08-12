@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
     const body = await req.json();
 
     const { preferences, useAI } = body;
@@ -175,7 +175,7 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
 
     // Check if Gemini is configured
     const integration = await prisma.schoolIntegration.findUnique({

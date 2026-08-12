@@ -41,7 +41,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   // Verify version ownership
   const vRows = await prisma.$queryRaw<Array<{ status: string }>>`

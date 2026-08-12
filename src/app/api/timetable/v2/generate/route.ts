@@ -57,7 +57,7 @@ async function _handlePost(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const body = schema.safeParse(await req.json().catch(() => ({})));
   if (!body.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });

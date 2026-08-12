@@ -20,7 +20,7 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   const subjects = await prisma.subject.findMany({
     where: { schoolId },
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const body = assignSchema.safeParse(await req.json().catch(() => null));
   if (!body.success) {
     return NextResponse.json({ error: "subjectId required" }, { status: 400 });
@@ -120,7 +120,7 @@ export async function PUT(_req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   const assigned = await prisma.$transaction(async (tx) => {
     // Get max existing code

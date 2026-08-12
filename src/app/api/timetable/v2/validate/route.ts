@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const versionId = req.nextUrl.searchParams.get("versionId");
 
   // ── Load slots ─────────────────────────────────────────────────────────

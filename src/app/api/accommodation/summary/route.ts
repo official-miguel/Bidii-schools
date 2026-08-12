@@ -17,8 +17,9 @@ export async function GET() {
     user.role === "ADMIN_STAFF";
 
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { schoolId } = user;
+  const schoolId = user.schoolId!;
 
   // All 5 queries run in parallel — no sequential waterfalls.
   const [dormitories, bedCountsTotals, bedCountsOccupied, settings, boardingStudents] =

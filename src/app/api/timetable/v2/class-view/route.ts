@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get("classId");
   const versionId = searchParams.get("versionId");

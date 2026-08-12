@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     (await requireSchoolPermission("LIBRARY", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   const [
     // Catalogue / copy counts

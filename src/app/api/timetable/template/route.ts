@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
 
     // Fetch template config
     let config = await prisma.timetableConfig.findUnique({
@@ -112,7 +112,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
     const body = await req.json();
 
     const {

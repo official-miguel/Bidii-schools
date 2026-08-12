@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
     const { searchParams } = new URL(req.url);
     const classId = searchParams.get("classId");
 
@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
     const body = await req.json();
 
     const { classId, requirements } = body;
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = user.schoolId;
+    const schoolId = user.schoolId!;
     const body = await req.json();
     const { action } = body;
 

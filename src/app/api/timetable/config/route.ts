@@ -28,7 +28,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   let config = await prisma.timetableConfig.findUnique({
     where: { schoolId },

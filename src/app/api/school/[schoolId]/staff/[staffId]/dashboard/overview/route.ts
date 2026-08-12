@@ -44,7 +44,7 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today = new Date();
 
   // ── School module availability ───────────────────────────────────────────
