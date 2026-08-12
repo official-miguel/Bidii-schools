@@ -69,7 +69,7 @@ export async function requireRole(...roles: Role[]): Promise<User | null> {
 export type OfflineTokenPayload = {
   id:          "current";
   userId:      string;
-  schoolId:    string;
+  schoolId:    string | null;
   role:        string;
   email:       string;
   staffRoleId: string | null;
@@ -79,19 +79,19 @@ export type OfflineTokenPayload = {
 
 /**
  * Build a signed offline token for a user. Called server-side at login.
- * The HMAC covers userId|schoolId|role|email|expiresAt so none of those
- * fields can be tampered with without invalidating the signature.
+ * schoolId is null for SUPER_ADMIN accounts (not scoped to any school).
  */
 export function buildOfflineToken(user: User): OfflineTokenPayload {
   const secret    = process.env.SESSION_SECRET ?? "dev-secret";
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  const payload   = `${user.id}|${user.schoolId}|${user.role}|${user.email}|${expiresAt}`;
+  const schoolId  = user.schoolId ?? null;
+  const payload   = `${user.id}|${schoolId ?? ""}|${user.role}|${user.email}|${expiresAt}`;
   const sig       = createHmac("sha256", secret).update(payload).digest("hex");
 
   return {
     id:          "current",
     userId:      user.id,
-    schoolId:    user.schoolId,
+    schoolId,
     role:        user.role,
     email:       user.email,
     staffRoleId: user.staffRoleId ?? null,
