@@ -69,7 +69,7 @@ export async function enforceAuth(): Promise<AuthSuccess | AuthFailure> {
       ),
     };
   }
-  return { user, schoolId: user.schoolId, error: null };
+  return { user, schoolId: user.schoolId!, error: null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

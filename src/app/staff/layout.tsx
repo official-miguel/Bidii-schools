@@ -18,7 +18,7 @@ export default async function StaffPortalLayout({
   }
 
   const [school, roleLabel, perms] = await Promise.all([
-    prisma.school.findUnique({ where: { id: user.schoolId }, select: { name: true, motto: true } }),
+    prisma.school.findUnique({ where: { id: user.schoolId! }, select: { name: true, motto: true } }),
     getRoleDisplayLabel(user),
     getEffectivePermissions(user),
   ]);
@@ -36,7 +36,7 @@ export default async function StaffPortalLayout({
         motto={school?.motto}
         visibleHubs={visibleHubs}
       >
-        <PermissionProvider schoolId={user.schoolId} userId={user.id}>
+        <PermissionProvider schoolId={user.schoolId!} userId={user.id}>
           {children}
         </PermissionProvider>
       </DashboardShell>

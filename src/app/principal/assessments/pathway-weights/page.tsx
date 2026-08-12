@@ -13,7 +13,7 @@ export default async function PathwayWeightsPage() {
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
@@ -33,7 +33,7 @@ export default async function PathwayWeightsPage() {
 
   // Subjects applicable to CBE classes (forms 1–4).
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true },
   });
@@ -43,7 +43,7 @@ export default async function PathwayWeightsPage() {
     subjectId: string; sbaWeight: number; examWeight: number;
     sbaMaxMarks: number; examMaxMarks: number;
   }> = await db.pathwayWeight.findMany({
-    where: { frameworkId: framework.id, schoolId: user.schoolId },
+    where: { frameworkId: framework.id, schoolId: user.schoolId! },
     select: { subjectId: true, sbaWeight: true, examWeight: true, sbaMaxMarks: true, examMaxMarks: true },
   });
   const weightMap = new Map(existing.map((w) => [w.subjectId, w]));

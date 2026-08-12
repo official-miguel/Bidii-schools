@@ -23,11 +23,11 @@ export default async function ReportCardsPage({
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // All classes regardless of framework.
   const allClasses = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
@@ -48,13 +48,13 @@ export default async function ReportCardsPage({
 
   // Resolve periods for the selected class's framework.
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: frameworkType, isActive: true },
+    where: { schoolId: user.schoolId!, type: frameworkType, isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
   const periods = framework
     ? (await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ academicYear: "desc" }, { term: "desc" }],
         select: { id: true, name: true, academicYear: true },
       }) as Array<{ id: string; name: string; academicYear: string }>)
@@ -66,7 +66,7 @@ export default async function ReportCardsPage({
   const students =
     classId && periodId
       ? await prisma.student.findMany({
-          where: { classId, schoolId: user.schoolId },
+          where: { classId, schoolId: user.schoolId! },
           orderBy: { admissionNumber: "asc" },
           select: { id: true, fullName: true, admissionNumber: true },
         })

@@ -19,7 +19,7 @@ export default async function StaffAttendancePage() {
   }
 
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true },
   });

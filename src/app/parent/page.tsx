@@ -12,7 +12,7 @@ export default async function ParentDashboard() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) redirect("/login");
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
 
   // Find the student record(s) linked to this parent/student account.
   // A parent may have multiple children; a student has themselves.

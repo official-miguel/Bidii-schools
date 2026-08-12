@@ -10,7 +10,7 @@ export default async function TeacherSubjectsPage() {
   if (!user) redirect("/login");
 
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
     select: {
       id: true,

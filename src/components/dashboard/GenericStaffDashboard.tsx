@@ -10,7 +10,7 @@ import type { ModuleAccess } from "@/lib/permissions";
 interface Props { user: User }
 
 export default async function GenericStaffDashboard({ user }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
 
   const [school, roleLabel, perms, upcomingCalendar] = await Promise.all([

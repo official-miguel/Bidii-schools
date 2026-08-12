@@ -13,13 +13,13 @@ export default async function PeriodsPage() {
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
     select: { id: true, label: true, academicYear: true },
   }) as { id: string; label: string; academicYear: string } | null;
 
   const periods = framework
     ? await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ term: "asc" }, { name: "asc" }],
       }) as Array<{ id: string; name: string; term: number | null; academicYear: string; isCurrent: boolean }>
     : [];

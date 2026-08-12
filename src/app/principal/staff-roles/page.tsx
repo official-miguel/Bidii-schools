@@ -11,7 +11,7 @@ export default async function StaffRolesPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   await ensureDefaultStaffRoles(schoolId);
 
   const [roles, auditLogs, staffUsers] = await Promise.all([

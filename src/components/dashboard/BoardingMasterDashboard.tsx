@@ -11,7 +11,7 @@ import type { User } from "@prisma/client";
 interface Props { user: User }
 
 export default async function BoardingMasterDashboard({ user }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
 
   // Find the teacher record to get assigned dorms

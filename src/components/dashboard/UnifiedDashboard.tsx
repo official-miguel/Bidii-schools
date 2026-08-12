@@ -42,7 +42,7 @@ interface Props {
 }
 
 export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
   const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1;
 

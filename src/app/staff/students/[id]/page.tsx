@@ -11,7 +11,7 @@ export default async function StaffStudentProfilePage({ params }: { params: { id
   if (!perms.STUDENTS?.canView) redirect("/staff");
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!student) notFound();

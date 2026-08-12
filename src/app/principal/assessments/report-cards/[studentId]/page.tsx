@@ -20,7 +20,7 @@ export default async function StudentReportPage({
   if (!periodId) redirect("/principal/assessments/report-cards");
 
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: {
       id: true, fullName: true, admissionNumber: true, classId: true,
       schoolClass: { select: { id: true, name: true, frameworkType: true } },
@@ -28,7 +28,7 @@ export default async function StudentReportPage({
   });
   if (!student) redirect("/principal/assessments/report-cards");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canGenerateReportCard(actor, student.classId)) redirect("/principal/assessments/report-cards");
 
   const frameworkType = student.schoolClass.frameworkType as "EIGHT_FOUR_FOUR" | "CBC" | "CBE";

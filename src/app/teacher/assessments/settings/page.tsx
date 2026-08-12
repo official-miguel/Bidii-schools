@@ -19,7 +19,7 @@ export default async function HODAssessmentSettingsPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const isHOD = actor.roles.some((r) => r.role === "HOD");
   const isWide = actor.isPrincipal || actor.roles.some((r) =>
@@ -41,7 +41,7 @@ export default async function HODAssessmentSettingsPage() {
   let department: { id: string; name: string } | null = null;
   if (actor.teacher?.id) {
     department = await prisma.department.findFirst({
-      where: { schoolId: user.schoolId, headTeacherId: actor.teacher.id },
+      where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true, name: true },
     });
     // Fall back to primary department if not head of any
@@ -72,14 +72,14 @@ export default async function HODAssessmentSettingsPage() {
 
   // ── Subjects in this department ──────────────────────────────────────────
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId, departmentId: department.id },
+    where: { schoolId: user.schoolId!, departmentId: department.id },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, applicableForms: true },
   });
 
   // ── Active 8-4-4 frameworks (these are what papers belong to) ────────────
   const frameworks = await db.assessmentFramework.findMany({
-    where: { schoolId: user.schoolId, isActive: true },
+    where: { schoolId: user.schoolId!, isActive: true },
     orderBy: { academicYear: "desc" },
     select: {
       id: true,
@@ -103,7 +103,7 @@ export default async function HODAssessmentSettingsPage() {
   }> = [];
   try {
     existingFormulas = await db.departmentFormulaConfig.findMany({
-      where: { schoolId: user.schoolId, departmentId: department.id },
+      where: { schoolId: user.schoolId!, departmentId: department.id },
       select: {
         id: true,
         subjectId: true,

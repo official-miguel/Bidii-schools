@@ -18,13 +18,13 @@ export default async function CbeReportCardsPage({
 
   // Only CBE framework
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
   const periods = framework
     ? await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ term: "asc" }, { name: "asc" }],
         select: { id: true, name: true, academicYear: true },
       }) as Array<{ id: string; name: string; academicYear: string }>
@@ -32,7 +32,7 @@ export default async function CbeReportCardsPage({
 
   // Only CBE classes
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId, frameworkType: "CBE" as never },
+    where: { schoolId: user.schoolId!, frameworkType: "CBE" as never },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true },
   });
@@ -61,7 +61,7 @@ export default async function CbeReportCardsPage({
   const students =
     periodId && classId
       ? await prisma.student.findMany({
-          where: { classId, schoolId: user.schoolId },
+          where: { classId, schoolId: user.schoolId! },
           orderBy: { admissionNumber: "asc" },
           select: { id: true, fullName: true, admissionNumber: true },
         })

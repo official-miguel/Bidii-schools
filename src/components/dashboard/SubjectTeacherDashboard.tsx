@@ -11,7 +11,7 @@ import type { User } from "@prisma/client";
 interface Props { user: User }
 
 export default async function SubjectTeacherDashboard({ user }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
   const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // 0=Mon
 

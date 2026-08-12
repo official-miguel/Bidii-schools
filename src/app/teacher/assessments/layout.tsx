@@ -44,7 +44,7 @@ export default async function TeacherAssessmentsLayout({
   let isHOD = false;
   if (teacher?.id) {
     const hodDept = await prisma.department.findFirst({
-      where: { schoolId: user.schoolId, headTeacherId: teacher.id },
+      where: { schoolId: user.schoolId!, headTeacherId: teacher.id },
       select: { id: true },
     });
     isHOD = !!hodDept;
