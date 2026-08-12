@@ -167,7 +167,7 @@ model User {
   sessions                  Session[]
   student                   Student?
   teacher                   Teacher?
-  school                    School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school                    School?              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   staffRole                 StaffRole?           @relation(fields: [staffRoleId], references: [id])
   disciplineRecordsRecorded DisciplineRecord[]
   disciplineNotes           DisciplineNote[]

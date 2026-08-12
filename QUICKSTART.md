@@ -2,7 +2,7 @@
 
 ## Prerequisites
 - ✅ Node.js 18+ installed
-- ✅ PostgreSQL database (Neon or local)
+- ✅ PostgreSQL database (Supabase or local)
 - ✅ Git installed
 
 ---
@@ -142,7 +142,7 @@ After seeding, check the console output for login credentials.
 - ✅ Check DATABASE_URL in `.env`
 - ✅ Ensure database is running
 - ✅ Check firewall settings
-- ✅ For Neon, use the pooler URL with `pgbouncer=true`
+- ✅ For Supabase, use the session pooler URL (port 5432)
 
 ### Error: "Module not found"
 ```powershell

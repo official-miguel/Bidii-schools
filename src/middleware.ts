@@ -33,6 +33,7 @@ const PROTECTED_PREFIXES = [
   "/parent",
   "/results",
   "/assessments",
+  "/super-admin",
 ];
 
 export async function middleware(request: NextRequest) {

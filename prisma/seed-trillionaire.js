@@ -1,9 +1,9 @@
 /**
  * Plain Node.js seed for trillionairedesigns.ke@gmail.com
  * No ts-node — runs directly with: node prisma/seed-trillionaire.js
+ *
+ * Requires DATABASE_URL to be set in the environment (or in a .env file).
  */
-process.env.DATABASE_URL =
-  "postgresql://neondb_owner:npg_a4WMfJVskm3A@ep-rough-darkness-atgos0mr-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 const { PrismaClient } = require("@prisma/client");
 const p = new PrismaClient();
