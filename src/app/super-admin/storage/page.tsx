@@ -153,7 +153,7 @@ function SystemSummary({ totalUsedGb, totalQuotaGb }: { totalUsedGb: number; tot
           ))}
         </div>
         <p className="text-[10px] text-slate dark:text-dark-muted mt-3">
-          Per-school breakdown visible in each school's detail row below.
+          Per-school breakdown visible in each school&apos;s detail row below.
         </p>
       </Card>
     </div>
