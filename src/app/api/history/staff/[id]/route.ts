@@ -21,7 +21,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const teacher = await prisma.teacher.findFirst({
-    where: { id: params.id, schoolId: user.schoolId, archivedAt: { not: null } },
+    where: { id: params.id, schoolId: user.schoolId!, archivedAt: { not: null } },
     include: {
       primaryDepartment: { select: { id: true, name: true } },
       teacherSubjects: {

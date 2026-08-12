@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   // Resolve sub-strand → learningAreaId for access checks.
   const subStrand = await db.subStrand.findFirst({
-    where: { id: subStrandId, schoolId: user.schoolId },
+    where: { id: subStrandId, schoolId: user.schoolId! },
     select: { id: true, strand: { select: { learningAreaId: true } } },
   }) as { id: string; strand: { learningAreaId: string } } | null;
   if (!subStrand) {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   const learningAreaId = subStrand.strand.learningAreaId;
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const isPrincipalOrBroadRole = actor.isPrincipal ||
     actor.roles.some((r) =>
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const periods = await db.assessmentPeriod.findMany({
     where: {
       id: { in: uniquePeriodIds },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "CBE", isActive: true },
     },
     select: { id: true, frameworkId: true },
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   // Validate all studentIds in bulk.
   const uniqueStudentIds = [...new Set(items.map((i) => i.studentId))];
   const students = await prisma.student.findMany({
-    where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId },
+    where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId! },
     select: { id: true },
   });
   const validStudentIds = new Set(students.map((s) => s.id));
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
           },
         },
         create: {
-          schoolId:         user.schoolId,
+          schoolId: user.schoolId!,
           frameworkId:      period.frameworkId,
           periodId:         item.periodId,
           studentId:        item.studentId,

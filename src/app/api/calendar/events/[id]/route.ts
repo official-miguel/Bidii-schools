@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const existing = await prisma.calendarEvent.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       where: { id: params.id },
       data: updateData,
     });
-    emitSSE(user.schoolId, "calendarEvent.updated", {
+    emitSSE(user.schoolId!, "calendarEvent.updated", {
       ...event,
       date: event.date.toISOString(),
     });
@@ -84,13 +84,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
 
   const existing = await prisma.calendarEvent.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
   try {
     await prisma.calendarEvent.delete({ where: { id: params.id } });
-    emitSSE(user.schoolId, "calendarEvent.deleted", { id: params.id, schoolId: user.schoolId });
+    emitSSE(user.schoolId!, "calendarEvent.deleted", { id: params.id, schoolId: user.schoolId! });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Couldn't delete event." }, { status: 500 });

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   const reservations = await prisma.libraryReservation.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(status      ? { status:          status as never }   : {}),
       ...(type        ? { reservationType: type as never }     : {}),
       ...(catalogueId ? { catalogueId }                        : {}),
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
   // Validate catalogue
   const catalogue = await prisma.libraryCatalogue.findFirst({
-    where: { id: d.catalogueId, schoolId: user.schoolId, archivedAt: null },
+    where: { id: d.catalogueId, schoolId: user.schoolId!, archivedAt: null },
     select: { id: true, title: true },
   });
   if (!catalogue) return NextResponse.json({ error: "Catalogue entry not found." }, { status: 404 });
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   // Validate patron fields
   if (d.reservationType === "INDIVIDUAL" || d.reservationType === "WAITLIST") {
     if (!d.studentId) return NextResponse.json({ error: "studentId is required for individual reservations." }, { status: 400 });
-    const student = await prisma.student.findFirst({ where: { id: d.studentId, schoolId: user.schoolId }, select: { id: true } });
+    const student = await prisma.student.findFirst({ where: { id: d.studentId, schoolId: user.schoolId! }, select: { id: true } });
     if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
   }
   if (d.reservationType === "CLASSROOM") {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   let queuePosition: number | null = null;
   if (d.reservationType === "WAITLIST") {
     const maxPos = await prisma.libraryReservation.aggregate({
-      where: { catalogueId: d.catalogueId, schoolId: user.schoolId, status: { in: ["PENDING","ACTIVE"] }, reservationType: "WAITLIST" },
+      where: { catalogueId: d.catalogueId, schoolId: user.schoolId!, status: { in: ["PENDING","ACTIVE"] }, reservationType: "WAITLIST" },
       _max: { queuePosition: true },
     });
     queuePosition = (maxPos._max.queuePosition ?? 0) + 1;
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   let initialStatus: "PENDING" | "ACTIVE" = "PENDING";
   if (d.reservationType === "INDIVIDUAL" || d.reservationType === "CLASSROOM") {
     const availableCopy = await prisma.libraryCopy.findFirst({
-      where: { catalogueId: d.catalogueId, schoolId: user.schoolId, status: "AVAILABLE", archivedAt: null },
+      where: { catalogueId: d.catalogueId, schoolId: user.schoolId!, status: "AVAILABLE", archivedAt: null },
       select: { id: true },
     });
     if (availableCopy) {
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
 
   const reservation = await prisma.libraryReservation.create({
     data: {
-      schoolId:           user.schoolId,
+      schoolId: user.schoolId!,
       catalogueId:        d.catalogueId,
       reservationType:    d.reservationType as never,
       studentId:          d.studentId ?? null,
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
   });
 
   await recordCirculationEvent({
-    schoolId:      user.schoolId,
+    schoolId: user.schoolId!,
     eventType:     "RESERVED",
     catalogueId:   d.catalogueId,
     copyId:        allocatedCopyId,
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
     payload: { reservationType: d.reservationType, queuePosition, allocatedCopyId },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.updated", { id: d.catalogueId });
+  emitSSE(user.schoolId!, "libraryCatalogue.updated", { id: d.catalogueId });
 
   return NextResponse.json(reservation, { status: 201 });
 }

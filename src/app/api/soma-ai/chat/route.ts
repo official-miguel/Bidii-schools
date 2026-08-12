@@ -198,11 +198,11 @@ export async function POST(req: NextRequest) {
   const displayRole = parsed.context?.role ?? roleMap[user.role] ?? "staff";
 
   // ── Check Gemini credentials ────────────────────────────────────────────
-  const credentials = await getSchoolIntegrationKey(user.schoolId, "GEMINI");
+  const credentials = await getSchoolIntegrationKey(user.schoolId!, "GEMINI");
   if (!credentials) {
     logSomaAIInteraction({
       userId: user.id,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       userRole: user.role,
       message: parsed.message,
       intent: "gemini",
@@ -283,10 +283,10 @@ export async function POST(req: NextRequest) {
       const toolsUsed: string[] = [];
 
       try {
-        incrementUsage(user.schoolId);
+        incrementUsage(user.schoolId!);
 
         await streamGeminiWithTools({
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           contents,
           options: {
             systemInstruction,
@@ -341,7 +341,7 @@ export async function POST(req: NextRequest) {
       } finally {
         logSomaAIInteraction({
           userId: user.id,
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           userRole: user.role,
           message: parsed.message,
           intent: "gemini",

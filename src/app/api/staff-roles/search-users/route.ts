@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   // Find matching active users (ADMIN_STAFF or TEACHER) in this school
   const users = await prisma.user.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       isActive:  true,
       role:      { in: ["ADMIN_STAFF", "TEACHER"] },
       OR: [

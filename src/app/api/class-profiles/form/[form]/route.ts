@@ -91,7 +91,7 @@ export async function GET(
 
   // All classes in this form
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId, form: formNum },
+    where: { schoolId: user.schoolId!, form: formNum },
     orderBy: { name: "asc" },
     select: {
       id: true,
@@ -111,7 +111,7 @@ export async function GET(
   // All subjects that apply to this form number
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: formNum },
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
@@ -128,7 +128,7 @@ export async function GET(
   const overrides = await prisma.classSubjectProfile.findMany({
     where: {
       classId: { in: classIds },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
     },
     select: { classId: true, subjectId: true, type: true },
   });
@@ -172,7 +172,7 @@ export async function GET(
     form: formNum,
     classes,
     subjects: subjectsWithEffective,
-    electiveGroups: await fetchElectiveGroups(user.schoolId, formNum),
+    electiveGroups: await fetchElectiveGroups(user.schoolId!, formNum),
   });
 }
 
@@ -226,7 +226,7 @@ export async function PUT(
 
   // Fetch all classes in this form
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId, form: formNum },
+    where: { schoolId: user.schoolId!, form: formNum },
     select: { id: true },
   });
   if (classes.length === 0) {
@@ -238,7 +238,7 @@ export async function PUT(
   const validSubjects = await prisma.subject.findMany({
     where: {
       id: { in: subjectIds },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: formNum },
     },
     select: { id: true },
@@ -262,7 +262,7 @@ export async function PUT(
         create: {
           classId: cls.id,
           subjectId: a.subjectId,
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           type: a.type,
         },
         update: { type: a.type },

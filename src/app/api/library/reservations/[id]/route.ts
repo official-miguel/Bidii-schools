@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const r = await prisma.libraryReservation.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { catalogue: true },
   });
   if (!r) return NextResponse.json({ error: "Reservation not found." }, { status: 404 });
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const r = await prisma.libraryReservation.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!r) return NextResponse.json({ error: "Reservation not found." }, { status: 404 });
 
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
 
   await recordCirculationEvent({
-    schoolId:      user.schoolId,
+    schoolId: user.schoolId!,
     eventType:     d.status === "CANCELLED" ? "RESERVATION_CANCELLED" : "RESERVED",
     reservationId: params.id,
     catalogueId:   r.catalogueId,
@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     payload: { status: d.status, allocatedCopyId: d.allocatedCopyId },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.updated", { id: r.catalogueId });
+  emitSSE(user.schoolId!, "libraryCatalogue.updated", { id: r.catalogueId });
   return NextResponse.json(updated);
 }
 
@@ -93,7 +93,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const r = await prisma.libraryReservation.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!r) return NextResponse.json({ error: "Reservation not found." }, { status: 404 });
 
@@ -108,6 +108,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     where: { id: params.id }, data: { status: "CANCELLED" },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.updated", { id: r.catalogueId });
+  emitSSE(user.schoolId!, "libraryCatalogue.updated", { id: r.catalogueId });
   return NextResponse.json({ ok: true });
 }

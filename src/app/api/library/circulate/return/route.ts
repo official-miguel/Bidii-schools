@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load borrow ──────────────────────────────────────────────────────────
   const borrow = await prisma.libraryBorrow.findFirst({
-    where: { id: borrowId, schoolId: user.schoolId },
+    where: { id: borrowId, schoolId: user.schoolId! },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
   if (!borrow)          return NextResponse.json({ error: "Borrow record not found." }, { status: 404 });
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Override reason is required." }, { status: 400 });
 
   // ── Policy engine ────────────────────────────────────────────────────────
-  const engine      = await PolicyEngine.load(user.schoolId);
+  const engine      = await PolicyEngine.load(user.schoolId!);
   const policy      = engine.policyFor(patronType ?? "DEFAULT");
   const finePaused  = engine.isFinePaused(borrow.card.studentId);
   const now         = new Date();
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
   // ── Fine audit ───────────────────────────────────────────────────────────
   if (totalFine > 0) {
     await recordFineAudit({
-      schoolId:      user.schoolId,
+      schoolId: user.schoolId!,
       cardId:        borrow.cardId,
       borrowId:      borrowId,
       eventType:     "CHARGE",
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
 
   // ── Circulation event ────────────────────────────────────────────────────
   await recordCirculationEvent({
-    schoolId:      user.schoolId,
+    schoolId: user.schoolId!,
     eventType:     returnType === "LOST" ? "LOST_REPORTED" : returnType === "REPLACEMENT_RECEIVED" ? "REPLACEMENT_RECEIVED" : "RETURNED",
     copyId:        borrow.copyId,
     catalogueId:   (borrow.copy as { catalogueId?: string } | null)?.catalogueId ?? null,
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
     const catalogueId = (borrow.copy as { catalogueId?: string } | null)?.catalogueId;
     if (catalogueId) {
       const nextWaiting = await prisma.libraryReservation.findFirst({
-        where: { catalogueId, schoolId: user.schoolId, status: "PENDING", reservationType: "INDIVIDUAL" },
+        where: { catalogueId, schoolId: user.schoolId!, status: "PENDING", reservationType: "INDIVIDUAL" },
         orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],
       });
       if (nextWaiting) {
@@ -178,13 +178,13 @@ export async function POST(req: NextRequest) {
           where: { id: borrow.copyId! },
           data:  { status: "RESERVED" },
         });
-        emitSSE(user.schoolId, "libraryBorrow.returned", { reservationActivated: true, reservationId: nextWaiting.id });
+        emitSSE(user.schoolId!, "libraryBorrow.returned", { reservationActivated: true, reservationId: nextWaiting.id });
       }
     }
   }
 
-  emitSSE(user.schoolId, "libraryBorrow.returned", updatedBorrow);
-  emitSSE(user.schoolId, "libraryCard.updated",   updatedCard);
+  emitSSE(user.schoolId!, "libraryBorrow.returned", updatedBorrow);
+  emitSSE(user.schoolId!, "libraryCard.updated",   updatedCard);
 
   return NextResponse.json({
     borrow:      updatedBorrow,

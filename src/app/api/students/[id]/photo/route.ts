@@ -22,7 +22,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId, archivedAt: null },
+    where: { id: params.id, schoolId: user.schoolId!, archivedAt: null },
     select: { id: true, photoStoragePath: true },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -49,7 +49,7 @@ export async function POST(
     "image/jpg": "jpg",  "image/webp": "webp",
   };
   const ext         = extMap[file.type] ?? "jpg";
-  const storagePath = `${user.schoolId}/students/${params.id}/${Date.now()}.${ext}`;
+  const storagePath = `${user.schoolId!}/students/${params.id}/${Date.now()}.${ext}`;
   const buffer      = Buffer.from(await file.arrayBuffer());
   const supabase    = createAdminClient();
 
@@ -86,7 +86,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId, archivedAt: null },
+    where: { id: params.id, schoolId: user.schoolId!, archivedAt: null },
     select: { id: true, photoStoragePath: true },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });

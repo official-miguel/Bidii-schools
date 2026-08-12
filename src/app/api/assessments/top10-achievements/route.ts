@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   // Verify the period belongs to this school and uses the 8-4-4 framework.
   const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId: user.schoolId },
+    where: { id: periodId, schoolId: user.schoolId! },
     select: {
       id: true,
       name: true,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load all classes for this school ─────────────────────────────────────
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true },
   });
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load all students and their scores in one pass ───────────────────────
   const allStudents = await prisma.student.findMany({
-    where: { schoolId: user.schoolId, archivedAt: null },
+    where: { schoolId: user.schoolId!, archivedAt: null },
     select: { id: true, fullName: true, classId: true },
   });
 
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
   const subjectsByForm = new Map<number, Array<{ id: string }>>();
   for (const form of formSet) {
     const subs = await prisma.subject.findMany({
-      where: { schoolId: user.schoolId, applicableForms: { has: form } },
+      where: { schoolId: user.schoolId!, applicableForms: { has: form } },
       select: { id: true },
     });
     subjectsByForm.set(form, subs);
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     [...subjectsByForm.values()].flatMap((subs) => subs.map((s) => s.id))
   )];
   const allPapers = await db.paper.findMany({
-    where: { schoolId: user.schoolId, frameworkId: period.frameworkId, subjectId: { in: allSubjectIds } },
+    where: { schoolId: user.schoolId!, frameworkId: period.frameworkId, subjectId: { in: allSubjectIds } },
     select: { id: true, maxMarks: true, subjectId: true },
   }) as Array<{ id: string; maxMarks: number; subjectId: string }>;
 
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
   const allItems = await db.assessmentItem.findMany({
     where: {
       periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       resultKind: "NUMERIC",
       studentId: { in: [...studentIdSet] },
     },
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     // Check if an achievement for this class+period already exists
     const existing = await prisma.achievement.findFirst({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         title,
         category: "ACADEMICS",
       },
@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
     } else {
       await prisma.achievement.create({
         data: {
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           title,
           category: "ACADEMICS",
           description,
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
 
     const existing = await prisma.achievement.findFirst({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         title,
         category: "ACADEMICS",
       },
@@ -302,7 +302,7 @@ export async function POST(req: NextRequest) {
     } else {
       await prisma.achievement.create({
         data: {
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           title,
           category: "ACADEMICS",
           description,

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const students = await prisma.student.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       OR: [
         { fullName: { contains: q, mode: "insensitive" } },
         { admissionNumber: { contains: q, mode: "insensitive" } },

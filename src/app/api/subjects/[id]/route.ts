@@ -36,13 +36,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const existing = await prisma.subject.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
   if (parsed.data.departmentId) {
     const department = await prisma.department.findFirst({
-      where: { id: parsed.data.departmentId, schoolId: user.schoolId },
+      where: { id: parsed.data.departmentId, schoolId: user.schoolId! },
     });
     if (!department) {
       return NextResponse.json({ error: "Choose a valid department." }, { status: 400 });
@@ -78,7 +78,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.subject.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 

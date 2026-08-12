@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid descriptors JSON." }, { status: 400 });
   }
 
-  const result = await resolveRecipients(descriptors, user.schoolId);
+  const result = await resolveRecipients(descriptors, user.schoolId!);
   return NextResponse.json(result);
 }

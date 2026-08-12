@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest) {
 
   // Fetch regular subjects
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     include: {
       department: { select: { id: true, name: true } },
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest) {
   // Get subject IDs that are members of elective groups for marking
   const groupMemberSubjectIds = await prisma.electiveGroupMember.findMany({
     where: { 
-      group: { schoolId: user.schoolId }
+      group: { schoolId: user.schoolId! }
     },
     select: { 
       subjectId: true,
@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest) {
   // Fetch elective groups and represent them as pseudo-subjects for timetable
   // A group acts like a subject with multiple component subjects
   const electiveGroups = await prisma.electiveGroup.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     include: {
       members: {
         select: {
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
   // The department must belong to this school too, or a principal could
   // hang a subject off another school's department by guessing its id.
   const department = await prisma.department.findFirst({
-    where: { id: parsed.data.departmentId, schoolId: user.schoolId },
+    where: { id: parsed.data.departmentId, schoolId: user.schoolId! },
   });
   if (!department) {
     return NextResponse.json({ error: "Choose a valid department." }, { status: 400 });
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
   try {
     // Assign the next sequential internalCode for this school (never reused).
     const last = await prisma.subject.findFirst({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: { internalCode: "desc" },
       select: { internalCode: true },
     });
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
         doubleLesson: parsed.data.doubleLesson,
         requiresSpecialRoom: parsed.data.requiresSpecialRoom || null,
         internalCode,
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
       },
     });
     return NextResponse.json(subject, { status: 201 });

@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   // ── Guard: new password cannot be the school's slug ─────────────────────
   const school = await prisma.school.findUnique({
-    where:  { id: user.schoolId },
+    where:  { id: user.schoolId! },
     select: { slug: true },
   });
 

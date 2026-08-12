@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
   // Pre-load existing bookNumbers and (title+edition+form) combos for duplicate check
   const existingCatalogues = await prisma.libraryCatalogue.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     select: { bookNumber: true, title: true, edition: true, form: true },
   });
   const existingBookNumbers = new Set(
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     )
   );
 
-  const getAccession = await nextAccessionSeq(user.schoolId);
+  const getAccession = await nextAccessionSeq(user.schoolId!);
 
   let imported = 0;
   let skipped  = 0;
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
       const catalogue = await prisma.libraryCatalogue.create({
         data: {
-          schoolId:    user.schoolId,
+          schoolId: user.schoolId!,
           title:       d.title,
           bookNumber:  d.bookNumber  || null,
           subject:     d.subject     || null,
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
         const accessionNumber = getAccession();
         await prisma.libraryCopy.create({
           data: {
-            schoolId:    user.schoolId,
+            schoolId: user.schoolId!,
             catalogueId: catalogue.id,
             accessionNumber,
             qrCode:  `BIDII:${accessionNumber}`,
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (imported > 0) {
-    emitSSE(user.schoolId, "libraryCatalogue.bulkImported", { imported });
+    emitSSE(user.schoolId!, "libraryCatalogue.bulkImported", { imported });
   }
 
   return NextResponse.json({ imported, skipped, errors }, { status: 200 });

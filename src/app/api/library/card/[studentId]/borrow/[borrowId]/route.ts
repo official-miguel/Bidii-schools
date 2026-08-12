@@ -36,7 +36,7 @@ export async function PATCH(
     include: { card: true },
   });
 
-  if (!borrow || borrow.card.studentId !== params.studentId || borrow.schoolId !== user.schoolId) {
+  if (!borrow || borrow.card.studentId !== params.studentId || borrow.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Borrow record not found." }, { status: 404 });
   }
 
@@ -49,7 +49,7 @@ export async function PATCH(
   }
 
   const settings = await prisma.librarySettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
   const finePerDay = settings?.finePerDay ?? 5.0;
 
@@ -78,10 +78,10 @@ export async function PATCH(
       }),
     ]);
 
-    emitSSE(user.schoolId, "libraryBorrow.returned", updatedBorrow);
+    emitSSE(user.schoolId!, "libraryBorrow.returned", updatedBorrow);
     // Re-fetch card to emit current fineBalance to all tabs.
     const refreshedCard = await prisma.libraryCard.findUnique({ where: { id: borrow.cardId } });
-    if (refreshedCard) emitSSE(user.schoolId, "libraryCard.updated", refreshedCard);
+    if (refreshedCard) emitSSE(user.schoolId!, "libraryCard.updated", refreshedCard);
 
     return NextResponse.json(updatedBorrow);
   }
@@ -98,7 +98,7 @@ export async function PATCH(
       data: { fineStoppedAt: new Date() },
       include: { book: { select: { id: true, title: true, author: true } } },
     });
-    emitSSE(user.schoolId, "libraryBorrow.returned", updated); // reuse event — client merges the row
+    emitSSE(user.schoolId!, "libraryBorrow.returned", updated); // reuse event — client merges the row
     return NextResponse.json(updated);
   }
 
@@ -118,7 +118,7 @@ export async function PATCH(
         totalFinesPaid: { increment: actualPayment },
       },
     });
-    emitSSE(user.schoolId, "libraryCard.updated", updatedCard);
+    emitSSE(user.schoolId!, "libraryCard.updated", updatedCard);
     return NextResponse.json({ ok: true, newBalance: updatedCard.fineBalance, paid: actualPayment });
   }
 

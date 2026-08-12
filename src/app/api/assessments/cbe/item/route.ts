@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest) {
 
   // Resolve learningAreaId from the sub-strand chain for the canEnterMarks check.
   const subStrand = await db.subStrand.findFirst({
-    where: { id: subStrandId, schoolId: user.schoolId },
+    where: { id: subStrandId, schoolId: user.schoolId! },
     select: { strand: { select: { learningAreaId: true } } },
   }) as { strand: { learningAreaId: string } } | null;
   if (!subStrand) {
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const learningAreaId = subStrand.strand.learningAreaId;
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // Reuse canEnterMarks — the actor check works for CBE scope via learningAreaId
   // roles, but the function signature takes a subjectId. We use the learningAreaId
@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest) {
   const period = await db.assessmentPeriod.findFirst({
     where: {
       id: periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "CBE", isActive: true },
     },
     select: { id: true, frameworkId: true },
@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest) {
 
   // Validate student belongs to school.
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!student) {
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest) {
   await db.assessmentItem.upsert({
     where: { item_substrand: { studentId, periodId, subStrandId } },
     create: {
-      schoolId:         user.schoolId,
+      schoolId: user.schoolId!,
       frameworkId:      period.frameworkId,
       periodId,
       studentId,

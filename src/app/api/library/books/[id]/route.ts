@@ -28,7 +28,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const book = await prisma.libraryBook.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!book) return NextResponse.json({ error: "Book not found." }, { status: 404 });
 
@@ -63,7 +63,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const book = await prisma.libraryBook.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!book) return NextResponse.json({ error: "Book not found." }, { status: 404 });
 

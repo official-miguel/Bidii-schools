@@ -10,7 +10,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const departments = await prisma.department.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     include: {
       headTeacher: { select: { id: true, fullName: true } },
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const department = await prisma.department.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         name: parsed.data.name,
         headTeacherId: parsed.data.headTeacherId || null,
       },

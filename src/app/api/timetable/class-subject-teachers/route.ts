@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const assignments = await prisma.classSubjectTeacher.findMany({
     where: {
-      schoolClass: { schoolId: user.schoolId },
+      schoolClass: { schoolId: user.schoolId! },
       ...(classId ? { classId } : {}),
     },
     include: {
@@ -59,10 +59,10 @@ export async function PUT(req: NextRequest) {
   const { classId, subjectId, teacherId, reassignExistingSlots } = parsed.data;
 
   const [schoolClass, subject, teacherSubject] = await Promise.all([
-    prisma.schoolClass.findFirst({ where: { id: classId, schoolId: user.schoolId } }),
-    prisma.subject.findFirst({ where: { id: subjectId, schoolId: user.schoolId } }),
+    prisma.schoolClass.findFirst({ where: { id: classId, schoolId: user.schoolId! } }),
+    prisma.subject.findFirst({ where: { id: subjectId, schoolId: user.schoolId! } }),
     prisma.teacherSubject.findFirst({
-      where: { teacherId, subjectId, teacher: { schoolId: user.schoolId } },
+      where: { teacherId, subjectId, teacher: { schoolId: user.schoolId! } },
     }),
   ]);
   if (!schoolClass || !subject) {

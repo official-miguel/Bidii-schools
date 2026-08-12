@@ -8,7 +8,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const expectations = await prisma.formSubjectExpectation.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { form: "asc" },
   });
   return NextResponse.json(expectations);
@@ -32,9 +32,9 @@ export async function PUT(req: NextRequest) {
   }
 
   const expectation = await prisma.formSubjectExpectation.upsert({
-    where: { schoolId_form: { schoolId: user.schoolId, form: parsed.data.form } },
+    where: { schoolId_form: { schoolId: user.schoolId!, form: parsed.data.form } },
     update: { expectedCount: parsed.data.expectedCount },
-    create: { ...parsed.data, schoolId: user.schoolId },
+    create: { ...parsed.data, schoolId: user.schoolId! },
   });
   return NextResponse.json(expectation);
 }

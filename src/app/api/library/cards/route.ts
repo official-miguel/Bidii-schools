@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 
   const cards = await prisma.libraryCard.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(status  ? { status: status as never } : {}),
       ...(hasFine ? { fineBalance: { gt: 0 } } : {}),
       ...(q ? {
@@ -121,7 +121,7 @@ export async function POST(_req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const settings = await prisma.librarySettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
 
   const eligibleFromForm = settings?.eligibleFromForm ?? null;
@@ -130,7 +130,7 @@ export async function POST(_req: NextRequest) {
   // Find all active (non-archived) students without a library card
   const students = await prisma.student.findMany({
     where: {
-      schoolId:   user.schoolId,
+      schoolId: user.schoolId!,
       archivedAt: null,
       libraryCard: null,
       ...(eligibleFromForm !== null
@@ -149,14 +149,14 @@ export async function POST(_req: NextRequest) {
   let provisioned = 0;
 
   for (const student of students) {
-    const cardNumber = await generateCardNumber(user.schoolId);
+    const cardNumber = await generateCardNumber(user.schoolId!);
     const expiresAt = cardValidityDays
       ? new Date(Date.now() + cardValidityDays * 86_400_000)
       : null;
 
     await prisma.libraryCard.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId: student.id,
         cardNumber,
         status: "ACTIVE" as never,
@@ -166,6 +166,6 @@ export async function POST(_req: NextRequest) {
     provisioned++;
   }
 
-  emitSSE(user.schoolId, "libraryCards.provisioned", { provisioned });
+  emitSSE(user.schoolId!, "libraryCards.provisioned", { provisioned });
   return NextResponse.json({ provisioned });
 }

@@ -8,7 +8,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const templates = await prisma.messageTemplate.findMany({
-    where:   { schoolId: user.schoolId },
+    where:   { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
   });
   return NextResponse.json(templates);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   try {
     const template = await prisma.messageTemplate.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         name:     parsed.data.name,
         category: parsed.data.category || null,
         body:     parsed.data.body,

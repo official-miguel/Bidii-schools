@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   // Use a lean select instead of include — avoids loading extra join rows.
   // _count.students is an aggregate field, not a full join, so it's cheap.
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   if (parsed.data.classTeacherId) {
     const teacher = await prisma.teacher.findFirst({
-      where: { id: parsed.data.classTeacherId, schoolId: user.schoolId },
+      where: { id: parsed.data.classTeacherId, schoolId: user.schoolId! },
     });
     if (!teacher) return NextResponse.json({ error: "Choose a valid teacher." }, { status: 400 });
   }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   try {
     const schoolClass = await (prisma as any).schoolClass.create({ // eslint-disable-line @typescript-eslint/no-explicit-any
       data: {
-        schoolId:      user.schoolId,
+        schoolId: user.schoolId!,
         name:          parsed.data.name,
         form:          parsed.data.form,
         stream:        parsed.data.stream || null,

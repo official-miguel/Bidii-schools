@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const [students, teachers] = await Promise.all([
     prisma.student.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         fullName: { contains: q, mode: "insensitive" },
       },
       take:    limit,
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.teacher.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         fullName: { contains: q, mode: "insensitive" },
       },
       take:    limit,

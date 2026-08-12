@@ -20,7 +20,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const version = await getVersion(params.id, user.schoolId);
+  const version = await getVersion(params.id, user.schoolId!);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
 
   return NextResponse.json(version);
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const version = await getVersion(params.id, user.schoolId);
+  const version = await getVersion(params.id, user.schoolId!);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (version.status === "ARCHIVED")
     return NextResponse.json({ error: "Archived versions cannot be edited." }, { status: 409 });
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     WHERE id = ${params.id}
   `;
 
-  const updated = await getVersion(params.id, user.schoolId);
+  const updated = await getVersion(params.id, user.schoolId!);
   return NextResponse.json(updated);
 }
 
@@ -76,7 +76,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const version = await getVersion(params.id, user.schoolId);
+  const version = await getVersion(params.id, user.schoolId!);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (version.status === "PUBLISHED")
     return NextResponse.json({ error: "Unpublish this version before deleting it." }, { status: 409 });
@@ -88,7 +88,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     INSERT INTO "TimetableChangeLog"
       (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id},
+      ${randomUUID()}, ${user.schoolId!}, ${params.id},
       'ARCHIVED'::"TimetableChangeAction",
       ${JSON.stringify({ deleted: true, name: version.name })}::jsonb,
       ${user.id}, ${new Date()}

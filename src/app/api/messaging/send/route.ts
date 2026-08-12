@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const { descriptors, channel, body, scheduledAt, attachmentUrl, attachmentName } = parsed.data;
 
   // Verify integration key exists
-  const integration = await getSchoolIntegrationKey(user.schoolId, channel as "SMS" | "WHATSAPP");
+  const integration = await getSchoolIntegrationKey(user.schoolId!, channel as "SMS" | "WHATSAPP");
   if (!integration) {
     return NextResponse.json(
       { error: `${channel} integration is not configured for this school. Go to Settings → Integrations to add a key.` },
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   // Create the Message row immediately
   const message = await prisma.message.create({
     data: {
-      schoolId:            user.schoolId,
+      schoolId: user.schoolId!,
       senderUserId:        user.id,
       channel:             channel as MessageChannel,
       body,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   (async () => {
     const { resolved, skipped } = await resolveRecipients(
       descriptors as never,
-      user.schoolId
+      user.schoolId!
     );
 
     // Update recipient summary
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // Get the settings for batch size
     const settings = await prisma.messagingSettings.findUnique({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
     });
     const batchSize = settings?.batchSize ?? 50;
 
@@ -93,11 +93,11 @@ export async function POST(req: NextRequest) {
               personalBody = personalBody.split(token).join(name || "[unknown]");
             }
           }
-          const result = await dispatchMessage(user.schoolId, channel as MessageChannel, phone, personalBody);
+          const result = await dispatchMessage(user.schoolId!, channel as MessageChannel, phone, personalBody);
           await prisma.messageLog.create({
             data: {
               messageId:      message.id,
-              schoolId:       user.schoolId,
+              schoolId: user.schoolId!,
               channel:        channel as MessageChannel,
               phone,
               recipientLabel: label,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       await prisma.messageLog.create({
         data: {
           messageId:      message.id,
-          schoolId:       user.schoolId,
+          schoolId: user.schoolId!,
           channel:        channel as MessageChannel,
           phone:          "N/A",
           recipientLabel: label,

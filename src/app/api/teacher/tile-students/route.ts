@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
   // For core/class-teacher tiles: all students in the class.
   let studentWhere: Record<string, unknown> = {
     classId,
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     archivedAt: null,
   };
 
@@ -106,14 +106,14 @@ export async function GET(req: NextRequest) {
     prisma.attendance.findMany({
       where: {
         classId,
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         date: { gte: todayStart, lte: todayEnd },
         studentId: { in: studentIds },
       },
       select: { studentId: true, status: true },
     }),
     db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
       select: { id: true },
     }) as Promise<{ id: true } | null>,
   ]);
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
   if (framework) {
     const allSubjects = await prisma.subject.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         // scope to this subject only if a subjectId is given, otherwise all
         ...(subjectId ? { id: subjectId } : {}),
       },
@@ -149,13 +149,13 @@ export async function GET(req: NextRequest) {
 
     const [periods, papers, allItems] = await Promise.all([
       db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ academicYear: "asc" }, { term: "asc" }, { name: "asc" }],
         select: { id: true, name: true },
       }),
       db.paper.findMany({
         where: {
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           frameworkId: framework.id,
           subjectId: { in: subjectIdsForExam },
         },
@@ -163,7 +163,7 @@ export async function GET(req: NextRequest) {
       }),
       db.assessmentItem.findMany({
         where: {
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           studentId: { in: studentIds },
           frameworkId: framework.id,
           resultKind: "NUMERIC",

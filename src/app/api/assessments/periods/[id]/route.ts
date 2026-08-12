@@ -24,7 +24,7 @@ export async function PATCH(
     where: { id: params.id },
     select: { id: true, schoolId: true, frameworkId: true },
   });
-  if (!period || period.schoolId !== user.schoolId) {
+  if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -34,7 +34,7 @@ export async function PATCH(
   // If setting isCurrent = true, first clear the flag on all sibling periods.
   if (body.isCurrent === true) {
     await db.assessmentPeriod.updateMany({
-      where: { schoolId: user.schoolId, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
       data: { isCurrent: false },
     });
   }
@@ -86,7 +86,7 @@ export async function DELETE(
       _count: { select: { items: true } },
     },
   });
-  if (!period || period.schoolId !== user.schoolId) {
+  if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { value, usedFallback } = await generateJson<IncidentSuggestion>(
-    user.schoolId,
+    user.schoolId!,
     `A teacher described a school discipline incident:\n"${parsed.data.text}"\n\nReturn JSON:\n- title: very short offence label (2-4 words, e.g. "Vaping", "Fighting during games")\n- category: one of "Substance Abuse", "Violence", "Bullying", "Lateness", "Property Damage", "Dishonesty", "Disrespect", "Truancy", "Other"\n- severity: "MINOR", "MODERATE" or "SEVERE"\n- keywords: 2-5 short lowercase keywords\n- suggestedAction: one short suggested disciplinary action sentence\n- summary: ONE very short summary sentence, e.g. "Found vaping."`,
     {
       temperature: 0.2,

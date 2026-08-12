@@ -54,9 +54,9 @@ async function scorecardHandler(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [actor, period] = await Promise.all([
-    resolveAssessmentActor(user, user.schoolId),
+    resolveAssessmentActor(user, user.schoolId!),
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId },
+      where: { id: periodId, schoolId: user.schoolId! },
       select: { id: true, frameworkId: true },
     }),
   ]);
@@ -72,7 +72,7 @@ async function scorecardHandler(req: NextRequest) {
 
   if (classId) {
     const schoolClass = await prisma.schoolClass.findFirst({
-      where: { id: classId, schoolId: user.schoolId },
+      where: { id: classId, schoolId: user.schoolId! },
       select: { id: true, name: true, form: true },
     });
     if (!schoolClass)
@@ -86,7 +86,7 @@ async function scorecardHandler(req: NextRequest) {
 
   // ── Batch 2: classes + rankingConfig — run concurrently ───────────────────
   const classWhere: Record<string, unknown> = {
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     form: resolvedForm,
   };
   if (classId) classWhere.id = classId;
@@ -98,7 +98,7 @@ async function scorecardHandler(req: NextRequest) {
       select: { id: true, name: true },
     }),
     prisma.rankingConfig.findUnique({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       select: { meanFlagThreshold: true },
     }),
   ]);
@@ -114,17 +114,17 @@ async function scorecardHandler(req: NextRequest) {
   // ── Batch 3: students + subjects + papers — run concurrently ─────────────
   const [students, coreSubjects, papers] = await Promise.all([
     prisma.student.findMany({
-      where: { classId: { in: classIds }, schoolId: user.schoolId },
+      where: { classId: { in: classIds }, schoolId: user.schoolId! },
       orderBy: [{ classId: "asc" }, { fullName: "asc" }],
       select: { id: true, fullName: true, admissionNumber: true, classId: true },
     }),
     prisma.subject.findMany({
-      where: { schoolId: user.schoolId, applicableForms: { has: resolvedForm } },
+      where: { schoolId: user.schoolId!, applicableForms: { has: resolvedForm } },
       orderBy: { name: "asc" },
       select: { id: true, name: true, code: true },
     }),
     db.paper.findMany({
-      where: { schoolId: user.schoolId, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
       select: { id: true, subjectId: true, maxMarks: true },
     }),
   ]);
@@ -142,7 +142,7 @@ async function scorecardHandler(req: NextRequest) {
       where: {
         studentId:  { in: studentIds },
         periodId,
-        schoolId:   user.schoolId,
+        schoolId: user.schoolId!,
         resultKind: "NUMERIC",
       },
       select: { studentId: true, subjectId: true, paperId: true, numericScore: true },
@@ -176,7 +176,7 @@ async function scorecardHandler(req: NextRequest) {
   // for schools that don't use electives).
   const electiveSubjects = electiveSubjectIds.size > 0
     ? await prisma.subject.findMany({
-        where: { id: { in: [...electiveSubjectIds] }, schoolId: user.schoolId },
+        where: { id: { in: [...electiveSubjectIds] }, schoolId: user.schoolId! },
         orderBy: { name: "asc" },
         select: { id: true, name: true, code: true },
       })

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   const { cardId, reason, amount } = parsed.data;
 
   const card = await prisma.libraryCard.findFirst({
-    where: { id: cardId, schoolId: user.schoolId },
+    where: { id: cardId, schoolId: user.schoolId! },
   });
   if (!card) return NextResponse.json({ error: "Library card not found." }, { status: 404 });
   if (card.fineBalance <= 0)
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   });
 
   await recordFineAudit({
-    schoolId:      user.schoolId,
+    schoolId: user.schoolId!,
     cardId,
     eventType:     "CLEAR",
     amount:        -clearAmount,
@@ -59,6 +59,6 @@ export async function POST(req: NextRequest) {
     performedById: user.id,
   });
 
-  emitSSE(user.schoolId, "libraryCard.updated", updated);
+  emitSSE(user.schoolId!, "libraryCard.updated", updated);
   return NextResponse.json({ ok: true, cleared: clearAmount, balanceAfter });
 }

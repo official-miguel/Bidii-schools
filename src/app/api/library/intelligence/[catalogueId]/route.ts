@@ -22,14 +22,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const catalogue = await prisma.libraryCatalogue.findFirst({
-    where: { id: params.catalogueId, schoolId: user.schoolId },
+    where: { id: params.catalogueId, schoolId: user.schoolId! },
   });
   if (!catalogue) return NextResponse.json({ error: "Catalogue entry not found." }, { status: 404 });
 
   const [copies, reservations, events, borrowAgg] = await Promise.all([
     // All copies with their full borrow history
     prisma.libraryCopy.findMany({
-      where: { catalogueId: params.catalogueId, schoolId: user.schoolId },
+      where: { catalogueId: params.catalogueId, schoolId: user.schoolId! },
       orderBy: { accessionNumber: "asc" },
       include: {
         borrows: {
@@ -48,13 +48,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     // Active + pending reservations
     prisma.libraryReservation.findMany({
-      where: { catalogueId: params.catalogueId, schoolId: user.schoolId, status: { in: ["PENDING","ACTIVE"] } },
+      where: { catalogueId: params.catalogueId, schoolId: user.schoolId!, status: { in: ["PENDING","ACTIVE"] } },
       orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],
     }),
 
     // Last 100 circulation events
     prisma.libraryCirculationEvent.findMany({
-      where: { catalogueId: params.catalogueId, schoolId: user.schoolId },
+      where: { catalogueId: params.catalogueId, schoolId: user.schoolId! },
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
@@ -67,7 +67,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       FROM "LibraryBorrow" lb
       JOIN "LibraryCopy" lcp ON lcp.id = lb."copyId"
       WHERE lcp."catalogueId" = ${params.catalogueId}
-        AND lb."schoolId" = ${user.schoolId}
+        AND lb."schoolId" = ${user.schoolId!}
     `.catch(() => [{ count: BigInt(0), totalRenewals: BigInt(0), totalFines: 0 }]),
   ]);
 

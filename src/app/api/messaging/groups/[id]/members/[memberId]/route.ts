@@ -11,7 +11,7 @@ export async function DELETE(
 
   // Verify group belongs to school
   const group = await prisma.recipientGroup.findUnique({ where: { id: params.id } });
-  if (!group || group.schoolId !== user.schoolId) {
+  if (!group || group.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

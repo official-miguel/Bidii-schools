@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canEnterMarks(actor, subjectId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest) {
   const period: { id: string; frameworkId: string } | null = await db.assessmentPeriod.findFirst({
     where: {
       id: periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
     },
     select: { id: true, frameworkId: true },
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!student) {
@@ -56,7 +56,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const paper: { id: string; maxMarks: number } | null = await db.paper.findFirst({
-    where: { id: paperId, subjectId, schoolId: user.schoolId, frameworkId: period.frameworkId },
+    where: { id: paperId, subjectId, schoolId: user.schoolId!, frameworkId: period.frameworkId },
     select: { id: true, maxMarks: true },
   });
   if (!paper) {
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest) {
   await db.assessmentItem.upsert({
     where: { item_paper: { studentId, periodId, paperId } },
     create: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       frameworkId: period.frameworkId,
       periodId,
       studentId,

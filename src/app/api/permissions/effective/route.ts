@@ -30,7 +30,7 @@ export async function GET() {
   let derivedKinds: string[] = [];
   if (user.role === "TEACHER" || user.role === "ADMIN_STAFF") {
     try {
-      const derived = await computeDerivedRoles(user.id, user.schoolId);
+      const derived = await computeDerivedRoles(user.id, user.schoolId!);
       derivedKinds = [...derived.activeKinds];
     } catch {
       // Non-fatal — user may have no teacher record

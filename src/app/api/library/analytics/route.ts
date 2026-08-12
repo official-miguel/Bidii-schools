@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       FROM "LibraryCatalogue" lc
       JOIN "LibraryCopy" lcp ON lcp."catalogueId" = lc.id
       JOIN "LibraryBorrow" lb ON lb."copyId" = lcp.id
-      WHERE lc."schoolId" = ${user.schoolId}
+      WHERE lc."schoolId" = ${user.schoolId!}
         AND lb."borrowedAt" >= ${since}
       GROUP BY lc.id, lc.title, lc.subject, lc.form
       ORDER BY "borrowCount" DESC
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     // Least used — catalogues with 0 borrows in window
     prisma.libraryCatalogue.findMany({
       where: {
-        schoolId: user.schoolId, archivedAt: null,
+        schoolId: user.schoolId!, archivedAt: null,
         copies: { none: { borrows: { some: { borrowedAt: { gte: since } } } } },
       },
       orderBy: { createdAt: "asc" },
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // Newly added catalogues
     prisma.libraryCatalogue.findMany({
-      where: { schoolId: user.schoolId, archivedAt: null, createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) } },
+      where: { schoolId: user.schoolId!, archivedAt: null, createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) } },
       orderBy: { createdAt: "desc" },
       take: 20,
       select: { id: true, title: true, subject: true, form: true, category: true, totalCopies: true, createdAt: true },
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
       FROM "LibraryCatalogue" lc
       JOIN "LibraryCopy" lcp ON lcp."catalogueId" = lc.id
       JOIN "LibraryBorrow" lb ON lb."copyId" = lcp.id
-      WHERE lc."schoolId" = ${user.schoolId}
+      WHERE lc."schoolId" = ${user.schoolId!}
         AND lb."borrowedAt" >= ${since}
       GROUP BY lc.id, lc.title, lc.subject
       HAVING AVG(lb."renewalCount") > 0.7
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
       SELECT TO_CHAR("dueAt", 'YYYY-MM') AS month,
              COUNT(*)::bigint            AS "overdueCount"
       FROM "LibraryBorrow"
-      WHERE "schoolId"  = ${user.schoolId}
+      WHERE "schoolId"  = ${user.schoolId!}
         AND "dueAt"     >= ${since}
         AND "returnedAt" IS NULL
         AND "dueAt"     < NOW()
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
       FROM "LibraryCatalogue" lc
       JOIN "LibraryCopy" lcp ON lcp."catalogueId" = lc.id
       JOIN "LibraryBorrow" lb ON lb."copyId" = lcp.id
-      WHERE lc."schoolId" = ${user.schoolId}
+      WHERE lc."schoolId" = ${user.schoolId!}
         AND lb."borrowedAt" >= ${since}
       GROUP BY lc.subject
       ORDER BY "borrowCount" DESC
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       FROM "LibraryCatalogue" lc
       JOIN "LibraryCopy" lcp ON lcp."catalogueId" = lc.id
       JOIN "LibraryBorrow" lb ON lb."copyId" = lcp.id
-      WHERE lc."schoolId" = ${user.schoolId}
+      WHERE lc."schoolId" = ${user.schoolId!}
         AND lb."borrowedAt" >= ${since}
       GROUP BY lc.form
       ORDER BY "borrowCount" DESC
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
 
     // Overall summary
     prisma.libraryBorrow.aggregate({
-      where: { schoolId: user.schoolId, borrowedAt: { gte: since } },
+      where: { schoolId: user.schoolId!, borrowedAt: { gte: since } },
       _count: { id: true },
       _sum:   { renewalCount: true, fineAmount: true },
     }),

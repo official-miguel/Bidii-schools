@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cat = await prisma.libraryCatalogue.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       copies: {
         orderBy: { accessionNumber: "asc" },
@@ -83,7 +83,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cat = await prisma.libraryCatalogue.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true, bookNumber: true },
   });
   if (!cat) return NextResponse.json({ error: "Catalogue entry not found." }, { status: 404 });
@@ -101,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // Check bookNumber uniqueness if changed
   if (d.bookNumber && d.bookNumber !== cat.bookNumber) {
     const exists = await prisma.libraryCatalogue.findFirst({
-      where: { schoolId: user.schoolId, bookNumber: d.bookNumber, id: { not: params.id } },
+      where: { schoolId: user.schoolId!, bookNumber: d.bookNumber, id: { not: params.id } },
       select: { id: true },
     });
     if (exists)
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.updated", updated);
+  emitSSE(user.schoolId!, "libraryCatalogue.updated", updated);
   return NextResponse.json(updated);
 }
 
@@ -147,7 +147,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cat = await prisma.libraryCatalogue.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true, archivedAt: true },
   });
   if (!cat) return NextResponse.json({ error: "Catalogue entry not found." }, { status: 404 });
@@ -175,6 +175,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     data: { archivedAt: new Date() },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.archived", { id: params.id });
+  emitSSE(user.schoolId!, "libraryCatalogue.archived", { id: params.id });
   return NextResponse.json(archived);
 }

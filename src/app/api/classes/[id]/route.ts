@@ -23,13 +23,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const existing = await prisma.schoolClass.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   if (parsed.data.classTeacherId) {
     const teacher = await prisma.teacher.findFirst({
-      where: { id: parsed.data.classTeacherId, schoolId: user.schoolId },
+      where: { id: parsed.data.classTeacherId, schoolId: user.schoolId! },
     });
     if (!teacher) return NextResponse.json({ error: "Choose a valid teacher." }, { status: 400 });
   }
@@ -66,7 +66,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.schoolClass.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 

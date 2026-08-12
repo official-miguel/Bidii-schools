@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const studentId = req.nextUrl.searchParams.get("studentId") || undefined;
   const achievements = await prisma.achievement.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(studentId ? { students: { some: { studentId } } } : {}),
     },
     orderBy: { achievementDate: "desc" },
@@ -50,14 +50,14 @@ export async function POST(req: NextRequest) {
   const d = parsed.data;
 
   const count = await prisma.student.count({
-    where: { id: { in: d.studentIds }, schoolId: user.schoolId },
+    where: { id: { in: d.studentIds }, schoolId: user.schoolId! },
   });
   if (count !== d.studentIds.length) {
     return NextResponse.json({ error: "Choose valid students." }, { status: 400 });
   }
 
   // AI summary is generated once at creation and cached on the record.
-  const aiSummary = await summarizeAchievement(user.schoolId, {
+  const aiSummary = await summarizeAchievement(user.schoolId!, {
     title: d.title,
     description: d.description || null,
     category: d.category,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     const achievement = await prisma.achievement.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         title: d.title,
         category: d.category,
         description: d.description || null,

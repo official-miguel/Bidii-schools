@@ -32,7 +32,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const settings = await prisma.librarySettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
 
   return NextResponse.json(settings ?? { ...DEFAULT_SETTINGS, updatedAt: null });
@@ -63,8 +63,8 @@ export async function PUT(req: NextRequest) {
 
   const d = parsed.data;
   const settings = await prisma.librarySettings.upsert({
-    where:  { schoolId: user.schoolId },
-    create: { schoolId: user.schoolId, ...d, identificationMethod: (d.identificationMethod ?? "MANUAL") as never },
+    where:  { schoolId: user.schoolId! },
+    create: { schoolId: user.schoolId!, ...d, identificationMethod: (d.identificationMethod ?? "MANUAL") as never },
     update: {
       maxBooksPerStudent:   d.maxBooksPerStudent,
       maxBorrowDays:        d.maxBorrowDays,

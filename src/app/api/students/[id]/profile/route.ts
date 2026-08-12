@@ -41,7 +41,7 @@ export async function GET(
 
   // ── Wave 1: student (required gate) ─────────────────────────────────────
   const student = await db.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: {
       id: true, fullName: true, admissionNumber: true,
       dateOfBirth: true, parentName: true, parentContact: true,
@@ -64,7 +64,7 @@ export async function GET(
       select: { schoolId: true },
     });
     // Just ensure the teacher belongs to the same school — already guaranteed
-    // by the student lookup above (schoolId: user.schoolId), but verify the
+    // by the student lookup above (schoolId: user.schoolId!), but verify the
     // teacher record exists so we don't serve data to a misconfigured login.
     if (!teacher) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -87,7 +87,7 @@ export async function GET(
   ] = await Promise.all([
     // All subjects for this student's form.
     prisma.subject.findMany({
-      where: { schoolId: user.schoolId, applicableForms: { has: student.schoolClass.form } },
+      where: { schoolId: user.schoolId!, applicableForms: { has: student.schoolClass.form } },
       orderBy: [{ type: "asc" }, { name: "asc" }],
       select: { id: true, name: true, code: true, type: true },
     }),
@@ -109,27 +109,27 @@ export async function GET(
 
     // 8-4-4 framework.
     db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
       select: { id: true },
     }) as Promise<{ id: string } | null>,
 
     // Discipline records (no notes/description in list — just summary fields).
     db.disciplineRecord.findMany({
-      where: { studentId: student.id, schoolId: user.schoolId },
+      where: { studentId: student.id, schoolId: user.schoolId! },
       orderBy: { dateOfOffence: "desc" },
       select: { id: true, offence: true, status: true, dateOfOffence: true, aiSummary: true },
     }),
 
     // Achievements.
     prisma.achievement.findMany({
-      where: { schoolId: user.schoolId, students: { some: { studentId: student.id } } },
+      where: { schoolId: user.schoolId!, students: { some: { studentId: student.id } } },
       orderBy: { achievementDate: "desc" },
       select: { id: true, title: true, category: true, achievementDate: true, awardLevel: true, aiSummary: true },
     }),
 
     // Ranking config — for the academic flag threshold.
     prisma.rankingConfig.findUnique({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       select: { meanFlagThreshold: true },
     }),
   ]);
@@ -168,19 +168,19 @@ export async function GET(
 
     const [periods, papers, allItems] = await Promise.all([
       db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ academicYear: "asc" }, { term: "asc" }, { name: "asc" }],
         select: { id: true, name: true, academicYear: true, term: true },
       }),
 
       db.paper.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id, subjectId: { in: subjectIds } },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id, subjectId: { in: subjectIds } },
         select: { id: true, maxMarks: true, subjectId: true },
       }),
 
       db.assessmentItem.findMany({
         where: {
-          schoolId: user.schoolId, studentId: params.id,
+          schoolId: user.schoolId!, studentId: params.id,
           frameworkId: framework.id, resultKind: "NUMERIC",
         },
         select: { periodId: true, paperId: true, numericScore: true },

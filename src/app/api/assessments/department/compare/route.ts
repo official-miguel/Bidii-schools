@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   // Resolve the framework from the supplied period.
   const periodRow = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId: user.schoolId },
+    where: { id: periodId, schoolId: user.schoolId! },
     select: { frameworkId: true },
   }) as { frameworkId: string } | null;
 
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   // All periods for this framework, chronological.
   const allPeriods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId, frameworkId: periodRow.frameworkId },
+    where: { schoolId: user.schoolId!, frameworkId: periodRow.frameworkId },
     orderBy: [{ academicYear: "asc" }, { term: "asc" }],
     select: { id: true, name: true, term: true, academicYear: true },
   }) as Array<{ id: string; name: string; term: number | null; academicYear: string }>;
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
 
   // All departments in the school.
   const departments = await prisma.department.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
   // For each department, resolve its subject IDs so we can filter items.
   const allSubjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId, departmentId: { in: departments.map((d) => d.id) } },
+    where: { schoolId: user.schoolId!, departmentId: { in: departments.map((d) => d.id) } },
     select: { id: true, departmentId: true },
   });
 
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
        AND "resultKind"    = 'NUMERIC'
        AND "numericScore"  IS NOT NULL
      GROUP BY "periodId", "subjectId"`,
-    user.schoolId,
+    user.schoolId!,
     allPeriodIds
   );
 

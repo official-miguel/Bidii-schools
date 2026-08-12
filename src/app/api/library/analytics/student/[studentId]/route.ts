@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const sid       = user.schoolId;
+  const sid       = user.schoolId!;
   const studentId = params.studentId;
 
   // Get card id first (pre-migration: libraryCard.findUnique may not have new fields)

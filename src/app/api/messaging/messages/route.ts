@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const dateTo   = searchParams.get("dateTo");
 
   const where = {
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     ...(status ? { status: status as never } : {}),
     ...(q ? { OR: [
       { body:             { contains: q, mode: "insensitive" as const } },

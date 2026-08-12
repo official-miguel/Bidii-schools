@@ -27,14 +27,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
   }
   const existing = await prisma.achievement.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Achievement not found." }, { status: 404 });
 
   const d = parsed.data;
   if (d.studentIds) {
     const count = await prisma.student.count({
-      where: { id: { in: d.studentIds }, schoolId: user.schoolId },
+      where: { id: { in: d.studentIds }, schoolId: user.schoolId! },
     });
     if (count !== d.studentIds.length) {
       return NextResponse.json({ error: "Choose valid students." }, { status: 400 });
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     (d.awardLevel !== undefined && (d.awardLevel || null) !== existing.awardLevel);
 
   const aiSummary = contentChanged
-    ? await summarizeAchievement(user.schoolId, {
+    ? await summarizeAchievement(user.schoolId!, {
         title: d.title ?? existing.title,
         description: d.description !== undefined ? d.description || null : existing.description,
         category: d.category ?? existing.category,
@@ -92,7 +92,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.achievement.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!existing) return NextResponse.json({ error: "Achievement not found." }, { status: 404 });

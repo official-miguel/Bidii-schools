@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const achievement = await prisma.achievement.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!achievement) return NextResponse.json({ error: "Achievement not found." }, { status: 404 });
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (parsed.data.aiSummary !== undefined) {
     aiSummary = parsed.data.aiSummary || null;
   } else {
-    aiSummary = await summarizeAchievement(user.schoolId, {
+    aiSummary = await summarizeAchievement(user.schoolId!, {
       title: achievement.title,
       description: achievement.description,
       category: achievement.category,

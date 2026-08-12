@@ -15,7 +15,7 @@ export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const statuses = await listIntegrationStatuses(user.schoolId);
+  const statuses = await listIntegrationStatuses(user.schoolId!);
   return NextResponse.json(statuses);
 }
 
@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
 
   try {
     await setSchoolIntegrationKey(
-      user.schoolId,
+      user.schoolId!,
       parsed.data.provider as IntegrationProvider,
       parsed.data.apiKey,
       parsed.data.metadata ?? null
     );
-    const statuses = await listIntegrationStatuses(user.schoolId);
+    const statuses = await listIntegrationStatuses(user.schoolId!);
     return NextResponse.json(statuses, { status: 201 });
   } catch (e) {
     const err = e as { message?: string };

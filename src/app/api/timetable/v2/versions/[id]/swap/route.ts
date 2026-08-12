@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // ── Verify version ownership and editability ──────────────────────────────
   const vRows = await prisma.$queryRaw<Array<{ status: string }>>`
     SELECT status FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}`;
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}`;
   if (!vRows[0])
     return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (vRows[0].status === "ARCHIVED")
@@ -226,7 +226,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         (id, "schoolId", "versionId", "slotId", action, "changeSource",
          "beforeState", "afterState", detail, "performedById", "performedAt")
       VALUES (
-        ${randomUUID()}, ${user.schoolId}, ${params.id}, ${slotAId},
+        ${randomUUID()}, ${user.schoolId!}, ${params.id}, ${slotAId},
         'SLOT_MOVED'::"TimetableChangeAction", 'MANUAL',
         ${JSON.stringify({ dayOfWeek: slotA.dayOfWeek, period: slotA.period })}::jsonb,
         ${JSON.stringify({ dayOfWeek: slotB.dayOfWeek, period: slotB.period })}::jsonb,
@@ -239,7 +239,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         (id, "schoolId", "versionId", "slotId", action, "changeSource",
          "beforeState", "afterState", detail, "performedById", "performedAt")
       VALUES (
-        ${randomUUID()}, ${user.schoolId}, ${params.id}, ${slotBId},
+        ${randomUUID()}, ${user.schoolId!}, ${params.id}, ${slotBId},
         'SLOT_MOVED'::"TimetableChangeAction", 'MANUAL',
         ${JSON.stringify({ dayOfWeek: slotB.dayOfWeek, period: slotB.period })}::jsonb,
         ${JSON.stringify({ dayOfWeek: slotA.dayOfWeek, period: slotA.period })}::jsonb,

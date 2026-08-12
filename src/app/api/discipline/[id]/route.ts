@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { name: true } } } },
       recordedBy: { select: { email: true, role: true, teacher: { select: { fullName: true } } } },
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
   }
   const existing = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Record not found." }, { status: 404 });
 
@@ -83,7 +83,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           : {}),
       },
     });
-    emitSSE(user.schoolId, "disciplineRecord.updated", record);
+    emitSSE(user.schoolId!, "disciplineRecord.updated", record);
     return NextResponse.json(record);
   } catch {
     return NextResponse.json({ error: "Couldn't update the record." }, { status: 500 });
@@ -95,7 +95,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Record not found." }, { status: 404 });
 

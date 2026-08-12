@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
   const period = await db.assessmentPeriod.findFirst({
     where: {
       id: periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
     },
     select: { id: true, frameworkId: true },
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
 
   // ---- classes ----
-  const classWhere: Record<string, unknown> = { schoolId: user.schoolId };
+  const classWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (classId) classWhere.id = classId;
   if (form !== undefined && !isNaN(form)) classWhere.form = form;
 
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 
   // ---- students ----
   const students = await prisma.student.findMany({
-    where: { classId: { in: classIds }, schoolId: user.schoolId },
+    where: { classId: { in: classIds }, schoolId: user.schoolId! },
     select: { id: true, fullName: true, admissionNumber: true, classId: true },
   });
   if (students.length === 0) return NextResponse.json({ students: [] });
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 
   // ---- papers ----
   const papersWhere: Record<string, unknown> = {
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     frameworkId: period.frameworkId,
   };
   if (subjectId) papersWhere.subjectId = subjectId;
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     });
 
   // ---- subjects ----
-  const subjectsWhere: Record<string, unknown> = { schoolId: user.schoolId };
+  const subjectsWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (subjectId) subjectsWhere.id = subjectId;
   const subjects = await prisma.subject.findMany({
     where: subjectsWhere,
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
   const itemsWhere: Record<string, unknown> = {
     studentId: { in: studentIds },
     periodId,
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     resultKind: "NUMERIC",
   };
   if (subjectId) itemsWhere.subjectId = subjectId;

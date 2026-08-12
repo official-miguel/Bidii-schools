@@ -20,7 +20,7 @@ export async function GET() {
   // Find students linked to this user via parentContact or userId.
   const linkedStudents = await prisma.student.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       OR: [
         { userId: user.id },
         { parentContact: user.email },
@@ -41,7 +41,7 @@ export async function GET() {
 
   // Find the current period.
   const currentPeriod = await db.assessmentPeriod.findFirst({
-    where: { schoolId: user.schoolId, isCurrent: true },
+    where: { schoolId: user.schoolId!, isCurrent: true },
     select: { id: true, name: true },
   }) as { id: string; name: string } | null;
 

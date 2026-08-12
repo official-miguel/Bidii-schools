@@ -76,7 +76,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const perms = await getTeacherEffectivePermissions(user);
     if (perms.STAFF?.canView) {
       const teacher = await prisma.teacher.findFirst({
-        where: { id: params.id, schoolId: user.schoolId },
+        where: { id: params.id, schoolId: user.schoolId! },
         include: {
           primaryDepartment: { select: { id: true, name: true } },
           classTeacherOf: { select: { id: true, name: true } },
@@ -136,13 +136,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { subjectIds, staffRoleId, ...rest } = parsed.data;
 
   const existing = await prisma.teacher.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!existing) return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
 
   if (subjectIds && subjectIds.length > 0) {
     const count = await prisma.subject.count({
-      where: { id: { in: subjectIds }, schoolId: user.schoolId },
+      where: { id: { in: subjectIds }, schoolId: user.schoolId! },
     });
     if (count !== subjectIds.length) {
       return NextResponse.json({ error: "Choose valid subjects." }, { status: 400 });
@@ -151,7 +151,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (staffRoleId) {
     const role = await prisma.staffRole.findFirst({
-      where: { id: staffRoleId, schoolId: user.schoolId },
+      where: { id: staffRoleId, schoolId: user.schoolId! },
     });
     if (!role) return NextResponse.json({ error: "Choose a valid staff role." }, { status: 400 });
   }

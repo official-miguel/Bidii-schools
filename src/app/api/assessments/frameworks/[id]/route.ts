@@ -22,7 +22,7 @@ export async function PATCH(
     where: { id: params.id },
     select: { id: true, schoolId: true },
   });
-  if (!framework || framework.schoolId !== user.schoolId) {
+  if (!framework || framework.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -72,7 +72,7 @@ export async function DELETE(
       _count: { select: { items: true } },
     },
   });
-  if (!framework || framework.schoolId !== user.schoolId) {
+  if (!framework || framework.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const file = await prisma.studentFile.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
   });
   if (!file) return NextResponse.json({ error: "File not found." }, { status: 404 });
 
@@ -30,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!fileName) return NextResponse.json({ error: "Enter a file name." }, { status: 400 });
 
   const file = await prisma.studentFile.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!file) return NextResponse.json({ error: "File not found." }, { status: 404 });
@@ -48,7 +48,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const file = await prisma.studentFile.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!file) return NextResponse.json({ error: "File not found." }, { status: 404 });

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canReadPeriods(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -29,12 +29,12 @@ export async function GET(request: Request) {
 
   if (!frameworkId) {
     const fw844 = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
       select: { id: true },
     });
 
     const fwAny = fw844 ?? await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, isActive: true },
+      where: { schoolId: user.schoolId!, isActive: true },
       orderBy: { academicYear: "desc" },
       select: { id: true },
     });
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       where: { id: frameworkId },
       select: { id: true, schoolId: true },
     });
-    if (!framework || framework.schoolId !== user.schoolId) {
+    if (!framework || framework.schoolId !== user.schoolId!) {
       return NextResponse.json({ error: "Framework not found" }, { status: 404 });
     }
   }
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   }
 
   const periods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId, frameworkId },
+    where: { schoolId: user.schoolId!, frameworkId },
     orderBy: [{ term: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -106,14 +106,14 @@ export async function POST(request: Request) {
     where: { id: frameworkId },
     select: { id: true, schoolId: true },
   });
-  if (!framework || framework.schoolId !== user.schoolId) {
+  if (!framework || framework.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Framework not found" }, { status: 404 });
   }
 
   try {
     const period = await db.assessmentPeriod.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         frameworkId,
         name: name.trim(),
         academicYear: academicYear.trim(),

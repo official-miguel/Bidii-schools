@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   // Verify source exists and belongs to this school
   const sourceRows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
     SELECT id, "schoolId" FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}
   `;
   if (!sourceRows[0]) return NextResponse.json({ error: "Source version not found." }, { status: 404 });
 
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       (id, "schoolId", name, description, status, "academicYear", term,
        "clonedFromId", "createdById", "createdAt", "updatedAt")
     VALUES (
-      ${newId}, ${user.schoolId}, ${parsed.data.name},
+      ${newId}, ${user.schoolId!}, ${parsed.data.name},
       ${parsed.data.description ?? null},
       'DRAFT',
       ${parsed.data.academicYear ?? null},
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     INSERT INTO "TimetableChangeLog"
       (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${newId},
+      ${randomUUID()}, ${user.schoolId!}, ${newId},
       'CLONED'::"TimetableChangeAction",
       ${JSON.stringify({ sourceVersionId: params.id, name: parsed.data.name })}::jsonb,
       ${user.id}, ${now}

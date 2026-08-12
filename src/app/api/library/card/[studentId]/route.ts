@@ -31,7 +31,7 @@ export async function GET(
 
   // Verify student belongs to this school
   const student = await prisma.student.findFirst({
-    where: { id: params.studentId, schoolId: user.schoolId },
+    where: { id: params.studentId, schoolId: user.schoolId! },
     select: {
       id: true,
       fullName: true,
@@ -44,7 +44,7 @@ export async function GET(
   // Upsert card
   const card = await prisma.libraryCard.upsert({
     where: { studentId: params.studentId },
-    create: { schoolId: user.schoolId, studentId: params.studentId },
+    create: { schoolId: user.schoolId!, studentId: params.studentId },
     update: {},
     include: {
       borrows: {
@@ -77,7 +77,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
-    where: { id: params.studentId, schoolId: user.schoolId },
+    where: { id: params.studentId, schoolId: user.schoolId! },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
@@ -91,7 +91,7 @@ export async function POST(
 
   // Load settings
   const settings = await prisma.librarySettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
   const maxBooks = settings?.maxBooksPerStudent ?? 3;
   const maxDays = settings?.maxBorrowDays ?? 14;
@@ -99,7 +99,7 @@ export async function POST(
   // Upsert card
   const card = await prisma.libraryCard.upsert({
     where: { studentId: params.studentId },
-    create: { schoolId: user.schoolId, studentId: params.studentId },
+    create: { schoolId: user.schoolId!, studentId: params.studentId },
     update: {},
     include: {
       borrows: { where: { returnedAt: null } },
@@ -124,7 +124,7 @@ export async function POST(
 
   // Verify book exists and has copies available
   const book = await prisma.libraryBook.findFirst({
-    where: { id: parsed.data.bookId, schoolId: user.schoolId },
+    where: { id: parsed.data.bookId, schoolId: user.schoolId! },
     include: {
       _count: { select: { borrowRecords: { where: { returnedAt: null } } } },
     },
@@ -144,7 +144,7 @@ export async function POST(
 
   const borrow = await prisma.libraryBorrow.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       cardId: card.id,
       bookId: parsed.data.bookId,
       dueAt,
@@ -154,10 +154,10 @@ export async function POST(
     },
   });
 
-  emitSSE(user.schoolId, "libraryBorrow.issued", borrow);
+  emitSSE(user.schoolId!, "libraryBorrow.issued", borrow);
   // Also emit a card update so other tabs refresh the fine balance / borrow count.
   const updatedCard = await prisma.libraryCard.findUnique({ where: { id: card.id } });
-  if (updatedCard) emitSSE(user.schoolId, "libraryCard.updated", updatedCard);
+  if (updatedCard) emitSSE(user.schoolId!, "libraryCard.updated", updatedCard);
 
   return NextResponse.json(borrow, { status: 201 });
 }

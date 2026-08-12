@@ -20,11 +20,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { userId, assign } = parsed.data;
 
   const [role, targetUser] = await Promise.all([
-    prisma.staffRole.findFirst({ where: { id: params.id, schoolId: user.schoolId } }),
+    prisma.staffRole.findFirst({ where: { id: params.id, schoolId: user.schoolId! } }),
     // Accept both ADMIN_STAFF and TEACHER — teachers can be granted extra
     // module permissions on top of their built-in capabilities.
     prisma.user.findFirst({
-      where: { id: userId, schoolId: user.schoolId, role: { in: ["ADMIN_STAFF", "TEACHER"] } },
+      where: { id: userId, schoolId: user.schoolId!, role: { in: ["ADMIN_STAFF", "TEACHER"] } },
     }),
   ]);
 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       update: {},
     });
     await logPermissionAudit({
-      schoolId:      user.schoolId,
+      schoolId: user.schoolId!,
       performedById: user.id,
       targetUserId:  userId,
       staffRoleId:   params.id,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } else {
     await prisma.userStaffRole.deleteMany({ where: { userId, staffRoleId: params.id } });
     await logPermissionAudit({
-      schoolId:      user.schoolId,
+      schoolId: user.schoolId!,
       performedById: user.id,
       targetUserId:  userId,
       staffRoleId:   params.id,

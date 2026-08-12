@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canEnterMarks(actor, subjectId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -69,19 +69,19 @@ export async function POST(req: NextRequest) {
     db.assessmentPeriod.findMany({
       where: {
         id: { in: uniquePeriodIds },
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
       },
       select: { id: true, frameworkId: true },
     }) as Promise<PeriodRow[]>,
 
     prisma.student.findMany({
-      where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId },
+      where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId! },
       select: { id: true },
     }),
 
     db.paper.findMany({
-      where: { id: { in: uniquePaperIds }, subjectId, schoolId: user.schoolId },
+      where: { id: { in: uniquePaperIds }, subjectId, schoolId: user.schoolId! },
       select: { id: true, maxMarks: true, frameworkId: true },
     }) as Promise<PaperRow[]>,
   ]);
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   }
 
   const enteredById = actor.teacher?.id ?? null;
-  const schoolId    = user.schoolId;
+  const schoolId    = user.schoolId!;
 
   const toUpsert = items.filter((i) => i.score !== null);
   const toDelete = items.filter((i) => i.score === null);

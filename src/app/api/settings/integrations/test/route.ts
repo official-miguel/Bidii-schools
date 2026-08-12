@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unsupported provider for testing." }, { status: 400 });
   }
 
-  const key = await getSchoolIntegrationKey(user.schoolId, "GEMINI");
+  const key = await getSchoolIntegrationKey(user.schoolId!, "GEMINI");
   if (!key) {
     return NextResponse.json({ error: "No Gemini key saved yet." }, { status: 400 });
   }

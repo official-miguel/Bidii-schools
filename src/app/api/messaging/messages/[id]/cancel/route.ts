@@ -11,7 +11,7 @@ export async function POST(
 
   const message = await prisma.message.findUnique({ where: { id: params.id } });
 
-  if (!message || message.schoolId !== user.schoolId) {
+  if (!message || message.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (message.status !== "PENDING") {

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     );
   }
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!record) return NextResponse.json({ error: "Record not found." }, { status: 404 });

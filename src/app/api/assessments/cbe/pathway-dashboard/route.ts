@@ -31,14 +31,14 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Resolve Senior CBE framework.
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
   if (!framework) {
@@ -49,17 +49,17 @@ export async function GET(req: NextRequest) {
   // the framework id — fetch all three in parallel.
   const [period, schoolClass, students] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId, frameworkId: framework.id },
+      where: { id: periodId, schoolId: user.schoolId!, frameworkId: framework.id },
       select: { id: true, name: true, academicYear: true, term: true },
     }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
 
     prisma.schoolClass.findFirst({
-      where: { id: classId, schoolId: user.schoolId },
+      where: { id: classId, schoolId: user.schoolId! },
       select: { id: true, name: true, form: true },
     }),
 
     prisma.student.findMany({
-      where: { classId, schoolId: user.schoolId },
+      where: { classId, schoolId: user.schoolId! },
       orderBy: { admissionNumber: "asc" },
       select: { id: true, fullName: true, admissionNumber: true },
     }),
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch subjects applicable to this class's form.
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId, applicableForms: { has: schoolClass.form } },
+    where: { schoolId: user.schoolId!, applicableForms: { has: schoolClass.form } },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, type: true },
   });
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
     where: {
       periodId,
       studentId: { in: studentIds },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       resultKind: "NUMERIC",
       subjectId: { in: subjectIds },
     },

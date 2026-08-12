@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const requestedModel = parsed.success ? (parsed.data.model ?? null) : null;
 
   const row = await prisma.schoolIntegration.findUnique({
-    where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+    where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
   });
 
   if (!row || !row.isActive) {

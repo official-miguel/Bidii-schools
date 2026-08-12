@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
          AND    a.date >= $3 AND a.date <= $4
        GROUP BY a.date
        ORDER BY a.date ASC`,
-      user.schoolId,
+      user.schoolId!,
       classId,
       from,
       to,
@@ -144,14 +144,14 @@ export async function GET(req: NextRequest) {
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const schoolClass = await prisma.schoolClass.findFirst({
-      where: { id: classId, schoolId: user.schoolId },
+      where: { id: classId, schoolId: user.schoolId! },
       select: { name: true },
     });
     if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
     const [students, records] = await Promise.all([
       prisma.student.findMany({
-        where: { classId, schoolId: user.schoolId },
+        where: { classId, schoolId: user.schoolId! },
         orderBy: { fullName: "asc" },
         select: { id: true, fullName: true, admissionNumber: true },
       }),
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const student = await prisma.student.findFirst({
-      where: { id: studentId, schoolId: user.schoolId },
+      where: { id: studentId, schoolId: user.schoolId! },
       select: { id: true, fullName: true, admissionNumber: true, classId: true },
     });
     if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -215,7 +215,7 @@ export async function GET(req: NextRequest) {
 
     const [records, counts] = await Promise.all([
       prisma.attendance.findMany({
-        where: { studentId, schoolId: user.schoolId },
+        where: { studentId, schoolId: user.schoolId! },
         orderBy: { date: "desc" },
         take: HISTORY_LIMIT,
         select: { date: true, status: true, classId: true,
@@ -224,7 +224,7 @@ export async function GET(req: NextRequest) {
       // Fast aggregate for overall stats — does not load every row.
       prisma.attendance.groupBy({
         by: ["status"],
-        where: { studentId, schoolId: user.schoolId },
+        where: { studentId, schoolId: user.schoolId! },
         _count: { id: true },
       }),
     ]);
@@ -306,7 +306,7 @@ export async function GET(req: NextRequest) {
          AND a.date       = $2
          AND a.status     = 'ABSENT'
        ORDER BY sc."form" ASC, sc."name" ASC, s."fullName" ASC`,
-      user.schoolId,
+      user.schoolId!,
       date,
       trendFrom,
     );
@@ -374,7 +374,7 @@ export async function GET(req: NextRequest) {
            AND    a.date >= $2
            AND    a.date <= $3
          GROUP BY sc."form"`,
-        user.schoolId, from, to
+        user.schoolId!, from, to
       ),
 
       // GROUP BY class (stream)
@@ -390,7 +390,7 @@ export async function GET(req: NextRequest) {
            AND    a.date >= $2
            AND    a.date <= $3
          GROUP BY sc.id, sc."name", sc.stream`,
-        user.schoolId, from, to
+        user.schoolId!, from, to
       ),
 
       // GROUP BY student
@@ -406,7 +406,7 @@ export async function GET(req: NextRequest) {
            AND    a.date >= $2
            AND    a.date <= $3
          GROUP BY s.id, s."fullName", s."admissionNumber"`,
-        user.schoolId, from, to
+        user.schoolId!, from, to
       ),
 
       // Total recorded
@@ -414,7 +414,7 @@ export async function GET(req: NextRequest) {
         `SELECT COUNT(*)::bigint AS total
          FROM   "Attendance"
          WHERE  "schoolId" = $1 AND date >= $2 AND date <= $3`,
-        user.schoolId, from, to
+        user.schoolId!, from, to
       ),
     ]);
 
@@ -468,11 +468,11 @@ export async function GET(req: NextRequest) {
   const [statusGroups, classes] = await Promise.all([
     prisma.attendance.groupBy({
       by: ["classId", "status"],
-      where: { schoolId: user.schoolId, date },
+      where: { schoolId: user.schoolId!, date },
       _count: { id: true },
     }),
     prisma.schoolClass.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: [{ form: "asc" }, { name: "asc" }],
       select: { id: true, name: true, _count: { select: { students: true } } },
     }),
@@ -583,11 +583,11 @@ export async function POST(req: NextRequest) {
   // Validate class and students in parallel.
   const [schoolClass, validStudents] = await Promise.all([
     prisma.schoolClass.findFirst({
-      where: { id: classId, schoolId: user.schoolId },
+      where: { id: classId, schoolId: user.schoolId! },
       select: { id: true },
     }),
     prisma.student.findMany({
-      where: { classId, schoolId: user.schoolId },
+      where: { classId, schoolId: user.schoolId! },
       select: { id: true },
     }),
   ]);
@@ -614,7 +614,7 @@ export async function POST(req: NextRequest) {
     // This creates new rows for any student without a record for this date.
     await tx.attendance.createMany({
       data: records.map((r) => ({
-        schoolId:    user.schoolId,
+        schoolId: user.schoolId!,
         studentId:   r.studentId,
         classId,
         date,
@@ -653,8 +653,8 @@ export async function POST(req: NextRequest) {
 
   // Emit SSE events.
   for (const r of records) {
-    emitSSE(user.schoolId, "attendance.upserted", {
-      schoolId:    user.schoolId,
+    emitSSE(user.schoolId!, "attendance.upserted", {
+      schoolId: user.schoolId!,
       studentId:   r.studentId,
       classId,
       date:        date.toISOString(),

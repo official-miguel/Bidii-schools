@@ -22,13 +22,13 @@ export async function GET(req: NextRequest) {
     where: { id: periodId },
     select: { id: true, name: true, academicYear: true, schoolId: true },
   });
-  if (!period || period.schoolId !== user.schoolId) {
+  if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
 
   // Count distinct students with at least one result in this period
   const studentIds = await prisma.assessmentItem.findMany({
-    where:  { periodId, schoolId: user.schoolId },
+    where:  { periodId, schoolId: user.schoolId! },
     select: { studentId: true },
     distinct: ["studentId"],
   });
@@ -67,16 +67,16 @@ export async function POST(req: NextRequest) {
   const { periodId, channel, closingLine } = parsed.data;
 
   const period = await prisma.assessmentPeriod.findUnique({ where: { id: periodId } });
-  if (!period || period.schoolId !== user.schoolId) {
+  if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
 
-  const settings = await prisma.messagingSettings.findUnique({ where: { schoolId: user.schoolId } });
+  const settings = await prisma.messagingSettings.findUnique({ where: { schoolId: user.schoolId! } });
   const closing  = closingLine ?? settings?.resultsClosing ?? "Thank you for your continued support.";
   const batchSize = settings?.batchSize ?? 50;
 
   const studentRows = await prisma.assessmentItem.findMany({
-    where:    { periodId, schoolId: user.schoolId },
+    where:    { periodId, schoolId: user.schoolId! },
     select:   { studentId: true },
     distinct: ["studentId"],
   });
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < studentIds.length; i += batchSize) {
       const slice = studentIds.slice(i, i + batchSize);
       await Promise.all(slice.map(async (studentId) => {
-        const payload = await buildResultsMessage(studentId, periodId, user.schoolId, closing);
+        const payload = await buildResultsMessage(studentId, periodId, user.schoolId!, closing);
 
         if (!payload.phone) {
           addSkipped(batchId, payload.recipientLabel, "no contact number on file");
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         // Create a per-student message row for history
         const message = await prisma.message.create({
           data: {
-            schoolId:            user.schoolId,
+            schoolId: user.schoolId!,
             senderUserId:        user.id,
             channel:             channel as MessageChannel,
             body:                payload.body,
@@ -110,12 +110,12 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        const result = await dispatchMessage(user.schoolId, channel as MessageChannel, payload.phone, payload.body);
+        const result = await dispatchMessage(user.schoolId!, channel as MessageChannel, payload.phone, payload.body);
 
         await prisma.messageLog.create({
           data: {
             messageId:      message.id,
-            schoolId:       user.schoolId,
+            schoolId: user.schoolId!,
             channel:        channel as MessageChannel,
             phone:          payload.phone,
             recipientLabel: payload.recipientLabel,

@@ -18,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
 
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
     SELECT * FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}
   `;
   const version = rows[0];
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
@@ -41,7 +41,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
   await prisma.$executeRaw`
     UPDATE "TimetableVersion"
     SET status = 'ARCHIVED', "updatedAt" = ${now}
-    WHERE "schoolId" = ${user.schoolId} AND status = 'PUBLISHED'
+    WHERE "schoolId" = ${user.schoolId!} AND status = 'PUBLISHED'
   `;
 
   // Publish the target version
@@ -59,7 +59,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
   // The constraint is now (classId, teacherId, dayOfWeek, period) so a teacher
   // running a pooled session for two different classes at the same period
   // produces two distinct rows — one per class — without violating uniqueness.
-  await prisma.$executeRaw`DELETE FROM "TimetableSlot" WHERE "schoolId" = ${user.schoolId}`;
+  await prisma.$executeRaw`DELETE FROM "TimetableSlot" WHERE "schoolId" = ${user.schoolId!}`;
 
   await prisma.$executeRaw`
     INSERT INTO "TimetableSlot"
@@ -67,7 +67,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
        "schoolId", "createdAt", "updatedAt")
     SELECT
       gen_random_uuid()::text, "classId", "dayOfWeek", period, "subjectId",
-      "teacherId", room, ${user.schoolId}, ${now}, ${now}
+      "teacherId", room, ${user.schoolId!}, ${now}, ${now}
     FROM "TimetableVersionSlot"
     WHERE "versionId" = ${params.id}
     ON CONFLICT ("classId", "teacherId", "dayOfWeek", period) DO NOTHING
@@ -78,7 +78,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
     INSERT INTO "TimetableChangeLog"
       (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id},
+      ${randomUUID()}, ${user.schoolId!}, ${params.id},
       'PUBLISHED'::"TimetableChangeAction",
       ${JSON.stringify({ slotCount })}::jsonb,
       ${user.id}, ${now}
@@ -95,7 +95,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
 
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
     SELECT * FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}
   `;
   const version = rows[0];
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });

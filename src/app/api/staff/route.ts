@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     (await requireSchoolRole("PRINCIPAL")) ??
     (await requireSchoolPermission("STAFF", "create"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.schoolId!) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const schoolId = user.schoolId!;
 

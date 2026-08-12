@@ -35,7 +35,7 @@ const bodySchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.schoolId!) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const schoolId = user.schoolId!;
 

@@ -13,7 +13,7 @@ export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const current = await maxAdmissionNumber(user.schoolId);
+  const current = await maxAdmissionNumber(user.schoolId!);
   let next: number | null = null;
   if (current !== null) {
     next = current + 1;

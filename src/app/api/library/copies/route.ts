@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
   const copies = await prisma.libraryCopy.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(catalogueId ? { catalogueId } : {}),
       ...(status      ? { status: status as never } : {}),
       archivedAt: archived ? { not: null } : null,
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
 
   // Verify catalogue belongs to this school
   const catalogue = await prisma.libraryCatalogue.findFirst({
-    where: { id: d.catalogueId, schoolId: user.schoolId },
+    where: { id: d.catalogueId, schoolId: user.schoolId! },
     select: { id: true, costPerCopy: true },
   });
   if (!catalogue)
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
   // Check uniqueness if accession provided
   if (d.accessionNumber) {
     const existing = await prisma.libraryCopy.findFirst({
-      where: { schoolId: user.schoolId, accessionNumber: d.accessionNumber },
+      where: { schoolId: user.schoolId!, accessionNumber: d.accessionNumber },
       select: { id: true },
     });
     if (existing)
@@ -156,13 +156,13 @@ export async function POST(req: NextRequest) {
     const accessionNumber =
       count === 1 && d.accessionNumber
         ? d.accessionNumber
-        : await generateAccessionNumber(user.schoolId);
+        : await generateAccessionNumber(user.schoolId!);
 
     const qrCode = buildQrPayload(accessionNumber);
 
     const copy = await prisma.libraryCopy.create({
       data: {
-        schoolId:        user.schoolId,
+        schoolId: user.schoolId!,
         catalogueId:     d.catalogueId,
         accessionNumber,
         qrCode,
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
     data: { totalCopies: { increment: count } },
   });
 
-  emitSSE(user.schoolId, "libraryCopy.created", { catalogueId: d.catalogueId, count });
+  emitSSE(user.schoolId!, "libraryCopy.created", { catalogueId: d.catalogueId, count });
 
   return NextResponse.json(
     count === 1 ? created[0] : { created: created.length, copies: created },

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canViewMarksheet(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const period = await db.assessmentPeriod.findFirst({
     where: {
       id: periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "CBE", isActive: true },
     },
     select: { id: true, name: true, academicYear: true, term: true },
@@ -40,14 +40,14 @@ export async function GET(req: NextRequest) {
 
   // Verify class belongs to school.
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId: user.schoolId! },
     select: { id: true, name: true },
   });
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   // Resolve sub-strand with its full parent chain for display labels.
   const subStrand = await db.subStrand.findFirst({
-    where: { id: subStrandId, schoolId: user.schoolId },
+    where: { id: subStrandId, schoolId: user.schoolId! },
     select: {
       id: true,
       name: true,
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch all students in the class ordered by admissionNumber.
   const students = await prisma.student.findMany({
-    where: { classId, schoolId: user.schoolId },
+    where: { classId, schoolId: user.schoolId! },
     orderBy: { admissionNumber: "asc" },
     select: { id: true, fullName: true, admissionNumber: true },
   });
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       studentId:   { in: studentIds },
       periodId,
       subStrandId,
-      schoolId:    user.schoolId,
+      schoolId: user.schoolId!,
       resultKind:  "PERFORMANCE_LEVEL",
     },
     select: { studentId: true, performanceLevel: true, comment: true },

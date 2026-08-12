@@ -57,16 +57,16 @@ async function dashboardHandler(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // ── Batch 2: auth actor + period + classes — all independent of each other ──
-  const classWhere: Record<string, unknown> = { schoolId: user.schoolId };
+  const classWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (classId)            classWhere.id   = classId;
   if (form !== undefined) classWhere.form = form;
 
   const [actor, period, classes] = await Promise.all([
-    resolveAssessmentActor(user, user.schoolId),
+    resolveAssessmentActor(user, user.schoolId!),
     db.assessmentPeriod.findFirst({
       where: {
         id: periodId,
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
       },
       select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
@@ -96,13 +96,13 @@ async function dashboardHandler(req: NextRequest) {
   const [siblingsResult, studentsResult] = await Promise.all([
     needsSiblings
       ? prisma.schoolClass.findMany({
-          where: { schoolId: user.schoolId, form: classes[0].form },
+          where: { schoolId: user.schoolId!, form: classes[0].form },
           orderBy: [{ name: "asc" }],
           select: { id: true, name: true, form: true },
         })
       : Promise.resolve(null),
     prisma.student.findMany({
-      where: { classId: { in: classIds }, schoolId: user.schoolId },
+      where: { classId: { in: classIds }, schoolId: user.schoolId! },
       select: { id: true, classId: true },
       take: DASHBOARD_STUDENT_LIMIT,
     }),
@@ -119,8 +119,8 @@ async function dashboardHandler(req: NextRequest) {
   if (studentIds.length === 0) return emptyDashboard(period, { periodId, classId, subjectId, form });
 
   // ── Batch 3: papers + subjects + allPeriods — independent of each other ────
-  const papersWhere: Record<string, unknown>   = { schoolId: user.schoolId, frameworkId: period.frameworkId };
-  const subjectsWhere: Record<string, unknown> = { schoolId: user.schoolId };
+  const papersWhere: Record<string, unknown>   = { schoolId: user.schoolId!, frameworkId: period.frameworkId };
+  const subjectsWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (subjectId) { papersWhere.subjectId = subjectId; subjectsWhere.id = subjectId; }
 
   const [papers, subjects, allPeriods] = await Promise.all([
@@ -133,7 +133,7 @@ async function dashboardHandler(req: NextRequest) {
       select: { id: true, name: true, code: true },
     }),
     db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
       orderBy: [{ term: "asc" }, { name: "asc" }],
       select: { id: true, name: true, academicYear: true, term: true },
     }) as Promise<PeriodRow[]>,
@@ -143,7 +143,7 @@ async function dashboardHandler(req: NextRequest) {
   const itemsWhere: Record<string, unknown> = {
     studentId:  { in: studentIds },
     periodId,
-    schoolId:   user.schoolId,
+    schoolId: user.schoolId!,
     resultKind: "NUMERIC",
   };
   if (subjectId) itemsWhere.subjectId = subjectId;
@@ -160,7 +160,7 @@ async function dashboardHandler(req: NextRequest) {
           where: {
             periodId:   { in: allPeriodIds },
             studentId:  { in: studentIds },
-            schoolId:   user.schoolId,
+            schoolId: user.schoolId!,
             resultKind: "NUMERIC",
           },
           select: { periodId: true, studentId: true, subjectId: true, paperId: true, numericScore: true },
@@ -364,7 +364,7 @@ async function dashboardHandler(req: NextRequest) {
   const extraClassIds = heatmapClassIds.filter((id) => !classIds.includes(id));
   if (extraClassIds.length > 0) {
     const extraStudents = await prisma.student.findMany({
-      where: { classId: { in: extraClassIds }, schoolId: user.schoolId },
+      where: { classId: { in: extraClassIds }, schoolId: user.schoolId! },
       select: { id: true, classId: true },
       take: DASHBOARD_STUDENT_LIMIT,
     });
@@ -373,7 +373,7 @@ async function dashboardHandler(req: NextRequest) {
       const extraItemsWhere: Record<string, unknown> = {
         studentId: { in: extraStudentIds },
         periodId,
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         resultKind: "NUMERIC",
       };
       if (subjectId) extraItemsWhere.subjectId = subjectId;

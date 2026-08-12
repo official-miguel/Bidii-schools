@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { student: { select: { fullName: true } } },
   });
   if (!record) return NextResponse.json({ error: "Record not found." }, { status: 404 });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } else {
     try {
       const text = await callGemini(
-        user.schoolId,
+        user.schoolId!,
         `School discipline case for student ${record.student.fullName}.\nOffence: ${record.offence}\nDescription: ${record.description || "—"}\nAction taken: ${record.actionTaken || "—"}\n\nWrite ONE very short plain-text summary sentence, e.g. "Found vaping." No markdown, no preamble.`,
         { temperature: 0.2, timeoutMs: 20000, cacheTtlMs: 0 }
       );

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const params     = req.nextUrl.searchParams;
   const periodId   = params.get("periodId");
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
   // so top3 is meaningful, but we'll suppress fullList below.
 
   const allResults = await computeTeacherRanking(
-    user.schoolId,
+    user.schoolId!,
     periodId,
     rankingDeptId
   );
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
   // (so they can see the dept list AND the school top3 separately).
   let schoolResults = allResults;
   if (canSeeAll && scope === "department") {
-    schoolResults = await computeTeacherRanking(user.schoolId, periodId, undefined);
+    schoolResults = await computeTeacherRanking(user.schoolId!, periodId, undefined);
   }
 
   const top3 = allResults.slice(0, 3);
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
   let departments: DeptStub[] = [];
   if (canSeeAll) {
     departments = await prisma.department.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });

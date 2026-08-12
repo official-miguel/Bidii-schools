@@ -58,7 +58,7 @@ export async function POST(
   }
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { schoolClass: { select: { id: true, name: true } } },
   });
   if (!student) {
@@ -78,7 +78,7 @@ export async function POST(
     if (type === "EXPULSION" && reason) {
       await tx.disciplineRecord.create({
         data: {
-          schoolId:     user.schoolId,
+          schoolId: user.schoolId!,
           studentId:    student.id,
           classId:      student.classId,
           offence:      "Expulsion",
@@ -112,7 +112,7 @@ export async function POST(
     // 3. Write audit log
     await tx.auditLog.create({
       data: {
-        schoolId:      user.schoolId,
+        schoolId: user.schoolId!,
         action:        "STUDENT_ARCHIVED",
         performedById: user.id,
         performedAt:   now,
@@ -129,7 +129,7 @@ export async function POST(
   });
 
   // Notify live listeners
-  emitSSE(user.schoolId, "student.archived", {
+  emitSSE(user.schoolId!, "student.archived", {
     id:          student.id,
     archiveType: type,
   });

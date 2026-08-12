@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { permissions, ...rest } = parsed.data;
 
   const existing = await prisma.staffRole.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { permissions: true },
   });
   if (!existing) return NextResponse.json({ error: "Role not found." }, { status: 404 });
@@ -77,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const after  = permissions ? Object.fromEntries(permissions.map((p) => [p.module, p])) : undefined;
 
     await logPermissionAudit({
-      schoolId:      user.schoolId,
+      schoolId: user.schoolId!,
       performedById: user.id,
       staffRoleId:   params.id,
       action:        "ROLE_UPDATED",
@@ -97,7 +97,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.staffRole.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { _count: { select: { users: true } }, userRoles: { select: { userId: true } } },
   });
   if (!existing) return NextResponse.json({ error: "Role not found." }, { status: 404 });
@@ -109,7 +109,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   await prisma.staffRole.delete({ where: { id: params.id } });
 
   await logPermissionAudit({
-    schoolId:      user.schoolId,
+    schoolId: user.schoolId!,
     performedById: user.id,
     staffRoleId:   params.id,
     action:        "ROLE_DELETED",

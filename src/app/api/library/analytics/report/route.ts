@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const subject  = sp.get("subject")  ?? undefined;
   const category = sp.get("category") ?? undefined;
   const groupBy  = (sp.get("groupBy") ?? "month") as "month" | "week" | "day";
-  const sid      = user.schoolId;
+  const sid      = user.schoolId!;
 
   if (!fromStr || !toStr)
     return NextResponse.json({ error: "from and to dates are required." }, { status: 400 });

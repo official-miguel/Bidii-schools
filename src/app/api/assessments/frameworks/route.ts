@@ -22,13 +22,13 @@ export async function GET() {
   if (!isPrincipal) {
     // Non-principals get a minimal read: enough to resolve which framework
     // to use when populating the dashboard exam-period filter.
-    const actor = await resolveAssessmentActor(user, user.schoolId);
+    const actor = await resolveAssessmentActor(user, user.schoolId!);
     if (!canReadPeriods(actor)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const frameworks = await db.assessmentFramework.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: [{ type: "asc" }, { academicYear: "desc" }],
       select: {
         id: true,
@@ -44,7 +44,7 @@ export async function GET() {
 
   // Principal — full details including counts.
   const frameworks = await db.assessmentFramework.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ type: "asc" }, { academicYear: "desc" }],
     select: {
       id: true,
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
   const existing = await db.assessmentFramework.findUnique({
     where: {
       schoolId_type_academicYear: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         type,
         academicYear,
       },
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
 
   const framework = await db.assessmentFramework.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       type,
       label: label.trim(),
       academicYear: academicYear.trim(),

@@ -40,7 +40,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Validate schoolId param matches session — prevent cross-school access
-  if (params.schoolId !== user.schoolId) {
+  if (params.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

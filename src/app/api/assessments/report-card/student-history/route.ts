@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch the student (verify ownership + get form).
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: {
       id: true,
       schoolClass: { select: { form: true } },
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
   // Resolve the active 8-4-4 framework.
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
   // All periods for this framework, sorted oldest-first.
   const periods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId, frameworkId: framework.id },
+    where: { schoolId: user.schoolId!, frameworkId: framework.id },
     orderBy: [{ academicYear: "asc" }, { term: "asc" }, { name: "asc" }],
     select: { id: true, name: true, academicYear: true, term: true },
   }) as Array<{ id: string; name: string; academicYear: string; term: number | null }>;
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   // All papers for this student's form (so we can compute subject %).
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: student.schoolClass.form },
     },
     select: { id: true },
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
   const papers = await db.paper.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       frameworkId: framework.id,
       subjectId: { in: subjectIds },
     },
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
   // All assessment items for this student across all periods in one query.
   const allItems = await db.assessmentItem.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       studentId,
       periodId: { in: periodIds },
       resultKind: "NUMERIC",

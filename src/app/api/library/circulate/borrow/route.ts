@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load student + card ──────────────────────────────────────────────────
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: {
       id: true, fullName: true, admissionNumber: true,
       schoolClass: { select: { name: true, form: true } },
@@ -73,21 +73,21 @@ export async function POST(req: NextRequest) {
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
   // Auto-provision card
-  const settings = await prisma.librarySettings.findUnique({ where: { schoolId: user.schoolId } });
+  const settings = await prisma.librarySettings.findUnique({ where: { schoolId: user.schoolId! } });
   const cardValidityDays = settings?.cardValidityDays ?? null;
 
   let card = await prisma.libraryCard.findUnique({ where: { studentId } }) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!card) {
     const year = new Date().getFullYear();
     const last = await prisma.libraryCard.findFirst({
-      where: { schoolId: user.schoolId, cardNumber: { startsWith: `LIB-${year}-` } },
+      where: { schoolId: user.schoolId!, cardNumber: { startsWith: `LIB-${year}-` } },
       orderBy: { createdAt: "desc" }, select: { cardNumber: true },
     });
     let seq = 1;
     if (last?.cardNumber) { const m = last.cardNumber.match(/(\d+)$/); if (m) seq = parseInt(m[1]) + 1; }
     card = await prisma.libraryCard.create({
       data: {
-        schoolId: user.schoolId, studentId,
+        schoolId: user.schoolId!, studentId,
         cardNumber: `LIB-${year}-${String(seq).padStart(5, "0")}`,
         status: "ACTIVE" as never,
         expiresAt: cardValidityDays ? new Date(Date.now() + cardValidityDays * 86_400_000) : null,
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
   // ── Load copy ────────────────────────────────────────────────────────────
   const copy = await prisma.libraryCopy.findFirst({
-    where: { id: copyId, schoolId: user.schoolId },
+    where: { id: copyId, schoolId: user.schoolId! },
     include: { catalogue: { select: { id: true, title: true, author: true, bookNumber: true, subject: true, form: true } } },
   });
   if (!copy) return NextResponse.json({ error: "Copy not found." }, { status: 404 });
@@ -112,12 +112,12 @@ export async function POST(req: NextRequest) {
     where: {
       catalogueId: copy.catalogueId, studentId,
       status: { in: ["PENDING", "ACTIVE"] },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
     },
   });
 
   // ── Policy evaluation ────────────────────────────────────────────────────
-  const engine = await PolicyEngine.load(user.schoolId);
+  const engine = await PolicyEngine.load(user.schoolId!);
   const eval_ = engine.evaluateBorrow({
     card: {
       id: card.id, studentId: card.studentId,
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
   const [borrow] = await prisma.$transaction([
     prisma.libraryBorrow.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         cardId:   card.id,
         copyId,
         dueAt,
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
 
   // ── Circulation event ────────────────────────────────────────────────────
   await recordCirculationEvent({
-    schoolId: user.schoolId, eventType: "BORROWED",
+    schoolId: user.schoolId!, eventType: "BORROWED",
     copyId, catalogueId: copy.catalogueId,
     borrowId: borrow.id, studentId,
     performedById: user.id,
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  emitSSE(user.schoolId, "libraryBorrow.issued", { ...borrow, catalogue: copy.catalogue });
+  emitSSE(user.schoolId!, "libraryBorrow.issued", { ...borrow, catalogue: copy.catalogue });
 
   return NextResponse.json({
     borrow: { ...borrow, copy, catalogue: copy.catalogue },

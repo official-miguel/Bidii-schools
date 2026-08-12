@@ -17,7 +17,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -34,7 +34,7 @@ export async function GET() {
   // it based on applicableForms and their type.
   // We do one bulk query and group in JS to avoid N+1.
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     select: { id: true, type: true, applicableForms: true },
   });
 

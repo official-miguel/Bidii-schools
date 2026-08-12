@@ -8,11 +8,11 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const settings = await prisma.messagingSettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
 
   return NextResponse.json(settings ?? {
-    schoolId:       user.schoolId,
+    schoolId: user.schoolId!,
     resultsClosing: "Thank you for your continued support.",
     batchSize:      50,
   });
@@ -33,10 +33,10 @@ export async function PUT(req: NextRequest) {
   }
 
   const settings = await prisma.messagingSettings.upsert({
-    where:  { schoolId: user.schoolId },
+    where:  { schoolId: user.schoolId! },
     update: parsed.data,
     create: {
-      schoolId:       user.schoolId,
+      schoolId: user.schoolId!,
       resultsClosing: parsed.data.resultsClosing ?? "Thank you for your continued support.",
       batchSize:      parsed.data.batchSize      ?? 50,
     },

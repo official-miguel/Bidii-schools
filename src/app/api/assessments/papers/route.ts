@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   // Verify the framework belongs to this school.
   const framework = await db.assessmentFramework.findFirst({
-    where: { id: frameworkId, schoolId: user.schoolId },
+    where: { id: frameworkId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!framework) {
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   }
 
   const papers = await db.paper.findMany({
-    where: { subjectId, frameworkId, schoolId: user.schoolId },
+    where: { subjectId, frameworkId, schoolId: user.schoolId! },
     orderBy: { sortOrder: "asc" },
     select: { id: true, name: true, maxMarks: true, sortOrder: true },
   });
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // Only principal or HOD / Exam Officer may add papers.
   const canManage =
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
   // Verify framework belongs to this school.
   const framework = await db.assessmentFramework.findFirst({
-    where: { id: frameworkId, schoolId: user.schoolId },
+    where: { id: frameworkId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!framework) {
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
   // Verify subject belongs to this school.
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId },
+    where: { id: subjectId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!subject) {
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
   // Determine next sortOrder.
   const lastPaper = await db.paper.findFirst({
-    where: { subjectId, frameworkId, schoolId: user.schoolId },
+    where: { subjectId, frameworkId, schoolId: user.schoolId! },
     orderBy: { sortOrder: "desc" },
     select: { sortOrder: true },
   });
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
 
   const paper = await db.paper.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       frameworkId,
       subjectId,
       name: name.trim(),
@@ -143,7 +143,7 @@ export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   const canManage =
     actor.isPrincipal ||
     actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role));
@@ -158,7 +158,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const paper = await db.paper.findFirst({
-    where: { id: paperId, schoolId: user.schoolId },
+    where: { id: paperId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!paper) {
@@ -198,7 +198,7 @@ export async function DELETE(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   const canManage =
     actor.isPrincipal ||
     actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role));
@@ -213,7 +213,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   const paper = await db.paper.findFirst({
-    where: { id: paperId, schoolId: user.schoolId },
+    where: { id: paperId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!paper) {

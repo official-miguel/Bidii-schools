@@ -21,13 +21,13 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const row = await db.rankingConfig.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     select: {
       improvementWeight: true,
       completionWeight:  true,
@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // Only HOD, Exam Officer, Director, or Principal may edit weights.
   const canEdit =
@@ -115,9 +115,9 @@ export async function PUT(req: NextRequest) {
   }
 
   const row = await db.rankingConfig.upsert({
-    where:  { schoolId: user.schoolId },
+    where:  { schoolId: user.schoolId! },
     create: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       improvementWeight,
       completionWeight,
       absoluteWeight,

@@ -11,7 +11,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { provider
     return NextResponse.json({ error: "Unknown provider." }, { status: 400 });
   }
 
-  await removeSchoolIntegrationKey(user.schoolId, params.provider as IntegrationProvider);
-  const statuses = await listIntegrationStatuses(user.schoolId);
+  await removeSchoolIntegrationKey(user.schoolId!, params.provider as IntegrationProvider);
+  const statuses = await listIntegrationStatuses(user.schoolId!);
   return NextResponse.json(statuses);
 }

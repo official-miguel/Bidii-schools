@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { value, usedFallback } = await generateJson<AchievementSuggestion>(
-    user.schoolId,
+    user.schoolId!,
     `A teacher described a student achievement:\n"${parsed.data.text}"\n\nReturn JSON:\n- title: short achievement title (3-6 words, e.g. "County Football Champions")\n- category: one of "SPORTS", "LEADERSHIP", "MUSIC_FESTIVAL", "ACADEMICS", "INNOVATION", "OTHER"\n- summary: ONE very short simplified phrase (max ~8 words, e.g. "Won County Football Championship.")\n- keywords: 2-5 short lowercase keywords\n- awardLevel: "School", "Sub-County", "County", "Regional", "National" or "" if unclear`,
     {
       temperature: 0.2,

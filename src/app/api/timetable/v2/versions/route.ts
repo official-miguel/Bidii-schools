@@ -34,7 +34,7 @@ export async function GET() {
            v."clonedFromId", v."vulnerabilities"
     FROM "TimetableVersion" v
     LEFT JOIN "TimetableVersionSlot" s ON s."versionId" = v.id
-    WHERE v."schoolId" = ${user.schoolId}
+    WHERE v."schoolId" = ${user.schoolId!}
     GROUP BY v.id
     ORDER BY v."createdAt" DESC
   `;
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       (id, "schoolId", name, description, status, "academicYear", term,
        "createdById", "createdAt", "updatedAt")
     VALUES (
-      ${id}, ${user.schoolId}, ${parsed.data.name},
+      ${id}, ${user.schoolId!}, ${parsed.data.name},
       ${parsed.data.description ?? null},
       'DRAFT',
       ${parsed.data.academicYear ?? null},
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     INSERT INTO "TimetableChangeLog"
       (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${id},
+      ${randomUUID()}, ${user.schoolId!}, ${id},
       'CREATED'::"TimetableChangeAction",
       ${JSON.stringify({ name: parsed.data.name })}::jsonb,
       ${user.id}, ${now}

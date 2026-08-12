@@ -52,7 +52,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
-    where: { id: params.studentId, schoolId: user.schoolId },
+    where: { id: params.studentId, schoolId: user.schoolId! },
     select: {
       id: true, fullName: true, admissionNumber: true,
       dateOfBirth: true, archivedAt: true, archiveType: true,
@@ -68,7 +68,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
   const settings = await prisma.librarySettings.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
   });
 
   // Auto-provision card if missing
@@ -77,7 +77,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 
   if (!card) {
-    const cardNumber   = await generateCardNumber(user.schoolId);
+    const cardNumber   = await generateCardNumber(user.schoolId!);
     const cardValidity = settings?.cardValidityDays ?? null;
     const expiresAt    = cardValidity
       ? new Date(Date.now() + cardValidity * 86_400_000)
@@ -90,7 +90,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     card = await prisma.libraryCard.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId: params.studentId,
         cardNumber,
         status,
@@ -146,7 +146,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const card = await prisma.libraryCard.findFirst({
-    where: { studentId: params.studentId, schoolId: user.schoolId },
+    where: { studentId: params.studentId, schoolId: user.schoolId! },
   });
   if (!card) return NextResponse.json({ error: "Library card not found." }, { status: 404 });
 
@@ -163,7 +163,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   let expiresAt = card.expiresAt;
   if (d.renew) {
     const settings = await prisma.librarySettings.findUnique({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
     });
     const days = settings?.cardValidityDays ?? null;
     expiresAt = days ? new Date(Date.now() + days * 86_400_000) : null;
@@ -179,6 +179,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
   });
 
-  emitSSE(user.schoolId, "libraryCard.updated", updated);
+  emitSSE(user.schoolId!, "libraryCard.updated", updated);
   return NextResponse.json(updated);
 }

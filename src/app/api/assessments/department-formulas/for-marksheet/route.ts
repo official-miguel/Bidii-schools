@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   // Find the subject's department first
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId },
+    where: { id: subjectId, schoolId: user.schoolId! },
     select: { departmentId: true },
   });
 
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   try {
     const config = await db.departmentFormulaConfig.findFirst({
       where: {
-        schoolId:     user.schoolId,
+        schoolId: user.schoolId!,
         departmentId: subject.departmentId,
         subjectId,
         form,

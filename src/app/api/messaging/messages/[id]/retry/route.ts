@@ -15,7 +15,7 @@ export async function POST(
     include: { logs: { where: { status: "FAILED" } } },
   });
 
-  if (!message || message.schoolId !== user.schoolId) {
+  if (!message || message.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (message.logs.length === 0) {
@@ -25,7 +25,7 @@ export async function POST(
   // Fire-and-forget retry
   (async () => {
     for (const log of message.logs) {
-      const result = await dispatchMessage(user.schoolId, log.channel, log.phone, message.body);
+      const result = await dispatchMessage(user.schoolId!, log.channel, log.phone, message.body);
       await prisma.messageLog.update({
         where: { id: log.id },
         data: {

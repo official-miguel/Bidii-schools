@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const isHod = actor.roles.some((r) => r.role === "HOD");
   const isWide = actor.isPrincipal || actor.roles.some((r) =>
@@ -65,7 +65,7 @@ export async function GET(req: Request) {
 
   if (actor.teacher?.id) {
     const dept = await prisma.department.findFirst({
-      where: { schoolId: user.schoolId, headTeacherId: actor.teacher.id },
+      where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true, name: true },
     });
     if (dept) {
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
 
   // ── Resolve subjects in this department ──────────────────────────────────
   const subjectWhere: Record<string, unknown> = {
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     ...(departmentId ? { departmentId } : {}),
   };
   if (subjectIdFilter) subjectWhere.id = subjectIdFilter;
@@ -107,7 +107,7 @@ export async function GET(req: Request) {
   const deptSubjectIds = deptSubjects.map((s) => s.id);
 
   // ── Resolve all classes in the school (HOD can view any class) ────────────
-  const classWhere: Record<string, unknown> = { schoolId: user.schoolId };
+  const classWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (classIdFilter) classWhere.id = classIdFilter;
   if (formFilter !== null && !isNaN(formFilter)) classWhere.form = formFilter;
 
@@ -126,11 +126,11 @@ export async function GET(req: Request) {
   // ── Resolve the period ────────────────────────────────────────────────────
   const resolvedPeriod = periodIdParam
     ? await db.assessmentPeriod.findFirst({
-        where: { id: periodIdParam, schoolId: user.schoolId },
+        where: { id: periodIdParam, schoolId: user.schoolId! },
         select: { id: true, name: true, frameworkId: true },
       }) as { id: string; name: string; frameworkId: string } | null
     : await db.assessmentPeriod.findFirst({
-        where: { schoolId: user.schoolId, isCurrent: true },
+        where: { schoolId: user.schoolId!, isCurrent: true },
         select: { id: true, name: true, frameworkId: true },
       }) as { id: string; name: string; frameworkId: true } | null;
 
@@ -186,7 +186,7 @@ export async function GET(req: Request) {
   // ── Batch: student counts per class ──────────────────────────────────────
   const studentCountRows = await prisma.student.groupBy({
     by: ["classId"],
-    where: { classId: { in: pairClassIds }, schoolId: user.schoolId, archivedAt: null },
+    where: { classId: { in: pairClassIds }, schoolId: user.schoolId!, archivedAt: null },
     _count: { id: true },
   });
   const studentCountByClass = new Map(
@@ -198,7 +198,7 @@ export async function GET(req: Request) {
   if (resolvedPeriod) {
     const enteredItems = await db.assessmentItem.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         periodId: resolvedPeriod.id,
         subjectId: { in: pairSubjectIds },
         student: { classId: { in: pairClassIds } },

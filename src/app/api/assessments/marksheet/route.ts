@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canViewMarksheet(actor, subjectId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const period = await db.assessmentPeriod.findFirst({
     where: {
       id: periodId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
     },
     select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
@@ -38,13 +38,13 @@ export async function GET(req: NextRequest) {
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
 
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId: user.schoolId! },
     select: { id: true, name: true, form: true },
   });
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId },
+    where: { id: subjectId, schoolId: user.schoolId! },
     select: { id: true, name: true, code: true },
   });
   if (!subject) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     await db.paper.findMany({
       where: {
         subjectId,
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
       },
       orderBy: { sortOrder: "asc" },
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
     });
 
   const students = await prisma.student.findMany({
-    where: { classId, schoolId: user.schoolId },
+    where: { classId, schoolId: user.schoolId! },
     orderBy: { admissionNumber: "asc" },
     select: { id: true, fullName: true, admissionNumber: true },
   });
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         studentId: { in: studentIds },
         periodId,
         paperId: { in: paperIds },
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
       },
       select: { studentId: true, paperId: true, numericScore: true },
     });

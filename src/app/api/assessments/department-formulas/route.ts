@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canManageFormulas(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   // Determine which department to scope to
   let departmentId = req.nextUrl.searchParams.get("departmentId");
   if (!departmentId && actor.teacher?.id) {
-    const dept = await resolveHODDepartment(actor.teacher.id, user.schoolId);
+    const dept = await resolveHODDepartment(actor.teacher.id, user.schoolId!);
     departmentId = dept?.id ?? null;
   }
 
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const formulas = await db.departmentFormulaConfig.findMany({
-      where: { schoolId: user.schoolId, departmentId },
+      where: { schoolId: user.schoolId!, departmentId },
       orderBy: [{ subjectId: "asc" }, { form: "asc" }],
       select: {
         id: true,
@@ -90,7 +90,7 @@ export async function PUT(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canManageFormulas(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -109,7 +109,7 @@ export async function PUT(req: NextRequest) {
   // HOD can only manage their own department
   const isHod = actor.roles.some((r) => r.role === "HOD");
   if (isHod && actor.teacher?.id) {
-    const hodDept = await resolveHODDepartment(actor.teacher.id, user.schoolId);
+    const hodDept = await resolveHODDepartment(actor.teacher.id, user.schoolId!);
     if (hodDept?.id !== departmentId) {
       return NextResponse.json({ error: "Forbidden — not your department." }, { status: 403 });
     }
@@ -117,7 +117,7 @@ export async function PUT(req: NextRequest) {
 
   // Verify subject belongs to this department
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId, departmentId },
+    where: { id: subjectId, schoolId: user.schoolId!, departmentId },
     select: { id: true },
   });
   if (!subject) {
@@ -129,7 +129,7 @@ export async function PUT(req: NextRequest) {
 
   // Verify framework belongs to this school
   const framework = await db.assessmentFramework.findFirst({
-    where: { id: frameworkId, schoolId: user.schoolId },
+    where: { id: frameworkId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!framework) {
@@ -146,7 +146,7 @@ export async function PUT(req: NextRequest) {
       },
     },
     create: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       departmentId,
       subjectId,
       form,
@@ -179,7 +179,7 @@ export async function DELETE(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canManageFormulas(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -188,7 +188,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   const existing = await db.departmentFormulaConfig.findFirst({
-    where: { id, schoolId: user.schoolId },
+    where: { id, schoolId: user.schoolId! },
     select: { id: true, departmentId: true },
   });
   if (!existing) {
@@ -198,7 +198,7 @@ export async function DELETE(req: NextRequest) {
   // HOD can only delete from their own dept
   const isHod = actor.roles.some((r) => r.role === "HOD");
   if (isHod && actor.teacher?.id) {
-    const hodDept = await resolveHODDepartment(actor.teacher.id, user.schoolId);
+    const hodDept = await resolveHODDepartment(actor.teacher.id, user.schoolId!);
     if (hodDept?.id !== existing.departmentId) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }

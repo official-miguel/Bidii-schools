@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   // Verify version belongs to this school
   const vRows = await prisma.$queryRaw<Array<{ status: string }>>`
     SELECT status FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}`;
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}`;
   if (!vRows[0]) return NextResponse.json({ error: "Version not found." }, { status: 404 });
 
   const search = req.nextUrl.searchParams;

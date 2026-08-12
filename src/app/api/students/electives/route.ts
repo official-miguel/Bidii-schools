@@ -21,14 +21,14 @@ export async function GET(req: NextRequest) {
 
   // All active students in the class
   const allStudents = await prisma.student.findMany({
-    where: { classId, schoolId: user.schoolId, archivedAt: null },
+    where: { classId, schoolId: user.schoolId!, archivedAt: null },
     orderBy: { fullName: "asc" },
     select: { id: true, fullName: true, admissionNumber: true },
   });
 
   // Students already enrolled in this elective
   const enrolled = await prisma.studentElective.findMany({
-    where: { subjectId, student: { classId, schoolId: user.schoolId } },
+    where: { subjectId, student: { classId, schoolId: user.schoolId! } },
     select: { studentId: true },
   });
   const enrolledIds = new Set(enrolled.map((e) => e.studentId));
@@ -61,14 +61,14 @@ export async function POST(req: NextRequest) {
 
   // Verify subject belongs to this school
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId },
+    where: { id: subjectId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!subject) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
   // Verify all students belong to this school
   const studentCount = await prisma.student.count({
-    where: { id: { in: studentIds }, schoolId: user.schoolId },
+    where: { id: { in: studentIds }, schoolId: user.schoolId! },
   });
   if (studentCount !== studentIds.length) {
     return NextResponse.json({ error: "One or more students not found." }, { status: 400 });

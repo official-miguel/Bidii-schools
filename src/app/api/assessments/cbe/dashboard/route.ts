@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -45,12 +45,12 @@ export async function GET(req: NextRequest) {
   // period and schoolClass are independent — fetch in parallel.
   const [period, schoolClass] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId, framework: { type: "CBE", isActive: true } },
+      where: { id: periodId, schoolId: user.schoolId!, framework: { type: "CBE", isActive: true } },
       select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
     }) as Promise<{ id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null>,
 
     prisma.schoolClass.findFirst({
-      where: { id: classId, schoolId: user.schoolId },
+      where: { id: classId, schoolId: user.schoolId! },
       select: { id: true, name: true },
     }),
   ]);
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   const students = await prisma.student.findMany({
-    where: { classId, schoolId: user.schoolId },
+    where: { classId, schoolId: user.schoolId! },
     orderBy: { admissionNumber: "asc" },
     select: { id: true, fullName: true, admissionNumber: true },
   });
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     where: {
       periodId,
       studentId: { in: studentIds },
-      schoolId:  user.schoolId,
+      schoolId: user.schoolId!,
       resultKind: "PERFORMANCE_LEVEL",
     },
     select: {
@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
          AND  "resultKind"  = 'PERFORMANCE_LEVEL'
          AND  "subStrandId" = ANY($4::text[])
        GROUP BY "subStrandId"`,
-      user.schoolId,
+      user.schoolId!,
       periodId,
       studentIds,
       subStrandIds
@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
          AND  "resultKind"    = 'PERFORMANCE_LEVEL'
          AND  "learningAreaId" IS NOT NULL
        GROUP BY "learningAreaId"`,
-      user.schoolId,
+      user.schoolId!,
       periodId,
       studentIds
     ),

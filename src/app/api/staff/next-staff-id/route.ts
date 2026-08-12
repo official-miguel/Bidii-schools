@@ -31,12 +31,12 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Check for a recycled ID first
-  const recycled = await smallestRecycledId(user.schoolId);
+  const recycled = await smallestRecycledId(user.schoolId!);
   if (recycled !== null) {
     return NextResponse.json({ nextStaffId: recycled, isRecycled: true });
   }
 
-  const current = await maxStaffId(user.schoolId);
+  const current = await maxStaffId(user.schoolId!);
   const next = current !== null ? String(current + 1) : null;
   return NextResponse.json({ nextStaffId: next, isRecycled: false });
 }

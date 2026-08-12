@@ -53,11 +53,11 @@ export async function GET(req: Request) {
   const [resolvedPeriod, assignments] = await Promise.all([
     periodIdParam
       ? db.assessmentPeriod.findFirst({
-          where: { id: periodIdParam, schoolId: user.schoolId },
+          where: { id: periodIdParam, schoolId: user.schoolId! },
           select: { id: true, name: true, frameworkId: true },
         }) as Promise<{ id: string; name: string; frameworkId: string } | null>
       : db.assessmentPeriod.findFirst({
-          where: { schoolId: user.schoolId, isCurrent: true },
+          where: { schoolId: user.schoolId!, isCurrent: true },
           select: { id: true, name: true, frameworkId: true },
         }) as Promise<{ id: string; name: string; frameworkId: string } | null>,
 
@@ -88,7 +88,7 @@ export async function GET(req: Request) {
   // Use groupBy so we get a count per classId without fetching all rows.
   const studentCountRows = await prisma.student.groupBy({
     by: ["classId"],
-    where: { classId: { in: assignedClassIds }, schoolId: user.schoolId },
+    where: { classId: { in: assignedClassIds }, schoolId: user.schoolId! },
     _count: { id: true },
   });
   const studentCountByClass = new Map(
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
   if (resolvedPeriod) {
     const enteredItems = await db.assessmentItem.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         periodId: resolvedPeriod.id,
         subjectId: { in: assignedSubjectIds },
         student: { classId: { in: assignedClassIds } },

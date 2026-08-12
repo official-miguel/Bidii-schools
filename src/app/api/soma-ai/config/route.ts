@@ -16,7 +16,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const row = await prisma.schoolIntegration.findUnique({
-    where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+    where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
   });
 
   if (!row) {
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const existing = await prisma.schoolIntegration.findUnique({
-    where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+    where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
   });
 
   if (!existing && !parsed.data.apiKey) {
@@ -109,10 +109,10 @@ export async function PATCH(req: NextRequest) {
     const keyPreview = previewSecret(apiKey);
     const jsonMeta = newMeta as Prisma.InputJsonValue;
     await prisma.schoolIntegration.upsert({
-      where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+      where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
       update: { encryptedValue, keyPreview, metadata: jsonMeta, isActive: true },
       create: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         provider: "GEMINI",
         encryptedValue,
         keyPreview,
@@ -122,14 +122,14 @@ export async function PATCH(req: NextRequest) {
   } else {
     // Metadata-only update
     await prisma.schoolIntegration.update({
-      where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+      where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
       data: { metadata: newMeta as Prisma.InputJsonValue },
     });
   }
 
   // Re-read and return fresh state
   const updated = await prisma.schoolIntegration.findUnique({
-    where: { schoolId_provider: { schoolId: user.schoolId, provider: "GEMINI" } },
+    where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
   });
   const meta = (updated?.metadata ?? {}) as Record<string, unknown>;
 

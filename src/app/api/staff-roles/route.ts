@@ -9,10 +9,10 @@ export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureDefaultStaffRoles(user.schoolId);
+  await ensureDefaultStaffRoles(user.schoolId!);
 
   const roles = await prisma.staffRole.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     include: {
       permissions: true,
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   try {
     const role = await prisma.staffRole.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         name,
         description: description || null,
         permissions: {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     });
 
     await logPermissionAudit({
-      schoolId:      user.schoolId,
+      schoolId: user.schoolId!,
       performedById: user.id,
       staffRoleId:   role.id,
       action:        "ROLE_CREATED",

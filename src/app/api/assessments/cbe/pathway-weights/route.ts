@@ -24,19 +24,19 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId: user.schoolId! },
     select: { id: true, form: true },
   });
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId:       user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: schoolClass.form },
     },
     orderBy: { name: "asc" },
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     examMaxMarks: number;
   }> = framework
     ? await db.pathwayWeight.findMany({
-        where: { frameworkId: framework.id, schoolId: user.schoolId },
+        where: { frameworkId: framework.id, schoolId: user.schoolId! },
         select: {
           subjectId:    true,
           sbaWeight:    true,
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   }
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
   if (!framework) {
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
   // Validate all subjectIds belong to this school.
   const subjectIds = parsed.data.items.map((i) => i.subjectId);
   const subjects = await prisma.subject.findMany({
-    where: { id: { in: subjectIds }, schoolId: user.schoolId },
+    where: { id: { in: subjectIds }, schoolId: user.schoolId! },
     select: { id: true },
   });
   const validIds = new Set(subjects.map((s) => s.id));
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       db.pathwayWeight.upsert({
         where: { PathwayWeight_frameworkId_subjectId_key: { frameworkId: framework.id, subjectId: item.subjectId } },
         create: {
-          schoolId:     user.schoolId,
+          schoolId: user.schoolId!,
           frameworkId:  framework.id,
           subjectId:    item.subjectId,
           sbaWeight:    item.sbaWeight,

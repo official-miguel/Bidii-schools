@@ -10,14 +10,14 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canReadPeriods(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Find the school's active CBE framework.
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+    where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
@@ -27,7 +27,7 @@ export async function GET() {
 
   // Fetch LearningArea → Strand → SubStrand, all ordered by sortOrder.
   const learningAreas = await db.learningArea.findMany({
-    where: { schoolId: user.schoolId, frameworkId: framework.id },
+    where: { schoolId: user.schoolId!, frameworkId: framework.id },
     orderBy: { name: "asc" },
     select: {
       id: true,

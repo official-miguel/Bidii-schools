@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   const rows = await prisma.libraryCatalogue.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       archivedAt: archived ? { not: null } : null,
       ...(subject  ? { subject  } : {}),
       ...(form !== undefined ? { form } : {}),
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
   // Duplicate bookNumber check
   if (d.bookNumber) {
     const exists = await prisma.libraryCatalogue.findFirst({
-      where: { schoolId: user.schoolId, bookNumber: d.bookNumber },
+      where: { schoolId: user.schoolId!, bookNumber: d.bookNumber },
       select: { id: true },
     });
     if (exists)
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
   const catalogue = await prisma.libraryCatalogue.create({
     data: {
-      schoolId:    user.schoolId,
+      schoolId: user.schoolId!,
       title:       d.title,
       bookNumber:  d.bookNumber || null,
       subject:     d.subject   || null,
@@ -162,6 +162,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  emitSSE(user.schoolId, "libraryCatalogue.created", catalogue);
+  emitSSE(user.schoolId!, "libraryCatalogue.created", catalogue);
   return NextResponse.json(catalogue, { status: 201 });
 }

@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       classTeacher: {
         select: { id: true, fullName: true, email: true },
@@ -69,7 +69,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const [allGroups, classTeacherRows] = await Promise.all([
       prisma.electiveGroup.findMany({
         where: {
-          schoolId: user.schoolId,
+          schoolId: user.schoolId!,
           OR: [{ scopeForm: 0 }, { scopeForm: cls.form }],
         },
         include: {
@@ -92,7 +92,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       }),
       // Per-class teacher pairings — the source of truth shown in the drawer
       prisma.classElectiveGroupTeacher.findMany({
-        where: { classId: params.id, schoolId: user.schoolId },
+        where: { classId: params.id, schoolId: user.schoolId! },
         include: {
           subject: { select: { id: true, code: true, name: true } },
           teacher: { select: { id: true, fullName: true } },
@@ -142,7 +142,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   // ── All subjects applicable to this form ─────────────────────────────────
   const allSubjectsRaw = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
@@ -174,7 +174,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const teacherSubjectRows = await prisma.teacherSubject.findMany({
     where: {
       subjectId: { in: ungroupedSubjectIds },
-      teacher: { schoolId: user.schoolId, archivedAt: null },
+      teacher: { schoolId: user.schoolId!, archivedAt: null },
     },
     select: {
       subjectId: true,

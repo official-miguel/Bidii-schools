@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -71,16 +71,16 @@ export async function GET(req: NextRequest) {
 
   // Find current period.
   const currentPeriod = await db.assessmentPeriod.findFirst({
-    where: { schoolId: user.schoolId, isCurrent: true },
+    where: { schoolId: user.schoolId!, isCurrent: true },
     select: { id: true, frameworkId: true },
   }) as { id: string; frameworkId: string } | null;
 
   // Determine classes in scope.
-  let classQuery: Record<string, unknown> = { schoolId: user.schoolId };
+  let classQuery: Record<string, unknown> = { schoolId: user.schoolId! };
   if (scope === "department" && (departmentId || hodDeptId)) {
     const deptId = departmentId ?? hodDeptId!;
     const deptSubjects = await prisma.subject.findMany({
-      where: { schoolId: user.schoolId, departmentId: deptId },
+      where: { schoolId: user.schoolId!, departmentId: deptId },
       select: { id: true },
     });
     const subjectIds = deptSubjects.map((s) => s.id);
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
       distinct: ["classId"],
     }) as Array<{ classId: string }>;
     classQuery = {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       id: { in: assignedClassIds.map((r) => r.classId) },
     };
   }
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
        GROUP BY s."classId"`,
-      user.schoolId,
+      user.schoolId!,
       currentPeriod.id,
       classIds
     ),
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
          AND    ai."numericScore" IS NOT NULL
          AND    ai."subjectId" IS NOT NULL
        GROUP BY ai."subjectId"`,
-      user.schoolId,
+      user.schoolId!,
       currentPeriod.id,
       classIds
     ),
@@ -198,13 +198,13 @@ export async function GET(req: NextRequest) {
        SELECT COUNT(*)::bigint AS at_risk_count
        FROM   student_means
        WHERE  mean_pts < 4`,
-      user.schoolId,
+      user.schoolId!,
       currentPeriod.id,
       classIds
     ),
 
     scope === "school"
-      ? prisma.teacher.count({ where: { schoolId: user.schoolId } })
+      ? prisma.teacher.count({ where: { schoolId: user.schoolId! } })
       : Promise.resolve(null as number | null),
   ]);
 
@@ -215,7 +215,7 @@ export async function GET(req: NextRequest) {
   // Per-class total student count via groupBy (already in previous DB optimisation layer).
   const studentCountRows = await prisma.student.groupBy({
     by: ["classId"],
-    where: { classId: { in: classIds }, schoolId: user.schoolId },
+    where: { classId: { in: classIds }, schoolId: user.schoolId! },
     _count: { id: true },
   });
   const classTotalMap = new Map(studentCountRows.map((r) => [r.classId, r._count.id]));

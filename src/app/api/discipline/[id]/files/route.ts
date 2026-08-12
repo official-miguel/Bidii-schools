@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: { student: { select: { id: true, fullName: true } } },
   });
   if (!record) return NextResponse.json({ error: "Record not found." }, { status: 404 });
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   try {
     created = await prisma.studentFile.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId: record.studentId,
         disciplineRecordId: record.id,
         fileName: file.name.slice(0, 200) || "upload",
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   let aiSummary: string | null = null;
   if (AI_CAPABLE.has(mimeType)) {
     aiSummary = await summarizeDisciplineFile(
-      user.schoolId,
+      user.schoolId!,
       { mimeType, base64: buffer.toString("base64") },
       { studentName: record.student.fullName, offence: record.offence }
     );

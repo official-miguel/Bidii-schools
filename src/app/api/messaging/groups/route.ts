@@ -8,7 +8,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const groups = await prisma.recipientGroup.findMany({
-    where:   { schoolId: user.schoolId },
+    where:   { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     include: { _count: { select: { members: true } } },
   });
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   try {
     const group = await prisma.recipientGroup.create({
       data: {
-        schoolId:    user.schoolId,
+        schoolId: user.schoolId!,
         name:        parsed.data.name,
         description: parsed.data.description || null,
       },

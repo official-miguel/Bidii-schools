@@ -43,7 +43,7 @@ export async function POST(
   const { reason } = parsed.data;
 
   const teacher = await prisma.teacher.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       primaryDepartment: { select: { name: true } },
       classTeacherOf:    { select: { name: true } },
@@ -91,8 +91,8 @@ export async function POST(
     // 3. Release numeric staff ID for recycling
     if (isNumericId) {
       await tx.recycledStaffId.upsert({
-        where:  { schoolId_staffId: { schoolId: user.schoolId, staffId: teacher.staffId } },
-        create: { schoolId: user.schoolId, staffId: teacher.staffId },
+        where:  { schoolId_staffId: { schoolId: user.schoolId!, staffId: teacher.staffId } },
+        create: { schoolId: user.schoolId!, staffId: teacher.staffId },
         update: {}, // Already freed — no-op
       });
     }
@@ -100,7 +100,7 @@ export async function POST(
     // 4. Audit log
     await tx.auditLog.create({
       data: {
-        schoolId:      user.schoolId,
+        schoolId: user.schoolId!,
         action:        "STAFF_ARCHIVED",
         performedById: user.id,
         performedAt:   now,
@@ -116,7 +116,7 @@ export async function POST(
     });
   });
 
-  emitSSE(user.schoolId, "teacher.archived", { id: teacher.id });
+  emitSSE(user.schoolId!, "teacher.archived", { id: teacher.id });
 
   return NextResponse.json({ ok: true });
 }

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (!studentId) return NextResponse.json({ error: "studentId is required." }, { status: 400 });
 
   const files = await prisma.studentFile.findMany({
-    where: { studentId, schoolId: user.schoolId },
+    where: { studentId, schoolId: user.schoolId! },
     select: {
       id: true,
       fileName: true,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
   try {
     const created = await prisma.studentFile.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId: student.id,
         fileName: file.name.slice(0, 200) || "upload",
         mimeType,

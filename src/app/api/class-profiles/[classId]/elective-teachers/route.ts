@@ -57,14 +57,14 @@ export async function GET(
 
   // Verify class belongs to school
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: params.classId, schoolId: user.schoolId },
+    where: { id: params.classId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!cls) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   try {
     const pairings = await prisma.classElectiveGroupTeacher.findMany({
-      where: { classId: params.classId, schoolId: user.schoolId },
+      where: { classId: params.classId, schoolId: user.schoolId! },
       include: pairingInclude,
       orderBy: [
         { group:   { name: "asc" } },
@@ -106,7 +106,7 @@ export async function POST(
 
   // Verify the class belongs to this school
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId: user.schoolId! },
     select: { id: true, form: true, stream: true },
   });
   if (!cls) return NextResponse.json({ error: "Class not found." }, { status: 404 });
@@ -115,7 +115,7 @@ export async function POST(
   const group = await prisma.electiveGroup.findFirst({
     where: {
       id: groupId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       OR: [{ scopeForm: 0 }, { scopeForm: cls.form }],
     },
     select: { id: true, name: true, scopeStreams: true },
@@ -153,13 +153,13 @@ export async function POST(
 
   // Teacher must be assigned to teach this subject (soft check — warn but allow)
   const teacherSubject = await prisma.teacherSubject.findFirst({
-    where: { teacherId, subjectId, teacher: { schoolId: user.schoolId } },
+    where: { teacherId, subjectId, teacher: { schoolId: user.schoolId! } },
     include: { teacher: { select: { fullName: true } } },
   });
 
   // Verify the teacher at minimum belongs to this school
   const teacher = teacherSubject?.teacher ?? await prisma.teacher.findFirst({
-    where: { id: teacherId, schoolId: user.schoolId },
+    where: { id: teacherId, schoolId: user.schoolId! },
     select: { fullName: true },
   });
   if (!teacher) {
@@ -189,7 +189,7 @@ export async function POST(
       classId,
       subjectId,
       teacherId,
-      schoolId:  user.schoolId,
+      schoolId: user.schoolId!,
     },
     include: pairingInclude,
   });
@@ -225,13 +225,13 @@ export async function DELETE(
 
   // Verify class belongs to school
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!cls) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   const pairing = await prisma.classElectiveGroupTeacher.findFirst({
-    where: { groupId, classId, subjectId, teacherId, schoolId: user.schoolId },
+    where: { groupId, classId, subjectId, teacherId, schoolId: user.schoolId! },
   });
   if (!pairing) {
     return NextResponse.json(

@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const copy = await prisma.libraryCopy.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       catalogue: {
         select: {
@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const copy = await prisma.libraryCopy.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true, status: true, archivedAt: true },
   });
   if (!copy) return NextResponse.json({ error: "Copy not found." }, { status: 404 });
@@ -101,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
   });
 
-  emitSSE(user.schoolId, "libraryCopy.updated", updated);
+  emitSSE(user.schoolId!, "libraryCopy.updated", updated);
   return NextResponse.json(updated);
 }
 
@@ -118,7 +118,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const copy = await prisma.libraryCopy.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true, catalogueId: true, archivedAt: true, status: true },
   });
   if (!copy) return NextResponse.json({ error: "Copy not found." }, { status: 404 });
@@ -150,6 +150,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return c;
   });
 
-  emitSSE(user.schoolId, "libraryCopy.archived", { id: params.id, catalogueId: copy.catalogueId });
+  emitSSE(user.schoolId!, "libraryCopy.archived", { id: params.id, catalogueId: copy.catalogueId });
   return NextResponse.json(archived);
 }

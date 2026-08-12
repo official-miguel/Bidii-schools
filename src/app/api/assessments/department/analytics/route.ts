@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -79,11 +79,11 @@ export async function GET(req: NextRequest) {
   // Verify department and fetch its subjects in parallel.
   const [department, deptSubjects] = await Promise.all([
     prisma.department.findFirst({
-      where: { id: departmentId, schoolId: user.schoolId },
+      where: { id: departmentId, schoolId: user.schoolId! },
       select: { id: true, name: true },
     }),
     prisma.subject.findMany({
-      where: { schoolId: user.schoolId, departmentId },
+      where: { schoolId: user.schoolId!, departmentId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
   const [items, currentPeriodRow] = await Promise.all([
     db.assessmentItem.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         periodId,
         subjectId: { in: deptSubjectIds },
         resultKind: "NUMERIC",
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
                   student: { classId: string } }>>,
 
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId },
+      where: { id: periodId, schoolId: user.schoolId! },
       select: { frameworkId: true },
     }) as Promise<{ frameworkId: string } | null>,
   ]);
@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
   let trendData: TrendDataPoint[] = [];
   if (currentPeriodRow) {
     const allPeriods = await db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId, frameworkId: currentPeriodRow.frameworkId },
+      where: { schoolId: user.schoolId!, frameworkId: currentPeriodRow.frameworkId },
       orderBy: [{ academicYear: "asc" }, { term: "asc" }],
       select: { id: true, name: true, term: true, academicYear: true },
     }) as Array<{ id: string; name: string; term: number | null; academicYear: string }>;
@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
              AND "resultKind" = 'NUMERIC'
              AND "numericScore" IS NOT NULL
            GROUP BY "periodId"`,
-          user.schoolId,
+          user.schoolId!,
           allPeriodIds,
           deptSubjectIds
         ),
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
              AND "resultKind" = 'NUMERIC'
              AND "numericScore" IS NOT NULL
            GROUP BY "periodId"`,
-          user.schoolId,
+          user.schoolId!,
           allPeriodIds
         ),
       ]);
@@ -219,7 +219,7 @@ export async function GET(req: NextRequest) {
   const classIds = [...new Set(items.map((i) => i.student.classId))];
   const classes = classIds.length > 0
     ? await prisma.schoolClass.findMany({
-        where: { id: { in: classIds }, schoolId: user.schoolId },
+        where: { id: { in: classIds }, schoolId: user.schoolId! },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
       })

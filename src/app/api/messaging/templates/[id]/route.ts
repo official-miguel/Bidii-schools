@@ -17,7 +17,7 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const tpl = await prisma.messageTemplate.findUnique({ where: { id: params.id } });
-  if (!tpl || tpl.schoolId !== user.schoolId) {
+  if (!tpl || tpl.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -52,7 +52,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const tpl = await prisma.messageTemplate.findUnique({ where: { id: params.id } });
-  if (!tpl || tpl.schoolId !== user.schoolId) {
+  if (!tpl || tpl.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const monthEnd = new Date(Date.UTC(year, month, 1));
 
   const dbEvents = await prisma.calendarEvent.findMany({
-    where: { schoolId: user.schoolId, date: { gte: monthStart, lt: monthEnd } },
+    where: { schoolId: user.schoolId!, date: { gte: monthStart, lt: monthEnd } },
     orderBy: { date: "asc" },
     include: { createdBy: { select: { id: true, email: true } } },
   });
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const data: Prisma.CalendarEventUncheckedCreateInput = {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       title: parsed.data.title,
       description: parsed.data.description || null,
       date: new Date(parsed.data.date),
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     if (parsed.data.closingDate) data.closingDate = new Date(parsed.data.closingDate);
 
     const event = await prisma.calendarEvent.create({ data });
-    emitSSE(user.schoolId, "calendarEvent.created", {
+    emitSSE(user.schoolId!, "calendarEvent.created", {
       ...event,
       date: event.date.toISOString(),
     });

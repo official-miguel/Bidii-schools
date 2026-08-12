@@ -19,17 +19,17 @@ export async function GET(
     prisma.assessmentPeriod.findUnique({ where: { id: periodId }, select: { schoolId: true } }),
   ]);
 
-  if (!student || student.schoolId !== user.schoolId) {
+  if (!student || student.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Student not found." }, { status: 404 });
   }
-  if (!period || period.schoolId !== user.schoolId) {
+  if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
 
-  const settings = await prisma.messagingSettings.findUnique({ where: { schoolId: user.schoolId } });
+  const settings = await prisma.messagingSettings.findUnique({ where: { schoolId: user.schoolId! } });
   const closing  = settings?.resultsClosing ?? "Thank you for your continued support.";
 
-  const payload = await buildResultsMessage(params.studentId, periodId, user.schoolId, closing);
+  const payload = await buildResultsMessage(params.studentId, periodId, user.schoolId!, closing);
 
   // Mask phone for client
   const maskedPhone = payload.phone && payload.phone.length > 4

@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: Record<string, any> = {
-    schoolId:   user.schoolId,
+    schoolId: user.schoolId!,
     archivedAt: { not: null },
     ...(cursor ? { id: { gt: cursor } } : {}),
   };
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     : page;
 
   const total = q ? undefined : await prisma.teacher.count({
-    where: { schoolId: user.schoolId, archivedAt: { not: null } },
+    where: { schoolId: user.schoolId!, archivedAt: { not: null } },
   });
 
   const headers: Record<string, string> = { "Cache-Control": "private, no-store" };

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     "image/jpg": "jpg",  "image/webp": "webp",
   };
   const ext          = extMap[file.type] ?? "jpg";
-  const storagePath  = `${user.schoolId}/${user.id}/${Date.now()}.${ext}`;
+  const storagePath  = `${user.schoolId!}/${user.id}/${Date.now()}.${ext}`;
   const buffer       = Buffer.from(await file.arrayBuffer());
   const supabase     = createAdminClient();
 

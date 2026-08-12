@@ -26,19 +26,19 @@ export async function GET(req: NextRequest) {
 
   // Guard: canGenerateReportCard for this student's class.
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: { id: true, fullName: true, classId: true, schoolClass: { select: { name: true, form: true } } },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canGenerateReportCard(actor, student.classId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Return existing row if present.
   const existing = await db.reportRemark.findUnique({
-    where: { schoolId_periodId_studentId: { schoolId: user.schoolId, periodId, studentId } },
+    where: { schoolId_periodId_studentId: { schoolId: user.schoolId!, periodId, studentId } },
   }) as { id: string; draftRemark: string | null; editedRemark: string | null; isAiGenerated: boolean } | null;
 
   if (existing) {
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
   try {
     // Build a brief performance summary from assessment items.
     const items = await db.assessmentItem.findMany({
-      where: { schoolId: user.schoolId, periodId, studentId, resultKind: "NUMERIC" },
+      where: { schoolId: user.schoolId!, periodId, studentId, resultKind: "NUMERIC" },
       select: { numericScore: true, subject: { select: { name: true } } },
     }) as Array<{ numericScore: number | null; subject: { name: string } | null }>;
 
@@ -75,7 +75,7 @@ Subject scores this term: ${summaryLines || "No scores entered yet."}
 
 Write a 2–3 sentence teacher comment suitable for printing on a report card. Be warm, specific, and constructive. Do not use vague filler phrases. Do not mention exact percentage scores — focus on strengths and one area for growth. Write in second-person ("Student name has...").`;
 
-    draftRemark = await callGemini(user.schoolId, prompt, {
+    draftRemark = await callGemini(user.schoolId!, prompt, {
       temperature: 0.6,
       timeoutMs: 20000,
     });
@@ -89,9 +89,9 @@ Write a 2–3 sentence teacher comment suitable for printing on a report card. B
 
   // Persist the row.
   await db.reportRemark.upsert({
-    where: { schoolId_periodId_studentId: { schoolId: user.schoolId, periodId, studentId } },
+    where: { schoolId_periodId_studentId: { schoolId: user.schoolId!, periodId, studentId } },
     create: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       periodId,
       studentId,
       draftRemark,
@@ -129,20 +129,20 @@ export async function PUT(req: NextRequest) {
   }
 
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId: user.schoolId! },
     select: { id: true, classId: true },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canGenerateReportCard(actor, student.classId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const row = await db.reportRemark.upsert({
-    where: { schoolId_periodId_studentId: { schoolId: user.schoolId, periodId, studentId } },
+    where: { schoolId_periodId_studentId: { schoolId: user.schoolId!, periodId, studentId } },
     create: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       periodId,
       studentId,
       editedRemark: remark,

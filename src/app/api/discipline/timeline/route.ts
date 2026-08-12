@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!studentId) return NextResponse.json({ error: "studentId is required." }, { status: 400 });
 
   const records = await prisma.disciplineRecord.findMany({
-    where: { studentId, schoolId: user.schoolId },
+    where: { studentId, schoolId: user.schoolId! },
     orderBy: { dateOfOffence: "asc" },
     select: {
       id: true,

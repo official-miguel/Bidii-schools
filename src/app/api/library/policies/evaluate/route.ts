@@ -29,14 +29,14 @@ export async function GET(req: NextRequest) {
 
   const [card, copy, activeBorrowCount] = await Promise.all([
     prisma.libraryCard.findUnique({ where: { studentId } }),
-    prisma.libraryCopy.findFirst({ where: { id: copyId, schoolId: user.schoolId }, include: { catalogue: { select: { id: true, title: true } } } }),
+    prisma.libraryCopy.findFirst({ where: { id: copyId, schoolId: user.schoolId! }, include: { catalogue: { select: { id: true, title: true } } } }),
     prisma.libraryBorrow.count({ where: { card: { studentId }, returnedAt: null } }),
   ]);
 
   if (!copy) return NextResponse.json({ error: "Copy not found." }, { status: 404 });
 
   if (!card) {
-    const engine  = await PolicyEngine.load(user.schoolId);
+    const engine  = await PolicyEngine.load(user.schoolId!);
     const policy  = engine.policyFor(patronType);
     const dueAt   = new Date();
     dueAt.setDate(dueAt.getDate() + policy.borrowDays);
@@ -49,10 +49,10 @@ export async function GET(req: NextRequest) {
   }
 
   const hasReservation = await prisma.libraryReservation.findFirst({
-    where: { catalogueId: copy.catalogueId, studentId, status: { in: ["PENDING","ACTIVE"] }, schoolId: user.schoolId },
+    where: { catalogueId: copy.catalogueId, studentId, status: { in: ["PENDING","ACTIVE"] }, schoolId: user.schoolId! },
   });
 
-  const engine = await PolicyEngine.load(user.schoolId);
+  const engine = await PolicyEngine.load(user.schoolId!);
   const result = engine.evaluateBorrow({
     card: {
       id: card.id, studentId: card.studentId,

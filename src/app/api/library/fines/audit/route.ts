@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const cursor = sp.get("cursor") ?? undefined;
 
   const rows = await prisma.libraryFineAudit.findMany({
-    where: { schoolId: user.schoolId, ...(cardId ? { cardId } : {}) },
+    where: { schoolId: user.schoolId!, ...(cardId ? { cardId } : {}) },
     orderBy: { createdAt: "desc" },
     take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

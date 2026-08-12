@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const pauses = await prisma.libraryFinePause.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(pauses);
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   const pause = await prisma.libraryFinePause.create({
     data: {
-      schoolId:   user.schoolId,
+      schoolId: user.schoolId!,
       scope:      d.scope,
       label:      d.label,
       reason:     d.reason ?? null,
@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
   // Record audit event for the school-wide card audit trail
   if (d.scope === "SCHOOL_WIDE") {
     const cards = await prisma.libraryCard.findMany({
-      where: { schoolId: user.schoolId, fineBalance: { gt: 0 } },
+      where: { schoolId: user.schoolId!, fineBalance: { gt: 0 } },
       select: { id: true, fineBalance: true },
     });
     for (const c of cards.slice(0, 50)) { // audit up to 50 for performance
       await recordFineAudit({
-        schoolId: user.schoolId, cardId: c.id,
+        schoolId: user.schoolId!, cardId: c.id,
         eventType: "PAUSE_APPLIED", amount: 0, balanceAfter: c.fineBalance,
         reason: d.label, performedById: user.id,
       });
@@ -86,7 +86,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   const pause = await prisma.libraryFinePause.findFirst({
-    where: { id, schoolId: user.schoolId },
+    where: { id, schoolId: user.schoolId! },
   });
   if (!pause) return NextResponse.json({ error: "Pause not found." }, { status: 404 });
 

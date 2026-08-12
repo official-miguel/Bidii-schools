@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const policies = await prisma.libraryPolicy.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { patronType: "asc" },
   });
   return NextResponse.json(policies);
@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
   };
 
   const policy = await prisma.libraryPolicy.upsert({
-    where: { schoolId_patronType: { schoolId: user.schoolId, patronType: d.patronType as never } },
-    create: { schoolId: user.schoolId, patronType: d.patronType as never, ...data },
+    where: { schoolId_patronType: { schoolId: user.schoolId!, patronType: d.patronType as never } },
+    create: { schoolId: user.schoolId!, patronType: d.patronType as never, ...data },
     update: data,
   });
 

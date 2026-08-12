@@ -45,7 +45,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: params.classId, schoolId: user.schoolId },
+    where: { id: params.classId, schoolId: user.schoolId! },
     select: {
       id: true,
       name: true,
@@ -60,7 +60,7 @@ export async function GET(
   // All subjects whose applicableForms include this class's form number
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
@@ -77,7 +77,7 @@ export async function GET(
   let overrides: { subjectId: string; type: "CORE" | "ELECTIVE" }[] = [];
   try {
     overrides = await prisma.classSubjectProfile.findMany({
-      where: { classId: params.classId, schoolId: user.schoolId },
+      where: { classId: params.classId, schoolId: user.schoolId! },
       select: { subjectId: true, type: true },
     });
   } catch {
@@ -100,7 +100,7 @@ export async function GET(
   let classTeachersByGroup: Record<string, ClassTeacherRow[]> = {};
   try {
     const rows = await prisma.classElectiveGroupTeacher.findMany({
-      where: { classId: params.classId, schoolId: user.schoolId },
+      where: { classId: params.classId, schoolId: user.schoolId! },
       include: {
         subject: { select: { id: true, code: true, name: true } },
         teacher: { select: { id: true, fullName: true } },
@@ -129,7 +129,7 @@ export async function GET(
   try {
     const allGroups = await prisma.electiveGroup.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         OR: [
           { scopeForm: 0 },
           { scopeForm: cls.form },
@@ -214,7 +214,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cls = await prisma.schoolClass.findFirst({
-    where: { id: params.classId, schoolId: user.schoolId },
+    where: { id: params.classId, schoolId: user.schoolId! },
     select: { id: true, form: true },
   });
   if (!cls) return NextResponse.json({ error: "Class not found." }, { status: 404 });
@@ -231,7 +231,7 @@ export async function PATCH(
   const validSubjects = await prisma.subject.findMany({
     where: {
       id: { in: subjectIds },
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
     },
     select: { id: true },
@@ -255,7 +255,7 @@ export async function PATCH(
           create: {
             classId: params.classId,
             subjectId: a.subjectId,
-            schoolId: user.schoolId,
+            schoolId: user.schoolId!,
             type: a.type,
           },
           update: { type: a.type },

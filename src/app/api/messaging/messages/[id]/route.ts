@@ -30,7 +30,7 @@ export async function GET(
     },
   });
 
-  if (!message || message.schoolId !== user.schoolId) {
+  if (!message || message.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

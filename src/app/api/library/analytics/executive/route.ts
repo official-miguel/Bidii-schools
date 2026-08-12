@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const classId = sp.get("classId") ?? undefined;
   const subject = sp.get("subject") ?? undefined;
   const since   = new Date(Date.now() - days * 86_400_000);
-  const sid     = user.schoolId;
+  const sid     = user.schoolId!;
 
   // â”€â”€ Run all queries concurrently â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [

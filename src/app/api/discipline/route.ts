@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   const studentId = req.nextUrl.searchParams.get("studentId") || undefined;
   const records = await prisma.disciplineRecord.findMany({
-    where: { schoolId: user.schoolId, ...(studentId ? { studentId } : {}) },
+    where: { schoolId: user.schoolId!, ...(studentId ? { studentId } : {}) },
     orderBy: { dateOfOffence: "desc" },
     include: {
       student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { id: true, name: true, form: true, stream: true } } } },
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const d = parsed.data;
 
   const student = await prisma.student.findFirst({
-    where: { id: d.studentId, schoolId: user.schoolId },
+    where: { id: d.studentId, schoolId: user.schoolId! },
     select: { id: true, classId: true },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   try {
     const record = await prisma.disciplineRecord.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId: student.id,
         classId: student.classId,
         offence: d.offence,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         },
       },
     });
-    emitSSE(user.schoolId, "disciplineRecord.created", record);
+    emitSSE(user.schoolId!, "disciplineRecord.created", record);
     return NextResponse.json(record, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Couldn't record the discipline case." }, { status: 500 });

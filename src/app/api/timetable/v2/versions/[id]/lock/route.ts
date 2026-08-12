@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // Verify version ownership and editability
   const vRows = await prisma.$queryRaw<Array<{ status: string }>>`
     SELECT status FROM "TimetableVersion"
-    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}`;
+    WHERE id = ${params.id} AND "schoolId" = ${user.schoolId!}`;
   if (!vRows[0]) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (vRows[0].status === "ARCHIVED")
     return NextResponse.json({ error: "Cannot lock/unlock slots in an archived version." }, { status: 409 });
@@ -128,7 +128,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       (id, "schoolId", "versionId", "slotId", action, "changeSource", detail,
        "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id}, ${slotId},
+      ${randomUUID()}, ${user.schoolId!}, ${params.id}, ${slotId},
       ${lock ? "LOCK" : "UNLOCK"}::"TimetableChangeAction",
       'MANUAL',
       ${JSON.stringify({ scope, lock, reason: reason ?? null, affectedCount })}::jsonb,

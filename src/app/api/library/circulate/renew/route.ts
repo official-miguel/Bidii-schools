@@ -35,13 +35,13 @@ export async function POST(req: NextRequest) {
   const { borrowId, patronType, notes } = parsed.data;
 
   const borrow = await prisma.libraryBorrow.findFirst({
-    where: { id: borrowId, schoolId: user.schoolId },
+    where: { id: borrowId, schoolId: user.schoolId! },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
   if (!borrow)           return NextResponse.json({ error: "Borrow record not found." }, { status: 404 });
   if (borrow.returnedAt) return NextResponse.json({ error: "Book already returned." }, { status: 409 });
 
-  const engine = await PolicyEngine.load(user.schoolId);
+  const engine = await PolicyEngine.load(user.schoolId!);
   const policy = engine.policyFor(patronType ?? "DEFAULT");
 
   if (borrow.renewalCount >= policy.maxRenewals)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const catalogueId = (borrow.copy as { catalogueId?: string } | null)?.catalogueId;
   if (catalogueId) {
     const waiting = await prisma.libraryReservation.findFirst({
-      where: { catalogueId, schoolId: user.schoolId, status: "PENDING" },
+      where: { catalogueId, schoolId: user.schoolId!, status: "PENDING" },
     });
     if (waiting)
       return NextResponse.json({
@@ -73,13 +73,13 @@ export async function POST(req: NextRequest) {
   });
 
   await recordCirculationEvent({
-    schoolId: user.schoolId, eventType: "RENEWED",
+    schoolId: user.schoolId!, eventType: "RENEWED",
     copyId: borrow.copyId, catalogueId,
     borrowId, studentId: borrow.card.studentId,
     performedById: user.id,
     payload: { renewalCount: updated.renewalCount, newDueAt: newDueAt.toISOString() },
   });
 
-  emitSSE(user.schoolId, "libraryBorrow.issued", updated);
+  emitSSE(user.schoolId!, "libraryBorrow.issued", updated);
   return NextResponse.json({ borrow: updated, newDueAt: newDueAt.toISOString() });
 }

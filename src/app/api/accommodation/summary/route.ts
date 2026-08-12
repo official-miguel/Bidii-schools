@@ -17,7 +17,7 @@ export async function GET() {
     user.role === "ADMIN_STAFF";
 
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (!user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.schoolId!) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const schoolId = user.schoolId!;
 

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const books = await prisma.libraryBook.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(q
         ? {
             OR: [
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   // ISBN uniqueness check
   if (isbn) {
     const existing = await prisma.libraryBook.findFirst({
-      where: { schoolId: user.schoolId, isbn },
+      where: { schoolId: user.schoolId!, isbn },
     });
     if (existing) {
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   const book = await prisma.libraryBook.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       title,
       author: author || null,
       isbn: isbn || null,
