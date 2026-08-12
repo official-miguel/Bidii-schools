@@ -4,7 +4,7 @@ import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { removeSchoolIntegrationKey, listIntegrationStatuses, PROVIDER_INFO } from "@/lib/integrations";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { provider: string } }) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   if (!(params.provider in PROVIDER_INFO)) {

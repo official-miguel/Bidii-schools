@@ -141,7 +141,7 @@ async function maxAdmissionNumber(schoolId: string): Promise<number | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

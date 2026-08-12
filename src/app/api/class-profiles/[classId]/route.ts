@@ -210,7 +210,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { classId: string } },
 ) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cls = await prisma.schoolClass.findFirst({

@@ -18,7 +18,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requireRole("PRINCIPAL", "TEACHER");
+  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
@@ -82,7 +82,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requireRole("PRINCIPAL", "TEACHER");
+  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({

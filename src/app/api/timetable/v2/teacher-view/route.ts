@@ -15,7 +15,7 @@ import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
 //   versionId — optional; defaults to the published version / legacy slots.
 
 export async function GET(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL", "TEACHER");
+  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

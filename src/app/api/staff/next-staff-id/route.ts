@@ -27,7 +27,7 @@ async function smallestRecycledId(schoolId: string): Promise<string | null> {
 ///   2. max(existing numeric staffId) + 1 (sequential increment).
 ///   3. null when no numeric IDs exist yet (caller shows starting-number input).
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Check for a recycled ID first

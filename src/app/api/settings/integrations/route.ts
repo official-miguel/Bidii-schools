@@ -12,7 +12,7 @@ const PROVIDERS = Object.keys(PROVIDER_INFO) as [string, ...string[]];
 // on the school's account. Keeping this one screen un-delegable avoids that
 // class of problem entirely rather than trying to permission it carefully.
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const statuses = await listIntegrationStatuses(user.schoolId);
@@ -26,7 +26,7 @@ const saveSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = saveSchema.safeParse(await req.json().catch(() => null));

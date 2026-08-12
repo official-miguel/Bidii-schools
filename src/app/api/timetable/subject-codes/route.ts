@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, requireSchoolRole } from "@/lib/auth";
 
 export async function GET(_req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -48,7 +48,7 @@ const assignSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
  * Safe to call multiple times — only assigns to subjects missing a code.
  */
 export async function PUT(_req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

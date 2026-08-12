@@ -28,7 +28,7 @@ function isoDay(date: Date): string {
 /// recordedById on writes.
 async function requireAttendanceAccess(classId: string, action: "view" | "create" = "view") {
   // Fast path: PRINCIPAL always wins.
-  const principalUser = await requireRole("PRINCIPAL");
+  const principalUser = await requireSchoolRole("PRINCIPAL");
   if (principalUser) return { user: principalUser, teacher: null, allowed: true as const };
 
   // Everyone else goes through requirePermission (handles ADMIN_STAFF and TEACHER via
@@ -254,7 +254,7 @@ export async function GET(req: NextRequest) {
   // today), along with their class, admission number, and a 30-day attendance
   // rate for the mark-trend column on the drilldown page.
   if (params.get("absentToday")) {
-    const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
+    const user = await requireSchoolRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));
@@ -347,7 +347,7 @@ export async function GET(req: NextRequest) {
   //   Before: ~12 000 rows transferred + JS grouping  ≈ 85 ms
   //   After:  3 aggregate result sets (~50 rows each)  ≈ 18 ms
   if (params.get("analytics")) {
-    const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
+    const user = await requireSchoolRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const to = params.get("to") ? parseDateOnly(params.get("to")!) : parseDateOnly(isoDay(new Date()));
@@ -458,7 +458,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Stats mode ───────────────────────────────────────────────────────────
-  const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
+  const user = await requireSchoolRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));

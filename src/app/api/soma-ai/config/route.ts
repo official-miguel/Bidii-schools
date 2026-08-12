@@ -12,7 +12,7 @@ import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
 // Key preview only — never the raw key.
 // ---------------------------------------------------------------------------
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const row = await prisma.schoolIntegration.findUnique({
@@ -70,7 +70,7 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));

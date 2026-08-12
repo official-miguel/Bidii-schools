@@ -6,7 +6,7 @@ import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { ensureDefaultStaffRoles, ALL_MODULES, logPermissionAudit } from "@/lib/permissions";
 
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await ensureDefaultStaffRoles(user.schoolId);
@@ -44,7 +44,7 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));

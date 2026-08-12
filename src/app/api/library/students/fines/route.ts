@@ -7,7 +7,7 @@ import { requireRole, requireSchoolRole } from "@/lib/auth";
  *  balance descending. Principal-only.
  */
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const cards = await prisma.libraryCard.findMany({

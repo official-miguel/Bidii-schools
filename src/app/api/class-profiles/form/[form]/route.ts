@@ -208,7 +208,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { form: string } }
 ) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const formNum = parseInt(params.form, 10);

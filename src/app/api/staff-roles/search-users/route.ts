@@ -12,7 +12,7 @@ import { requireRole, requireSchoolRole } from "@/lib/auth";
  * can show an "Assign / Remove" toggle without a separate lookup.
  */
 export async function GET(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;

@@ -10,7 +10,7 @@ export async function GET() {
   // ADMIN_STAFF users whose role grants at least view access to the Staff module see full data.
   // TEACHER with STAFF.canView (via assigned role) sees full data.
   // Plain Subject Teacher (TEACHER with no STAFF.canView) sees trimmed data.
-  const principalUser = await requireRole("PRINCIPAL");
+  const principalUser = await requireSchoolRole("PRINCIPAL");
   if (principalUser) {
     const teachers = await prisma.teacher.findMany({
       where: { schoolId: principalUser.schoolId!, archivedAt: null },

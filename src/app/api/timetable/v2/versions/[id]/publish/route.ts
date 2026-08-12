@@ -90,7 +90,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
 
 // ── DELETE /api/timetable/v2/versions/[id]/publish (unpublish) ────────────
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`

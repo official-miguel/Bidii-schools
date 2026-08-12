@@ -7,7 +7,7 @@ import { requireRole, requireSchoolRole } from "@/lib/auth";
 // the AI Timetable panel can render one compact grid per teacher without a
 // separate request each.
 export async function GET() {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -32,7 +32,7 @@ const schema = z.object({
 // error-prone than diffing add/remove from the client, and the grid this
 // feeds is small enough that resending the whole set each save is cheap.
 export async function PUT(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

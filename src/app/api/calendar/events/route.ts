@@ -11,7 +11,7 @@ import { emitSSE } from "@/lib/sse";
 /// governed by the RBAC module table — see src/lib/permissions.ts), and by
 /// ADMIN_STAFF only if their role grants CALENDAR view.
 async function requireCalendarViewer() {
-  return (await requireRole("PRINCIPAL", "TEACHER")) ?? (await requireSchoolPermission("CALENDAR", "view"));
+  return (await requireSchoolRole("PRINCIPAL", "TEACHER")) ?? (await requireSchoolPermission("CALENDAR", "view"));
 }
 
 export async function GET(req: NextRequest) {

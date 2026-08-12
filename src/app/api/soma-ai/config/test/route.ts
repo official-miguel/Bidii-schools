@@ -19,7 +19,7 @@ const schema = z.object({
  * Returns { ok: boolean; model: string; latencyMs: number; error?: string }
  */
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = schema.safeParse(await req.json().catch(() => ({})));

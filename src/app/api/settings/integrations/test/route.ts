@@ -12,7 +12,7 @@ const schema = z.object({ provider: z.literal("GEMINI") });
 const TIMEOUT_MS = 8000;
 
 export async function POST(req: NextRequest) {
-  const user = await requireRole("PRINCIPAL");
+  const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = schema.safeParse(await req.json().catch(() => null));

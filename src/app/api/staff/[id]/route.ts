@@ -8,7 +8,7 @@ import { requirePermission, getTeacherEffectivePermissions, requireSchoolPermiss
 // GET /api/staff/[id] — single staff member detail for entity drawers
 // ---------------------------------------------------------------------------
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const principalUser = await requireRole("PRINCIPAL");
+  const principalUser = await requireSchoolRole("PRINCIPAL");
   if (principalUser) {
     const teacher = await prisma.teacher.findFirst({
       where: { id: params.id, schoolId: principalUser.schoolId },
