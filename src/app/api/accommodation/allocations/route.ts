@@ -19,7 +19,7 @@ async function manageGuard() {
 
 export async function GET(req: NextRequest) {
   const user = await guard();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const dormId = req.nextUrl.searchParams.get("dormId");
   const status = req.nextUrl.searchParams.get("status") ?? "CURRENT";
@@ -75,7 +75,7 @@ const allocateSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = allocateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     // Create new allocation
     const newAllocation = await tx.allocationRecord.create({
       data: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         studentId,
         dormId,
         cubicleId: cubicleId ?? null,
