@@ -36,7 +36,7 @@ type UserRow = {
   role:               string;
   mustChangePassword: boolean;
   isActive:           boolean;
-  schoolId:           string;
+  schoolId:           string | null;   // null for SUPER_ADMIN
   staffRoleId:        string | null;
   createdAt:          Date;
   updatedAt:          Date;
@@ -182,6 +182,7 @@ export async function POST(req: NextRequest) {
           const matched: UserRow[] = [];
           for (const candidate of candidates) {
             if (!candidate.passwordHash) {
+              if (!candidate.schoolId) continue; // SUPER_ADMIN has no school
               const school = await prisma.school.findUnique({
                 where:  { id: candidate.schoolId },
                 select: { slug: true },
@@ -236,7 +237,8 @@ export async function POST(req: NextRequest) {
   let offlineToken: ReturnType<typeof buildOfflineToken>;
   try {
     token        = await createSession(user.id);
-    offlineToken = buildOfflineToken(user as Parameters<typeof buildOfflineToken>[0]);
+    // buildOfflineToken expects a User-shaped object; schoolId may be null for SUPER_ADMIN
+    offlineToken = buildOfflineToken(user as unknown as Parameters<typeof buildOfflineToken>[0]);
   } catch (err) {
     console.error("[LOGIN] Session error:", err);
     return NextResponse.json(

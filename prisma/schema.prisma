@@ -149,7 +149,8 @@ model User {
   isActive                  Boolean              @default(true)
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
-  schoolId                  String
+  /// Nullable for SUPER_ADMIN accounts which are not scoped to any school.
+  schoolId                  String?
   /// Only meaningful when role = ADMIN_STAFF. Governs which modules this
   /// login can see and manage (Staff Roles & Permissions). PRINCIPAL always
   /// has full access regardless of this field; TEACHER keeps its existing
