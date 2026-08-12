@@ -4,7 +4,7 @@ import { prisma }                     from "@/lib/prisma";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
 
 /** Module dependency map — key cannot be enabled unless all values are enabled */
-export const MODULE_DEPS: Record<string, string[]> = {
+const MODULE_DEPS: Record<string, string[]> = {
   GRADING:        ["ATTENDANCE"],
   REPORTS:        ["GRADING"],
   IMPORT_TOOL:    [],
@@ -20,7 +20,7 @@ export const MODULE_DEPS: Record<string, string[]> = {
 };
 
 /** Plan tier → default module set */
-export const PLAN_BUNDLES: Record<string, string[]> = {
+const PLAN_BUNDLES: Record<string, string[]> = {
   FREE:         ["ATTENDANCE"],
   STARTER:      ["ATTENDANCE", "GRADING", "REPORTS", "IMPORT_TOOL"],
   GROWTH:       ["ATTENDANCE", "GRADING", "REPORTS", "IMPORT_TOOL", "MESSAGING", "LIBRARY", "TIMETABLE"],
