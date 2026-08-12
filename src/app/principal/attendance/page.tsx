@@ -9,7 +9,7 @@ import ContextNavigation from "@/components/ContextNavigation";
 export default async function PrincipalAttendancePage() {
   const user = await getCurrentUser();
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user!.schoolId },
+    where: { schoolId: user!.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true },
   });
