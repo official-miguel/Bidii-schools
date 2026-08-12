@@ -4,21 +4,16 @@
  * Password-based login for all roles.
  *
  * SUPER_ADMIN:
- *   Looked up by email alone (no schoolId scope) before the per-school flow.
- *   The platform school row satisfies the DB FK but is never exposed to users.
+ *   Looked up via raw SQL (bypasses the Prisma-generated Role enum so the
+ *   query works even before `prisma generate` picks up SUPER_ADMIN).
  *
  * First-login flow for teachers / staff:
- *   • The initial password is the school's slug (e.g. "kianyaga").
- *   • mustChangePassword is set to true on account creation.
- *   • On first login the server authenticates normally and returns
- *     { mustChangePassword: true } so the client shows the set-password screen.
- *   • After the teacher sets a new password, mustChangePassword is cleared and
- *     the school slug can NEVER be re-used again
- *     (enforced in /api/auth/change-password).
+ *   • Initial password = school slug (e.g. "kianyaga").
+ *   • mustChangePassword=true forces a password set on first login.
+ *   • School slug can never be reused as a password afterward.
  *
  * Per-school email model:
- *   Same email at two schools → if exactly one match, log in directly;
- *   if multiple, return requiresSchoolSlug=true.
+ *   Same email at two schools → requiresSchoolSlug=true until disambiguated.
  *
  * Accepts email OR phone number as the identifier.
  */
@@ -33,7 +28,7 @@ import {
   buildOfflineToken,
 } from "@/lib/auth";
 
-// ── Explicit user shape ───────────────────────────────────────────────────────
+// ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
   id:                 string;
   email:              string;
@@ -94,16 +89,25 @@ export async function POST(req: NextRequest) {
   let passwordAlreadyVerified = false;
 
   try {
-    // ── SUPER_ADMIN fast-path ──────────────────────────────────────────────
-    // SUPER_ADMIN is not scoped to any school — look up by email alone first.
-    // This runs before the per-school flow so the platform school slug can
-    // never be guessed by a regular user to bypass school scoping.
+    // ── SUPER_ADMIN fast-path (raw SQL — bypasses Prisma enum validation) ──
+    // Must run before the per-school flow. Uses $queryRaw so it works even
+    // when the generated Prisma client was built before SUPER_ADMIN was added.
     if (isEmail) {
-      const candidate = await prisma.user.findFirst({
-        where:  { email: identifier, role: "SUPER_ADMIN", isActive: true },
-        select: userSelect,
-      });
-      if (candidate) {
+      const rows = await prisma.$queryRaw<UserRow[]>`
+        SELECT
+          id, email, "passwordHash", role::text AS role,
+          "mustChangePassword", "isActive", "schoolId",
+          "staffRoleId", "createdAt", "updatedAt",
+          "avatarUrl", "avatarStoragePath"
+        FROM "User"
+        WHERE email = ${identifier}
+          AND role::text = 'SUPER_ADMIN'
+          AND "isActive" = true
+        LIMIT 1
+      `;
+
+      if (rows.length > 0) {
+        const candidate = rows[0];
         if (!candidate.passwordHash) return invalid();
         const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
         if (!ok) return invalid();
@@ -115,7 +119,6 @@ export async function POST(req: NextRequest) {
     // ── Per-school lookup (all other roles) ───────────────────────────────
     if (!user) {
       if (schoolSlug) {
-        // Slug-scoped lookup
         const school = await prisma.school.findUnique({
           where:  { slug: schoolSlug },
           select: { id: true },
@@ -140,15 +143,22 @@ export async function POST(req: NextRequest) {
           }
         }
       } else {
-        // No slug — find all candidates, disambiguate by password
+        // No slug — find all non-super-admin candidates
         let candidates: UserRow[] = [];
 
         if (isEmail) {
-          // Exclude SUPER_ADMIN — already handled above
-          candidates = await prisma.user.findMany({
-            where:  { email: identifier, isActive: true, role: { not: "SUPER_ADMIN" } },
-            select: userSelect,
-          });
+          // Use raw SQL to exclude SUPER_ADMIN without touching the enum type
+          candidates = await prisma.$queryRaw<UserRow[]>`
+            SELECT
+              id, email, "passwordHash", role::text AS role,
+              "mustChangePassword", "isActive", "schoolId",
+              "staffRoleId", "createdAt", "updatedAt",
+              "avatarUrl", "avatarStoragePath"
+            FROM "User"
+            WHERE email = ${identifier}
+              AND role::text != 'SUPER_ADMIN'
+              AND "isActive" = true
+          `;
         } else {
           const teachers = await prisma.teacher.findMany({
             where:  { phone: identifier, archivedAt: null },
@@ -172,7 +182,6 @@ export async function POST(req: NextRequest) {
           const matched: UserRow[] = [];
           for (const candidate of candidates) {
             if (!candidate.passwordHash) {
-              // Check against school slug (first-login path)
               const school = await prisma.school.findUnique({
                 where:  { id: candidate.schoolId },
                 select: { slug: true },
@@ -215,7 +224,7 @@ export async function POST(req: NextRequest) {
 
   if (!user || !user.isActive) return invalid();
 
-  // ── Password verification (for non-pre-verified paths) ───────────────────
+  // ── Password verification ─────────────────────────────────────────────────
   if (!passwordAlreadyVerified) {
     if (!user.passwordHash) return invalid();
     const valid = await verifyPassword(password, user.passwordHash).catch(() => false);
