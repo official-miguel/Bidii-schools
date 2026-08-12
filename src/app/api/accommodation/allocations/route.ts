@@ -20,6 +20,7 @@ async function manageGuard() {
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const schoolId = user.schoolId;
 
   const dormId = req.nextUrl.searchParams.get("dormId");
   const status = req.nextUrl.searchParams.get("status") ?? "CURRENT";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const allocations = await prisma.allocationRecord.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       ...(dormId ? { dormId } : {}),
       status: status as "CURRENT" | "VACATED" | "TRANSFERRED",
       ...(q
@@ -76,6 +77,7 @@ const allocateSchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const schoolId = user.schoolId;
 
   const parsed = allocateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest) {
 
   // Verify student belongs to this school
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId: user.schoolId },
+    where: { id: studentId, schoolId },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
 
   // Verify dorm belongs to this school
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: dormId, schoolId: user.schoolId },
+    where: { id: dormId, schoolId },
     include: { _count: { select: { allocations: { where: { status: "CURRENT" } } } } },
   });
   if (!dorm) {
@@ -119,7 +121,7 @@ export async function POST(req: NextRequest) {
   // If a sleeping position is specified, check it's not already occupied
   if (sleepingPositionId) {
     const pos = await prisma.sleepingPosition.findFirst({
-      where: { id: sleepingPositionId, dormId, schoolId: user.schoolId },
+      where: { id: sleepingPositionId, dormId, schoolId },
     });
     if (!pos) {
       return NextResponse.json({ error: "Sleeping position not found." }, { status: 404 });
@@ -135,13 +137,13 @@ export async function POST(req: NextRequest) {
   const allocation = await prisma.$transaction(async (tx) => {
     // Vacate any existing CURRENT allocation for this student
     await tx.allocationRecord.updateMany({
-      where: { studentId, schoolId: user.schoolId, status: "CURRENT" },
+      where: { studentId, schoolId, status: "CURRENT" },
       data: { status: "VACATED", vacatedDate: new Date() },
     });
 
     // If student had a previous sleeping position, mark it free
     const previousAllocation = await tx.allocationRecord.findFirst({
-      where: { studentId, schoolId: user.schoolId, status: "VACATED" },
+      where: { studentId, schoolId, status: "VACATED" },
       orderBy: { updatedAt: "desc" },
     });
     if (previousAllocation?.sleepingPositionId) {
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
     // Create new allocation
     const newAllocation = await tx.allocationRecord.create({
       data: {
-        schoolId: user.schoolId!,
+        schoolId,
         studentId,
         dormId,
         cubicleId: cubicleId ?? null,
