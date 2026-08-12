@@ -23,7 +23,7 @@ export async function GET(
   { params }: { params: { studentId: string } }
 ) {
   const user = await guard();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const records = await prisma.allocationRecord.findMany({
     where: { studentId: params.studentId, schoolId: user.schoolId },
@@ -51,7 +51,7 @@ export async function DELETE(
   { params }: { params: { studentId: string } }
 ) {
   const user = await manageGuard();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const parsed = deallocateSchema.safeParse(body);
@@ -67,7 +67,7 @@ export async function DELETE(
   const current = await prisma.allocationRecord.findFirst({
     where: {
       studentId: params.studentId,
-      schoolId: user.schoolId,
+      schoolId: user.schoolId ?? undefined,
       status: "CURRENT",
     },
   });
