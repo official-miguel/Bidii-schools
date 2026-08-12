@@ -2,15 +2,23 @@
  * POST /api/auth/change-password
  *
  * First-login mandatory password change.
- * Validates the current (temporary) password, hashes the new one,
- * clears mustChangePassword, and rotates the session so any other
- * tabs pick up the change immediately.
+ *
+ * Flow:
+ *   • Teacher logs in for the first time using the school slug as their password.
+ *   • mustChangePassword === true, so the ForcePasswordChangeModal is shown.
+ *   • The modal submits ONLY { newPassword, confirmPassword } — no "current password"
+ *     field is needed because the user already proved identity at login.
+ *   • This route hashes and saves the new password, clears mustChangePassword,
+ *     and rotates the session.
+ *
+ * Guard: the new password CANNOT equal the school's slug (with or without a
+ * leading "@").  This ensures the initial shared password is permanently retired.
  */
+
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
-  verifyPassword,
   hashPassword,
   createSession,
   destroySession,
@@ -20,7 +28,6 @@ import {
 import { cookies } from "next/headers";
 
 const schema = z.object({
-  currentPassword: z.string().min(1, "Enter your current password."),
   newPassword: z
     .string()
     .min(8, "New password must be at least 8 characters.")
@@ -43,40 +50,38 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { currentPassword, newPassword } = parsed.data;
+  const { newPassword } = parsed.data;
 
-  // Verify the current (temporary) password
-  // passwordHash may be null for OTP-only accounts — they cannot use this route.
-  if (!user.passwordHash) {
-    return NextResponse.json(
-      { error: "Your account uses one-time code login and has no password to change." },
-      { status: 400 }
-    );
-  }
-  const valid = await verifyPassword(currentPassword, user.passwordHash);
-  if (!valid) {
-    return NextResponse.json(
-      { error: "Current password is incorrect." },
-      { status: 400 }
-    );
-  }
+  // ── Guard: new password cannot be the school's slug ─────────────────────
+  const school = await prisma.school.findUnique({
+    where:  { id: user.schoolId },
+    select: { slug: true },
+  });
 
-  if (currentPassword === newPassword) {
-    return NextResponse.json(
-      { error: "New password must be different from your current password." },
-      { status: 400 }
-    );
+  if (school) {
+    const normNew  = newPassword.replace(/^@/, "").toLowerCase();
+    const normSlug = school.slug.replace(/^@/, "").toLowerCase();
+    if (normNew === normSlug) {
+      return NextResponse.json(
+        {
+          error:
+            "You cannot use the school identifier as your password. " +
+            "Please choose a personal password.",
+        },
+        { status: 400 }
+      );
+    }
   }
 
   const newHash = await hashPassword(newPassword);
 
-  // Update password and clear the force-change flag
+  // Save new password and clear the force-change flag
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: newHash, mustChangePassword: false },
+    data:  { passwordHash: newHash, mustChangePassword: false },
   });
 
-  // Rotate session — destroy the old cookie, issue a fresh one
+  // Rotate session — destroy old cookie, issue a fresh one
   const oldToken = cookies().get(SESSION_COOKIE)?.value;
   if (oldToken) {
     await destroySession(oldToken).catch(() => {});
@@ -86,10 +91,10 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, newToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure:   process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    path:     "/",
+    maxAge:   60 * 60 * 24 * 7,
   });
   return res;
 }

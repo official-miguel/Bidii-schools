@@ -116,7 +116,7 @@ function DirectoryTab() {
     if (!modalOpen) return;
     setStaffDraft({ roleChoice, selectedSubjects });
   }, [roleChoice, selectedSubjects, modalOpen, setStaffDraft]);
-  const [tempPassword, setTempPassword] = useState<{ email: string; password: string } | null>(null);
+  const [loginCreated, setLoginCreated] = useState<{ email: string } | null>(null);
   const [nextStaffId, setNextStaffId] = useState<string | null>(null);
   const nextStaffIdFetched = useRef(false);
   const [search, setSearch]     = useState("");
@@ -217,11 +217,11 @@ function DirectoryTab() {
       };
       const res = await fetch("/api/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Something went wrong."); setSubmitting(false); return; }
+      if (data.error) { setError(data.error || "Something went wrong."); setSubmitting(false); return; }
       clearStaffDraft();
       setModalOpen(false);
       setSubmitting(false);
-      if (data.tempPassword) setTempPassword({ email: payload.email, password: data.tempPassword });
+      if (res.ok) setLoginCreated({ email: payload.email });
       nextStaffIdFetched.current = false; setNextStaffId(null); load();
     }
   }
@@ -291,13 +291,23 @@ function DirectoryTab() {
         </WorkspaceToolbar.Actions>
       </WorkspaceToolbar>
 
-      {tempPassword && (
-        <div className="mb-5">
-          <CredentialBox
-            email={tempPassword.email}
-            password={tempPassword.password}
-            onDismiss={() => setTempPassword(null)}
-          />
+      {loginCreated && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl bg-success-bg border border-success/20 px-5 py-4 text-sm text-success">
+          <div className="flex-1">
+            <p className="font-semibold mb-0.5">Login created for {loginCreated.email}</p>
+            <p>
+              Their initial password is the <strong>school username</strong>. They will be prompted to set
+              a personal password on first login.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLoginCreated(null)}
+            className="opacity-60 hover:opacity-100 transition-opacity shrink-0 mt-0.5"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
         </div>
       )}
 
