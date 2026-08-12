@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireRole, hashPassword, getCurrentUser } from "@/lib/auth";
 import { requirePermission, getTeacherEffectivePermissions } from "@/lib/permissions";
@@ -104,10 +103,6 @@ const createSchema = z
     path: ["subjectIds"],
   });
 
-function generateTempPassword() {
-  return `bidii-${randomBytes(4).toString("hex")}`;
-}
-
 // ---------------------------------------------------------------------------
 // POST /api/staff — register a new staff member
 // ---------------------------------------------------------------------------
@@ -190,27 +185,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fetch school name once — used in the welcome email subject/body.
+  // Fetch school name and slug — name for the welcome email, slug is the initial password.
   const school = await prisma.school.findUnique({
     where: { id: user.schoolId },
-    select: { name: true },
+    select: { name: true, slug: true },
   });
   const schoolName = school?.name ?? "Your School";
+  const schoolSlug = school?.slug ?? "";
   const schoolId   = user.schoolId; // capture for closure below
 
   // ---------------------------------------------------------------------------
   // Helper: fire-and-forget welcome email after successful creation
   // ---------------------------------------------------------------------------
-  async function maybeSendWelcome(email: string, fullName: string, tempPassword: string) {
-    if (!email || !tempPassword) return;
+  async function maybeSendWelcome(email: string, fullName: string) {
+    if (!email) return;
     sendWelcomeEmail({
       schoolId,
       schoolName,
       recipientEmail: email,
       recipientName: fullName,
-      temporaryPassword: tempPassword,
+      // The school slug is the initial password — tell the teacher what to use.
+      temporaryPassword: `@${schoolSlug}`,
     }).catch(() => {
-      // Non-fatal — the credential is still shown in the UI
+      // Non-fatal — the info is also shown in the UI
     });
   }
 
@@ -221,16 +218,16 @@ export async function POST(req: NextRequest) {
 
   if (explicitId) {
     try {
-      const tempPassword = data.createLogin ? generateTempPassword() : null;
-
       const teacher = await prisma.$transaction(async (tx) => {
         let userId: string | null = null;
-        if (data.createLogin && data.email && tempPassword) {
+        if (data.createLogin && data.email && schoolSlug) {
           const authUser = await tx.user.create({
             data: {
               schoolId: user.schoolId,
               email: data.email,
-              passwordHash: await hashPassword(tempPassword),
+              // Initial password = school slug (bcrypt-hashed).
+              // mustChangePassword forces a reset on first login.
+              passwordHash: await hashPassword(schoolSlug),
               role: staffRole ? "ADMIN_STAFF" : "TEACHER",
               staffRoleId: staffRole?.id ?? null,
               mustChangePassword: true,
@@ -258,11 +255,11 @@ export async function POST(req: NextRequest) {
       });
 
       // Send welcome email asynchronously (non-blocking)
-      if (tempPassword && data.email) {
-        await maybeSendWelcome(data.email, data.fullName, tempPassword);
+      if (data.email) {
+        await maybeSendWelcome(data.email, data.fullName);
       }
 
-      return NextResponse.json({ teacher, tempPassword }, { status: 201 });
+      return NextResponse.json({ teacher }, { status: 201 });
     } catch (e) {
       const err = e as { code?: string; meta?: { target?: string[] } };
       if (err.code === "P2002") {
@@ -323,20 +320,20 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const tempPassword = data.createLogin ? generateTempPassword() : null;
-
       const teacher = await prisma.$transaction(async (tx) => {
         if (recycledRowId) {
           await tx.recycledStaffId.delete({ where: { id: recycledRowId } });
         }
 
         let userId: string | null = null;
-        if (data.createLogin && data.email && tempPassword) {
+        if (data.createLogin && data.email && schoolSlug) {
           const authUser = await tx.user.create({
             data: {
               schoolId: user.schoolId,
               email: data.email,
-              passwordHash: await hashPassword(tempPassword),
+              // Initial password = school slug (bcrypt-hashed).
+              // mustChangePassword forces a reset on first login.
+              passwordHash: await hashPassword(schoolSlug),
               role: staffRole ? "ADMIN_STAFF" : "TEACHER",
               staffRoleId: staffRole?.id ?? null,
               mustChangePassword: true,
@@ -364,11 +361,11 @@ export async function POST(req: NextRequest) {
       });
 
       // Send welcome email asynchronously (non-blocking)
-      if (tempPassword && data.email) {
-        await maybeSendWelcome(data.email, data.fullName, tempPassword);
+      if (data.email) {
+        await maybeSendWelcome(data.email, data.fullName);
       }
 
-      return NextResponse.json({ teacher, tempPassword }, { status: 201 });
+      return NextResponse.json({ teacher }, { status: 201 });
     } catch (e) {
       const err = e as { code?: string; meta?: { target?: string[] } };
       if (err.code === "P2002") {

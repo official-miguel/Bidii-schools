@@ -1,16 +1,21 @@
 /**
  * mobile/lib/auth.ts
  *
- * Authentication store — Supabase Email OTP flow.
+ * Authentication store — email/phone + password login.
  *
- * Two-step flow:
- *   1. requestCode(email)  → Supabase sends a 6-digit code to the email.
- *   2. verifyCode(email, token, schoolSlug?) → verifies with Supabase, then
- *      calls our own API to look up the User row and return role + session.
+ * Flow:
+ *   1. login(identifier, password, schoolSlug?)
+ *        → POST /api/auth/login
+ *        → returns { role, mustChangePassword, offlineToken }
+ *        → if mustChangePassword === true, navigate to set-password screen
  *
- * Per-school email model is preserved: if the same email exists at multiple
- * schools, the API returns requiresSchoolSlug=true and we re-submit with the
- * school identifier.
+ *   2. setPassword(newPassword)
+ *        → POST /api/auth/change-password
+ *        → clears mustChangePassword, rotates session
+ *
+ * Per-school email model:
+ *   Same email at multiple schools → API returns requiresSchoolSlug=true (409).
+ *   Client shows the school username field and re-submits.
  *
  * Session is persisted to AsyncStorage via Zustand persist middleware so the
  * user stays signed in across app restarts.
@@ -19,36 +24,32 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { requestOtp, verifyOtp, mapOtpError } from "./supabase/auth";
 import { api } from "@/services/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface AuthUser {
-  id:         string;
-  email:      string;
-  role:       string;
-  schoolId:   string;
-  fullName?:  string;
-  avatarUrl?: string | null;
+  id:               string;
+  email:            string;
+  role:             string;
+  schoolId:         string;
+  fullName?:        string;
+  avatarUrl?:       string | null;
+  mustChangePassword: boolean;
 }
 
-export type LoginStep = "idle" | "code_sent" | "needs_slug" | "authenticated";
-
 interface AuthState {
-  user:        AuthUser | null;
-  token:       string | null;   // Bidii session token (from our own API)
-  step:        LoginStep;
-  pendingEmail: string | null;  // email waiting for OTP verification
-  isLoading:   boolean;
-  error:       string | null;
+  user:      AuthUser | null;
+  token:     string | null;
+  isLoading: boolean;
+  error:     string | null;
 
   // Actions
-  requestCode:  (email: string) => Promise<void>;
-  verifyCode:   (email: string, token: string, schoolSlug?: string) => Promise<{ requiresSchoolSlug?: boolean }>;
-  logout:       () => Promise<void>;
-  clearError:   () => void;
-  init:         () => Promise<void>;
+  login:       (identifier: string, password: string, schoolSlug?: string) => Promise<{ requiresSchoolSlug?: boolean }>;
+  setPassword: (newPassword: string) => Promise<boolean>;
+  logout:      () => Promise<void>;
+  clearError:  () => void;
+  init:        () => Promise<void>;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────────
@@ -56,87 +57,99 @@ interface AuthState {
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
-      user:         null,
-      token:        null,
-      step:         "idle",
-      pendingEmail: null,
-      isLoading:    false,
-      error:        null,
+      user:      null,
+      token:     null,
+      isLoading: false,
+      error:     null,
 
-      // ── Step 1: request OTP ────────────────────────────────────────────────
-      requestCode: async (email: string) => {
+      // ── Login ──────────────────────────────────────────────────────────────
+      login: async (identifier, password, schoolSlug) => {
         set({ isLoading: true, error: null });
         try {
-          const err = await requestOtp(email.trim().toLowerCase());
-          if (err) {
-            set({ isLoading: false, error: mapOtpError(err.message) });
-            return;
-          }
-          set({ isLoading: false, step: "code_sent", pendingEmail: email.trim().toLowerCase() });
-        } catch {
-          set({ isLoading: false, error: "Couldn't reach the server. Check your connection." });
-        }
-      },
-
-      // ── Step 2: verify OTP → create app session ────────────────────────────
-      verifyCode: async (email: string, token: string, schoolSlug?: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          // Verify with Supabase.
-          const err = await verifyOtp(email, token);
-          if (err) {
-            set({ isLoading: false, error: mapOtpError(err.message) });
-            return {};
-          }
-
-          // Call our own API to look up the User row + create a Bidii session.
-          const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? ""}/api/auth/otp/verify`, {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ email, token, schoolSlug }),
-          });
+          const res = await fetch(
+            `${process.env.EXPO_PUBLIC_API_URL ?? ""}/api/auth/login`,
+            {
+              method:  "POST",
+              headers: { "Content-Type": "application/json" },
+              body:    JSON.stringify({
+                identifier: identifier.trim().toLowerCase(),
+                password,
+                ...(schoolSlug ? { schoolSlug: schoolSlug.trim().replace(/^@/, "") } : {}),
+              }),
+            }
+          );
           const data = await res.json();
 
           if (!res.ok) {
             if (res.status === 409 && data.requiresSchoolSlug) {
-              set({ isLoading: false, step: "needs_slug" });
+              set({ isLoading: false });
               return { requiresSchoolSlug: true };
             }
-            set({ isLoading: false, error: data.error || "Verification failed." });
+            set({ isLoading: false, error: data.error || "Incorrect email/phone or password." });
             return {};
           }
 
-          // Store the offline token as our session token.
-          const sessionToken = data.offlineToken?.userId
+          // Store the offline token so API calls can attach it as Bearer
+          const sessionToken = data.offlineToken
             ? JSON.stringify(data.offlineToken)
             : null;
-
           if (sessionToken) await api.setToken(sessionToken);
 
           set({
-            isLoading:    false,
-            step:         "authenticated",
-            pendingEmail: null,
-            token:        sessionToken,
+            isLoading: false,
+            error:     null,
+            token:     sessionToken,
             user: {
-              id:       data.offlineToken?.userId ?? "",
-              email,
-              role:     data.role ?? "",
-              schoolId: data.offlineToken?.schoolId ?? "",
+              id:                 data.offlineToken?.userId  ?? "",
+              email:              identifier.trim().toLowerCase(),
+              role:               data.role                  ?? "",
+              schoolId:           data.offlineToken?.schoolId ?? "",
+              mustChangePassword: data.mustChangePassword    ?? false,
             },
-            error: null,
           });
           return {};
         } catch {
           set({ isLoading: false, error: "Couldn't reach the server. Check your connection." });
           return {};
+        }
+      },
+
+      // ── Set password (first-login forced change) ───────────────────────────
+      setPassword: async (newPassword) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await fetch(
+            `${process.env.EXPO_PUBLIC_API_URL ?? ""}/api/auth/change-password`,
+            {
+              method:  "POST",
+              headers: {
+                "Content-Type": "application/json",
+                // Include the session token so the server knows who is changing
+                Authorization: `Bearer ${get().token ?? ""}`,
+              },
+              body: JSON.stringify({ newPassword }),
+            }
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            set({ isLoading: false, error: data.error || "Couldn't save password. Try again." });
+            return false;
+          }
+          // Clear the mustChangePassword flag locally
+          const user = get().user;
+          if (user) set({ user: { ...user, mustChangePassword: false } });
+          set({ isLoading: false, error: null });
+          return true;
+        } catch {
+          set({ isLoading: false, error: "Couldn't reach the server. Check your connection." });
+          return false;
         }
       },
 
       // ── Logout ──────────────────────────────────────────────────────────────
       logout: async () => {
         await api.clearToken();
-        set({ user: null, token: null, step: "idle", pendingEmail: null, error: null, isLoading: false });
+        set({ user: null, token: null, error: null, isLoading: false });
       },
 
       clearError: () => set({ error: null }),
@@ -155,14 +168,14 @@ export const useAuth = create<AuthState>()(
   )
 );
 
-// ── Role helpers (unchanged API) ──────────────────────────────────────────────
+// ── Role helpers ──────────────────────────────────────────────────────────────
 
 export const ROLES = {
-  PRINCIPAL:  "PRINCIPAL",
+  PRINCIPAL:   "PRINCIPAL",
   ADMIN_STAFF: "ADMIN_STAFF",
-  LIBRARIAN:  "ADMIN_STAFF",
-  TEACHER:    "TEACHER",
-  STUDENT:    "STUDENT",
+  LIBRARIAN:   "ADMIN_STAFF",
+  TEACHER:     "TEACHER",
+  STUDENT:     "STUDENT",
 } as const;
 
 export type UserRole = keyof typeof ROLES;
@@ -173,9 +186,9 @@ export function hasRole(allowedRoles: UserRole[]): boolean {
   return allowedRoles.includes(user.role as UserRole);
 }
 
-export const isPrincipal  = () => useAuth.getState().user?.role === "PRINCIPAL";
-export const isLibrarian  = () => useAuth.getState().user?.role === "ADMIN_STAFF";
-export const isStudent    = () => useAuth.getState().user?.role === "STUDENT";
-export const isTeacher    = () => useAuth.getState().user?.role === "TEACHER";
+export const isPrincipal   = () => useAuth.getState().user?.role === "PRINCIPAL";
+export const isLibrarian   = () => useAuth.getState().user?.role === "ADMIN_STAFF";
+export const isStudent     = () => useAuth.getState().user?.role === "STUDENT";
+export const isTeacher     = () => useAuth.getState().user?.role === "TEACHER";
 export const getDisplayName = () =>
   useAuth.getState().user?.email.split("@")[0] ?? "User";
