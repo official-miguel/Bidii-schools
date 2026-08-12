@@ -181,7 +181,7 @@ export default function StoragePage() {
       const res = await fetch(`/api/super-admin/storage?sortBy=${sortKey}&sortDir=${sortDir}`);
       if (!res.ok) throw new Error("Failed to load storage data");
       setData(await res.json());
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);

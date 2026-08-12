@@ -26,7 +26,9 @@ export async function GET(req: NextRequest) {
   if (moduleName)   where.module   = { contains: moduleName, mode: "insensitive" };
   if (from || to) {
     where.createdAt = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (from) (where.createdAt as any).gte = new Date(from);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (to)   (where.createdAt as any).lte = new Date(to);
   }
 

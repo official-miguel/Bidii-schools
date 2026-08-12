@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     const deps = MODULE_DEPS[module] ?? [];
     if (deps.length > 0) {
       const existing = await prisma.schoolModuleToggle.findMany({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         where: { schoolId, module: { in: deps as any }, enabled: true },
       });
       const missing = deps.filter(d => !existing.some(e => e.module === d));
@@ -79,7 +80,9 @@ export async function POST(req: NextRequest) {
   }
 
   const toggle = await prisma.schoolModuleToggle.upsert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     where:  { schoolId_module: { schoolId, module: module as any } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     create: { schoolId, module: module as any, enabled, updatedBy: user.id },
     update: { enabled, updatedBy: user.id },
   });

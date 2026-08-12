@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z }                     from "zod";
 import { prisma }                from "@/lib/prisma";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
-import { hashPassword, createSession } from "@/lib/auth";
-import { cookies }               from "next/headers";
+import { hashPassword } from "@/lib/auth";
 
 const CreateSchema = z.object({
   name:          z.string().min(2),

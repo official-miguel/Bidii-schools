@@ -42,8 +42,8 @@ interface Summary {
 }
 
 export default function TeacherAccommodationView({
-  canManageAll,
-  ownDormIds,
+  canManageAll: _canManageAll,
+  ownDormIds: _ownDormIds,
 }: {
   canManageAll: boolean;
   ownDormIds: string[];

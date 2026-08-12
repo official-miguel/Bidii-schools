@@ -287,6 +287,7 @@ export async function POST(req: NextRequest) {
               movesCount: moves.length,
               approvedBy: user.id,
               notes: notes || null,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               moves: moves.map((m: any) => ({
                 studentId: m.studentId,
                 studentName: m.studentName,

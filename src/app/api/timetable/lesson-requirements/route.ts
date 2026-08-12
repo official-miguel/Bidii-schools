@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const classId = searchParams.get("classId");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { schoolId };
     if (classId) {
       where.classId = classId;
@@ -121,6 +122,7 @@ export async function PUT(req: NextRequest) {
 
       // Create new requirements
       await tx.subjectLessonRequirement.createMany({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: requirements.map((req: any) => ({
           schoolId,
           classId,

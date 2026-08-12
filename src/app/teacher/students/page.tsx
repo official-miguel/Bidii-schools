@@ -164,6 +164,7 @@ export default function TeacherStudentsPage() {
   const classMap = useMemo(() => new Map(rawClasses.map((c) => [c.id, c])), [rawClasses]);
 
   const students: Student[] = useMemo(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () => (rawStudents as any[])
       .filter((s) => !s.archivedAt)
       .map((s) => ({

@@ -18,7 +18,7 @@ interface Props {
   classTeacherOfId: string | null;
 }
 
-export default function TeacherAttendanceOverview({ classIds, classTeacherOfId }: Props) {
+export default function TeacherAttendanceOverview({ classIds, classTeacherOfId: _classTeacherOfId }: Props) {
   const [stats, setStats] = useState<AttendanceStatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 

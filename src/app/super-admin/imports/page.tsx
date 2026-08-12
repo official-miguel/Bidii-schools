@@ -249,7 +249,7 @@ function NewImportTab() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Failed to start import");
       setSubmitted(j.job);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setSubmitting(false);
@@ -457,7 +457,7 @@ function HistoryTab() {
       setJobs(j.jobs ?? []);
       setTotal(j.total ?? 0);
       setPage(pg);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setLoading(false);
@@ -475,7 +475,7 @@ function HistoryTab() {
       setRollbackMsg(`Import ${jobId.slice(0, 8)}… rolled back`);
       setTimeout(() => setRollbackMsg(null), 3000);
       await load(page);
-    } catch (e: any) {
+    } catch (e) {
       setApiError(e.message);
     } finally {
       setRollbackBusy(null);

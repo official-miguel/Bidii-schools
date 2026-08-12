@@ -18,7 +18,6 @@ const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 const BUCKET         = process.env.SUPABASE_STORAGE_IMAGES_BUCKET ?? "images";
 
 const VALID_FIELDS = ["logo", "stamp"] as const;
-type UploadField   = typeof VALID_FIELDS[number];
 
 const EXT_MAP: Record<string, string> = {
   "image/png":     "png",
