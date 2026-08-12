@@ -80,6 +80,14 @@ export async function POST(req: NextRequest) {
   }
 
   const { identifier, password, schoolSlug } = parsed.data;
+  
+  console.log('[LOGIN] Attempt:', {
+    identifier,
+    passwordLength: password.length,
+    schoolSlug: schoolSlug || 'none',
+    isEmail: identifier.includes("@")
+  });
+  
   const invalid = () =>
     NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
 
@@ -108,8 +116,17 @@ export async function POST(req: NextRequest) {
 
       if (rows.length > 0) {
         const candidate = rows[0];
-        if (!candidate.passwordHash) return invalid();
-        const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
+        console.log('[LOGIN] SUPER_ADMIN found:', candidate.id, candidate.email);
+        if (!candidate.passwordHash) {
+          console.log('[LOGIN] SUPER_ADMIN has no password hash');
+          return invalid();
+        }
+        console.log('[LOGIN] Testing password for SUPER_ADMIN...');
+        const ok = await verifyPassword(password, candidate.passwordHash).catch((err) => {
+          console.error('[LOGIN] Password verification error:', err);
+          return false;
+        });
+        console.log('[LOGIN] Password verification result:', ok);
         if (!ok) return invalid();
         user = candidate;
         passwordAlreadyVerified = true;
