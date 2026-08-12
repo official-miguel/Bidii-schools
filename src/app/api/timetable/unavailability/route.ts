@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 
 // Returns every teacher at the school alongside their unavailable slots, so
 // the AI Timetable panel can render one compact grid per teacher without a
@@ -9,9 +9,10 @@ import { requireRole } from "@/lib/auth";
 export async function GET() {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const teachers = await prisma.teacher.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId },
     orderBy: { fullName: "asc" },
     select: {
       id: true,
@@ -33,6 +34,7 @@ const schema = z.object({
 export async function PUT(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -43,7 +45,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const teacher = await prisma.teacher.findFirst({
-    where: { id: parsed.data.teacherId, schoolId: user.schoolId },
+    where: { id: parsed.data.teacherId, schoolId },
   });
   if (!teacher) return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
 

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 
 export async function GET() {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const [school, dormCount, freePositionsCount] = await Promise.all([
     prisma.school.findUnique({
-      where: { id: user.schoolId },
+      where: { id: schoolId },
       select: {
         name: true,
         logoUrl: true,
@@ -21,10 +22,10 @@ export async function GET() {
       },
     }),
     prisma.dormitory.count({
-      where: { schoolId: user.schoolId, status: "ACTIVE" },
+      where: { schoolId, status: "ACTIVE" },
     }),
     prisma.sleepingPosition.count({
-      where: { schoolId: user.schoolId, isOccupied: false },
+      where: { schoolId, isOccupied: false },
     }),
   ]);
 
@@ -56,6 +57,7 @@ const updateSchema = z.object({
 export async function PUT(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -68,7 +70,7 @@ export async function PUT(req: NextRequest) {
   const data = parsed.data;
 
   const school = await prisma.school.update({
-    where: { id: user.schoolId },
+    where: { id: schoolId },
     data: {
       ...(data.motto             !== undefined ? { motto:             data.motto             || null } : {}),
       ...(data.logoUrl           !== undefined ? { logoUrl:           data.logoUrl           || null } : {}),

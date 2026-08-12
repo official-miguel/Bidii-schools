@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
 
@@ -21,9 +21,10 @@ async function getAuthor(manage = false) {
 export async function GET() {
   const user = await getAuthor();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const [config, operatingDays, specialPeriods, workloadRules] = await Promise.all([
-    prisma.timetableConfig.findUnique({ where: { schoolId: user.schoolId } }),
+    prisma.timetableConfig.findUnique({ where: { schoolId } }),
 
     prisma.$queryRaw<
       Array<{
@@ -31,7 +32,7 @@ export async function GET() {
         isHalfDay: boolean; halfDayEndsAfterPeriod: number | null; label: string | null;
       }>
     >`SELECT id, "dayOfWeek", "isActive", "isHalfDay", "halfDayEndsAfterPeriod", label
-      FROM "OperatingDay" WHERE "schoolId" = ${user.schoolId} ORDER BY "dayOfWeek"`,
+      FROM "OperatingDay" WHERE "schoolId" = ${schoolId} ORDER BY "dayOfWeek"`,
 
     prisma.$queryRaw<
       Array<{
@@ -41,7 +42,7 @@ export async function GET() {
       }>
     >`SELECT id, type, label, "dayOfWeek", period, "durationMinutes",
              "appliesToForms", "appliesToClasses", "isActive", "sortOrder"
-      FROM "SpecialPeriod" WHERE "schoolId" = ${user.schoolId}
+      FROM "SpecialPeriod" WHERE "schoolId" = ${schoolId}
       ORDER BY "sortOrder", period`,
 
     prisma.$queryRaw<
@@ -58,7 +59,7 @@ export async function GET() {
              r."preferMorning", r."preferAfternoon"
       FROM "SubjectWorkloadRule" r
       JOIN "Subject" s ON s.id = r."subjectId"
-      WHERE r."schoolId" = ${user.schoolId}
+      WHERE r."schoolId" = ${schoolId}
       ORDER BY r.form, s.code`,
   ]);
 
@@ -72,7 +73,7 @@ export async function GET() {
   };
 
   return NextResponse.json({
-    config:         { ...DEFAULTS, ...(config ?? {}), schoolId: user.schoolId },
+    config:         { ...DEFAULTS, ...(config ?? {}), schoolId },
     operatingDays,
     specialPeriods,
     workloadRules,
@@ -145,6 +146,7 @@ const bodySchema = z.object({
 export async function PUT(req: NextRequest) {
   const user = await getAuthor(true);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
@@ -156,22 +158,22 @@ export async function PUT(req: NextRequest) {
   // ── TimetableConfig ──────────────────────────────────────────────────────
   if (config) {
     await prisma.timetableConfig.upsert({
-      where:  { schoolId: user.schoolId },
+      where:  { schoolId },
       update: { ...config, updatedAt: now },
-      create: { schoolId: user.schoolId, ...config, updatedAt: now },
+      create: { schoolId, ...config, updatedAt: now },
     });
   }
 
   // ── OperatingDays — full replace ─────────────────────────────────────────
   if (operatingDays) {
-    await prisma.$executeRaw`DELETE FROM "OperatingDay" WHERE "schoolId" = ${user.schoolId}`;
+    await prisma.$executeRaw`DELETE FROM "OperatingDay" WHERE "schoolId" = ${schoolId}`;
     for (const d of operatingDays) {
       await prisma.$executeRaw`
         INSERT INTO "OperatingDay"
           (id, "schoolId", "dayOfWeek", "isActive", "isHalfDay",
            "halfDayEndsAfterPeriod", label, "createdAt", "updatedAt")
         VALUES (
-          ${randomUUID()}, ${user.schoolId}, ${d.dayOfWeek}, ${d.isActive},
+          ${randomUUID()}, ${schoolId}, ${d.dayOfWeek}, ${d.isActive},
           ${d.isHalfDay ?? false}, ${d.halfDayEndsAfterPeriod ?? null},
           ${d.label ?? null}, ${now}, ${now}
         )
@@ -184,7 +186,7 @@ export async function PUT(req: NextRequest) {
     // Simplest correct approach: delete all existing rows for this school,
     // then re-insert the full list. The list is small (< 20 rows typically)
     // so a full replace is cheaper and safer than diffing.
-    await prisma.$executeRaw`DELETE FROM "SpecialPeriod" WHERE "schoolId" = ${user.schoolId}`;
+    await prisma.$executeRaw`DELETE FROM "SpecialPeriod" WHERE "schoolId" = ${schoolId}`;
 
     for (const sp of specialPeriods) {
       const id = sp.id ?? randomUUID();
@@ -196,7 +198,7 @@ export async function PUT(req: NextRequest) {
            "appliesToForms", "appliesToClasses", "isActive", "sortOrder",
            "createdAt", "updatedAt")
         VALUES (
-          ${id}, ${user.schoolId}, ${sp.type}::"SpecialPeriodType",
+          ${id}, ${schoolId}, ${sp.type}::"SpecialPeriodType",
           ${sp.label}, ${sp.dayOfWeek ?? null}, ${sp.period},
           ${sp.durationMinutes ?? null},
           ${forms}::integer[], ${classes}::text[],
@@ -227,7 +229,7 @@ export async function PUT(req: NextRequest) {
            "consecutiveDouble", "requiresSpecialRoom", "maxPerDay", "minSpreadDays",
            "preferMorning", "preferAfternoon", "createdAt", "updatedAt")
         VALUES (
-          ${r.id ?? randomUUID()}, ${user.schoolId}, ${r.subjectId}, ${r.form},
+          ${r.id ?? randomUUID()}, ${schoolId}, ${r.subjectId}, ${r.form},
           ${r.lessonsPerWeek}, ${r.doubleLesson ?? false},
           ${r.consecutiveDouble ?? false}, ${r.requiresSpecialRoom ?? null},
           ${r.maxPerDay ?? null}, ${r.minSpreadDays ?? null},

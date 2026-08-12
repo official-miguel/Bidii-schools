@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission, requireRecordsPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     (await requireRecordsPermission("RECORDS_DISCIPLINE", "view")) ??
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const sp     = req.nextUrl.searchParams;
   const classId = sp.get("classId") || undefined;
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
   // expose a standalone WhereInput via Parameters<> in all versions, so
   // we use an explicit Record shape and let findMany infer the rest.
   const where: Record<string, unknown> = {
-    schoolId: user.schoolId,
+    schoolId,
     archivedAt: null,          // Active students only — archived ones live in /api/history/students
     ...(classId ? { classId } : {}),
     ...(q
@@ -142,6 +143,7 @@ async function maxAdmissionNumber(schoolId: string): Promise<number | null> {
 export async function POST(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -158,7 +160,7 @@ export async function POST(req: NextRequest) {
   const normalisedName = data.fullName.toLowerCase().replace(/\s+/g, " ").trim();
   const sameName = await prisma.student.findMany({
     where: {
-      schoolId:    user.schoolId,
+      schoolId:    schoolId,
       archivedAt:  null,
       schoolClass: { form: data.form },
     },
@@ -176,7 +178,7 @@ export async function POST(req: NextRequest) {
 
   // Streams for this form, in registration order — round-robin target list.
   const streams = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId, form: data.form },
+    where: { schoolId, form: data.form },
     orderBy: { createdAt: "asc" },
     select: { id: true, _count: { select: { students: true } } },
   });
@@ -188,7 +190,7 @@ export async function POST(req: NextRequest) {
 
   if (data.electiveSubjectIds.length > 0) {
     const count = await prisma.subject.count({
-      where: { id: { in: data.electiveSubjectIds }, schoolId: user.schoolId },
+      where: { id: { in: data.electiveSubjectIds }, schoolId },
     });
     if (count !== data.electiveSubjectIds.length) {
       return NextResponse.json({ error: "Choose valid elective subjects." }, { status: 400 });
@@ -198,7 +200,7 @@ export async function POST(req: NextRequest) {
   // Retry loop: the (schoolId, admissionNumber) unique constraint is the
   // concurrency guard — a clash simply recomputes the next number.
   for (let attempt = 0; attempt < 3; attempt++) {
-    const current = await maxAdmissionNumber(user.schoolId);
+    const current = await maxAdmissionNumber(schoolId);
     let next: number;
     if (current === null) {
       if (!data.startingAdmissionNumber) {
@@ -215,7 +217,7 @@ export async function POST(req: NextRequest) {
     try {
       const student = await prisma.student.create({
         data: {
-          schoolId: user.schoolId,
+          schoolId,
           fullName: data.fullName,
           admissionNumber: String(next),
           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
@@ -234,12 +236,12 @@ export async function POST(req: NextRequest) {
       // Auto-provision a library card for every new student so they can
       // borrow immediately without a separate card-creation step.
       const settings = await prisma.librarySettings.findUnique({
-        where: { schoolId: user.schoolId },
+        where: { schoolId },
         select: { cardValidityDays: true },
       });
       const year = new Date().getFullYear();
       const lastCard = await prisma.libraryCard.findFirst({
-        where: { schoolId: user.schoolId, cardNumber: { startsWith: `LIB-${year}-` } },
+        where: { schoolId, cardNumber: { startsWith: `LIB-${year}-` } },
         orderBy: { createdAt: "desc" },
         select: { cardNumber: true },
       });
@@ -255,7 +257,7 @@ export async function POST(req: NextRequest) {
         : null;
       await prisma.libraryCard.create({
         data: {
-          schoolId: user.schoolId,
+          schoolId,
           studentId: student.id,
           cardNumber,
           status: "ACTIVE",
@@ -269,7 +271,7 @@ export async function POST(req: NextRequest) {
       // ── Auto-allocate dorm if school policy + student is boarding ──────
       if (data.boardingStatus === "BOARDING") {
         const school = await prisma.school.findUnique({
-          where: { id: user.schoolId },
+          where: { id: schoolId },
           select: { autoAllocateDorms: true },
         });
         if (school?.autoAllocateDorms) {
@@ -278,7 +280,7 @@ export async function POST(req: NextRequest) {
           // Log allocation attempts for debugging.
           try {
             const result = await autoAssignDorm({
-              schoolId: user.schoolId,
+              schoolId,
               studentId: student.id,
               studentForm: student.schoolClass.form,
               allocatedById: user.id,
@@ -286,7 +288,7 @@ export async function POST(req: NextRequest) {
             if (!result) {
               // Log: allocation failed silently (no eligible dorms or free positions)
               console.warn(
-                `[Accommodation] Auto-allocation failed for student ${student.id} in school ${user.schoolId}: no eligible dorms or free positions available`
+                `[Accommodation] Auto-allocation failed for student ${student.id} in school ${schoolId}: no eligible dorms or free positions available`
               );
             }
           } catch (err) {
@@ -298,7 +300,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      emitSSE(user.schoolId, "student.created", student);
+      emitSSE(schoolId, "student.created", student);
       return NextResponse.json(student, { status: 201 });
     } catch (e) {
       const err = e as { code?: string };

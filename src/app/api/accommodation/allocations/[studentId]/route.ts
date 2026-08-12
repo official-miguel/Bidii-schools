@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 
@@ -23,10 +23,11 @@ export async function GET(
   { params }: { params: { studentId: string } }
 ) {
   const user = await guard();
-  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const records = await prisma.allocationRecord.findMany({
-    where: { studentId: params.studentId, schoolId: user.schoolId },
+    where: { studentId: params.studentId, schoolId },
     orderBy: { allocationDate: "desc" },
     include: {
       dorm: { select: { id: true, name: true } },
@@ -51,7 +52,8 @@ export async function DELETE(
   { params }: { params: { studentId: string } }
 ) {
   const user = await manageGuard();
-  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const body = await req.json().catch(() => ({}));
   const parsed = deallocateSchema.safeParse(body);
@@ -67,7 +69,7 @@ export async function DELETE(
   const current = await prisma.allocationRecord.findFirst({
     where: {
       studentId: params.studentId,
-      schoolId: user.schoolId ?? undefined,
+      schoolId,
       status: "CURRENT",
     },
   });

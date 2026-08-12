@@ -24,8 +24,9 @@ async function ownsVersion(versionId: string, schoolId: string) {
 export async function GET(req: NextRequest, { params }: Ctx) {
   const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
-  const version = await ownsVersion(params.id, user.schoolId);
+  const version = await ownsVersion(params.id, schoolId);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
 
   const classId = req.nextUrl.searchParams.get("classId");
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   // ── Apply group display collapse logic ─────────────────────────────────
   // Fetch group information for collapse
   const electiveGroups = await prisma.electiveGroup.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId },
     select: {
       id: true,
       name: true,
@@ -130,8 +131,9 @@ const addSchema = z.object({
 export async function POST(req: NextRequest, { params }: Ctx) {
   const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
-  const version = await ownsVersion(params.id, user.schoolId);
+  const version = await ownsVersion(params.id, schoolId);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (version.status === "ARCHIVED")
     return NextResponse.json({ error: "Cannot modify an archived version." }, { status: 409 });
@@ -162,7 +164,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
   // Verify the class belongs to this school
   const classCheck = await prisma.schoolClass.findFirst({
-    where: { id: d.classId, schoolId: user.schoolId },
+    where: { id: d.classId, schoolId },
     select: { id: true },
   });
   if (!classCheck) return NextResponse.json({ error: "Class not found." }, { status: 400 });
@@ -191,7 +193,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       where: {
         groupId,
         classId: d.classId,
-        schoolId: user.schoolId,
+        schoolId,
       },
       select: { subjectId: true, teacherId: true },
     });
@@ -238,7 +240,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       where: {
         teacherId: d.teacherId,
         subjectId: d.subjectId,
-        teacher: { schoolId: user.schoolId },
+        teacher: { schoolId },
       },
       select: { teacherId: true },
     });
@@ -267,7 +269,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   let teachersToCheck: string[] = [];
   if (isGroupSubject && groupId) {
     const teacherAssignments = await prisma.classElectiveGroupTeacher.findMany({
-      where: { groupId, classId: d.classId, schoolId: user.schoolId },
+      where: { groupId, classId: d.classId, schoolId },
       select: { teacherId: true },
     });
     teachersToCheck = [...new Set(teacherAssignments.map(ta => ta.teacherId))];
@@ -313,7 +315,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       where: {
         groupId,
         classId: d.classId,
-        schoolId: user.schoolId,
+        schoolId,
       },
       select: { subjectId: true, teacherId: true },
     });
@@ -336,7 +338,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
             (id, "versionId", "schoolId", "classId", "dayOfWeek", period,
              "subjectId", "teacherId", room, "isManual", notes, "createdAt", "updatedAt")
           VALUES (
-            ${slotId}, ${params.id}, ${user.schoolId}, ${d.classId},
+            ${slotId}, ${params.id}, ${schoolId}, ${d.classId},
             ${d.dayOfWeek}, ${d.period}, ${member.subjectId}, ${teacherId},
             ${d.room ?? null}, ${d.isManual ?? true}, ${d.notes ?? null},
             ${now}, ${now}
@@ -353,7 +355,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         (id, "versionId", "schoolId", "classId", "dayOfWeek", period,
          "subjectId", "teacherId", room, "isManual", notes, "createdAt", "updatedAt")
       VALUES (
-        ${slotId}, ${params.id}, ${user.schoolId}, ${d.classId},
+        ${slotId}, ${params.id}, ${schoolId}, ${d.classId},
         ${d.dayOfWeek}, ${d.period}, ${d.subjectId}, ${d.teacherId},
         ${d.room ?? null}, ${d.isManual ?? true}, ${d.notes ?? null},
         ${now}, ${now}
@@ -371,7 +373,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       (id, "schoolId", "versionId", "slotId", action, "changeSource",
        "afterState", detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id}, ${createdSlotIds[0]},
+      ${randomUUID()}, ${schoolId}, ${params.id}, ${createdSlotIds[0]},
       'SLOT_ADDED'::"TimetableChangeAction", 'MANUAL',
       ${JSON.stringify(afterSnap)}::jsonb,
       ${JSON.stringify({ classId: d.classId, dayOfWeek: d.dayOfWeek, period: d.period })}::jsonb,
@@ -398,8 +400,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 export async function DELETE(req: NextRequest, { params }: Ctx) {
   const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
-  const version = await ownsVersion(params.id, user.schoolId);
+  const version = await ownsVersion(params.id, schoolId);
   if (!version) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (version.status === "ARCHIVED")
     return NextResponse.json({ error: "Cannot modify an archived version." }, { status: 409 });
@@ -416,7 +419,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     INSERT INTO "TimetableChangeLog"
       (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id},
+      ${randomUUID()}, ${schoolId}, ${params.id},
       'SLOT_REMOVED'::"TimetableChangeAction",
       ${JSON.stringify({ slotId })}::jsonb,
       ${user.id}, ${new Date()}

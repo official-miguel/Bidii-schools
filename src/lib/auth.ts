@@ -61,6 +61,23 @@ export async function requireRole(...roles: Role[]): Promise<User | null> {
   return user;
 }
 
+/**
+ * A User whose schoolId is guaranteed to be a non-null string.
+ * Used by school-scoped API routes so Prisma where-clauses satisfy the
+ * `string | StringFilter | undefined` constraint without null.
+ */
+export type SchoolUser = Omit<User, "schoolId"> & { schoolId: string };
+
+/**
+ * Like requireRole but also asserts schoolId is present.
+ * Returns null for SUPER_ADMIN accounts (no school) or unauthenticated requests.
+ */
+export async function requireSchoolRole(...roles: Role[]): Promise<SchoolUser | null> {
+  const user = await requireRole(...roles);
+  if (!user || !user.schoolId) return null;
+  return user as SchoolUser;
+}
+
 // ---------------------------------------------------------------------------
 // Offline auth token — signed server-side at login, cached client-side in
 // IndexedDB so the user can be identified without a network round-trip.

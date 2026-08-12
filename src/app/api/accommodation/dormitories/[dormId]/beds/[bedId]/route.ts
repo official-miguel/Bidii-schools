@@ -31,10 +31,11 @@ export async function DELETE(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   // Verify the bed belongs to this dorm and school
   const bed = await prisma.bed.findFirst({
-    where: { id: params.bedId, dormId: params.dormId, schoolId: user.schoolId },
+    where: { id: params.bedId, dormId: params.dormId, schoolId },
     include: {
       positions: {
         select: {

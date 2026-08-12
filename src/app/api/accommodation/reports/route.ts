@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 
@@ -23,6 +23,7 @@ async function guard() {
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const { searchParams } = req.nextUrl;
   const type = searchParams.get("type") ?? "occupancy";
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined;
 
   const dormWhere = {
-    schoolId: user.schoolId,
+    schoolId,
     ...(dormId ? { id: dormId } : {}),
   };
 
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest) {
     case "students": {
       const allocations = await prisma.allocationRecord.findMany({
         where: {
-          schoolId: user.schoolId,
+          schoolId,
           status: "CURRENT",
           ...(dormId ? { dormId } : {}),
         },
@@ -154,7 +155,7 @@ export async function GET(req: NextRequest) {
     case "movement": {
       const allocations = await prisma.allocationRecord.findMany({
         where: {
-          schoolId: user.schoolId,
+          schoolId,
           ...(dormId ? { dormId } : {}),
           ...(from || to
             ? {
@@ -194,13 +195,13 @@ export async function GET(req: NextRequest) {
     // ── Unallocated students ────────────────────────────────────────────
     case "unallocated": {
       const allocated = await prisma.allocationRecord.findMany({
-        where: { schoolId: user.schoolId, status: "CURRENT" },
+        where: { schoolId, status: "CURRENT" },
         select: { studentId: true },
       });
       const allocatedIds = new Set(allocated.map((a) => a.studentId));
 
       const students = await prisma.student.findMany({
-        where: { schoolId: user.schoolId, archivedAt: null },
+        where: { schoolId, archivedAt: null },
         select: {
           id: true,
           fullName: true,
@@ -226,7 +227,7 @@ export async function GET(req: NextRequest) {
     // ── Boarding population ─────────────────────────────────────────────
     case "boarding_population": {
       const classes = await prisma.schoolClass.findMany({
-        where: { schoolId: user.schoolId },
+        where: { schoolId },
         orderBy: [{ form: "asc" }, { name: "asc" }],
         include: {
           _count: { select: { students: { where: { archivedAt: null } } } },

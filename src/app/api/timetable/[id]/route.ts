@@ -5,9 +5,10 @@ import { requireRole } from "@/lib/auth";
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const existing = await prisma.timetableSlot.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId },
   });
   if (!existing) return NextResponse.json({ error: "Slot not found." }, { status: 404 });
 

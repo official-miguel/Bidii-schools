@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import {
   type GenderPolicy,
   validateDormGenderPolicy,
@@ -11,26 +11,27 @@ import {
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
 
   const dormitories = await prisma.dormitory.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
@@ -98,6 +99,7 @@ const createSchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -108,21 +110,13 @@ export async function POST(req: NextRequest) {
   }
 
   const {
-    name,
-    genderPolicy,
-    structure,
-    status,
-    allocationPolicy,
-    cubiclesInheritPolicy,
-    description,
-    boardingMasterId,
-    dormCaptainId,
-    permittedForms,
+    name, genderPolicy, structure, status, allocationPolicy,
+    cubiclesInheritPolicy, description, boardingMasterId, dormCaptainId, permittedForms,
   } = parsed.data;
 
   // Check uniqueness
   const existing = await prisma.dormitory.findFirst({
-    where: { schoolId: user.schoolId, name: { equals: name, mode: "insensitive" } },
+    where: { schoolId, name: { equals: name, mode: "insensitive" } },
   });
   if (existing) {
     return NextResponse.json(
@@ -131,12 +125,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Enforce school gender policy ───────────────────────────────────────────
-  // Fetch the school's gender policy and validate the requested dorm policy
-  // against it. For single-gender schools we also silently coerce the value
-  // so that a misbehaving client cannot create a dorm with the wrong gender.
   const school = await prisma.school.findUnique({
-    where: { id: user.schoolId },
+    where: { id: schoolId },
     select: { genderPolicy: true },
   });
   const schoolGenderPolicy = (school?.genderPolicy ?? "MIXED") as GenderPolicy;
@@ -153,7 +143,7 @@ export async function POST(req: NextRequest) {
 
   const dorm = await prisma.dormitory.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId,
       name,
       genderPolicy: resolvedGenderPolicy,
       structure,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission } from "@/lib/permissions";
 import {
   type GenderPolicy,
@@ -116,6 +116,7 @@ function interleaveStudentsByForm<T extends { form: number }>(students: T[]): T[
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
   // gender checks because all enrolled students are boys by definition.
   // For MIXED schools we check each student's gender against the dorm policy.
   const school = await prisma.school.findUnique({
-    where: { id: user.schoolId },
+    where: { id: schoolId },
     select: { genderPolicy: true },
   });
   const schoolGenderPolicy = (school?.genderPolicy ?? "MIXED") as GenderPolicy;
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
   // ── Resolve target dorms ───────────────────────────────────────────────────
   const dormQuery = dormIds && dormIds.length > 0 ? { id: { in: dormIds } } : {};
   const dorms = await prisma.dormitory.findMany({
-    where: { ...dormQuery, schoolId: user.schoolId, status: "ACTIVE" },
+    where: { ...dormQuery, schoolId, status: "ACTIVE" },
     include: { permittedForms: true },
     orderBy: { name: "asc" },
   });
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
   // ── Load free sleeping positions per dorm ─────────────────────────────────
   const freePosRows = await prisma.sleepingPosition.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       dormId: { in: dorms.map((d) => d.id) },
       isOccupied: false,
     },
@@ -179,7 +180,7 @@ export async function POST(req: NextRequest) {
 
   // ── Resolve students to allocate ───────────────────────────────────────────
   const studentWhere: Record<string, unknown> = {
-    schoolId: user.schoolId,
+    schoolId,
     archivedAt: null,
   };
   if (filter?.forms && filter.forms.length > 0) {
@@ -393,7 +394,7 @@ export async function POST(req: NextRequest) {
       for (const entry of plan) {
         // Vacate any existing CURRENT allocation for this student
         const existing = await tx.allocationRecord.findFirst({
-          where: { studentId: entry.studentId, schoolId: user.schoolId, status: "CURRENT" },
+          where: { studentId: entry.studentId, schoolId, status: "CURRENT" },
         });
         if (existing) {
           await tx.allocationRecord.update({
@@ -411,7 +412,7 @@ export async function POST(req: NextRequest) {
         // Create the new allocation with a specific bed + sleeping position
         await tx.allocationRecord.create({
           data: {
-            schoolId: user.schoolId,
+            schoolId,
             studentId: entry.studentId,
             dormId: entry.dormId,
             cubicleId: entry.position.cubicleId ?? null,

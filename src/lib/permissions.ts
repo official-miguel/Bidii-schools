@@ -374,6 +374,19 @@ export async function requirePermission(
   return null;
 }
 
+/**
+ * Like requirePermission but also asserts schoolId is non-null.
+ * Use this in school-scoped routes to satisfy Prisma's type constraints.
+ */
+export async function requireSchoolPermission(
+  module: Module,
+  action: PermissionAction = "view"
+): Promise<import("./auth").SchoolUser | null> {
+  const user = await requirePermission(module, action);
+  if (!user || !user.schoolId) return null;
+  return user as import("./auth").SchoolUser;
+}
+
 function checkAction(entry: ModuleAccess, action: PermissionAction): boolean {
   switch (action) {
     case "view":      return entry.canView || entry.canManage;

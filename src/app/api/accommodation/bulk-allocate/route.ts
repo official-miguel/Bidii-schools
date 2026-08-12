@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission } from "@/lib/permissions";
 import {
   type GenderPolicy,
@@ -52,6 +52,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -66,11 +67,11 @@ export async function POST(req: NextRequest) {
   // ── Verify dorm & load school gender policy ───────────────────────────────
   const [dorm, school] = await Promise.all([
     prisma.dormitory.findFirst({
-      where: { id: dormId, schoolId: user.schoolId },
+      where: { id: dormId, schoolId },
       include: { permittedForms: true },
     }),
     prisma.school.findUnique({
-      where: { id: user.schoolId },
+      where: { id: schoolId },
       select: { genderPolicy: true },
     }),
   ]);
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     const { forms, classIds, unallocatedOnly, admissionYear } = filter;
 
     const whereClause: Record<string, unknown> = {
-      schoolId: user.schoolId,
+      schoolId,
       archivedAt: null,
     };
 
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
   // ── Enforce gender policy & form restrictions ─────────────────────────────
   // Fetch gender + form for all target students in one shot.
   const studentsForValidation = await prisma.student.findMany({
-    where: { id: { in: targetStudentIds }, schoolId: user.schoolId },
+    where: { id: { in: targetStudentIds }, schoolId },
     select: { id: true, gender: true, schoolClass: { select: { form: true } } },
   });
 
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest) {
   // Filter to the requested cubicle when one is specified.
   const freePositions = await prisma.sleepingPosition.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       dormId,
       isOccupied: false,
       ...(cubicleId ? { cubicleId } : {}),
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
         try {
           // Vacate existing current allocation
           const existing = await tx.allocationRecord.findFirst({
-            where: { studentId, schoolId: user.schoolId, status: "CURRENT" },
+            where: { studentId, schoolId, status: "CURRENT" },
           });
 
           if (existing) {
@@ -265,7 +266,7 @@ export async function POST(req: NextRequest) {
           // Create new allocation with specific bed + position
           await tx.allocationRecord.create({
             data: {
-              schoolId: user.schoolId,
+              schoolId,
               studentId,
               dormId,
               cubicleId: pos.cubicleId ?? cubicleId ?? null,

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 
@@ -14,8 +14,8 @@ async function guard() {
 // Query: dormId (optional), months (default 6)
 export async function GET(req: NextRequest) {
   const user = await guard();
-  if (!user || !user.schoolId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const schoolId = user.schoolId;
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const { searchParams } = req.nextUrl;
   const dormId = searchParams.get("dormId");

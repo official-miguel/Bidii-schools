@@ -42,6 +42,7 @@ export async function POST(
 ) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = addSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -56,7 +57,7 @@ export async function POST(
 
   // Verify group belongs to school
   const group = await prisma.electiveGroup.findFirst({
-    where: { id: groupId, schoolId: user.schoolId },
+    where: { id: groupId, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
@@ -74,7 +75,7 @@ export async function POST(
 
   // Teacher must be assigned to teach this subject
   const teacherSubject = await prisma.teacherSubject.findFirst({
-    where: { teacherId, subjectId, teacher: { schoolId: user.schoolId } },
+    where: { teacherId, subjectId, teacher: { schoolId } },
     include: { teacher: { select: { fullName: true } } },
   });
   if (!teacherSubject) {
@@ -103,7 +104,7 @@ export async function POST(
       groupId,
       subjectId,
       teacherId,
-      schoolId: user.schoolId,
+      schoolId,
     },
     include: {
       subject: { select: { id: true, code: true, name: true } },
@@ -127,6 +128,7 @@ export async function DELETE(
 ) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = removeSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -141,7 +143,7 @@ export async function DELETE(
 
   // Verify group belongs to school
   const group = await prisma.electiveGroup.findFirst({
-    where: { id: groupId, schoolId: user.schoolId },
+    where: { id: groupId, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 

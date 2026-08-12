@@ -31,6 +31,7 @@ const schema = z.object({
 export async function PATCH(req: NextRequest, { params }: Ctx) {
   const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const body = schema.safeParse(await req.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: body.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
@@ -38,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 
   // Verify version ownership + editability
   const vRows = await prisma.$queryRaw<Array<{ status: string }>>`
-    SELECT status FROM "TimetableVersion" WHERE id = ${params.id} AND "schoolId" = ${user.schoolId}`;
+    SELECT status FROM "TimetableVersion" WHERE id = ${params.id} AND "schoolId" = ${schoolId}`;
   if (!vRows[0]) return NextResponse.json({ error: "Version not found." }, { status: 404 });
   if (vRows[0].status === "ARCHIVED") return NextResponse.json({ error: "Cannot edit an archived version." }, { status: 409 });
 
@@ -57,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // If changing teacher, verify eligibility
   if (newTeacherId && newTeacherId !== slot.teacherId) {
     const eligible = await prisma.teacherSubject.findFirst({
-      where: { teacherId: newTeacherId, subjectId: slot.subjectId, teacher: { schoolId: user.schoolId } },
+      where: { teacherId: newTeacherId, subjectId: slot.subjectId, teacher: { schoolId } },
     });
     if (!eligible) return NextResponse.json({ error: "That teacher is not assigned to this subject." }, { status: 400 });
   }
@@ -65,7 +66,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   // Check blocked slot
   const specialRows = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) FROM "SpecialPeriod"
-    WHERE "schoolId" = ${user.schoolId} AND "isActive" = true AND period = ${period}
+    WHERE "schoolId" = ${schoolId} AND "isActive" = true AND period = ${period}
       AND ("dayOfWeek" IS NULL OR "dayOfWeek" = ${dayOfWeek})`;
   if (Number(specialRows[0]?.count ?? 0) > 0) {
     return NextResponse.json({ error: "That slot is a special period and cannot be used for a lesson." }, { status: 409 });
@@ -136,7 +137,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       (id, "schoolId", "versionId", "slotId", action, "changeSource",
        "beforeState", "afterState", detail, "performedById", "performedAt")
     VALUES (
-      ${randomUUID()}, ${user.schoolId}, ${params.id}, ${slotId},
+      ${randomUUID()}, ${schoolId}, ${params.id}, ${slotId},
       'SLOT_MOVED'::"TimetableChangeAction", 'MANUAL',
       ${JSON.stringify(beforeState)}::jsonb,
       ${JSON.stringify(afterState)}::jsonb,

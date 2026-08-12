@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 
@@ -32,16 +32,17 @@ const DEFAULT_SETTINGS = {
 export async function GET() {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const [settings, dormCount, freePositionsCount] = await Promise.all([
     prisma.accommodationSettings.findUnique({
-      where: { schoolId: user.schoolId },
+      where: { schoolId },
     }),
     prisma.dormitory.count({
-      where: { schoolId: user.schoolId, status: "ACTIVE" },
+      where: { schoolId, status: "ACTIVE" },
     }),
     prisma.sleepingPosition.count({
-      where: { schoolId: user.schoolId, isOccupied: false },
+      where: { schoolId, isOccupied: false },
     }),
   ]);
 
@@ -69,6 +70,7 @@ const updateSchema = z.object({
 export async function PUT(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -79,8 +81,8 @@ export async function PUT(req: NextRequest) {
   }
 
   const settings = await prisma.accommodationSettings.upsert({
-    where: { schoolId: user.schoolId },
-    create: { schoolId: user.schoolId, ...parsed.data },
+    where: { schoolId },
+    create: { schoolId, ...parsed.data },
     update: parsed.data,
   });
 
