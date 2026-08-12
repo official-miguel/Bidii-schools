@@ -530,12 +530,11 @@ async function _handlePost(req: NextRequest) {
   // Batch slot inserts to avoid per-row round-trips that exhaust the transaction timeout (P2028).
   // We chunk into groups of 200 to stay within parameter limits.
   // We deliberately avoid a long-lived interactive $transaction here because
-  // the database uses PgBouncer in transaction mode (Neon), which has a very short
-  // connection-hold window.  Instead we:
+  // Supabase's connection pooler has a limited connection-hold window.  Instead we:
   //  1. Upsert/insert the version row first (fast, single statement)
   //  2. Delete existing slots for this version (fast, single statement)
   //  3. Insert slot chunks individually — each is its own short transaction
-  // This keeps every individual DB call well under PgBouncer's timeout.
+  // This keeps every individual DB call well within the pooler's timeout.
   const { Prisma } = await import("@prisma/client");
 
   // ── Deduplicate slots before inserting ────────────────────────────────────

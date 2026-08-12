@@ -2,7 +2,7 @@ const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
-    "Missing DATABASE_URL env var. Neon connection URL is required for Prisma CLI."
+    "Missing DATABASE_URL env var. A PostgreSQL connection URL is required for Prisma CLI."
   );
 }
 

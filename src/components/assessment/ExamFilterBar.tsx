@@ -134,7 +134,7 @@ export default function ExamFilterBar({
     setSubjectId("");
     prevKey.current = "";
 
-    // 30 s timeout — Neon cold starts can take 5–15 s
+    // 30 s timeout — allow time for the database to respond under load
     const timer = setTimeout(() => controller.abort(), 30_000);
 
     const url = frameworkId
