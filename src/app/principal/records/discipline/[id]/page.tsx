@@ -9,7 +9,7 @@ export default async function DisciplineCasePage({ params }: { params: { id: str
   if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       student: {
         select: {

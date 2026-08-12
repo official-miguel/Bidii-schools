@@ -40,7 +40,7 @@ export default async function PrintPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // Resolve the framework type: explicit param > student's class > classId
   async function resolveFramework(cid: string): Promise<"CBE" | "844"> {
@@ -56,7 +56,7 @@ export default async function PrintPage({
   // ---- Single-student mode ----
   if (studentId) {
     const student = await prisma.student.findFirst({
-      where: { id: studentId, schoolId: user.schoolId },
+      where: { id: studentId, schoolId: user.schoolId! },
       select: { classId: true, fullName: true },
     });
     if (!student) redirect("/");
@@ -65,7 +65,7 @@ export default async function PrintPage({
     const fw = await resolveFramework(student.classId);
 
     if (fw === "CBE") {
-      const data = await buildCbeReportCard(studentId, periodId, user.schoolId);
+      const data = await buildCbeReportCard(studentId, periodId, user.schoolId!);
       if (!data) redirect("/");
       return (
         <>
@@ -79,7 +79,7 @@ export default async function PrintPage({
     }
 
     // 8-4-4
-    const data = await buildReportCard(studentId, periodId, user.schoolId);
+    const data = await buildReportCard(studentId, periodId, user.schoolId!);
     if (!data) redirect("/");
     return (
       <>
@@ -98,7 +98,7 @@ export default async function PrintPage({
   const fw = await resolveFramework(classId!);
 
   if (fw === "CBE") {
-    const classData = await buildCbeClassReportCards(classId!, periodId, user.schoolId);
+    const classData = await buildCbeClassReportCards(classId!, periodId, user.schoolId!);
     if (!classData) redirect("/");
     return (
       <>
@@ -116,7 +116,7 @@ export default async function PrintPage({
   }
 
   // 8-4-4
-  const classData = await buildClassReportCards(classId!, periodId, user.schoolId);
+  const classData = await buildClassReportCards(classId!, periodId, user.schoolId!);
   if (!classData) redirect("/");
   return (
     <>

@@ -20,7 +20,7 @@ export default async function TeacherDashboardPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const isWideAccess = actor.roles.some((r) =>
     ["DIRECTOR", "EXAM_OFFICER"].includes(r.role)
@@ -46,14 +46,14 @@ export default async function TeacherDashboardPage() {
       : {};
 
   const allClasses = await db.schoolClass.findMany({
-    where: { schoolId: user.schoolId, ...classFilter },
+    where: { schoolId: user.schoolId!, ...classFilter },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
 
   // ── ALL school classes (for Full School Analysis tab) ────────────────────
   const schoolClasses = await db.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
@@ -68,7 +68,7 @@ export default async function TeacherDashboardPage() {
 
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(assignmentSubjectIds ? { id: { in: assignmentSubjectIds } } : {}),
     },
     orderBy: { name: "asc" },
@@ -77,7 +77,7 @@ export default async function TeacherDashboardPage() {
 
   // ── All subjects (for Full School Analysis) ────────────────────────────
   const allSubjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true, applicableForms: true },
   });

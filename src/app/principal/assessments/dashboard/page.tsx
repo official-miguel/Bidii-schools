@@ -16,13 +16,13 @@ export default async function DashboardPage({
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
   const allClasses = await db.schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
 
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true, applicableForms: true },
   });

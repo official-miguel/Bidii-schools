@@ -8,7 +8,7 @@ export default async function TeacherStudentProfilePage({ params }: { params: { 
   if (!user || user.role !== "TEACHER") redirect("/login");
 
   const student = await prisma.student.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     select: { id: true },
   });
   if (!student) notFound();

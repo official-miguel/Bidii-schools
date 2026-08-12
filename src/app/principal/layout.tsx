@@ -17,7 +17,7 @@ export default async function PrincipalLayout({
   }
 
   const school = await prisma.school.findUnique({
-    where: { id: user.schoolId },
+    where: { id: user.schoolId! },
     select: { name: true, motto: true },
   });
 
@@ -31,7 +31,7 @@ export default async function PrincipalLayout({
         schoolName={school?.name}
         motto={school?.motto}
       >
-        <PermissionProvider schoolId={user.schoolId} userId={user.id}>
+        <PermissionProvider schoolId={user.schoolId!} userId={user.id}>
           {children}
         </PermissionProvider>
       </DashboardShell>

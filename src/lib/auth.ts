@@ -74,7 +74,7 @@ export type SchoolUser = Omit<User, "schoolId"> & { schoolId: string };
  */
 export async function requireSchoolRole(...roles: Role[]): Promise<SchoolUser | null> {
   const user = await requireRole(...roles);
-  if (!user || !user.schoolId) return null;
+  if (!user || !user.schoolId!) return null;
   return user as SchoolUser;
 }
 
@@ -101,7 +101,7 @@ export type OfflineTokenPayload = {
 export function buildOfflineToken(user: User): OfflineTokenPayload {
   const secret    = process.env.SESSION_SECRET ?? "dev-secret";
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  const schoolId  = user.schoolId ?? null;
+  const schoolId  = user.schoolId! ?? null;
   const payload   = `${user.id}|${schoolId ?? ""}|${user.role}|${user.email}|${expiresAt}`;
   const sig       = createHmac("sha256", secret).update(payload).digest("hex");
 

@@ -24,13 +24,13 @@ export default async function FormStreamsPage({ params }: PageProps) {
 
   // Fetch current period for stats
   const currentPeriod = await prisma.assessmentPeriod.findFirst({
-    where: { schoolId: user.schoolId, isCurrent: true },
+    where: { schoolId: user.schoolId!, isCurrent: true },
     select: { id: true },
   });
 
   // Fetch streams belonging to this form
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId, form: formNum },
+    where: { schoolId: user.schoolId!, form: formNum },
     orderBy: { name: "asc" },
     select: { id: true, name: true, form: true, frameworkType: true },
   });

@@ -20,14 +20,14 @@ export default async function MarksheetPage({
 
   // Resolve current period id for DoneBar.
   const currentPeriod = await db.assessmentPeriod.findFirst({
-    where: { schoolId: user.schoolId, isCurrent: true },
+    where: { schoolId: user.schoolId!, isCurrent: true },
     select: { id: true },
   }) as { id: string } | null;
   const currentPeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const classes = await (prisma as any).schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
@@ -41,12 +41,12 @@ export default async function MarksheetPage({
   if (framework === "CBE") {
     // Detect sub-type: learning areas (junior) vs competency units (senior pathway).
     const cbeFramework = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+      where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
       select: { id: true },
     }) as { id: string } | null;
 
     const hasLearningAreas = cbeFramework
-      ? (await db.learningArea.count({ where: { schoolId: user.schoolId, frameworkId: cbeFramework.id } })) > 0
+      ? (await db.learningArea.count({ where: { schoolId: user.schoolId!, frameworkId: cbeFramework.id } })) > 0
       : false;
 
     const cbeClasses = classes.map((c) => ({ id: c.id, name: c.name }));
@@ -79,7 +79,7 @@ export default async function MarksheetPage({
   // ---- 8-4-4 routing (default) ----
   // Pass all subjects — ExamFilterBar filters by applicableForms internally.
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, applicableForms: true },
   });

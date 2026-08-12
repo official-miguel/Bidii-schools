@@ -20,7 +20,7 @@ export default async function TeacherDeptAnalyticsPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   const isWideAccess = actor.roles.some((r) =>
     ["DIRECTOR", "EXAM_OFFICER"].includes(r.role)
@@ -37,7 +37,7 @@ export default async function TeacherDeptAnalyticsPage() {
 
     // Also pick up any department the teacher is HOD of (may differ from primary)
     const hodDepts = await prisma.department.findMany({
-      where: { schoolId: user.schoolId, headTeacherId: actor.teacher.id },
+      where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true },
     });
     for (const d of hodDepts) {
@@ -61,7 +61,7 @@ export default async function TeacherDeptAnalyticsPage() {
   let departments: Array<{ id: string; name: string }>;
   if (isWideAccess) {
     const all = await prisma.department.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });
@@ -76,7 +76,7 @@ export default async function TeacherDeptAnalyticsPage() {
   } else {
     // Only own department(s) — ordered: primary first then others
     const owned = await prisma.department.findMany({
-      where: { schoolId: user.schoolId, id: { in: ownDeptIds } },
+      where: { schoolId: user.schoolId!, id: { in: ownDeptIds } },
       select: { id: true, name: true },
     });
     // Sort so primaryDepartmentId appears first
@@ -111,7 +111,7 @@ export default async function TeacherDeptAnalyticsPage() {
   }
 
   const classes = await db.schoolClass.findMany({
-    where: { schoolId: user.schoolId, ...classFilter },
+    where: { schoolId: user.schoolId!, ...classFilter },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true },
   }) as Array<{ id: string; name: string; form: number }>;
@@ -126,7 +126,7 @@ export default async function TeacherDeptAnalyticsPage() {
 
   const subjects = await prisma.subject.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId: user.schoolId!,
       ...(subjectIds ? { id: { in: subjectIds } } : {}),
     },
     orderBy: { name: "asc" },

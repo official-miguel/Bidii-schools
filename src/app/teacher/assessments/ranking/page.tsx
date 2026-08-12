@@ -17,7 +17,7 @@ export default async function TeacherRankingPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
 
   // Collect all departments this teacher belongs to (primary + HOD roles).
   const ownDeptIds: string[] = [];
@@ -33,7 +33,7 @@ export default async function TeacherRankingPage() {
 
     // Also pick up any department where this teacher is HOD
     const hodDepts = await prisma.department.findMany({
-      where: { schoolId: user.schoolId, headTeacherId: actor.teacher.id },
+      where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true },
     });
     for (const d of hodDepts) {
@@ -45,7 +45,7 @@ export default async function TeacherRankingPage() {
   const teacherDepartments =
     ownDeptIds.length > 0
       ? await prisma.department.findMany({
-          where: { schoolId: user.schoolId, id: { in: ownDeptIds } },
+          where: { schoolId: user.schoolId!, id: { in: ownDeptIds } },
           orderBy: { name: "asc" },
           select: { id: true, name: true },
         })
@@ -60,13 +60,13 @@ export default async function TeacherRankingPage() {
     : teacherDepartments;
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
   const periods = framework
     ? (await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ academicYear: "desc" }, { term: "desc" }],
         select: {
           id: true, name: true, academicYear: true, term: true, isCurrent: true,

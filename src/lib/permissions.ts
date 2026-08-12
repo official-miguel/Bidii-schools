@@ -215,7 +215,7 @@ export async function getTeacherEffectivePermissions(user: User): Promise<Effect
       classElectiveGroupTeachers: { select: { groupId: true, classId: true, subjectId: true } },
       classTeacherOf: { select: { id: true } },
       departmentHeadOf: { select: { id: true } },
-      dormsBoardingMaster: { where: { schoolId: user.schoolId }, select: { id: true } },
+      dormsBoardingMaster: { where: { schoolId: user.schoolId! }, select: { id: true } },
     },
   });
 
@@ -383,7 +383,7 @@ export async function requireSchoolPermission(
   action: PermissionAction = "view"
 ): Promise<import("./auth").SchoolUser | null> {
   const user = await requirePermission(module, action);
-  if (!user || !user.schoolId) return null;
+  if (!user || !user.schoolId!) return null;
   return user as import("./auth").SchoolUser;
 }
 
@@ -782,7 +782,7 @@ export async function getFullRoleContext(user: User): Promise<FullRoleContext> {
   if (isTeacher || isAdminStaff) {
     try {
       const { computeDerivedRoles } = await import("./derivedRoles");
-      const dr = await computeDerivedRoles(user.id, user.schoolId);
+      const dr = await computeDerivedRoles(user.id, user.schoolId!);
       derivedKinds = dr.activeKinds as Set<string>;
     } catch { /* non-fatal */ }
   }

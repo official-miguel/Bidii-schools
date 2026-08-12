@@ -12,7 +12,7 @@ export default async function StaffPerformanceRoute() {
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) redirect("/principal/assessments");
 
   const isHod = actor.roles.some((r) => r.role === "HOD");
@@ -31,20 +31,20 @@ export default async function StaffPerformanceRoute() {
   // (avoids a client-side round-trip on first paint).
   const allDepartments = !isHod
     ? await prisma.department.findMany({
-        where: { schoolId: user.schoolId },
+        where: { schoolId: user.schoolId! },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       })
     : [];
 
   const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
   const periods = framework
     ? (await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId, frameworkId: framework.id },
+        where: { schoolId: user.schoolId!, frameworkId: framework.id },
         orderBy: [{ academicYear: "desc" }, { term: "desc" }],
         select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
       }) as Array<{

@@ -12,7 +12,7 @@ import type { User } from "@prisma/client";
 interface Props { user: User; rolePrefix: string }
 
 export default async function ClassTeacherDashboard({ user, rolePrefix }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
 
   const teacher = await prisma.teacher.findUnique({

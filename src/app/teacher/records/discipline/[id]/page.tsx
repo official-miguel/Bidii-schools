@@ -16,7 +16,7 @@ export default async function TeacherDisciplineCasePage({ params }: { params: { 
   }
 
   const record = await prisma.disciplineRecord.findFirst({
-    where: { id: params.id, schoolId: user.schoolId },
+    where: { id: params.id, schoolId: user.schoolId! },
     include: {
       student: {
         select: {

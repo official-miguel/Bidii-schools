@@ -52,7 +52,7 @@ export type PermissionDenied = typeof PERMISSION_DENIED;
 export async function resolveUserScope(user: User): Promise<UserScope> {
   const base = {
     userId: user.id,
-    schoolId: user.schoolId,
+    schoolId: user.schoolId!,
     role: user.role,
     moduleGrants: {} as UserScope["moduleGrants"],
     displayName: user.email,
@@ -61,11 +61,11 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
   // ── Principal — full access ─────────────────────────────────────────────
   if (user.role === "PRINCIPAL") {
     const allClasses = await prisma.schoolClass.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       select: { id: true },
     });
     const allStudents = await prisma.student.findMany({
-      where: { schoolId: user.schoolId, archivedAt: null },
+      where: { schoolId: user.schoolId!, archivedAt: null },
       select: { id: true },
     });
     return {
@@ -81,11 +81,11 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
   if (user.role === "ADMIN_STAFF") {
     const moduleGrants = await getEffectivePermissions(user);
     const allClasses = await prisma.schoolClass.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       select: { id: true },
     });
     const allStudents = await prisma.student.findMany({
-      where: { schoolId: user.schoolId, archivedAt: null },
+      where: { schoolId: user.schoolId!, archivedAt: null },
       select: { id: true },
     });
     return {
@@ -145,7 +145,7 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
   if (user.role === "PARENT") {
     const children = await prisma.student.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         archivedAt: null,
         OR: [
           { userId: user.id },
@@ -169,7 +169,7 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
   if (user.role === "STUDENT") {
     const student = await prisma.student.findFirst({
       where: {
-        schoolId: user.schoolId,
+        schoolId: user.schoolId!,
         userId: user.id,
         archivedAt: null,
       },

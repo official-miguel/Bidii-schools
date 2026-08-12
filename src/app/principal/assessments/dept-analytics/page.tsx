@@ -8,7 +8,7 @@ export default async function DeptAnalyticsRoute() {
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) redirect("/principal/assessments");
 
   // HOD: only their own dept. Director/Principal: all depts.
@@ -22,7 +22,7 @@ export default async function DeptAnalyticsRoute() {
     departments = hodDept ? [hodDept] : [];
   } else {
     departments = await prisma.department.findMany({
-      where: { schoolId: user.schoolId },
+      where: { schoolId: user.schoolId! },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });
@@ -31,14 +31,14 @@ export default async function DeptAnalyticsRoute() {
   // Classes — all 8-4-4 classes (ExamFilterBar filters by form/stream internally).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const classes = await (prisma as any).schoolClass.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true },
   }) as Array<{ id: string; name: string; form: number }>;
 
   // Subjects — all, ExamFilterBar filters by applicableForms internally.
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
     select: { id: true, name: true, applicableForms: true },
   });

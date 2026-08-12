@@ -9,7 +9,7 @@ import type { User } from "@prisma/client";
 interface Props { user: User }
 
 export default async function LibrarianDashboard({ user }: Props) {
-  const schoolId = user.schoolId;
+  const schoolId = user.schoolId!;
   const today    = new Date();
 
   const [

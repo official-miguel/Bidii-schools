@@ -17,7 +17,7 @@ export default async function StaffDirectoryPage() {
   if (!user || user.role !== "ADMIN_STAFF") redirect("/login");
 
   const teachers = await prisma.teacher.findMany({
-    where:   { schoolId: user.schoolId },
+    where:   { schoolId: user.schoolId! },
     orderBy: { fullName: "asc" },
     include: {
       primaryDepartment: { select: { name: true } },

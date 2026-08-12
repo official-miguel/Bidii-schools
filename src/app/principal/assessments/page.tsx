@@ -10,7 +10,7 @@ export default async function AssessmentsIndexPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, user.schoolId!);
   const isHod = actor.roles.some((r) => r.role === "HOD");
 
   let hodDeptId: string | undefined;

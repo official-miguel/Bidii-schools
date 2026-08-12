@@ -60,7 +60,7 @@ export type SSEEventType =
  *
  * Example:
  *   import { emitSSE } from "@/lib/sse";
- *   emitSSE(user.schoolId, "attendance.upserted", attendance);
+ *   emitSSE(user.schoolId!, "attendance.upserted", attendance);
  */
 export function emitSSE(
   schoolId: string,

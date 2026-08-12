@@ -10,7 +10,7 @@
  *   4. Show a subtle "permissions refreshed" toast when stale cache is cleared
  *
  * Usage — add inside DashboardShell (or any layout that needs live permissions):
- *   <PermissionProvider schoolId={user.schoolId} userId={user.id}>
+ *   <PermissionProvider schoolId={user.schoolId!} userId={user.id}>
  *     {children}
  *   </PermissionProvider>
  */

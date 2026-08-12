@@ -20,7 +20,7 @@ export default async function ParentLayout({
   }
 
   const school = await prisma.school.findUnique({
-    where: { id: user.schoolId },
+    where: { id: user.schoolId! },
     select: { name: true, motto: true },
   });
 
