@@ -182,7 +182,7 @@ export default function StoragePage() {
       if (!res.ok) throw new Error("Failed to load storage data");
       setData(await res.json());
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

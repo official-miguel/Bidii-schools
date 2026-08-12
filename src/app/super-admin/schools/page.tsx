@@ -171,7 +171,7 @@ export default function SchoolsPage() {
       setTotal(j.total ?? 0);
       setPage(pg);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -195,7 +195,7 @@ export default function SchoolsPage() {
       if (!res.ok) throw new Error("Action failed");
       await load(page);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setActionBusy(null);
     }

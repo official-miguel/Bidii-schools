@@ -250,7 +250,7 @@ function NewImportTab() {
       if (!res.ok) throw new Error(j.error ?? "Failed to start import");
       setSubmitted(j.job);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setSubmitting(false);
     }
@@ -458,7 +458,7 @@ function HistoryTab() {
       setTotal(j.total ?? 0);
       setPage(pg);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -476,7 +476,7 @@ function HistoryTab() {
       setTimeout(() => setRollbackMsg(null), 3000);
       await load(page);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setRollbackBusy(null);
     }
