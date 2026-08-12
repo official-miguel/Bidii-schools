@@ -78,6 +78,7 @@ export async function GET(req: Request) {
         select: { primaryDepartmentId: true, primaryDepartment: { select: { name: true } } },
       });
       departmentId = teacherRow?.primaryDepartmentId ?? null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       departmentName = (teacherRow as any)?.primaryDepartment?.name ?? "";
     }
   }

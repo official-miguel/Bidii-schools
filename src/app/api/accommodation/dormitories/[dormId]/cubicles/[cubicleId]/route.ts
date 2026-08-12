@@ -22,9 +22,10 @@ export async function PATCH(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const cubicle = await prisma.cubicle.findFirst({
-    where: { id: params.cubicleId, dormId: params.dormId, schoolId: user.schoolId },
+    where: { id: params.cubicleId, dormId: params.dormId, schoolId },
     include: { _count: { select: { beds: true } } },
   });
   if (!cubicle) return NextResponse.json({ error: "Cubicle not found." }, { status: 404 });
@@ -53,6 +54,7 @@ export async function PATCH(
   }
 
   // Handle capacity changes: add/remove beds accordingly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
     ...(name !== undefined ? { name } : {}),
     ...(capacity !== undefined ? { capacity } : {}),
@@ -85,7 +87,7 @@ export async function PATCH(
             data: {
               dormId: params.dormId,
               cubicleId: params.cubicleId,
-              schoolId: user.schoolId,
+              schoolId,
               label: `${bedName} - Bed ${bedNumber}`,
               bedType: "SINGLE",
             },
@@ -96,7 +98,7 @@ export async function PATCH(
               bedId: bed.id,
               dormId: params.dormId,
               cubicleId: params.cubicleId,
-              schoolId: user.schoolId,
+              schoolId,
               position: null,
             },
           });
@@ -191,9 +193,10 @@ export async function DELETE(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const cubicle = await prisma.cubicle.findFirst({
-    where: { id: params.cubicleId, dormId: params.dormId, schoolId: user.schoolId },
+    where: { id: params.cubicleId, dormId: params.dormId, schoolId },
     include: { _count: { select: { allocations: { where: { status: "CURRENT" } } } } },
   });
   if (!cubicle) return NextResponse.json({ error: "Cubicle not found." }, { status: 404 });

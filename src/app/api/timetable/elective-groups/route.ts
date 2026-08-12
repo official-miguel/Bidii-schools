@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission } from "@/lib/permissions";
 
 // ── Auth helper ────────────────────────────────────────────────────────────
@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
     (await requireRole("PRINCIPAL")) ??
     (await requirePermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const { searchParams } = new URL(req.url);
   const scopeFormParam = searchParams.get("scopeForm");
@@ -77,16 +78,16 @@ export async function GET(req: NextRequest) {
     if (requestedForm > 0) {
       // Form-specific view: include this form's groups + school-wide groups
       where = {
-        schoolId: user.schoolId,
+        schoolId,
         OR: [{ scopeForm: requestedForm }, { scopeForm: 0 }],
       };
     } else {
       // Explicitly asked for school-wide only (scopeForm=0)
-      where = { schoolId: user.schoolId, scopeForm: 0 };
+      where = { schoolId, scopeForm: 0 };
     }
   } else {
     // No filter — return all groups for this school
-    where = { schoolId: user.schoolId };
+    where = { schoolId };
   }
 
   try {
@@ -128,6 +129,7 @@ const createSchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -141,7 +143,7 @@ export async function POST(req: NextRequest) {
 
   // Check uniqueness (name + scopeForm pair)
   const existing = await prisma.electiveGroup.findFirst({
-    where: { schoolId: user.schoolId, name, scopeForm },
+    where: { schoolId, name, scopeForm },
   });
   if (existing) {
     const scope = scopeForm === 0 ? "school-wide" : `Form ${scopeForm}`;
@@ -152,7 +154,7 @@ export async function POST(req: NextRequest) {
   }
 
   const group = await prisma.electiveGroup.create({
-    data: { schoolId: user.schoolId, name, scopeForm, lessonsPerWeek, doublesPerWeek, scopeStreams },
+    data: { schoolId, name, scopeForm, lessonsPerWeek, doublesPerWeek, scopeStreams },
     include: groupInclude(),
   });
 
@@ -174,6 +176,7 @@ const patchSchema = z.object({
 export async function PATCH(req: NextRequest) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -186,14 +189,14 @@ export async function PATCH(req: NextRequest) {
   const { id, name, lessonsPerWeek, doublesPerWeek, scopeStreams } = parsed.data;
 
   const group = await prisma.electiveGroup.findFirst({
-    where: { id, schoolId: user.schoolId },
+    where: { id, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
   // Name-uniqueness check on rename
   if (name && name !== group.name) {
     const clash = await prisma.electiveGroup.findFirst({
-      where: { schoolId: user.schoolId, name, scopeForm: group.scopeForm, id: { not: id } },
+      where: { schoolId, name, scopeForm: group.scopeForm, id: { not: id } },
     });
     if (clash) {
       const scope = group.scopeForm === 0 ? "school-wide" : `Form ${group.scopeForm}`;
@@ -225,6 +228,7 @@ const deleteSchema = z.object({ id: z.string().min(1) });
 export async function DELETE(req: NextRequest) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = deleteSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -232,7 +236,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   const group = await prisma.electiveGroup.findFirst({
-    where: { id: parsed.data.id, schoolId: user.schoolId },
+    where: { id: parsed.data.id, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 

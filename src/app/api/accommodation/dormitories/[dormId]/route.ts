@@ -28,9 +28,10 @@ export async function GET(
 ) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: params.dormId, schoolId: user.schoolId },
+    where: { id: params.dormId, schoolId },
     include: {
       permittedForms: true,
       boardingMaster: { select: { id: true, fullName: true, staffId: true } },
@@ -114,9 +115,10 @@ export async function PATCH(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: params.dormId, schoolId: user.schoolId },
+    where: { id: params.dormId, schoolId },
   });
   if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
@@ -136,7 +138,7 @@ export async function PATCH(
   let resolvedGenderPolicy: string | undefined = rest.genderPolicy;
   if (rest.genderPolicy !== undefined) {
     const school = await prisma.school.findUnique({
-      where: { id: user.schoolId },
+      where: { id: schoolId },
       select: { genderPolicy: true },
     });
     const schoolGenderPolicy = (school?.genderPolicy ?? "MIXED") as GenderPolicy;
@@ -186,7 +188,7 @@ export async function PATCH(
     // ── Snapshot: ACTIVE → inactive ─────────────────────────────────────────
     if (statusChangingToInactive) {
       const currentAllocations = await tx.allocationRecord.findMany({
-        where: { dormId: params.dormId, status: "CURRENT", schoolId: user.schoolId },
+        where: { dormId: params.dormId, status: "CURRENT", schoolId },
       });
       for (const alloc of currentAllocations) {
         await tx.allocationRecord.update({
@@ -209,7 +211,7 @@ export async function PATCH(
     // ── Restore: inactive → ACTIVE ──────────────────────────────────────────
     if (statusChangingToActive) {
       const heldAllocations = await tx.allocationRecord.findMany({
-        where: { dormId: params.dormId, status: "MAINTENANCE_HOLD", schoolId: user.schoolId },
+        where: { dormId: params.dormId, status: "MAINTENANCE_HOLD", schoolId },
         include: {
           student: { select: { archivedAt: true } },
           sleepingPosition: { select: { id: true, isOccupied: true } },
@@ -228,7 +230,7 @@ export async function PATCH(
 
         // Skip students who got a new allocation while the dorm was closed
         const activeCurrent = await tx.allocationRecord.findFirst({
-          where: { studentId: alloc.studentId, schoolId: user.schoolId, status: "CURRENT" },
+          where: { studentId: alloc.studentId, schoolId, status: "CURRENT" },
         });
         if (activeCurrent) {
           await tx.allocationRecord.update({
@@ -305,9 +307,10 @@ export async function DELETE(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: params.dormId, schoolId: user.schoolId },
+    where: { id: params.dormId, schoolId },
     include: { _count: { select: { allocations: { where: { status: "CURRENT" } } } } },
   });
   if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });

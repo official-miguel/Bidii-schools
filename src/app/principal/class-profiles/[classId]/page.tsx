@@ -24,7 +24,7 @@ import {
 import { SkeletonTable } from "@/components/ui/ProgressivePage";
 import ContextNavigation from "@/components/ContextNavigation";
 import {
-  ArrowLeft, CheckCircle2, Layers, User, Plus, X,
+  CheckCircle2, Layers, User, Plus, X,
   ExternalLink, Info, BookOpen, Users,
 } from "lucide-react";
 

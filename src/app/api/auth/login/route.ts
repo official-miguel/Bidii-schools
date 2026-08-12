@@ -1,143 +1,212 @@
+/**
+ * POST /api/auth/login
+ *
+ * Password-based login for all roles.
+ *
+ * SUPER_ADMIN:
+ *   Looked up via raw SQL (bypasses the Prisma-generated Role enum so the
+ *   query works even before `prisma generate` picks up SUPER_ADMIN).
+ *
+ * First-login flow for teachers / staff:
+ *   • Initial password = school slug (e.g. "kianyaga").
+ *   • mustChangePassword=true forces a password set on first login.
+ *   • School slug can never be reused as a password afterward.
+ *
+ * Per-school email model:
+ *   Same email at two schools → requiresSchoolSlug=true until disambiguated.
+ *
+ * Accepts email OR phone number as the identifier.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword, createSession, SESSION_COOKIE, buildOfflineToken } from "@/lib/auth";
+import {
+  verifyPassword,
+  createSession,
+  SESSION_COOKIE,
+  buildOfflineToken,
+} from "@/lib/auth";
+
+// ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
+type UserRow = {
+  id:                 string;
+  email:              string;
+  passwordHash:       string | null;
+  role:               string;
+  mustChangePassword: boolean;
+  isActive:           boolean;
+  schoolId:           string | null;   // null for SUPER_ADMIN
+  staffRoleId:        string | null;
+  createdAt:          Date;
+  updatedAt:          Date;
+  avatarUrl:          string | null;
+  avatarStoragePath:  string | null;
+};
+
+// ── Prisma select shape ───────────────────────────────────────────────────────
+const userSelect = {
+  id:                 true,
+  email:              true,
+  passwordHash:       true,
+  role:               true,
+  mustChangePassword: true,
+  isActive:           true,
+  schoolId:           true,
+  staffRoleId:        true,
+  createdAt:          true,
+  updatedAt:          true,
+  avatarUrl:          true,
+  avatarStoragePath:  true,
+} as const;
 
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-  /// Optional school slug — required when the same email is registered at
-  /// multiple schools. Ignored when omitted (falls back to findFirst).
+  identifier: z.string().trim().min(1, "Enter your email or phone number."),
+  password:   z.string().min(1, "Enter your password."),
   schoolSlug: z.string().trim().optional().or(z.literal("")),
 });
 
 export async function POST(req: NextRequest) {
+  let body: unknown;
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message || "Invalid input." },
+      { status: 400 }
+    );
+  }
+
+  const { identifier, password, schoolSlug } = parsed.data;
+  const invalid = () =>
+    NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
+
+  const isEmail = identifier.includes("@");
+
+  let user: UserRow | null = null;
+  let passwordAlreadyVerified = false;
+
   try {
-    // Validate environment variables
-    if (!process.env.DATABASE_URL) {
-      console.error("[LOGIN] Missing DATABASE_URL environment variable");
-      return NextResponse.json(
-        { error: "Server configuration error. Please contact administrator." },
-        { status: 500 }
-      );
+    // ── SUPER_ADMIN fast-path (raw SQL — bypasses Prisma enum validation) ──
+    // Must run before the per-school flow. Uses $queryRaw so it works even
+    // when the generated Prisma client was built before SUPER_ADMIN was added.
+    if (isEmail) {
+      const rows = await prisma.$queryRaw<UserRow[]>`
+        SELECT
+          id, email, "passwordHash", role::text AS role,
+          "mustChangePassword", "isActive", "schoolId",
+          "staffRoleId", "createdAt", "updatedAt",
+          "avatarUrl", "avatarStoragePath"
+        FROM "User"
+        WHERE email = ${identifier}
+          AND role::text = 'SUPER_ADMIN'
+          AND "isActive" = true
+        LIMIT 1
+      `;
+
+      if (rows.length > 0) {
+        const candidate = rows[0];
+        if (!candidate.passwordHash) return invalid();
+        const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
+        if (!ok) return invalid();
+        user = candidate;
+        passwordAlreadyVerified = true;
+      }
     }
 
-    if (!process.env.SESSION_SECRET) {
-      console.error("[LOGIN] Missing SESSION_SECRET environment variable");
-      return NextResponse.json(
-        { error: "Server configuration error. Please contact administrator." },
-        { status: 500 }
-      );
-    }
-
-    // Test database connectivity
-    try {
-      await prisma.$connect();
-    } catch (dbError) {
-      console.error("[LOGIN] Database connection failed:", dbError);
-      return NextResponse.json(
-        { error: "Database connection failed. Please try again later." },
-        { status: 503 }
-      );
-    }
-
-    // Parse request body
-    let body;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      console.error("[LOGIN] Failed to parse request body:", parseError);
-      return NextResponse.json({ error: "Invalid request format." }, { status: 400 });
-    }
-
-    // Validate input schema
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Enter a valid email and password." }, { status: 400 });
-    }
-
-    const { email, password, schoolSlug } = parsed.data;
-
-    // Same generic error for unknown email or wrong password — prevents
-    // login from being used to enumerate registered accounts.
-    const invalid = () =>
-      NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
-
-    // ── User lookup — school-scoped when a slug is provided ────────────────
-    let user;
-    // Set to true when the password has already been verified during the
-    // multi-candidate selection phase so we don't hash twice.
-    let passwordAlreadyVerified = false;
-    try {
+    // ── Per-school lookup (all other roles) ───────────────────────────────
+    if (!user) {
       if (schoolSlug) {
-        // Two-step lookup: school by slug, then user by (schoolId, email).
-        // This is the correct path when the same email exists at multiple schools.
         const school = await prisma.school.findUnique({
-          where: { slug: schoolSlug },
+          where:  { slug: schoolSlug },
           select: { id: true },
         });
-        if (!school) {
-          // Return the same generic error so slug enumeration isn't possible.
-          return invalid();
+        if (!school) return invalid();
+
+        if (isEmail) {
+          user = await prisma.user.findFirst({
+            where:  { schoolId: school.id, email: identifier, isActive: true },
+            select: userSelect,
+          });
+        } else {
+          const teacher = await prisma.teacher.findFirst({
+            where:  { schoolId: school.id, phone: identifier, archivedAt: null },
+            select: { userId: true },
+          });
+          if (teacher?.userId) {
+            user = await prisma.user.findUnique({
+              where:  { id: teacher.userId },
+              select: userSelect,
+            });
+          }
         }
-        user = await prisma.user.findFirst({
-          where: { schoolId: school.id, email },
-        });
       } else {
-        // Fallback: no slug supplied — find all active accounts with this
-        // email, then verify the password before doing anything else.
-        // We never reveal whether multiple accounts exist until the password
-        // has been proven correct, so a bad actor cannot enumerate multi-school
-        // memberships or use this path for account discovery.
-        const candidates = await prisma.user.findMany({
-          where: { email, isActive: true },
-          select: { id: true, email: true, passwordHash: true, role: true,
-                    mustChangePassword: true, isActive: true, schoolId: true,
-                    staffRoleId: true, createdAt: true, updatedAt: true,
-                    avatarUrl: true, avatarStoragePath: true },
-        });
+        // No slug — find all non-super-admin candidates
+        let candidates: UserRow[] = [];
+
+        if (isEmail) {
+          // Use raw SQL to exclude SUPER_ADMIN without touching the enum type
+          candidates = await prisma.$queryRaw<UserRow[]>`
+            SELECT
+              id, email, "passwordHash", role::text AS role,
+              "mustChangePassword", "isActive", "schoolId",
+              "staffRoleId", "createdAt", "updatedAt",
+              "avatarUrl", "avatarStoragePath"
+            FROM "User"
+            WHERE email = ${identifier}
+              AND role::text != 'SUPER_ADMIN'
+              AND "isActive" = true
+          `;
+        } else {
+          const teachers = await prisma.teacher.findMany({
+            where:  { phone: identifier, archivedAt: null },
+            select: { userId: true },
+          });
+          const userIds = teachers.map((t) => t.userId).filter(Boolean) as string[];
+          if (userIds.length > 0) {
+            candidates = await prisma.user.findMany({
+              where:  { id: { in: userIds }, isActive: true },
+              select: userSelect,
+            });
+          }
+        }
 
         if (candidates.length === 0) {
-          // No accounts — fall through to the invalid() call below.
-          user = null;
+          return invalid();
         } else if (candidates.length === 1) {
-          // Single account — normal path; password check happens below.
           user = candidates[0];
         } else {
-          // Multiple accounts share this email.
-          // Verify the password against each candidate BEFORE disclosing
-          // ambiguity.  This prevents the multi-school hint from being used
-          // as an oracle to discover which emails have cross-school accounts.
-          const matched: typeof candidates = [];
+          // Multiple schools — verify password to find the right candidate
+          const matched: UserRow[] = [];
           for (const candidate of candidates) {
-            try {
-              if (!candidate.passwordHash) continue; // OTP-only account — skip
-              const passwordMatches = await verifyPassword(password, candidate.passwordHash);
-              if (passwordMatches) matched.push(candidate);
-            } catch {
-              // If hashing fails for one account, skip it — don't abort the
-              // whole request, just treat that candidate as non-matching.
+            if (!candidate.passwordHash) {
+              if (!candidate.schoolId) continue; // SUPER_ADMIN has no school
+              const school = await prisma.school.findUnique({
+                where:  { id: candidate.schoolId },
+                select: { slug: true },
+              });
+              if (school) {
+                const norm = password.replace(/^@/, "");
+                if (norm === school.slug || password === school.slug) {
+                  matched.push(candidate);
+                }
+              }
+              continue;
             }
+            const ok = await verifyPassword(password, candidate.passwordHash);
+            if (ok) matched.push(candidate);
           }
 
-          if (matched.length === 0) {
-            // Wrong password — return the same generic error as always.
-            return invalid();
-          } else if (matched.length === 1) {
-            // Password matches exactly one school account — log that user in
-            // directly without requiring any extra step.
+          if (matched.length === 0) return invalid();
+          if (matched.length === 1) {
             user = matched[0];
             passwordAlreadyVerified = true;
           } else {
-            // Extremely rare: same password hash matches accounts at more than
-            // one school (e.g. a shared default password that was never changed).
-            // Only NOW, after the password has been verified, do we ask for the
-            // school identifier.  The message is intentionally vague.
             return NextResponse.json(
               {
-                error:
-                  "Your account is linked to more than one school. " +
-                  "Please enter your school identifier to continue.",
+                error: "Your account is linked to more than one school. Please enter your school identifier to continue.",
                 requiresSchoolSlug: true,
               },
               { status: 409 }
@@ -145,86 +214,52 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-    } catch (userQueryError) {
-      console.error("[LOGIN] Error querying user:", userQueryError);
-      return NextResponse.json(
-        { error: "Authentication service temporarily unavailable." },
-        { status: 503 }
-      );
     }
-
-    if (!user || !user.isActive) return invalid();
-
-    // Verify password (skip if already verified during multi-candidate selection)
-    if (!passwordAlreadyVerified) {
-      if (!user.passwordHash) {
-        // OTP-only account — redirect to OTP flow with a friendly message.
-        return NextResponse.json(
-          { error: "This account uses one-time code login. Please use the code-based sign-in flow." },
-          { status: 401 }
-        );
-      }
-      let valid;
-      try {
-        valid = await verifyPassword(password, user.passwordHash);
-      } catch {
-        return NextResponse.json(
-          { error: "Authentication service temporarily unavailable." },
-          { status: 503 }
-        );
-      }
-      if (!valid) return invalid();
-    }
-
-    // Create session
-    let token;
-    try {
-      token = await createSession(user.id);
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to create session. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    // Build offline token
-    let offlineToken;
-    try {
-      offlineToken = buildOfflineToken(user);
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to create authentication token." },
-        { status: 500 }
-      );
-    }
-
-    const res = NextResponse.json({
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-      offlineToken,
-    });
-
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    return res;
-
-  } catch (error) {
-    console.error("[LOGIN] Unexpected error:", error);
-    const errorMessage = process.env.NODE_ENV === "development"
-      ? `Internal server error: ${error instanceof Error ? error.message : "Unknown error"}`
-      : "An unexpected error occurred. Please try again.";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
-  } finally {
-    try {
-      await prisma.$disconnect();
-    } catch {
-      // ignore
-    }
+  } catch (err) {
+    console.error("[LOGIN] DB error:", err);
+    return NextResponse.json(
+      { error: "Authentication service temporarily unavailable." },
+      { status: 503 }
+    );
   }
+
+  if (!user || !user.isActive) return invalid();
+
+  // ── Password verification ─────────────────────────────────────────────────
+  if (!passwordAlreadyVerified) {
+    if (!user.passwordHash) return invalid();
+    const valid = await verifyPassword(password, user.passwordHash).catch(() => false);
+    if (!valid) return invalid();
+  }
+
+  // ── Session + offline token ───────────────────────────────────────────────
+  let token: string;
+  let offlineToken: ReturnType<typeof buildOfflineToken>;
+  try {
+    token        = await createSession(user.id);
+    // buildOfflineToken expects a User-shaped object; schoolId may be null for SUPER_ADMIN
+    offlineToken = buildOfflineToken(user as unknown as Parameters<typeof buildOfflineToken>[0]);
+  } catch (err) {
+    console.error("[LOGIN] Session error:", err);
+    return NextResponse.json(
+      { error: "Failed to create session. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  const res = NextResponse.json({
+    role:               user.role,
+    mustChangePassword: user.mustChangePassword,
+    offlineToken,
+  });
+
+  res.cookies.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure:   process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path:     "/",
+    maxAge:   60 * 60 * 24 * 7,
+  });
+
+  return res;
 }

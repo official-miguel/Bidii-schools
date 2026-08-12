@@ -102,6 +102,7 @@ export async function POST(
 ) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = addSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -113,13 +114,13 @@ export async function POST(
 
   // Verify group belongs to school
   const group = await prisma.electiveGroup.findFirst({
-    where: { id: groupId, schoolId: user.schoolId },
+    where: { id: groupId, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
   // Verify subject belongs to school and is ELECTIVE
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId },
+    where: { id: subjectId, schoolId },
   });
   if (!subject) {
     return NextResponse.json({ error: "Subject not found" }, { status: 404 });
@@ -166,7 +167,7 @@ export async function POST(
 
   if (existingMemberCount === 0) {
     const overlapping = await loadOverlappingSiblings(
-      user.schoolId,
+      schoolId,
       groupId,
       group.scopeForm,
       group.scopeStreams,
@@ -211,6 +212,7 @@ export async function DELETE(
 ) {
   const user = await auth();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = removeSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -222,7 +224,7 @@ export async function DELETE(
 
   // Verify group belongs to school
   const group = await prisma.electiveGroup.findFirst({
-    where: { id: groupId, schoolId: user.schoolId },
+    where: { id: groupId, schoolId },
   });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
@@ -255,7 +257,7 @@ export async function DELETE(
     const newAnchorId = allMembers[1].subjectId;
 
     const overlapping = await loadOverlappingSiblings(
-      user.schoolId,
+      schoolId,
       groupId,
       group.scopeForm,
       group.scopeStreams,

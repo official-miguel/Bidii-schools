@@ -83,13 +83,14 @@ export async function GET(
     (await requireRole("PRINCIPAL")) ??
     (await requirePermission("ACCOMMODATION", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const cubicleId = req.nextUrl.searchParams.get("cubicleId");
 
   const beds = await prisma.bed.findMany({
     where: {
       dormId: params.dormId,
-      schoolId: user.schoolId,
+      schoolId,
       ...(cubicleId ? { cubicleId } : {}),
     },
     orderBy: { label: "asc" },
@@ -123,9 +124,10 @@ export async function POST(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: params.dormId, schoolId: user.schoolId },
+    where: { id: params.dormId, schoolId },
   });
   if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
@@ -176,11 +178,11 @@ export async function POST(
             customOccupancy: bedType === "CUSTOM" ? customOccupancy : null,
             dormId: params.dormId,
             cubicleId: cubicleId ?? null,
-            schoolId: user.schoolId,
+            schoolId,
           },
         });
         await createPositionsForBed(
-          tx, bed.id, params.dormId, cubicleId, user.schoolId, bedType, customOccupancy
+          tx, bed.id, params.dormId, cubicleId, schoolId, bedType, customOccupancy
         );
         beds.push(bed);
       }
@@ -219,11 +221,11 @@ export async function POST(
         customOccupancy: bedType === "CUSTOM" ? customOccupancy : null,
         dormId: params.dormId,
         cubicleId: cubicleId ?? null,
-        schoolId: user.schoolId,
+        schoolId,
       },
     });
     await createPositionsForBed(
-      tx, newBed.id, params.dormId, cubicleId, user.schoolId, bedType, customOccupancy
+      tx, newBed.id, params.dormId, cubicleId, schoolId, bedType, customOccupancy
     );
     await recalcCapacity(tx, params.dormId);
     return newBed;

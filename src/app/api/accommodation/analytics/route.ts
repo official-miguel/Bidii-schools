@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 
@@ -15,6 +15,7 @@ async function guard() {
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const { searchParams } = req.nextUrl;
   const dormId = searchParams.get("dormId");
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   since.setMonth(since.getMonth() - months);
 
   const dormWhere = {
-    schoolId: user.schoolId,
+    schoolId,
     ...(dormId ? { id: dormId } : {}),
   };
 
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
   // ── Step 2: For each dorm, get the list of currently allocated studentIds
   const dormStudents = await prisma.allocationRecord.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       status: "CURRENT",
       dormId: dormId ? dormId : { in: dorms.map((d) => d.id) },
     },
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
   // ── Step 3: Attendance stats ──────────────────────────────────────────
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       studentId: { in: allStudentIds },
       date: { gte: since },
     },
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
   // ── Step 4: Discipline stats ──────────────────────────────────────────
   const disciplineRecords = await prisma.disciplineRecord.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       studentId: { in: allStudentIds },
       dateOfOffence: { gte: since },
     },
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
   // ── Step 5: Assessment / academic stats ───────────────────────────────
   const assessmentItems = await prisma.assessmentItem.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       studentId: { in: allStudentIds },
       numericScore: { not: null },
       createdAt: { gte: since },
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest) {
   try {
     const inspections = await prisma.dormInspection.findMany({
       where: {
-        schoolId: user.schoolId,
+        schoolId,
         status: "COMPLETED",
         dormId: dormId ? dormId : { in: dorms.map((d) => d.id) },
       },
@@ -129,7 +130,7 @@ export async function GET(req: NextRequest) {
   // ── Step 7: Historical occupancy (monthly) ────────────────────────────
   const historicalAllocations = await prisma.allocationRecord.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       dormId: dormId ? dormId : { in: dorms.map((d) => d.id) },
       allocationDate: { gte: since },
     },

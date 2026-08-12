@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 
@@ -139,6 +139,7 @@ async function snapshotDormAllocations(
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const body = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(body);
@@ -156,12 +157,12 @@ export async function POST(req: NextRequest) {
     const { studentId, toDormId, toCubicleId, toSleepingPositionId, reason, notes } = data;
 
     const student = await prisma.student.findFirst({
-      where: { id: studentId, schoolId: user.schoolId },
+      where: { id: studentId, schoolId },
     });
     if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
     const toDorm = await prisma.dormitory.findFirst({
-      where: { id: toDormId, schoolId: user.schoolId },
+      where: { id: toDormId, schoolId },
       include: { permittedForms: true },
     });
     if (!toDorm) return NextResponse.json({ error: "Destination dormitory not found." }, { status: 404 });
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
     }
 
     const currentOccupancy = await prisma.allocationRecord.count({
-      where: { dormId: toDormId, status: "CURRENT", schoolId: user.schoolId },
+      where: { dormId: toDormId, status: "CURRENT", schoolId },
     });
     if (toDorm.totalCapacity > 0 && currentOccupancy >= toDorm.totalCapacity) {
       return NextResponse.json({ error: "Destination dormitory is at full capacity." }, { status: 409 });
@@ -178,7 +179,7 @@ export async function POST(req: NextRequest) {
 
     if (toSleepingPositionId) {
       const pos = await prisma.sleepingPosition.findFirst({
-        where: { id: toSleepingPositionId, dormId: toDormId, schoolId: user.schoolId },
+        where: { id: toSleepingPositionId, dormId: toDormId, schoolId },
       });
       if (!pos) return NextResponse.json({ error: "Sleeping position not found." }, { status: 404 });
       if (pos.isOccupied) {
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
       const existing = await tx.allocationRecord.findFirst({
         where: {
           studentId,
-          schoolId: user.schoolId,
+          schoolId,
           status: { in: ["CURRENT", "MAINTENANCE_HOLD"] },
         },
       });
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
 
       const allocation = await tx.allocationRecord.create({
         data: {
-          schoolId: user.schoolId,
+          schoolId,
           studentId,
           dormId: toDormId,
           cubicleId: toCubicleId ?? null,
@@ -248,12 +249,12 @@ export async function POST(req: NextRequest) {
     const { fromDormId, toDormId, reason, notes } = data;
 
     const fromDorm = await prisma.dormitory.findFirst({
-      where: { id: fromDormId, schoolId: user.schoolId },
+      where: { id: fromDormId, schoolId },
     });
     if (!fromDorm) return NextResponse.json({ error: "Source dormitory not found." }, { status: 404 });
 
     const currentAllocations = await prisma.allocationRecord.findMany({
-      where: { dormId: fromDormId, status: "CURRENT", schoolId: user.schoolId },
+      where: { dormId: fromDormId, status: "CURRENT", schoolId },
     });
 
     let relocated = 0;
@@ -279,7 +280,7 @@ export async function POST(req: NextRequest) {
         if (toDormId) {
           await tx.allocationRecord.create({
             data: {
-              schoolId: user.schoolId,
+              schoolId,
               studentId: alloc.studentId,
               dormId: toDormId,
               notes: notes ?? `Emergency relocation from ${fromDorm.name}: ${reason}`,
@@ -315,7 +316,7 @@ export async function POST(req: NextRequest) {
     const { dormId, reason, notes, relocateStudents, toDormId } = data;
 
     const dorm = await prisma.dormitory.findFirst({
-      where: { id: dormId, schoolId: user.schoolId },
+      where: { id: dormId, schoolId },
     });
     if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
     if (dorm.status !== "ACTIVE") {
@@ -331,7 +332,7 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction(async (tx) => {
       // Snapshot every CURRENT allocation in this dorm
       const current = await tx.allocationRecord.findMany({
-        where: { dormId, status: "CURRENT", schoolId: user.schoolId },
+        where: { dormId, status: "CURRENT", schoolId },
       });
 
       for (const alloc of current) {
@@ -355,7 +356,7 @@ export async function POST(req: NextRequest) {
         if (relocateStudents && toDormId) {
           await tx.allocationRecord.create({
             data: {
-              schoolId: user.schoolId,
+              schoolId,
               studentId: alloc.studentId,
               dormId: toDormId,
               notes: notes ?? `Temporarily relocated from ${dorm.name} during maintenance`,
@@ -394,13 +395,13 @@ export async function POST(req: NextRequest) {
     const { dormId, notes } = data;
 
     const dorm = await prisma.dormitory.findFirst({
-      where: { id: dormId, schoolId: user.schoolId },
+      where: { id: dormId, schoolId },
     });
     if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
     // Find every snapshot for this dorm
     const heldAllocations = await prisma.allocationRecord.findMany({
-      where: { dormId, status: "MAINTENANCE_HOLD", schoolId: user.schoolId },
+      where: { dormId, status: "MAINTENANCE_HOLD", schoolId },
       include: {
         student: { select: { id: true, archivedAt: true } },
         sleepingPosition: { select: { id: true, isOccupied: true } },
@@ -432,7 +433,7 @@ export async function POST(req: NextRequest) {
         const activeCurrent = await tx.allocationRecord.findFirst({
           where: {
             studentId: alloc.studentId,
-            schoolId: user.schoolId,
+            schoolId,
             status: "CURRENT",
           },
         });
@@ -512,7 +513,7 @@ export async function POST(req: NextRequest) {
     const { dormId, reason, notes } = data;
 
     const dorm = await prisma.dormitory.findFirst({
-      where: { id: dormId, schoolId: user.schoolId },
+      where: { id: dormId, schoolId },
     });
     if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
     if (dorm.status === "CLOSED") {
@@ -525,7 +526,7 @@ export async function POST(req: NextRequest) {
       snapshotted = await snapshotDormAllocations(
         tx,
         dormId,
-        user.schoolId,
+        schoolId,
         `Dorm permanently closed: ${reason}`,
       );
 
@@ -551,7 +552,7 @@ export async function POST(req: NextRequest) {
     const { dormId, reason, notes } = data;
 
     const dorm = await prisma.dormitory.findFirst({
-      where: { id: dormId, schoolId: user.schoolId },
+      where: { id: dormId, schoolId },
     });
     if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
@@ -560,7 +561,7 @@ export async function POST(req: NextRequest) {
       where: {
         dormId,
         status: { in: ["CURRENT", "MAINTENANCE_HOLD"] },
-        schoolId: user.schoolId,
+        schoolId,
       },
     });
 
@@ -601,7 +602,7 @@ export async function POST(req: NextRequest) {
     const current = await prisma.allocationRecord.findFirst({
       where: {
         studentId,
-        schoolId: user.schoolId,
+        schoolId,
         status: { in: ["CURRENT", "MAINTENANCE_HOLD"] },
       },
     });
@@ -611,7 +612,7 @@ export async function POST(req: NextRequest) {
 
     if (sleepingPositionId) {
       const pos = await prisma.sleepingPosition.findFirst({
-        where: { id: sleepingPositionId, dormId: current.dormId, schoolId: user.schoolId },
+        where: { id: sleepingPositionId, dormId: current.dormId, schoolId },
       });
       if (!pos) return NextResponse.json({ error: "Sleeping position not found in this dorm." }, { status: 404 });
       if (pos.isOccupied && sleepingPositionId !== current.sleepingPositionId) {

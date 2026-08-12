@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 
 const schema = z.object({
   slots: z
@@ -21,6 +21,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -40,9 +41,9 @@ export async function POST(req: NextRequest) {
   // subject could have been deleted in the meantime), and the client's JSON
   // is not trusted just because it round-tripped through /generate.
   const [classCount, subjectCount, teacherCount] = await Promise.all([
-    prisma.schoolClass.count({ where: { id: { in: classIds }, schoolId: user.schoolId } }),
-    prisma.subject.count({ where: { id: { in: subjectIds }, schoolId: user.schoolId } }),
-    prisma.teacher.count({ where: { id: { in: teacherIds }, schoolId: user.schoolId } }),
+    prisma.schoolClass.count({ where: { id: { in: classIds }, schoolId } }),
+    prisma.subject.count({ where: { id: { in: subjectIds }, schoolId } }),
+    prisma.teacher.count({ where: { id: { in: teacherIds }, schoolId } }),
   ]);
   if (classCount !== classIds.length || subjectCount !== subjectIds.length || teacherCount !== teacherIds.length) {
     return NextResponse.json(
@@ -79,9 +80,9 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       // Only the classes actually in this draft have their timetable
       // replaced — everyone else's is left exactly as it was.
-      prisma.timetableSlot.deleteMany({ where: { classId: { in: classIds }, schoolId: user.schoolId } }),
+      prisma.timetableSlot.deleteMany({ where: { classId: { in: classIds }, schoolId } }),
       prisma.timetableSlot.createMany({
-        data: slots.map((s) => ({ ...s, schoolId: user.schoolId })),
+        data: slots.map((s) => ({ ...s, schoolId })),
       }),
       ...[...pairs.values()].map((p) =>
         prisma.classSubjectTeacher.upsert({

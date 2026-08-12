@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { computePeriodTimes } from "@/lib/scheduleTimes";
 import { collapseGroupSlotsForDisplay } from "@/lib/timetable/engineHelpers";
 import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
@@ -17,6 +17,7 @@ import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
 export async function GET(req: NextRequest) {
   const user = await requireRole("PRINCIPAL", "TEACHER");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const searchParams = req.nextUrl.searchParams;
   let   teacherId    = searchParams.get("teacherId");
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   // TEACHER role: resolve their own teacher record
   if (user.role === "TEACHER") {
     const teacherRecord = await prisma.teacher.findFirst({
-      where: { userId: user.id, schoolId: user.schoolId },
+      where: { userId: user.id, schoolId },
       select: { id: true },
     });
     if (!teacherRecord)
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   // Verify the teacher belongs to this school
   const teacher = await prisma.teacher.findFirst({
-    where: { id: teacherId, schoolId: user.schoolId },
+    where: { id: teacherId, schoolId },
     select: { id: true, fullName: true, staffId: true },
   });
   if (!teacher) return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
     // Specific version (draft preview or named version)
     const vRows = await prisma.$queryRaw<Array<{ schoolId: string }>>`
       SELECT "schoolId" FROM "TimetableVersion"
-      WHERE id = ${versionId} AND "schoolId" = ${user.schoolId}
+      WHERE id = ${versionId} AND "schoolId" = ${schoolId}
     `;
     if (!vRows[0]) return NextResponse.json({ error: "Version not found." }, { status: 404 });
 
@@ -83,14 +84,14 @@ export async function GET(req: NextRequest) {
       JOIN "SchoolClass" c   ON c.id = ts."classId"
       JOIN "Subject"     sub ON sub.id = ts."subjectId"
       JOIN "Teacher"     t   ON t.id = ts."teacherId"
-      WHERE ts."teacherId" = ${teacherId} AND ts."schoolId" = ${user.schoolId}
+      WHERE ts."teacherId" = ${teacherId} AND ts."schoolId" = ${schoolId}
       ORDER BY ts."dayOfWeek", ts.period
     `;
   }
 
   // ── Fetch group information for display collapse ─────────────────────────
   const electiveGroups = await prisma.electiveGroup.findMany({
-    where: { schoolId: user.schoolId },
+    where: { schoolId },
     select: {
       id: true,
       name: true,
@@ -119,7 +120,7 @@ export async function GET(req: NextRequest) {
 
   // ── Fetch config for period-to-time mapping ──────────────────────────────
   const config = await prisma.timetableConfig.findUnique({
-    where: { schoolId: user.schoolId },
+    where: { schoolId },
   });
 
   const DEFAULTS = {
@@ -134,13 +135,13 @@ export async function GET(req: NextRequest) {
     Array<{ type: string; label: string; dayOfWeek: number | null; period: number }>
   >`SELECT type, label, "dayOfWeek", period
     FROM "SpecialPeriod"
-    WHERE "schoolId" = ${user.schoolId} AND "isActive" = true
+    WHERE "schoolId" = ${schoolId} AND "isActive" = true
     ORDER BY period`;
 
   // ── Fetch operating days ────────────────────────────────────────────────
   const operatingDays = await prisma.$queryRaw<Array<{ dayOfWeek: number; isActive: boolean }>>`
     SELECT "dayOfWeek", "isActive" FROM "OperatingDay"
-    WHERE "schoolId" = ${user.schoolId} ORDER BY "dayOfWeek"
+    WHERE "schoolId" = ${schoolId} ORDER BY "dayOfWeek"
   `;
 
   const activeDays = operatingDays.filter((d) => d.isActive).map((d) => d.dayOfWeek);

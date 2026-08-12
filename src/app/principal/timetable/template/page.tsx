@@ -275,6 +275,7 @@ export default function TemplatePage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const msg = data.validationErrors?.map((e: any) => e.message).join("; ") ?? data.error;
         setError(msg ?? "Failed to save template");
         return;

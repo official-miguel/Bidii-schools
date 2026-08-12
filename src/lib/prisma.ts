@@ -1,77 +1,56 @@
 import { PrismaClient } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
-// Connection pool configuration — Neon serverless (PgBouncer pooler)
+// Connection pool configuration — Supabase Postgres (session pooler)
 //
-// Neon uses a PgBouncer pooler endpoint (the URL contains "-pooler.").
-// PgBouncer requires:
-//   1. connection_limit  — Prisma's per-process pool size. With PgBouncer the
-//      pooler fans out to real Postgres connections, so Prisma can safely hold
-//      several connections. Defaults to 10; override with DATABASE_POOL_SIZE.
-//   2. pool_timeout=30   — seconds Prisma waits for a free slot before throwing
-//      "Timed out fetching a new connection". Default is 10, which is too short
-//      when multiple server components render concurrently.
-//   3. statement_cache_size=0  — PgBouncer in transaction mode does not
-//      support prepared statements. Disabling them prevents "prepared
-//      statement does not exist" errors.
-//   4. pgbouncer=true  — tells Prisma to skip its own connection pooling
-//      logic when a PgBouncer sits in front.
+// Supabase exposes two pooler endpoints:
+//   • Session pooler  (port 5432) — one Postgres connection per client session.
+//     Safe for Prisma migrations and general runtime use.
+//   • Transaction pooler (port 6543) — PgBouncer in transaction mode.
+//     Does NOT support prepared statements; use statement_cache_size=0 and
+//     pgbouncer=true if you switch to this port.
 //
-// channel_binding=require is intentionally removed — PgBouncer does not
-// support SCRAM channel binding and will drop the connection silently.
+// The active DATABASE_URL in .env points to the session pooler (5432).
 //
-// connect_timeout=15 — gives Neon up to 15 s to wake a cold compute
-// endpoint before Prisma gives up (default is 5 s, too short for cold starts).
+// connect_timeout=20 — gives the pooler up to 20 s to establish a backend
+// connection before Prisma gives up (default is 5 s).
+//
+// pool_timeout=30 — seconds Prisma waits for a free connection slot before
+// throwing "Timed out fetching a new connection". Raised above the default
+// of 10 to handle bursts of concurrent server-component renders.
 //
 // DATABASE_POOL_SIZE: override the per-process pool size. Defaults to 10.
 // ---------------------------------------------------------------------------
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// Default pool size of 10. The Neon PgBouncer pooler handles the actual
-// backend connections, so Prisma can safely keep multiple slots open.
+// Default pool size of 10.
 const poolSize = parseInt(process.env.DATABASE_POOL_SIZE ?? "10", 10);
 
-// Build the datasource URL, enforcing the params required for PgBouncer.
+// Build the datasource URL, enforcing sensible connection params.
 function buildDatabaseUrl(): string {
   const base = process.env.DATABASE_URL ?? "";
   if (!base) return base;
   try {
     const url = new URL(base);
 
-    // Remove channel_binding — not supported by PgBouncer.
-    url.searchParams.delete("channel_binding");
-
-    // PgBouncer compatibility flags.
-    if (!url.searchParams.has("pgbouncer")) {
-      url.searchParams.set("pgbouncer", "true");
-    }
-
-    // One connection per process — the pooler handles fan-out.
+    // Per-process pool size.
     if (!url.searchParams.has("connection_limit")) {
       url.searchParams.set("connection_limit", String(poolSize));
     }
 
-    // Disable prepared statement cache — incompatible with PgBouncer
-    // transaction mode.
-    if (!url.searchParams.has("statement_cache_size")) {
-      url.searchParams.set("statement_cache_size", "0");
-    }
-
-    // Give Neon time to wake a cold compute endpoint.
+    // How long Prisma waits for the pooler to hand over a connection.
     if (!url.searchParams.has("connect_timeout")) {
       url.searchParams.set("connect_timeout", "20");
     }
 
-    // How long (seconds) Prisma waits for a free connection slot before
-    // throwing "Timed out fetching a new connection". Raise above the default
-    // of 10 to handle bursts of concurrent server-component renders.
+    // How long Prisma waits for a free slot in its own internal pool.
     if (!url.searchParams.has("pool_timeout")) {
       url.searchParams.set("pool_timeout", "30");
     }
 
-    // TCP keepalives — tells Neon the connection is still alive so it
-    // doesn't close it mid-request during slow queries.
+    // TCP keepalives — keeps idle connections alive through load-balancer
+    // idle-timeout windows.
     if (!url.searchParams.has("keepalives")) {
       url.searchParams.set("keepalives", "1");
     }
@@ -88,8 +67,6 @@ function buildDatabaseUrl(): string {
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    // In development: only show errors, not the harmless "connection closed"
-    // warnings that Neon emits when it recycles idle serverless connections.
     log: process.env.NODE_ENV === "development" ? ["error"] : ["error"],
     datasources: {
       db: { url: buildDatabaseUrl() },

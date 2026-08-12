@@ -23,9 +23,10 @@ export async function GET(
 ) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const inspection = await prisma.dormInspection.findFirst({
-    where: { id: params.inspectionId, schoolId: user.schoolId },
+    where: { id: params.inspectionId, schoolId },
     include: {
       dorm: { select: { id: true, name: true, genderPolicy: true } },
       inspectedBy: { select: { id: true, email: true } },
@@ -65,9 +66,10 @@ export async function PATCH(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const existing = await prisma.dormInspection.findFirst({
-    where: { id: params.inspectionId, schoolId: user.schoolId },
+    where: { id: params.inspectionId, schoolId },
   });
   if (!existing) return NextResponse.json({ error: "Inspection not found." }, { status: 404 });
 
@@ -109,9 +111,10 @@ export async function DELETE(
 ) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const existing = await prisma.dormInspection.findFirst({
-    where: { id: params.inspectionId, schoolId: user.schoolId },
+    where: { id: params.inspectionId, schoolId },
   });
   if (!existing) return NextResponse.json({ error: "Inspection not found." }, { status: 404 });
 

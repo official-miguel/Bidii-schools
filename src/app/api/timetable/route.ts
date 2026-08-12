@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { requirePermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
   const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const classId = req.nextUrl.searchParams.get("classId");
   if (!classId) {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId },
   });
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
@@ -40,6 +41,7 @@ const createSchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: data.classId, schoolId: user.schoolId },
+    where: { id: data.classId, schoolId },
   });
   if (!schoolClass) return NextResponse.json({ error: "Choose a valid class." }, { status: 400 });
 
@@ -61,8 +63,8 @@ export async function POST(req: NextRequest) {
     where: {
       teacherId: data.teacherId,
       subjectId: data.subjectId,
-      teacher: { schoolId: user.schoolId },
-      subject: { schoolId: user.schoolId },
+      teacher: { schoolId },
+      subject: { schoolId },
     },
   });
   if (!assignment) {
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const slot = await prisma.timetableSlot.create({
-      data: { ...data, schoolId: user.schoolId, room: data.room || null },
+      data: { ...data, schoolId, room: data.room || null },
       include: {
         subject: { select: { id: true, name: true, code: true } },
         teacher: { select: { id: true, fullName: true } },

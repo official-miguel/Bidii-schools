@@ -120,6 +120,12 @@ model School {
   /// Supabase Storage metadata
   storedImages             StoredImage[]
   storedReports            StoredReport[]
+  /// Super-admin control plane
+  schoolMeta               SchoolMeta?
+  schoolModuleToggles      SchoolModuleToggle[]
+  systemErrors             SystemError[]
+  storageUsages            StorageUsage[]
+  importJobs               ImportJob[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -131,17 +137,20 @@ model School {
 model User {
   id                        String               @id @default(cuid())
   email                     String
-  /// Password hash kept for the signup / change-password flow.
-  /// OTP login no longer requires it — the field is nullable so existing
-  /// rows created before the OTP migration are not broken and can still
-  /// sign in via OTP without a password.
+  /// Bcrypt password hash.
+  /// On first login the hash is of the school slug (e.g. "kianyaga").
+  /// mustChangePassword is set true so the teacher is forced to set a
+  /// personal password before reaching the dashboard.  After that the hash
+  /// is replaced with the teacher's own password and the school slug can
+  /// never be used again (enforced in /api/auth/change-password).
   passwordHash              String?
   role                      Role
   mustChangePassword        Boolean              @default(false)
   isActive                  Boolean              @default(true)
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
-  schoolId                  String
+  /// Nullable for SUPER_ADMIN accounts which are not scoped to any school.
+  schoolId                  String?
   /// Only meaningful when role = ADMIN_STAFF. Governs which modules this
   /// login can see and manage (Staff Roles & Permissions). PRINCIPAL always
   /// has full access regardless of this field; TEACHER keeps its existing
@@ -158,7 +167,7 @@ model User {
   sessions                  Session[]
   student                   Student?
   teacher                   Teacher?
-  school                    School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school                    School?              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   staffRole                 StaffRole?           @relation(fields: [staffRoleId], references: [id])
   disciplineRecordsRecorded DisciplineRecord[]
   disciplineNotes           DisciplineNote[]
@@ -1780,6 +1789,261 @@ enum Role {
   WATCHMAN
   MARKER
   ADMIN_STAFF
+  SUPER_ADMIN
+}
+
+// =============================================================================
+// Super Admin Control Plane
+// =============================================================================
+
+/// Plan tiers available to schools. Determines which module bundle is
+/// pre-enabled when the school is onboarded.
+enum PlanTier {
+  FREE
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+/// Lifecycle status of a school account.
+enum SchoolStatus {
+  ONBOARDING
+  ACTIVE
+  SUSPENDED
+}
+
+/// Cross-cutting system module registry — distinct from the per-school
+/// Module enum (which governs staff RBAC). These are platform-level
+/// feature flags toggled by the super admin.
+enum SystemModule {
+  ATTENDANCE
+  GRADING
+  FEE_MANAGEMENT
+  LIBRARY
+  TRANSPORT
+  MESSAGING
+  IMPORT_TOOL
+  REPORTS
+  TIMETABLE
+  ACCOMMODATION
+  ANALYTICS
+  AI_TOOLS
+}
+
+/// Severity level for system errors reported across schools.
+enum ErrorSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// Triage status for an error entry.
+enum ErrorStatus {
+  NEW
+  INVESTIGATING
+  RESOLVED
+  IGNORED
+}
+
+/// Processing status for a bulk import job.
+enum ImportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  ROLLED_BACK
+}
+
+/// Type of data being imported.
+enum ImportType {
+  STUDENTS
+  STAFF
+  BOTH
+  CUSTOM
+}
+
+/// Live service health status.
+enum ServiceStatus {
+  OPERATIONAL
+  DEGRADED
+  OUTAGE
+  MAINTENANCE
+}
+
+/// Overall system health banner status.
+enum SystemHealthStatus {
+  OPERATIONAL
+  DEGRADED
+  OUTAGE
+}
+
+// ---------------------------------------------------------------------------
+// Super-admin extended school metadata
+// ---------------------------------------------------------------------------
+// The core School model is owned by the school-facing app. We store
+// super-admin-only fields in a separate 1:1 companion model so the existing
+// school queries are unaffected.
+
+/// Super-admin-only metadata attached to each school. One row per School.
+model SchoolMeta {
+  schoolId       String       @id
+  planTier       PlanTier     @default(FREE)
+  status         SchoolStatus @default(ONBOARDING)
+  storageQuotaGb Float        @default(5)
+  slug           String?      @unique
+  contactPerson  String?
+  contactEmail   String?
+  contactPhone   String?
+  studentCount   Int          @default(0)
+  staffCount     Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([planTier])
+}
+
+/// One row per module enabled/disabled for a school.
+model SchoolModuleToggle {
+  schoolId  String
+  module    SystemModule
+  enabled   Boolean      @default(false)
+  updatedBy String?      /// super_admin user id
+  updatedAt DateTime     @updatedAt
+  school    School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@id([schoolId, module])
+  @@index([schoolId])
+}
+
+/// Error/exception entries reported across all schools.
+model SystemError {
+  id          String        @id @default(cuid())
+  schoolId    String?
+  message     String
+  stackTrace  String?
+  severity    ErrorSeverity @default(MEDIUM)
+  module      String?
+  status      ErrorStatus   @default(NEW)
+  occurrences Int           @default(1)
+  /// Sanitised request context (no PII) stored as JSON
+  context     Json?
+  notes       String?
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  school      School?       @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Per-service health & uptime tracking.
+model ServiceHealth {
+  id                String        @id @default(cuid())
+  serviceName       String        @unique
+  status            ServiceStatus @default(OPERATIONAL)
+  uptimePct24h      Float         @default(100)
+  uptimePct7d       Float         @default(100)
+  uptimePct30d      Float         @default(100)
+  lastIncidentAt    DateTime?
+  lastCheckedAt     DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+/// Point-in-time metric snapshot per service.
+model MetricSnapshot {
+  id             String   @id @default(cuid())
+  serviceName    String
+  responseTimeMs Float?
+  errorRate      Float?
+  requestCount   Int?
+  recordedAt     DateTime @default(now())
+
+  @@index([serviceName, recordedAt])
+}
+
+/// Incident log entry — manually added or auto-created on downtime.
+model IncidentLog {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  serviceName String?
+  startedAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  createdBy   String?   /// super_admin user id
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([startedAt])
+}
+
+/// Per-school storage usage snapshot.
+model StorageUsage {
+  id        String   @id @default(cuid())
+  schoolId  String
+  /// "documents" | "media" | "database" | "backups"
+  type      String
+  sizeBytes BigInt   @default(0)
+  recordedAt DateTime @default(now())
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, recordedAt])
+  @@index([schoolId, type])
+}
+
+/// Bulk import job record.
+model ImportJob {
+  id           String       @id @default(cuid())
+  schoolId     String
+  type         ImportType
+  fileName     String
+  totalRows    Int          @default(0)
+  succeeded    Int          @default(0)
+  failed       Int          @default(0)
+  status       ImportStatus @default(QUEUED)
+  errorReport  Json?        /// array of per-row errors
+  createdBy    String?      /// super_admin user id
+  rollbackAt   DateTime?    /// deadline for rollback (createdAt + 24h)
+  rolledBackAt DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Immutable audit trail for all sensitive super-admin actions.
+model SuperAdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String   /// super_admin user id
+  action     String   /// e.g. "SCHOOL_SUSPENDED", "MODULE_TOGGLED", "IMPERSONATION"
+  targetType String?  /// "school" | "user" | "module" | "import"
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}
+
+/// System-level health/status banner.
+model SystemStatus {
+  id        String             @id @default(cuid())
+  status    SystemHealthStatus @default(OPERATIONAL)
+  message   String?
+  updatedBy String?
+  updatedAt DateTime           @updatedAt
+  createdAt DateTime           @default(now())
 }
 
 enum SubjectType {

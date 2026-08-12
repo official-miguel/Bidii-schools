@@ -4,10 +4,10 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  BarChart2, Users, BedDouble,
+  BarChart2, BedDouble,
   AlertTriangle, Award, Shield, Calendar,
   RefreshCw, ChevronRight, Star, Flame,
-  BookOpen, ClipboardList,
+  BookOpen,
 } from "lucide-react";
 import { PageHeader, ErrorBanner } from "@/components/ui";
 

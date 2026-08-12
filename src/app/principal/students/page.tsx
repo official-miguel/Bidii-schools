@@ -410,6 +410,7 @@ export default function StudentsPage() {
       .then((r) => r.ok ? r.json() : null)
       .then((d: SchoolPolicy | null) => { if (d) setSchoolPolicy(d); })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Search / filter ───────────────────────────────────────────────────────
@@ -441,6 +442,7 @@ export default function StudentsPage() {
   );
 
   const students: Student[] = useMemo(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () => (rawStudents as any[])
       .filter((s) => !s.archivedAt)
       .map((s) => ({
@@ -608,7 +610,7 @@ export default function StudentsPage() {
     } finally {
       setSaving(false);
     }
-  }, [saving, editing, selectedClassId, selectedElectives, selectedForm, selectedGender, selectedBoarding, loadAll]);
+  }, [saving, editing, selectedClassId, selectedElectives, selectedForm, selectedGender, selectedBoarding, loadAll, clearStudentDraft]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   const showLoading = pageLoading && students.length === 0;

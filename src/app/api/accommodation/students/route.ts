@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 
@@ -18,6 +18,7 @@ async function guard() {
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
   const boardingOnly = req.nextUrl.searchParams.get("boardingOnly") === "true";
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const students = await prisma.student.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       archivedAt: null,
       ...(q
         ? {

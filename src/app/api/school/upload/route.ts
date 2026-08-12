@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireRole , requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -18,7 +18,6 @@ const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 const BUCKET         = process.env.SUPABASE_STORAGE_IMAGES_BUCKET ?? "images";
 
 const VALID_FIELDS = ["logo", "stamp"] as const;
-type UploadField   = typeof VALID_FIELDS[number];
 
 const EXT_MAP: Record<string, string> = {
   "image/png":     "png",
@@ -31,6 +30,7 @@ const EXT_MAP: Record<string, string> = {
 export async function POST(req: NextRequest) {
   const user = await requireRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   let formData: FormData;
   try { formData = await req.formData(); }
@@ -55,13 +55,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "File too large. Max 2 MB." }, { status: 400 });
 
   const ext         = EXT_MAP[file.type] ?? "png";
-  const storagePath = `${user.schoolId}/school/${field}/${Date.now()}.${ext}`;
+  const storagePath = `${schoolId}/school/${field}/${Date.now()}.${ext}`;
   const buffer      = Buffer.from(await file.arrayBuffer());
   const supabase    = createAdminClient();
 
   // Delete old file — read current URL to derive old path.
   const school = await prisma.school.findUnique({
-    where: { id: user.schoolId },
+    where: { id: schoolId },
     select: { logoUrl: true, stampUrl: true },
   });
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   const url               = urlData.publicUrl;
 
   await prisma.school.update({
-    where: { id: user.schoolId },
+    where: { id: schoolId },
     data:  field === "logo" ? { logoUrl: url } : { stampUrl: url },
   });
 

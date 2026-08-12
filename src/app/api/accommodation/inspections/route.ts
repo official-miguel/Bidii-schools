@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "view"))
   );
 }
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 
@@ -44,7 +44,7 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const { schoolId } = user;
   const { searchParams } = req.nextUrl;
   const dormId = searchParams.get("dormId");
   const status = searchParams.get("status");
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   const inspections = await prisma.dormInspection.findMany({
     where: {
-      schoolId: user.schoolId,
+      schoolId,
       ...(dormId ? { dormId } : {}),
       ...(status ? { status: status as "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" } : {}),
     },
@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -87,13 +88,13 @@ export async function POST(req: NextRequest) {
   } = parsed.data;
 
   const dorm = await prisma.dormitory.findFirst({
-    where: { id: dormId, schoolId: user.schoolId },
+    where: { id: dormId, schoolId },
   });
   if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
   const inspection = await prisma.dormInspection.create({
     data: {
-      schoolId: user.schoolId,
+      schoolId,
       dormId,
       inspectionDate: new Date(inspectionDate),
       inspectedById: inspectedById ?? user.id,

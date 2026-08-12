@@ -49,6 +49,7 @@ export async function GET(_req: NextRequest) {
 
     // Calculate session distribution
     const distribution = calculateSessionDistribution(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config.columns as any,
       config.operatingDays
     );
@@ -140,6 +141,7 @@ export async function PUT(req: NextRequest) {
 
       // Create new preferences
       await tx.timetablePreference.createMany({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: preferences.map((pref: any) => ({
           configId: schoolId,
           instruction: pref.instruction || `${pref.subjectCode} in ${pref.preferredSession.toLowerCase()}`,
@@ -216,6 +218,7 @@ export async function POST(req: NextRequest) {
       });
 
       const distribution = calculateSessionDistribution(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         config.columns as any,
         config.operatingDays
       );
@@ -280,6 +283,7 @@ export async function POST(req: NextRequest) {
       });
 
       const distribution = calculateSessionDistribution(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         config.columns as any,
         config.operatingDays
       );

@@ -33,6 +33,7 @@ export type ValidationIssue = {
   affectedSubjects?: string[];
   dayOfWeek?: number;
   period?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: any;
 };
 

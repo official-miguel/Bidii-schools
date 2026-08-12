@@ -19,8 +19,6 @@ import {
   type EngineSubject,
   type EngineClass,
   type EngineTeacher,
-  type SubjectRequirement,
-  type TeacherAssignment,
   type TemplateColumn,
 } from "@/lib/timetable/deterministicEngine";
 import { TimetableSession, TimetableSlotType } from "@prisma/client";
@@ -47,7 +45,7 @@ function makeConfig(periodsPerDay = 8, operatingDays = [0, 1, 2, 3, 4]) {
   };
 }
 
-function makeSubject(id: string, code: string, lessonsPerWeek = 5, doubleLesson = false): EngineSubject {
+function makeSubject(id: string, code: string, _lessonsPerWeek = 5, doubleLesson = false): EngineSubject {
   return { id, internalCode: parseInt(id.replace(/\D/g, "") || "1"), code, name: code, doubleLesson, requiresSpecialRoom: null };
 }
 

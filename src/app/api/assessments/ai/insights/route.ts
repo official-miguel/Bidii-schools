@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser , requireSchoolRole } from "@/lib/auth";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { prisma } from "@/lib/prisma";
 import {
@@ -35,8 +35,9 @@ const bodySchema = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { schoolId } = user;
 
-  const actor = await resolveAssessmentActor(user, user.schoolId);
+  const actor = await resolveAssessmentActor(user, schoolId);
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -54,15 +55,15 @@ export async function POST(req: NextRequest) {
 
   // Resolve framework for this class.
   const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId },
+    where: { id: classId, schoolId },
     select: { frameworkType: true, form: true },
   });
   const framework = (schoolClass?.frameworkType ?? "EIGHT_FOUR_FOUR") as string;
 
   // ---- Run all three data-only analyses in parallel (no AI calls) ----
   const [atRiskReport, anomalyReport] = await Promise.all([
-    detectAtRisk(user.schoolId, classId, periodId),
-    detectAnomalies(user.schoolId, periodId, classId),
+    detectAtRisk(schoolId, classId, periodId),
+    detectAnomalies(schoolId, periodId, classId),
   ]);
 
   // ---- Build dashboard context string for NL query ----
@@ -75,13 +76,13 @@ export async function POST(req: NextRequest) {
   // Add lightweight perf summary to context.
   if (framework === "EIGHT_FOUR_FOUR") {
     const fw = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
+      where: { schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
       select: { id: true },
     }) as { id: string } | null;
 
     if (fw) {
       const subjects = await prisma.subject.findMany({
-        where: { schoolId: user.schoolId, applicableForms: { has: schoolClass?.form ?? 1 } },
+        where: { schoolId, applicableForms: { has: schoolClass?.form ?? 1 } },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
       });
@@ -90,11 +91,11 @@ export async function POST(req: NextRequest) {
         select: { id: true, subjectId: true, maxMarks: true },
       }) as Array<{ id: string; subjectId: string; maxMarks: number }>;
       const students = await prisma.student.findMany({
-        where: { classId, schoolId: user.schoolId },
+        where: { classId, schoolId },
         select: { id: true },
       });
       const items = await db.assessmentItem.findMany({
-        where: { periodId, studentId: { in: students.map((s: { id: string }) => s.id) }, schoolId: user.schoolId, resultKind: "NUMERIC" },
+        where: { periodId, studentId: { in: students.map((s: { id: string }) => s.id) }, schoolId, resultKind: "NUMERIC" },
         select: { studentId: true, paperId: true, numericScore: true },
       }) as Array<{ studentId: string; paperId: string; numericScore: number | null }>;
 
@@ -112,25 +113,25 @@ export async function POST(req: NextRequest) {
     }
   } else {
     const fw = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId, type: "CBE", isActive: true },
+      where: { schoolId, type: "CBE", isActive: true },
       select: { id: true },
     }) as { id: string } | null;
 
     if (fw) {
       const las = await db.learningArea.findMany({
-        where: { frameworkId: fw.id, schoolId: user.schoolId },
+        where: { frameworkId: fw.id, schoolId },
         select: { id: true, name: true },
         take: 8,
       }) as Array<{ id: string; name: string }>;
       const students = await prisma.student.findMany({
-        where: { classId, schoolId: user.schoolId },
+        where: { classId, schoolId },
         select: { id: true },
       });
       const items = await db.assessmentItem.findMany({
         where: {
           periodId,
           studentId: { in: students.map((s: { id: string }) => s.id) },
-          schoolId: user.schoolId,
+          schoolId,
           resultKind: "PERFORMANCE_LEVEL",
           learningAreaId: { in: las.map((la) => la.id) },
         },
@@ -151,18 +152,18 @@ export async function POST(req: NextRequest) {
 
   // ---- NL query (only when question is provided) ----
   const nlResult = question
-    ? await answerNlQuery(user.schoolId, question, contextString)
+    ? await answerNlQuery(schoolId, question, contextString)
     : null;
 
   // ---- Per-student recommendations (only when studentId is provided) ----
   let recommendationsResult = null;
   if (studentId) {
     const student = await prisma.student.findFirst({
-      where: { id: studentId, schoolId: user.schoolId },
+      where: { id: studentId, schoolId },
       select: { fullName: true },
     });
     const school = await prisma.school.findUnique({
-      where: { id: user.schoolId },
+      where: { id: schoolId },
       select: { name: true },
     });
 
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
         schoolName:  school?.name ?? "",
         periodName:  periodId,
       };
-      recommendationsResult = await generateRecommendations(user.schoolId, input);
+      recommendationsResult = await generateRecommendations(schoolId, input);
     }
   }
 
