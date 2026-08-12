@@ -321,7 +321,7 @@ export default function ErrorsPage() {
       setPage(pg);
       setTrend(j.trend ?? []);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

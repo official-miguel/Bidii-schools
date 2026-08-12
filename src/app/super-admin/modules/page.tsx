@@ -150,7 +150,7 @@ export default function ModulesPage() {
       setSchools(j.schools ?? []);
       setToggles(j.toggles ?? []);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -199,7 +199,7 @@ export default function ModulesPage() {
       });
       setSuccessMsg(null);
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusyCell(null);
     }

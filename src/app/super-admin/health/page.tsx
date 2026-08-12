@@ -449,7 +449,7 @@ export default function HealthPage() {
       if (!res.ok) throw new Error("Failed to load health data");
       setData(await res.json());
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
