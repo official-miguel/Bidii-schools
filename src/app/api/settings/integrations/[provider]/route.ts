@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { IntegrationProvider } from "@prisma/client";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { removeSchoolIntegrationKey, listIntegrationStatuses, PROVIDER_INFO } from "@/lib/integrations";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { provider: string } }) {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { resolveRecipients } from "@/lib/messaging/resolve";
 import type { RecipientDescriptor } from "@/lib/messaging/resolve";
 
 export async function GET(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const raw = req.nextUrl.searchParams.get("descriptors");

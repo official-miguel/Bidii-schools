@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 
 // ---------------------------------------------------------------------------
@@ -37,8 +37,8 @@ export async function POST(
 ) {
   // Principal always allowed; ADMIN_STAFF with STUDENTS manage also allowed.
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("STUDENTS", "manage"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = archiveSchema.safeParse(await req.json().catch(() => null));

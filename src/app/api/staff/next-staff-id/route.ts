@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function maxStaffId(schoolId: string): Promise<number | null> {

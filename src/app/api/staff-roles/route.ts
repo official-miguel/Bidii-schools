@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { ensureDefaultStaffRoles, ALL_MODULES, logPermissionAudit } from "@/lib/permissions";
 
 export async function GET() {

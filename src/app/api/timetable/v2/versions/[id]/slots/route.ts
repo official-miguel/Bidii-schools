@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { collapseGroupSlotsForDisplay } from "@/lib/timetable/engineHelpers";
@@ -22,7 +22,8 @@ async function ownsVersion(versionId: string, schoolId: string) {
 // Returns all slots for this version, with subject/teacher names resolved.
 
 export async function GET(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -129,7 +130,8 @@ const addSchema = z.object({
 });
 
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -398,7 +400,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 // Removes a slot by slotId query param.
 
 export async function DELETE(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

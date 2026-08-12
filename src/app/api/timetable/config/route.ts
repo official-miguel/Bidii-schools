@@ -8,8 +8,8 @@
  */
 
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { TimetableSlotType, TimetableSession } from "@prisma/client";
 import { generateDefaultTemplate, getTemplateSummary } from "@/lib/timetable/templateManager";
@@ -22,8 +22,8 @@ import { generateDefaultTemplate, getTemplateSummary } from "@/lib/timetable/tem
  */
 export async function GET() {
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("TIMETABLE", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

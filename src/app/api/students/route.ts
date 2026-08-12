@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole , requireSchoolRole } from "@/lib/auth";
-import { requirePermission, requireRecordsPermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
 
@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
   // Records users need the student list for search/linking even without the
   // full STUDENTS module.
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("STUDENTS", "view")) ??
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "view")) ??
     (await requireRecordsPermission("RECORDS_DISCIPLINE", "view")) ??
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

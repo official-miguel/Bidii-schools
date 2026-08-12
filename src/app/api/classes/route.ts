@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission, requireRecordsPermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
   // Records users need class names for the class/stream filters.
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("CLASSES", "view")) ??
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CLASSES", "view")) ??
     (await requireRecordsPermission("RECORDS_DISCIPLINE", "view")) ??
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

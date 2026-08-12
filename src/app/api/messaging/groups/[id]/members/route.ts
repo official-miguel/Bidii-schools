@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 const memberSchema = z.union([
   z.object({ teacherId: z.string().cuid() }),
@@ -13,7 +13,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const group = await prisma.recipientGroup.findUnique({ where: { id: params.id } });

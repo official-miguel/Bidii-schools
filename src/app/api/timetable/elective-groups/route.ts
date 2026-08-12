@@ -18,15 +18,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole , requireSchoolRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 // ── Auth helper ────────────────────────────────────────────────────────────
 
 async function auth() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("TIMETABLE", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"))
   );
 }
 
@@ -59,8 +59,8 @@ function groupInclude() {
 
 export async function GET(req: NextRequest) {
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("TIMETABLE", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

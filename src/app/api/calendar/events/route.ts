@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { getKenyaPublicHolidaysForMonth } from "@/lib/kenyaHolidays";
 import { emitSSE } from "@/lib/sse";
 
@@ -11,7 +11,7 @@ import { emitSSE } from "@/lib/sse";
 /// governed by the RBAC module table — see src/lib/permissions.ts), and by
 /// ADMIN_STAFF only if their role grants CALENDAR view.
 async function requireCalendarViewer() {
-  return (await requireRole("PRINCIPAL", "TEACHER")) ?? (await requirePermission("CALENDAR", "view"));
+  return (await requireRole("PRINCIPAL", "TEACHER")) ?? (await requireSchoolPermission("CALENDAR", "view"));
 }
 
 export async function GET(req: NextRequest) {
@@ -85,7 +85,8 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("CALENDAR", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CALENDAR", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));

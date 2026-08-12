@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { buildResultsMessage } from "@/lib/messaging/examResults";
 import { dispatchMessage } from "@/lib/messaging/dispatch";
 import {
@@ -12,7 +12,7 @@ import type { MessageChannel } from "@prisma/client";
 
 /** GET /api/messaging/exam-results?periodId=xxx — summary stats */
 export async function GET(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const periodId = req.nextUrl.searchParams.get("periodId");
@@ -56,7 +56,7 @@ const sendSchema = z.object({
 
 /** POST /api/messaging/exam-results — bulk send results */
 export async function POST(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = sendSchema.safeParse(await req.json().catch(() => null));

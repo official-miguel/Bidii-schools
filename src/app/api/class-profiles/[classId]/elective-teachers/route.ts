@@ -24,15 +24,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 
 async function auth() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("CLASSES", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CLASSES", "manage"))
   );
 }
 
@@ -51,8 +51,8 @@ export async function GET(
   { params }: { params: { classId: string } },
 ) {
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("CLASSES", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CLASSES", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Verify class belongs to school

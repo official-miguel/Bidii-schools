@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, getCurrentUser } from "@/lib/auth";
-import { requirePermission, getTeacherEffectivePermissions } from "@/lib/permissions";
+import { requireRole, getCurrentUser, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
 
 // ---------------------------------------------------------------------------
 // GET /api/staff/[id] — single staff member detail for entity drawers
@@ -39,7 +39,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json(teacher);
   }
 
-  const staffUser = await requirePermission("STAFF", "view");
+  const staffUser = await requireSchoolPermission("STAFF", "view");
   if (staffUser && staffUser.role === "ADMIN_STAFF") {
     const teacher = await prisma.teacher.findFirst({
       where: { id: params.id, schoolId: staffUser.schoolId },
@@ -122,7 +122,8 @@ const updateSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const user =
-    (await requireRole("PRINCIPAL")) ?? (await requirePermission("STAFF", "edit"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STAFF", "edit"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));

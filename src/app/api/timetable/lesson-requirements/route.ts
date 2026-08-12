@@ -7,15 +7,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
     const user =
-      (await requireRole("PRINCIPAL")) ??
-      (await requirePermission("TIMETABLE", "view"));
+      (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -67,8 +67,8 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const user =
-      (await requireRole("PRINCIPAL")) ??
-      (await requirePermission("TIMETABLE", "manage"));
+      (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -174,8 +174,8 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user =
-      (await requireRole("PRINCIPAL")) ??
-      (await requirePermission("TIMETABLE", "manage"));
+      (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

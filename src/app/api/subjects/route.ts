@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(_req: NextRequest) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("SUBJECTS", "view"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("SUBJECTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Fetch regular subjects

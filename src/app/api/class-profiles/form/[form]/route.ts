@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 // ── Shared helper: fetch elective groups for a form (including school-wide) ──
 
@@ -80,7 +80,8 @@ export async function GET(
   { params }: { params: { form: string } }
 ) {
   const user =
-    (await requireRole("PRINCIPAL")) ?? (await requirePermission("CLASSES", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CLASSES", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const formNum = parseInt(params.form, 10);

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 
 const updateSchema = z.object({
@@ -20,7 +20,8 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("CALENDAR", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CALENDAR", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Kenya public holidays aren't DB rows (see src/lib/kenyaHolidays.ts) so
@@ -74,7 +75,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("CALENDAR", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CALENDAR", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   if (params.id.startsWith("kenya-")) {

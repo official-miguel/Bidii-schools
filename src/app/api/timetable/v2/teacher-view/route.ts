@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole , requireSchoolRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { computePeriodTimes } from "@/lib/scheduleTimes";
 import { collapseGroupSlotsForDisplay } from "@/lib/timetable/engineHelpers";
 import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";

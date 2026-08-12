@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
 
 type Ctx = { params: { id: string } };
@@ -16,7 +16,8 @@ async function getVersion(versionId: string, schoolId: string) {
 
 // ── GET /api/timetable/v2/versions/[id] ────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const version = await getVersion(params.id, user.schoolId);
@@ -36,7 +37,8 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const version = await getVersion(params.id, user.schoolId);
@@ -70,7 +72,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 // Deletes a DRAFT or ARCHIVED version (PUBLISHED cannot be deleted directly).
 
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const version = await getVersion(params.id, user.schoolId);

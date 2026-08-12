@@ -23,8 +23,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import {
   detectLiveConflicts,
   type LiveSlot,
@@ -35,8 +35,8 @@ type Ctx = { params: { id: string } };
 
 export async function GET(_req: NextRequest, { params }: Ctx) {
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("TIMETABLE", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

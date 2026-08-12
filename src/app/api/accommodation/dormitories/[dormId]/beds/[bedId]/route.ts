@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function manageGuard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("ACCOMMODATION", "manage"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
 

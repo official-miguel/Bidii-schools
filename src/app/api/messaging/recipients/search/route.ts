@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "view");
+  const user = await requireSchoolPermission("COMMUNICATION", "view");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const q     = req.nextUrl.searchParams.get("q")?.trim() ?? "";

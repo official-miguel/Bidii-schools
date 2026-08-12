@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireRole("PRINCIPAL");

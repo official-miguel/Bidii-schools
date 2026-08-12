@@ -5,13 +5,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("LIBRARY", "view"))
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("LIBRARY", "view"))
   );
 }
 

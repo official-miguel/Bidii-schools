@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
 
 type Ctx = { params: { id: string } };
@@ -12,7 +12,8 @@ type Ctx = { params: { id: string } };
 // so the legacy API routes and the offline store stay in sync.
 
 export async function POST(_req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`

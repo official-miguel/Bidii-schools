@@ -10,11 +10,12 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 type Params = { params: { catalogueId: string } };
-async function guard() { return (await requireRole("PRINCIPAL")) ?? (await requirePermission("LIBRARY","view")); }
+async function guard() { return (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("LIBRARY","view")); }
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const user = await guard();

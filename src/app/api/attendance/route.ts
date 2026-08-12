@@ -2,8 +2,8 @@ import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 
 function parseDateOnly(value: string): Date | null {
@@ -33,7 +33,7 @@ async function requireAttendanceAccess(classId: string, action: "view" | "create
 
   // Everyone else goes through requirePermission (handles ADMIN_STAFF and TEACHER via
   // getTeacherEffectivePermissions — no ad-hoc requireRole("TEACHER") fallback needed).
-  const user = await requirePermission("ATTENDANCE", action);
+  const user = await requireSchoolPermission("ATTENDANCE", action);
   if (!user) return { user: null, teacher: null, allowed: false as const };
 
   // ADMIN_STAFF with ATTENDANCE permission: full access across all classes.
@@ -186,8 +186,8 @@ export async function GET(req: NextRequest) {
   // ── Student history mode ─────────────────────────────────────────────────
   if (studentId) {
     const user =
-      (await requireRole("PRINCIPAL")) ??
-      (await requirePermission("ATTENDANCE", "view"));
+      (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("ATTENDANCE", "view"));
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const student = await prisma.student.findFirst({
@@ -254,7 +254,7 @@ export async function GET(req: NextRequest) {
   // today), along with their class, admission number, and a 30-day attendance
   // rate for the mark-trend column on the drilldown page.
   if (params.get("absentToday")) {
-    const user = await requireRole("PRINCIPAL") ?? await requirePermission("ATTENDANCE", "view");
+    const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));
@@ -347,7 +347,7 @@ export async function GET(req: NextRequest) {
   //   Before: ~12 000 rows transferred + JS grouping  ≈ 85 ms
   //   After:  3 aggregate result sets (~50 rows each)  ≈ 18 ms
   if (params.get("analytics")) {
-    const user = await requireRole("PRINCIPAL") ?? await requirePermission("ATTENDANCE", "view");
+    const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const to = params.get("to") ? parseDateOnly(params.get("to")!) : parseDateOnly(isoDay(new Date()));
@@ -458,7 +458,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Stats mode ───────────────────────────────────────────────────────────
-  const user = await requireRole("PRINCIPAL") ?? await requirePermission("ATTENDANCE", "view");
+  const user = await requireRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));

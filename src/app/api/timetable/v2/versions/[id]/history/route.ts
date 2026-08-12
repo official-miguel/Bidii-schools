@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma }                   from "@/lib/prisma";
-import { requireRole }              from "@/lib/auth";
-import { requirePermission }        from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireSchoolPermission } from "@/lib/permissions";
 
 type Ctx = { params: { id: string } };
 
@@ -15,7 +15,8 @@ type Ctx = { params: { id: string } };
  *   source ("MANUAL" | "AI" | "SYSTEM") — filter by changeSource
  */
 export async function GET(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Verify version belongs to this school

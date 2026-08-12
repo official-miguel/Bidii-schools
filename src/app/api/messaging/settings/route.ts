@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET() {
-  const user = await requirePermission("COMMUNICATION", "view");
+  const user = await requireSchoolPermission("COMMUNICATION", "view");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const settings = await prisma.messagingSettings.findUnique({
@@ -24,7 +24,7 @@ const updateSchema = z.object({
 });
 
 export async function PUT(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));

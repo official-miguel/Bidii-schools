@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z }                        from "zod";
 import { prisma }                   from "@/lib/prisma";
-import { requireRole }              from "@/lib/auth";
-import { requirePermission }        from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID }               from "crypto";
 
 type Ctx = { params: { id: string } };
@@ -36,7 +36,8 @@ const schema = z.object({
  *   TEACHER → all slots for the same teacherId
  */
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = schema.safeParse(await req.json().catch(() => null));

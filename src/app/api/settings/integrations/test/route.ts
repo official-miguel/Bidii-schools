@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 
 const schema = z.object({ provider: z.literal("GEMINI") });

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z }                        from "zod";
 import { prisma }                   from "@/lib/prisma";
-import { requireRole }              from "@/lib/auth";
-import { requirePermission }        from "@/lib/permissions";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID }               from "crypto";
 
 type Ctx = { params: { id: string } };
@@ -29,7 +29,8 @@ const schema = z.object({
  *   4. If teacher changed, the new teacher must be assigned to the subject.
  */
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

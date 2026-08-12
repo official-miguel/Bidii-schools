@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole , requireSchoolRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 
 // Returns every teacher at the school alongside their unavailable slots, so
 // the AI Timetable panel can render one compact grid per teacher without a

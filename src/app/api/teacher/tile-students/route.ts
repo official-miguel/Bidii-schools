@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { subjectScore, scoreToGrade, meanGrade } from "@/lib/assessment/grading844";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

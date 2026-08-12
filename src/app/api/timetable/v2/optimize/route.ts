@@ -11,8 +11,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { validateTimetable } from "@/lib/timetable/validator";
 import { buildLinkedClassGroups } from "@/lib/timetable/engineHelpers";
 import type { GeneratedSlot } from "@/lib/timetable/deterministicEngine";
@@ -25,8 +25,8 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   const user =
-    (await requireRole("PRINCIPAL")) ??
-    (await requirePermission("TIMETABLE", "view"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

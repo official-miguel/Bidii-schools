@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole , requireSchoolRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
 
 // ── Shared auth helper ─────────────────────────────────────────────────────
 async function getAuthor(manage = false) {
   if (manage) {
-    return (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+    return (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   }
-  return (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
+  return (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
 }
 
 // ── GET /api/timetable/v2/config ───────────────────────────────────────────

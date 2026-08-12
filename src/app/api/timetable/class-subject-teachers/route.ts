@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 /// Section: AI Timetable Generator / 2C — the standing "who teaches this
 /// subject to this class" assignments (ClassSubjectTeacher). Both the
@@ -12,7 +12,8 @@ import { requirePermission } from "@/lib/permissions";
 /// class; omit it to get every assignment in the school (used by the AI
 /// panel's "Subject teachers" table).
 export async function GET(req: NextRequest) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "view"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const classId = req.nextUrl.searchParams.get("classId");
@@ -44,7 +45,8 @@ const schema = z.object({
 });
 
 export async function PUT(req: NextRequest) {
-  const user = (await requireRole("PRINCIPAL")) ?? (await requirePermission("TIMETABLE", "manage"));
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = schema.safeParse(await req.json().catch(() => null));

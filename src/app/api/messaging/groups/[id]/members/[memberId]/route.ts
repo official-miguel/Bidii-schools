@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string; memberId: string } }
 ) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Verify group belongs to school

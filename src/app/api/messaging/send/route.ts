@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { resolveRecipients, buildRecipientSummary } from "@/lib/messaging/resolve";
 import { dispatchMessage } from "@/lib/messaging/dispatch";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
@@ -17,7 +17,7 @@ const sendSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await requirePermission("COMMUNICATION", "manage");
+  const user = await requireSchoolPermission("COMMUNICATION", "manage");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = sendSchema.safeParse(await req.json().catch(() => null));

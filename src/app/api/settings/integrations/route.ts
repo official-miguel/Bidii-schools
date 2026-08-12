@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireSchoolRole } from "@/lib/auth";
 import { listIntegrationStatuses, setSchoolIntegrationKey, PROVIDER_INFO } from "@/lib/integrations";
 
 const PROVIDERS = Object.keys(PROVIDER_INFO) as [string, ...string[]];

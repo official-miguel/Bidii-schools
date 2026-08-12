@@ -6,12 +6,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { requirePermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { recordFineAudit } from "@/lib/library/circulationEvents";
 
-async function guard() { return (await requireRole("PRINCIPAL")) ?? (await requirePermission("LIBRARY","view")); }
-async function manageGuard() { return (await requireRole("PRINCIPAL")) ?? (await requirePermission("LIBRARY","manage")); }
+async function guard() { return (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("LIBRARY","view")); }
+async function manageGuard() { return (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("LIBRARY","manage")); }
 
 export async function GET(_req: NextRequest) {
   const user = await guard();

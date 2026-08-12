@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, hashPassword, getCurrentUser , requireSchoolRole } from "@/lib/auth";
-import { requirePermission, getTeacherEffectivePermissions } from "@/lib/permissions";
+import { requireRole, hashPassword, getCurrentUser, requireSchoolRole } from "@/lib/auth";
+import { requirePermission, getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
 import { sendWelcomeEmail } from "@/lib/email";
 
 export async function GET() {
@@ -25,7 +25,7 @@ export async function GET() {
     return NextResponse.json(teachers);
   }
 
-  const staffUser = await requirePermission("STAFF", "view");
+  const staffUser = await requireSchoolPermission("STAFF", "view");
   if (staffUser && staffUser.role === "ADMIN_STAFF") {
     const teachers = await prisma.teacher.findMany({
       where: { schoolId: staffUser.schoolId, archivedAt: null },
@@ -109,7 +109,8 @@ const createSchema = z
 
 export async function POST(req: NextRequest) {
   const user =
-    (await requireRole("PRINCIPAL")) ?? (await requirePermission("STAFF", "create"));
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STAFF", "create"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
