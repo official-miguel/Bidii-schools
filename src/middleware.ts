@@ -3,26 +3,21 @@
  *
  * Runs on every matched request before the page/route handler.
  * Responsibilities:
- *   1. Refresh the Supabase session cookie (keeps the JWT alive without a
- *      client-side round-trip).
- *   2. Check whether the user has a valid Bidii session cookie and redirect
+ *   1. Check whether the user has a valid Bidii session cookie and redirect
  *      to /login for protected routes if not.
  *
- * Notes:
- * • We still use our own `bidii_session` cookie as the auth gate (the same
- *   opaque token verified server-side via Prisma) rather than reading the
- *   Supabase JWT. This keeps the rest of the app (layouts, API routes)
- *   unchanged.
- * • The Supabase middleware client is required by @supabase/ssr so that
- *   Server Components always receive a refreshed session — without it, the
- *   session can expire silently mid-request.
+ * Authentication:
+ * • We use CUSTOM password-based auth with Prisma + bcrypt (not Supabase Auth).
+ * • Supabase is used ONLY for Postgres database and Storage.
+ * • The `bidii_session` cookie is our auth gate (opaque token verified
+ *   server-side via Prisma).
  * • Middleware runs on the Edge runtime — no Prisma here. Real auth
  *   verification happens in layouts via getCurrentUser().
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createMiddlewareClient } from "@/lib/supabase/middleware";
+// Note: createMiddlewareClient import removed since we don't use Supabase Auth
 
 const SESSION_COOKIE = "bidii_session";
 
@@ -41,21 +36,23 @@ export async function middleware(request: NextRequest) {
   // write refreshed cookies onto it.
   const response = NextResponse.next({ request });
 
-  // Refresh the Supabase session cookie on every request.
-  // This is a no-op when Supabase env vars are not set (dev without Supabase).
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    try {
-      const supabase = createMiddlewareClient(request, response);
-      // getUser() triggers the token refresh and writes updated cookies.
-      await supabase.auth.getUser();
-    } catch {
-      // Non-fatal — if Supabase is unreachable we still want the request to
-      // proceed using our own session cookie gate below.
-    }
-  }
+  // NOTE: Supabase Auth is NOT used for authentication in this app.
+  // We use custom password-based auth with Prisma + bcrypt.
+  // Supabase is only used for Postgres database and Storage.
+  // The Supabase Auth middleware refresh has been disabled.
+  
+  // If you need to re-enable Supabase Auth in the future, uncomment below:
+  // if (
+  //   process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // ) {
+  //   try {
+  //     const supabase = createMiddlewareClient(request, response);
+  //     await supabase.auth.getUser();
+  //   } catch {
+  //     // Non-fatal
+  //   }
+  // }
 
   // ── Route protection via our own session cookie ─────────────────────────
   const { pathname } = request.nextUrl;
