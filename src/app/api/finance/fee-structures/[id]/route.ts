@@ -1,7 +1,6 @@
 /**
  * GET    /api/finance/fee-structures/[id]  — Fetch a single fee structure
  * PUT    /api/finance/fee-structures/[id]  — Update a fee structure
- * DELETE /api/finance/fee-structures/[id]  — 405 (blocked)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -11,7 +10,7 @@ import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 const updateSchema = z.object({
   amountPerTerm: z.number().positive("Basic school fees must be a positive amount.").optional(),
   stream:        z.string().trim().optional().nullable(),
-  termId:        z.string().optional().nullable(),
+  termNameId:    z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -24,7 +23,10 @@ export async function GET(
 
   const structure = await prisma.feeStructure.findFirst({
     where:  { id: params.id, schoolId },
-    select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
+    select: {
+      id: true, form: true, stream: true, termNameId: true, amountPerTerm: true, createdAt: true,
+      termName: { select: { id: true, name: true } },
+    },
   });
 
   if (!structure) return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -61,19 +63,22 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { termId, ...rest } = parsed.data;
+  const { termNameId, ...rest } = parsed.data;
 
-  // Verify the termId belongs to this school if provided
-  if (termId) {
-    const term = await prisma.term.findFirst({ where: { id: termId, schoolId } });
-    if (!term) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
+  // Verify the termNameId belongs to this school if provided
+  if (termNameId) {
+    const tn = await prisma.financialTermName.findFirst({ where: { id: termNameId, schoolId } });
+    if (!tn) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
   }
 
   try {
     const updated = await prisma.feeStructure.update({
       where:  { id: params.id },
-      data:   { ...rest, termId: termId ?? null },
-      select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
+      data:   { ...rest, termNameId: termNameId ?? null },
+      select: {
+        id: true, form: true, stream: true, termNameId: true, amountPerTerm: true, createdAt: true,
+        termName: { select: { id: true, name: true } },
+      },
     });
 
     return NextResponse.json({

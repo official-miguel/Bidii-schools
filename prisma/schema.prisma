@@ -3511,8 +3511,9 @@ model FinancialTermName {
   name      String
   createdAt DateTime @default(now())
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  terms  Term[]
+  school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  terms         Term[]
+  feeStructures FeeStructure[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -3531,16 +3532,16 @@ model FeeStructure {
   stream         String?
   /// "DAY" | "BOARDING" | null = applies to both boarding types. Kept for legacy.
   boardingStatus String?
-  /// Optional: link to a specific term this fee structure applies to.
-  termId         String?
+  /// Links to a FinancialTermName definition e.g. "Term 1". Null = applies to all terms.
+  termNameId     String?
   /// Base fee per term for students matching this structure.
   amountPerTerm  Decimal
   createdById    String
   createdAt      DateTime @default(now())
 
-  school     School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  createdBy  User   @relation(fields: [createdById], references: [id])
-  term       Term?  @relation(fields: [termId], references: [id])
+  school     School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy  User               @relation(fields: [createdById], references: [id])
+  termName   FinancialTermName? @relation(fields: [termNameId], references: [id])
 
   @@index([schoolId, form])
 }
@@ -3603,11 +3604,10 @@ model Term {
   createdById          String
   createdAt            DateTime  @default(now())
 
-  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  createdBy     User          @relation(fields: [createdById], references: [id])
+  school        School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation(fields: [createdById], references: [id])
   termName      FinancialTermName? @relation(fields: [termNameId], references: [id])
   termNameId    String?
-  feeStructures FeeStructure[]
   ledgerEntries LedgerEntry[]
   invoices      Invoice[]
   payments      Payment[]

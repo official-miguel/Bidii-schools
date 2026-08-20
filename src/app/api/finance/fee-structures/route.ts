@@ -10,7 +10,7 @@ import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 const createSchema = z.object({
   form:          z.number().int().min(1),
   stream:        z.string().trim().optional().nullable(),
-  termId:        z.string().optional().nullable(),
+  termNameId:    z.string().optional().nullable(),
   amountPerTerm: z.number().positive("Basic school fees must be a positive amount."),
 });
 
@@ -22,7 +22,10 @@ export async function GET() {
   const structures = await prisma.feeStructure.findMany({
     where:   { schoolId },
     orderBy: [{ form: "asc" }, { stream: "asc" }],
-    select:  { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
+    select:  {
+      id: true, form: true, stream: true, termNameId: true, amountPerTerm: true, createdAt: true,
+      termName: { select: { id: true, name: true } },
+    },
   });
 
   return NextResponse.json({
@@ -51,12 +54,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { form, stream, termId, amountPerTerm } = parsed.data;
+  const { form, stream, termNameId, amountPerTerm } = parsed.data;
 
-  // Verify the termId belongs to this school if provided
-  if (termId) {
-    const term = await prisma.term.findFirst({ where: { id: termId, schoolId } });
-    if (!term) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
+  // Verify the termNameId belongs to this school if provided
+  if (termNameId) {
+    const tn = await prisma.financialTermName.findFirst({ where: { id: termNameId, schoolId } });
+    if (!tn) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
   }
 
   try {
@@ -66,11 +69,14 @@ export async function POST(req: NextRequest) {
         form,
         stream:        stream ?? null,
         boardingStatus: null,
-        termId:        termId ?? null,
+        termNameId:    termNameId ?? null,
         amountPerTerm,
         createdById:   user.id,
       },
-      select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
+      select: {
+        id: true, form: true, stream: true, termNameId: true, amountPerTerm: true, createdAt: true,
+        termName: { select: { id: true, name: true } },
+      },
     });
 
     return NextResponse.json(

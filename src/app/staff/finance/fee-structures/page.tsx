@@ -17,17 +17,17 @@ interface SchoolClass {
   stream: string | null;
 }
 
-interface Term {
-  id:       string;
-  name:     string;
-  isActive: boolean;
+interface FinancialTermName {
+  id:   string;
+  name: string;
 }
 
 interface FeeStructure {
   id:            string;
   form:          number;
   stream:        string | null;
-  termId:        string | null;
+  termNameId:    string | null;
+  termName:      FinancialTermName | null;
   amountPerTerm: string;
   createdAt:     string;
 }
@@ -39,28 +39,21 @@ function formatKES(s: string) {
   return isNaN(n) ? s : `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 }
 
-function rowLabel(s: FeeStructure, classes: SchoolClass[], terms: Term[]) {
-  // Find matching class label
-  const cls = classes.find(c => c.form === s.form && (c.stream ?? null) === (s.stream ?? null))
-    ?? classes.find(c => c.form === s.form);
-  const classLabel = cls ? cls.name : `Form ${s.form}${s.stream ? ` – ${s.stream}` : ""}`;
-  return classLabel;
-}
-
-function termLabel(termId: string | null, terms: Term[]) {
-  if (!termId) return "—";
-  const t = terms.find(t => t.id === termId);
-  return t ? t.name : "—";
+function classLabel(s: FeeStructure, classes: SchoolClass[]) {
+  const cls =
+    classes.find(c => c.form === s.form && (c.stream ?? null) === (s.stream ?? null)) ??
+    classes.find(c => c.form === s.form);
+  return cls ? cls.name : `Form ${s.form}${s.stream ? ` – ${s.stream}` : ""}`;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
 
 interface ModalProps {
-  existing?: FeeStructure;
-  classes:   SchoolClass[];
-  terms:     Term[];
-  onClose:   () => void;
-  onSaved:   (s: FeeStructure) => void;
+  existing?:  FeeStructure;
+  classes:    SchoolClass[];
+  termNames:  FinancialTermName[];
+  onClose:    () => void;
+  onSaved:    (s: FeeStructure) => void;
 }
 
 const inputCls =
@@ -70,34 +63,28 @@ const inputCls =
 
 const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1";
 
-function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: ModalProps) {
+function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: ModalProps) {
   const isEdit = !!existing;
 
-  // Build unique form numbers from the school's classes
   const uniqueForms = Array.from(new Set(classes.map(c => c.form))).sort((a, b) => a - b);
 
-  // Default form: first class's form if available, else "1"
   const defaultForm = existing
     ? String(existing.form)
     : uniqueForms.length > 0 ? String(uniqueForms[0]) : "1";
 
-  const [selectedForm, setSelectedForm] = useState(defaultForm);
+  const [selectedForm,   setSelectedForm]   = useState(defaultForm);
   const [selectedStream, setSelectedStream] = useState(existing?.stream ?? "");
-  const [termId, setTermId] = useState(existing?.termId ?? "");
-  const [amountPerTerm, setAmountPerTerm] = useState(existing ? existing.amountPerTerm : "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [termNameId,     setTermNameId]     = useState(existing?.termNameId ?? "");
+  const [amountPerTerm,  setAmountPerTerm]  = useState(existing?.amountPerTerm ?? "");
+  const [saving,         setSaving]         = useState(false);
+  const [error,          setError]          = useState<string | null>(null);
 
-  // Streams available for the currently selected form
   const streamsForForm = classes
     .filter(c => c.form === parseInt(selectedForm, 10) && c.stream)
     .map(c => c.stream as string);
 
-  // Reset stream when form changes
   useEffect(() => {
-    if (!streamsForForm.includes(selectedStream)) {
-      setSelectedStream("");
-    }
+    if (!streamsForForm.includes(selectedStream)) setSelectedStream("");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedForm]);
 
@@ -114,16 +101,14 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
     setSaving(true);
     try {
       const body = {
-        form:   parseInt(selectedForm, 10),
-        stream: selectedStream.trim() || null,
-        termId: termId || null,
+        form:          parseInt(selectedForm, 10),
+        stream:        selectedStream.trim() || null,
+        termNameId:    termNameId || null,
         amountPerTerm: amount,
       };
 
       const res = await fetch(
-        isEdit
-          ? `/api/finance/fee-structures/${existing!.id}`
-          : "/api/finance/fee-structures",
+        isEdit ? `/api/finance/fee-structures/${existing!.id}` : "/api/finance/fee-structures",
         {
           method:  isEdit ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -133,7 +118,6 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
 
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to save."); setSaving(false); return; }
-
       onSaved(data.feeStructure);
     } catch {
       setError("Network error. Please try again.");
@@ -144,7 +128,6 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
           <h2 className="text-base font-semibold text-ink dark:text-dark-text">
             {isEdit ? "Edit fee structure" : "Add fee structure"}
@@ -154,7 +137,6 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={submit} className="px-5 py-4 space-y-4">
           {error && (
             <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">
@@ -177,9 +159,7 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
                 required
               >
                 {uniqueForms.map(f => {
-                  // Find a representative class name for this form
-                  const rep = classes.find(c => c.form === f && !c.stream)
-                    ?? classes.find(c => c.form === f);
+                  const rep = classes.find(c => c.form === f && !c.stream) ?? classes.find(c => c.form === f);
                   return (
                     <option key={f} value={f}>
                       {rep ? rep.name.replace(/\s*[-–]\s*\w+$/, "") || `Form ${f}` : `Form ${f}`}
@@ -209,34 +189,34 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
             ) : (
               <input
                 type="text"
-                value={selectedStream}
-                onChange={e => setSelectedStream(e.target.value)}
-                placeholder="No streams for this class — leave blank for all"
+                value=""
+                placeholder="No streams for this class"
                 className={inputCls}
                 disabled
               />
             )}
           </div>
 
-          {/* Term */}
+          {/* Term — from Financial Academic Term Names (Settings) */}
           <div>
             <label className={labelCls}>Term</label>
-            <select
-              value={termId}
-              onChange={e => setTermId(e.target.value)}
-              className={inputCls}
-            >
-              <option value="">— Select a term —</option>
-              {terms.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name}{t.isActive ? " (active)" : ""}
-                </option>
-              ))}
-            </select>
-            {terms.length === 0 && (
-              <p className="text-xs text-slate mt-1 dark:text-dark-muted">
-                No terms yet — create them under Setup › Terms.
+            {termNames.length === 0 ? (
+              <p className="text-sm text-slate dark:text-dark-muted">
+                No term names configured yet. Go to{" "}
+                <a href="/staff/finance/settings" className="text-teal underline">Finance Settings</a>
+                {" "}to create term names first.
               </p>
+            ) : (
+              <select
+                value={termNameId}
+                onChange={e => setTermNameId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">— All terms —</option>
+                {termNames.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             )}
           </div>
 
@@ -278,7 +258,7 @@ function FeeStructureModal({ existing, classes, terms, onClose, onSaved }: Modal
 export default function FeeStructuresPage() {
   const [structures, setStructures] = useState<FeeStructure[]>([]);
   const [classes,    setClasses]    = useState<SchoolClass[]>([]);
-  const [terms,      setTerms]      = useState<Term[]>([]);
+  const [termNames,  setTermNames]  = useState<FinancialTermName[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
   const [modal,      setModal]      = useState<"add" | FeeStructure | null>(null);
@@ -287,21 +267,21 @@ export default function FeeStructuresPage() {
     setLoading(true);
     setError(null);
     try {
-      const [fsRes, clsRes, termsRes] = await Promise.all([
+      const [fsRes, clsRes, namesRes] = await Promise.all([
         fetch("/api/finance/fee-structures"),
         fetch("/api/classes"),
-        fetch("/api/finance/terms"),
+        fetch("/api/finance/academic-term-names"),
       ]);
 
       if (!fsRes.ok) throw new Error("Failed to load fee structures");
 
       const fsData    = await fsRes.json();
-      const clsData   = clsRes.ok ? await clsRes.json() : [];
-      const termsData = termsRes.ok ? await termsRes.json() : { terms: [] };
+      const clsData   = clsRes.ok   ? await clsRes.json()   : [];
+      const namesData = namesRes.ok ? await namesRes.json() : { termNames: [] };
 
       setStructures(fsData.feeStructures ?? []);
       setClasses(Array.isArray(clsData) ? clsData : []);
-      setTerms(termsData.terms ?? []);
+      setTermNames(namesData.termNames ?? []);
     } catch {
       setError("Could not load fee structures. Please try again.");
     } finally {
@@ -314,9 +294,7 @@ export default function FeeStructuresPage() {
   function handleSaved(s: FeeStructure) {
     setStructures(prev => {
       const idx = prev.findIndex(x => x.id === s.id);
-      return idx >= 0
-        ? prev.map(x => x.id === s.id ? s : x)
-        : [s, ...prev];
+      return idx >= 0 ? prev.map(x => x.id === s.id ? s : x) : [s, ...prev];
     });
     setModal(null);
   }
@@ -361,18 +339,18 @@ export default function FeeStructuresPage() {
                 </tr>
               </thead>
               <tbody>
-                {structures.map((s) => (
+                {structures.map(s => (
                   <tr key={s.id} className={premiumTrClass}>
                     <td className={premiumTdClass}>
                       <p className="font-medium text-ink dark:text-dark-text">
-                        {rowLabel(s, classes, terms)}
+                        {classLabel(s, classes)}
                       </p>
                       {s.stream && (
                         <p className="text-xs text-slate dark:text-dark-muted">{s.stream}</p>
                       )}
                     </td>
                     <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>
-                      {termLabel(s.termId, terms)}
+                      {s.termName?.name ?? "All terms"}
                     </td>
                     <td className={`${premiumTdClass} text-right tabular-nums font-semibold text-ink dark:text-dark-text`}>
                       {formatKES(s.amountPerTerm)}
@@ -381,7 +359,7 @@ export default function FeeStructuresPage() {
                       <button
                         onClick={() => setModal(s)}
                         className="text-slate hover:text-teal transition-colors"
-                        aria-label={`Edit ${rowLabel(s, classes, terms)}`}
+                        aria-label={`Edit ${classLabel(s, classes)}`}
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -398,7 +376,7 @@ export default function FeeStructuresPage() {
         <FeeStructureModal
           existing={modal === "add" ? undefined : modal}
           classes={classes}
-          terms={terms}
+          termNames={termNames}
           onClose={() => setModal(null)}
           onSaved={handleSaved}
         />
