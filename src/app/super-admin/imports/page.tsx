@@ -590,7 +590,7 @@ function NewImportTab() {
     const f = e.target.files?.[0]; if (!f) return;
     setFile(f); setParsing(true); setPreview(null);
     try { setPreview(parseCSV(await f.text(), typeDef.requiredCols)); }
-    catch { setPreview({ headers: [], rows: [] }); }
+    catch { setPreview({ headers: [], rows: [], totalCount: 0 }); }
     finally { setParsing(false); }
   }
 
