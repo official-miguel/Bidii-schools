@@ -145,7 +145,7 @@ export default function TeacherStudentsPage() {
       ]))
       .then(([stuData, clsData, meData]) => {
         if (cancelled) return;
-        setRawStudents(stuData);
+        setRawStudents(stuData as Student[]);
         setRawClasses(clsData);
         // If teacher is a class teacher, default filter to their class
         if (meData?.classTeacherOf?.id) {
