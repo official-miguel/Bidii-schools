@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma }                     from "@/lib/prisma";
+import { Prisma }                      from "@prisma/client";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
 import { emitSSE }                     from "@/lib/sse";
 import { hashPassword }                from "@/lib/auth";
@@ -1129,7 +1130,7 @@ export async function POST(req: NextRequest) {
         succeeded:   result.succeeded,
         failed:      result.errors.length,
         totalRows:   rows.length,
-        errorReport: result.errors.length > 0 ? (result.errors as object[]) : null,
+        errorReport: result.errors.length > 0 ? (result.errors as object[]) : Prisma.JsonNull,
       },
     });
 
