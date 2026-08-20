@@ -14,7 +14,7 @@ export async function fetchAllStudents(): Promise<unknown[]> {
   let cursor: string | null = null;
 
   do {
-    const url = cursor
+    const url: string = cursor
       ? `/api/students?limit=500&cursor=${encodeURIComponent(cursor)}`
       : `/api/students?limit=500`;
 
