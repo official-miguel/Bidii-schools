@@ -135,10 +135,8 @@ async function parseFile(filePath: string): Promise<Array<Record<string, string>
   const ext = filePath.split(".").pop()?.toLowerCase();
 
   if (ext === "xlsx" || ext === "xls") {
-    // Dynamic require so xlsx is only loaded when needed.
-    // xlsx may not have @types — cast through unknown to avoid TS2307.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-    const xlsx = require("xlsx") as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const xlsx = (await import("xlsx")) as any;
     const workbook  = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0] as string;
     const sheet     = workbook.Sheets[sheetName];

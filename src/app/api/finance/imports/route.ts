@@ -117,8 +117,8 @@ async function suggestMappingFromFile(
   let headers: string[] = [];
 
   if (ext === ".xlsx") {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-    const xlsx      = require("xlsx") as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const xlsx      = (await import("xlsx")) as any;
     const workbook  = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0] as string;
     const sheet     = workbook.Sheets[sheetName];
