@@ -10,6 +10,7 @@ import { z } from "zod";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
+import * as readline from "readline";
 import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 import { buildSuggestedMapping } from "@/lib/finance/imports/columnMapper";
@@ -133,11 +134,8 @@ async function suggestMappingFromFile(
 }
 
 function readFirstLine(filePath: string): Promise<string> {
-  const { createInterface } = require("readline") as typeof import("readline");
-  const { createReadStream } = require("fs") as typeof import("fs");
-
   return new Promise((resolve, reject) => {
-    const rl = createInterface({ input: createReadStream(filePath) });
+    const rl = readline.createInterface({ input: fs.createReadStream(filePath) });
     rl.once("line", (line: string) => { rl.close(); resolve(line); });
     rl.once("error", reject);
     rl.once("close", () => resolve(""));
