@@ -24,7 +24,6 @@ import {
   premiumTdClass,
   premiumTrClass,
   ErrorBanner,
-  Card,
 } from "@/components/ui";
 
 interface LedgerEntry {

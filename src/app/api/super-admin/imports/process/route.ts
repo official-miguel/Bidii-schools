@@ -91,7 +91,7 @@ async function processDepartments(rows: Record<string, string>[], schoolId: stri
         skipDuplicates: true,
       });
       succeeded += toCreate.length;
-    } catch (e) {
+    } catch (_e) {
       // Fall back to per-row so we can report which one failed
       for (const r of toCreate) {
         try {

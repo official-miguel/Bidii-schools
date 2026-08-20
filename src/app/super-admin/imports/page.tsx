@@ -27,7 +27,7 @@ import {
   Upload, History, CheckCircle2, XCircle, RefreshCw,
   Download, RotateCcw, AlertTriangle, FileText,
   Building2, BookOpen, Users, GraduationCap, BedDouble,
-  DoorOpen, Link2, Heart, ChevronDown, ChevronUp, Info,
+  DoorOpen, Heart, ChevronDown, ChevronUp, Info,
 } from "lucide-react";
 import {
   PageHeader, Spinner, ErrorBanner, Badge, Card,
@@ -320,7 +320,7 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
                 <td className="px-3 py-2 text-slate tabular-nums">{row.rowNum}</td>
                 <td className="px-3 py-2">
                   {row.errors.length > 0
-                    ? <XCircle className="h-3.5 w-3.5 text-danger" title={row.errors.join("; ")} />
+                    ? <span title={row.errors.join("; ")}><XCircle className="h-3.5 w-3.5 text-danger" /></span>
                     : <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
                 </td>
                 {headers.slice(0, 6).map(h => (

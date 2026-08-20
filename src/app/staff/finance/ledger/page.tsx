@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { BookOpen, DollarSign } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, Spinner, ErrorBanner,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,

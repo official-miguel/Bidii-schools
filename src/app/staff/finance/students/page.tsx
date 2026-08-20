@@ -13,7 +13,6 @@ import {
   PageHeader,
   Badge,
   EmptyState,
-  primaryButtonClass,
   premiumTableContainerClass,
   premiumTheadClass,
   premiumThClass,

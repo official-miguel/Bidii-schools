@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { CreditCard, DollarSign, Banknote } from "lucide-react";
+import { DollarSign, Banknote } from "lucide-react";
 import {
-  PageHeader, Badge, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
+  PageHeader, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
   premiumTdClass, premiumTrClass,
 } from "@/components/ui";

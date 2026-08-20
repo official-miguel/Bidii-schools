@@ -35,7 +35,7 @@ const inputClsRight =
   "dark:placeholder:text-dark-muted/50";
 
 function LoginForm() {
-  const router = useRouter();
+  const _router = useRouter();
   const params = useSearchParams();
   const notice = params.get("notice");
   const nextPath = params.get("next");

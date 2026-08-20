@@ -35,7 +35,7 @@ import {
 
 // ── Shared input styles ───────────────────────────────────────────────────────
 
-const inputCls =
+const _inputCls =
   "w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-3 text-sm text-ink " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 " +
@@ -43,7 +43,7 @@ const inputCls =
   "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text " +
   "dark:placeholder:text-dark-muted/50";
 
-const inputClsRight =
+const _inputClsRight =
   "w-full rounded-xl border border-line bg-paper pl-10 pr-10 py-3 text-sm text-ink " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 " +
@@ -54,7 +54,7 @@ const inputClsRight =
 // ── Main form component ───────────────────────────────────────────────────────
 
 function StaffLoginForm() {
-  const router = useRouter();
+  const _router = useRouter();
   const params = useSearchParams();
   const nextPath = params.get("next");
 

@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  ReceiptText, Plus, ChevronDown, ChevronRight, X, Pencil, Tag,
+  Plus, ChevronDown, ChevronRight, X, Pencil, Tag,
 } from "lucide-react";
 import {
   PageHeader, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
