@@ -37,6 +37,12 @@ export const PROVIDER_INFO: Record<
     keyLabel: "SMTP password / API key",
     placeholder: "",
   },
+  MPESA_DARAJA: {
+    label: "M-Pesa Daraja",
+    description: "Enables M-Pesa STK Push payments and webhook reconciliation for the Finance module.",
+    keyLabel: "Consumer secret",
+    placeholder: "",
+  },
 };
 
 export type IntegrationStatus = {
