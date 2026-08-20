@@ -1,11 +1,12 @@
 /**
  * GET  /api/finance/terms  — List all terms
- * POST /api/finance/terms  — Create a new term
+ * POST /api/finance/terms  — Create a new term and auto-run batch invoicing
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
+import { runBatchInvoicing } from "@/lib/finance/invoicing";
 
 const createSchema = z.object({
   name:         z.string().trim().min(1, "Term name is required."),
@@ -57,8 +58,10 @@ export async function POST(req: NextRequest) {
     if (!tn) return NextResponse.json({ error: "Selected term name not found." }, { status: 400 });
   }
 
+  // Create the term
+  let term;
   try {
-    const term = await prisma.term.create({
+    term = await prisma.term.create({
       data: {
         schoolId,
         name,
@@ -77,9 +80,47 @@ export async function POST(req: NextRequest) {
         termName: { select: { id: true, name: true } },
       },
     });
-    return NextResponse.json({ term }, { status: 201 });
   } catch (err) {
-    console.error("[FINANCE/TERMS POST]", err);
+    console.error("[FINANCE/TERMS POST] create failed", err);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
+
+  // Auto-run batch invoicing for the new term
+  let invoicingResult;
+  try {
+    invoicingResult = await runBatchInvoicing(term.id, schoolId, user.id);
+
+    // Mark invoicing as completed
+    await prisma.term.update({
+      where: { id: term.id },
+      data:  { invoicingCompletedAt: new Date() },
+    });
+  } catch (err) {
+    console.error("[FINANCE/TERMS POST] invoicing failed", err);
+    // Term was created; return it with an invoicing error flag
+    return NextResponse.json(
+      {
+        term,
+        invoicing: {
+          succeeded: 0, skipped: 0, errors: [],
+          classesWithoutFees: [],
+          fatalError: "Invoicing could not be completed. You can retry from the term menu.",
+        },
+      },
+      { status: 201 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      term,
+      invoicing: {
+        succeeded:          invoicingResult.succeeded,
+        skipped:            invoicingResult.skipped,
+        errors:             invoicingResult.errors,
+        classesWithoutFees: invoicingResult.classesWithoutFees,
+      },
+    },
+    { status: 201 }
+  );
 }

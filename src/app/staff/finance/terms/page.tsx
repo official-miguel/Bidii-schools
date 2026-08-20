@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { CalendarDays, Plus, Pencil, X } from "lucide-react";
+import { CalendarDays, Plus, Pencil, X, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
@@ -25,13 +25,137 @@ interface Term {
   invoicingCompletedAt: string | null;
 }
 
-// ── Modal ──────────────────────────────────────────────────────────────────
+interface InvoicingResult {
+  succeeded:          number;
+  skipped:            number;
+  errors:             Array<{ studentId: string; admissionNumber: string; reason: string }>;
+  classesWithoutFees: Array<{ form: number; stream: string | null; className: string }>;
+  fatalError?:        string;
+}
+
+// ── Invoicing Result Panel ─────────────────────────────────────────────────
+
+function InvoicingResultPanel({ result, termName, onClose }: {
+  result: InvoicingResult;
+  termName: string;
+  onClose: () => void;
+}) {
+  const hasWarnings = result.classesWithoutFees.length > 0 || result.errors.length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border shrink-0">
+          <div className="flex items-center gap-2">
+            {result.fatalError ? (
+              <AlertTriangle className="h-5 w-5 text-danger" />
+            ) : hasWarnings ? (
+              <AlertTriangle className="h-5 w-5 text-warn" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 text-success" />
+            )}
+            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+              {termName} — Term created
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-5 py-4 space-y-4">
+          {result.fatalError && (
+            <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">
+              {result.fatalError}
+            </p>
+          )}
+
+          {/* Summary stats */}
+          {!result.fatalError && (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Invoiced",  value: result.succeeded, color: "text-success" },
+                { label: "Skipped",   value: result.skipped,   color: "text-slate dark:text-dark-muted" },
+                { label: "Errors",    value: result.errors.length, color: result.errors.length > 0 ? "text-danger" : "text-slate dark:text-dark-muted" },
+              ].map(s => (
+                <div key={s.label} className="rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-border/20 p-3 text-center">
+                  <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Classes without fee structures */}
+          {result.classesWithoutFees.length > 0 && (
+            <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warn shrink-0" />
+                <p className="text-sm font-medium text-ink dark:text-dark-text">
+                  {result.classesWithoutFees.length} class{result.classesWithoutFees.length !== 1 ? "es" : ""} without a fee structure
+                </p>
+              </div>
+              <p className="text-xs text-slate dark:text-dark-muted">
+                Students in these classes were not invoiced. Set up fee structures for them and re-run invoicing.
+              </p>
+              <ul className="space-y-1 mt-2">
+                {result.classesWithoutFees.map(c => (
+                  <li key={`${c.form}:${c.stream ?? ""}`} className="flex items-center gap-2 text-sm text-ink dark:text-dark-text">
+                    <Users className="h-3.5 w-3.5 text-warn shrink-0" />
+                    {c.className}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/staff/finance/fee-structures"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-teal underline"
+              >
+                Go to Fee Structures →
+              </a>
+            </div>
+          )}
+
+          {/* Per-student errors */}
+          {result.errors.length > 0 && (
+            <div className="rounded-xl border border-danger/20 bg-danger-bg/40 p-4 space-y-2">
+              <p className="text-sm font-medium text-danger">
+                {result.errors.length} student{result.errors.length !== 1 ? "s" : ""} could not be invoiced
+              </p>
+              <ul className="space-y-1 max-h-32 overflow-y-auto">
+                {result.errors.map(e => (
+                  <li key={e.studentId} className="text-xs text-slate dark:text-dark-muted">
+                    <span className="font-mono">{e.admissionNumber}</span> — {e.reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!result.fatalError && result.succeeded > 0 && result.classesWithoutFees.length === 0 && result.errors.length === 0 && (
+            <p className="text-sm text-slate dark:text-dark-muted">
+              All students have been invoiced successfully for this term.
+            </p>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t border-line dark:border-dark-border shrink-0">
+          <button onClick={onClose} className={primaryButtonClass}>
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Term Modal ─────────────────────────────────────────────────────────────
 
 interface ModalProps {
-  existing?:    Term;
-  termNames:    FinancialTermName[];
-  onClose:      () => void;
-  onSaved:      (t: Term) => void;
+  existing?:  Term;
+  termNames:  FinancialTermName[];
+  onClose:    () => void;
+  onSaved:    (t: Term, invoicing?: InvoicingResult) => void;
 }
 
 const inputCls =
@@ -56,7 +180,6 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
     setError(null);
 
     if (!termNameId) { setError("Please select a term."); return; }
-
     const selectedName = termNames.find(t => t.id === termNameId);
     if (!selectedName) { setError("Invalid term selected."); return; }
 
@@ -72,15 +195,11 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
       const url    = isEdit ? `/api/finance/terms/${existing!.id}` : "/api/finance/terms";
       const method = isEdit ? "PUT" : "POST";
 
-      const res  = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
-      });
+      const res  = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to save."); setSaving(false); return; }
 
-      onSaved(data.term);
+      onSaved(data.term, data.invoicing);
     } catch {
       setError("Network error. Please try again.");
       setSaving(false);
@@ -106,7 +225,6 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
             </p>
           )}
 
-          {/* Term Name — from financial academic terms in Settings */}
           <div>
             <label className={labelCls}>Term</label>
             {termNames.length === 0 ? (
@@ -116,38 +234,25 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
                 {" "}and create financial academic terms first.
               </p>
             ) : (
-              <select
-                value={termNameId}
-                onChange={e => setTermNameId(e.target.value)}
-                className={inputCls}
-                required
-              >
+              <select value={termNameId} onChange={e => setTermNameId(e.target.value)} className={inputCls} required>
                 <option value="">— Select a term —</option>
-                {termNames.map(tn => (
-                  <option key={tn.id} value={tn.id}>{tn.name}</option>
-                ))}
+                {termNames.map(tn => <option key={tn.id} value={tn.id}>{tn.name}</option>)}
               </select>
             )}
           </div>
 
-          {/* Academic Year — describes which year this term belongs to */}
           <div>
             <label className={labelCls}>Academic Year</label>
             <input
-              type="number"
-              min={2000}
-              max={2100}
+              type="number" min={2000} max={2100}
               value={academicYear}
               onChange={e => setAcademicYear(e.target.value)}
               className={inputCls}
               required
             />
-            <p className="text-xs text-slate mt-1 dark:text-dark-muted">
-              The calendar year this term runs in, e.g. 2025.
-            </p>
+            <p className="text-xs text-slate mt-1 dark:text-dark-muted">The calendar year this term runs in, e.g. 2025.</p>
           </div>
 
-          {/* Mark as active */}
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -155,24 +260,25 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
               onChange={e => setIsActive(e.target.checked)}
               className="h-4 w-4 rounded border-line accent-teal"
             />
-            <span className="text-sm text-ink dark:text-dark-text">
-              Set as current term (mark as active)
-            </span>
+            <span className="text-sm text-ink dark:text-dark-text">Set as current term (mark as active)</span>
           </label>
           <p className="text-xs text-slate -mt-2 dark:text-dark-muted">
             Only one term should be active at a time. Activating this term will indicate the current billing period.
           </p>
 
+          {!isEdit && (
+            <p className="text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border dark:text-dark-muted">
+              When you add this term, all students will be automatically invoiced based on their class fee structures. Students in classes without a fee structure will not be charged.
+            </p>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
-            >
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted">
               Cancel
             </button>
             <button type="submit" disabled={saving || termNames.length === 0} className={primaryButtonClass}>
-              {saving ? "Saving…" : isEdit ? "Save changes" : "Add term"}
+              {saving ? (isEdit ? "Saving…" : "Creating & invoicing…") : isEdit ? "Save changes" : "Add term"}
             </button>
           </div>
         </form>
@@ -184,11 +290,12 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function TermsPage() {
-  const [terms,      setTerms]      = useState<Term[]>([]);
-  const [termNames,  setTermNames]  = useState<FinancialTermName[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [modal,      setModal]      = useState<"add" | Term | null>(null);
+  const [terms,          setTerms]          = useState<Term[]>([]);
+  const [termNames,      setTermNames]      = useState<FinancialTermName[]>([]);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState<string | null>(null);
+  const [modal,          setModal]          = useState<"add" | Term | null>(null);
+  const [invoicingPanel, setInvoicingPanel] = useState<{ result: InvoicingResult; termName: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,12 +305,9 @@ export default function TermsPage() {
         fetch("/api/finance/terms"),
         fetch("/api/finance/academic-term-names"),
       ]);
-
       if (!termsRes.ok) throw new Error("Failed to load terms");
-
       const termsData = await termsRes.json();
       const namesData = namesRes.ok ? await namesRes.json() : { termNames: [] };
-
       setTerms(termsData.terms ?? []);
       setTermNames(namesData.termNames ?? []);
     } catch {
@@ -215,21 +319,23 @@ export default function TermsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  function handleSaved(t: Term) {
+  function handleSaved(t: Term, invoicing?: InvoicingResult) {
     setTerms(prev => {
       const idx = prev.findIndex(x => x.id === t.id);
-      return idx >= 0
-        ? prev.map(x => x.id === t.id ? t : x)
-        : [t, ...prev];
+      return idx >= 0 ? prev.map(x => x.id === t.id ? t : x) : [t, ...prev];
     });
     setModal(null);
+    // Show invoicing result for new terms only
+    if (invoicing) {
+      setInvoicingPanel({ result: invoicing, termName: t.termName?.name ?? t.name });
+    }
   }
 
   return (
     <div>
       <PageHeader
         title="Terms"
-        description="Configure financial academic terms and set the current billing period."
+        description="Configure financial academic terms. Adding a term automatically invoices all students."
         action={
           <button className={primaryButtonClass} onClick={() => setModal("add")}>
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -276,17 +382,18 @@ export default function TermsPage() {
                 {terms.map((t) => (
                   <tr key={t.id} className={premiumTrClass}>
                     <td className={premiumTdClass}>
-                      <p className="font-medium text-ink dark:text-dark-text">
-                        {t.termName?.name ?? t.name}
-                      </p>
+                      <p className="font-medium text-ink dark:text-dark-text">{t.termName?.name ?? t.name}</p>
                     </td>
-                    <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>
-                      {t.academicYear}
-                    </td>
+                    <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{t.academicYear}</td>
                     <td className={premiumTdClass}>
-                      <Badge variant={t.isActive ? "success" : "default"}>
-                        {t.isActive ? "Current term" : "Closed"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={t.isActive ? "success" : "default"}>
+                          {t.isActive ? "Current term" : "Closed"}
+                        </Badge>
+                        {t.invoicingCompletedAt && (
+                          <Badge variant="teal">Invoiced</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className={premiumTdClass}>
                       <button
@@ -312,6 +419,14 @@ export default function TermsPage() {
           termNames={termNames}
           onClose={() => setModal(null)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {invoicingPanel && (
+        <InvoicingResultPanel
+          result={invoicingPanel.result}
+          termName={invoicingPanel.termName}
+          onClose={() => setInvoicingPanel(null)}
         />
       )}
     </div>

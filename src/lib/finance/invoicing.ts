@@ -8,10 +8,9 @@
  * students who already have an invoice for the term are skipped.
  *
  * Fee structure specificity (most-specific wins):
- *   1. form + stream + boardingStatus  (all three match)
- *   2. form + stream + boardingStatus=null
- *   3. form + stream=null + boardingStatus  (exact boarding)
- *   4. form + stream=null + boardingStatus=null  (form only)
+ *   termNameId match = +4
+ *   stream match     = +2
+ *   boardingStatus   = +1 (legacy, kept for compatibility)
  */
 
 import { Decimal } from "@prisma/client/runtime/library";
@@ -21,9 +20,10 @@ import { nextInvoiceNumber } from "./receipts";
 import { computeProratedAmount } from "./proration";
 
 export interface BatchInvoicingResult {
-  succeeded: number;
-  skipped:   number;
-  errors:    Array<{ studentId: string; admissionNumber: string; reason: string }>;
+  succeeded:          number;
+  skipped:            number;
+  errors:             Array<{ studentId: string; admissionNumber: string; reason: string }>;
+  classesWithoutFees: Array<{ form: number; stream: string | null; className: string }>;
 }
 
 export interface BatchError {
@@ -33,7 +33,11 @@ export interface BatchError {
 }
 
 /**
- * Selects the most-specific FeeStructure for a student's form/stream/boardingStatus.
+ * Selects the most-specific FeeStructure for a student's form/stream/boardingStatus/termNameId.
+ * Specificity scoring (higher = better match):
+ *   termNameId match = +4
+ *   stream match     = +2
+ *   boardingStatus   = +1 (legacy, kept for compatibility)
  * Returns null if no matching structure is found.
  */
 function selectFeeStructure(
@@ -42,21 +46,23 @@ function selectFeeStructure(
     form: number;
     stream: string | null;
     boardingStatus: string | null;
+    termNameId: string | null;
     amountPerTerm: Decimal;
   }>,
   form: number,
   stream: string | null,
-  boardingStatus: string | null
+  boardingStatus: string | null,
+  termNameId: string | null = null
 ) {
-  // Score: higher = more specific match
-  // stream match = +2, boardingStatus match = +1
   const scored = structures
     .filter((s) => s.form === form)
     .filter((s) => s.stream === null || s.stream === stream)
     .filter((s) => s.boardingStatus === null || s.boardingStatus === boardingStatus)
+    .filter((s) => s.termNameId === null || s.termNameId === termNameId)
     .map((s) => ({
       structure: s,
       score:
+        (s.termNameId    !== null ? 4 : 0) +
         (s.stream        !== null ? 2 : 0) +
         (s.boardingStatus !== null ? 1 : 0),
     }))
@@ -70,7 +76,7 @@ function selectFeeStructure(
  *
  * For each non-archived student in the school:
  *  1. Skip if an Invoice already exists for (studentId, termId).
- *  2. Select the best-matching FeeStructure.
+ *  2. Select the best-matching FeeStructure (term-specific structures win).
  *  3. Sum all active (non-detached) StudentExpenseAttachment prices.
  *  4. Create Invoice + LedgerEntry(INVOICE) + FinanceNotification — all in one transaction per student.
  *  5. Record errors for students without a matching fee structure but continue processing.
@@ -83,7 +89,7 @@ export async function runBatchInvoicing(
   // Load term details
   const term = await prisma.term.findUnique({
     where: { id: termId },
-    select: { id: true, name: true, startDate: true, endDate: true, academicYear: true, schoolId: true },
+    select: { id: true, name: true, startDate: true, endDate: true, academicYear: true, schoolId: true, termNameId: true },
   });
 
   if (!term || term.schoolId !== schoolId) {
@@ -93,7 +99,7 @@ export async function runBatchInvoicing(
   // Load all fee structures for this school
   const allStructures = await prisma.feeStructure.findMany({
     where:  { schoolId },
-    select: { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true },
+    select: { id: true, form: true, stream: true, boardingStatus: true, termNameId: true, amountPerTerm: true },
   });
 
   // Load all non-archived students with their class info
@@ -139,7 +145,8 @@ export async function runBatchInvoicing(
   });
   const invoicePrefix = settings?.invoicePrefix ?? "INV-";
 
-  const result: BatchInvoicingResult = { succeeded: 0, skipped: 0, errors: [] };
+  const missingFeeClasses = new Map<string, { form: number; stream: string | null; className: string }>();
+  const result: BatchInvoicingResult = { succeeded: 0, skipped: 0, errors: [], classesWithoutFees: [] };
 
   for (const student of students) {
     // Skip already-invoiced students (idempotency)
@@ -152,8 +159,8 @@ export async function runBatchInvoicing(
     const stream  = student.schoolClass.stream ?? null;
     const boarding = student.boardingStatus ?? null;
 
-    // Select the best-matching fee structure
-    const structure = selectFeeStructure(allStructures, form, stream, boarding);
+    // Select the best-matching fee structure (term-specific wins)
+    const structure = selectFeeStructure(allStructures, form, stream, boarding, term.termNameId ?? null);
 
     if (!structure) {
       result.errors.push({
@@ -161,6 +168,14 @@ export async function runBatchInvoicing(
         admissionNumber: student.admissionNumber,
         reason: `No fee structure found for form=${form}, stream=${stream ?? "any"}, boardingStatus=${boarding ?? "any"}`,
       });
+      const classKey = `${form}:${stream ?? ""}`;
+      if (!missingFeeClasses.has(classKey)) {
+        missingFeeClasses.set(classKey, {
+          form,
+          stream,
+          className: `Form ${form}${stream ? ` – ${stream}` : ""}`,
+        });
+      }
       continue;
     }
 
@@ -242,6 +257,7 @@ export async function runBatchInvoicing(
     }
   }
 
+  result.classesWithoutFees = Array.from(missingFeeClasses.values());
   return result;
 }
 
@@ -265,7 +281,7 @@ export async function createProratedInvoice(opts: {
     }),
     prisma.term.findUnique({
       where:  { id: termId },
-      select: { name: true, startDate: true, endDate: true, academicYear: true },
+      select: { name: true, startDate: true, endDate: true, academicYear: true, termNameId: true },
     }),
     prisma.financeSettings.findUnique({
       where:  { schoolId },
@@ -285,14 +301,15 @@ export async function createProratedInvoice(opts: {
     // Auto-prorate
     const structures = await prisma.feeStructure.findMany({
       where:  { schoolId },
-      select: { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true },
+      select: { id: true, form: true, stream: true, boardingStatus: true, termNameId: true, amountPerTerm: true },
     });
 
     const structure = selectFeeStructure(
       structures,
       student.schoolClass.form,
       student.schoolClass.stream ?? null,
-      student.boardingStatus ?? null
+      student.boardingStatus ?? null,
+      term.termNameId ?? null
     );
 
     if (!structure) throw new Error("No fee structure found for this student.");
