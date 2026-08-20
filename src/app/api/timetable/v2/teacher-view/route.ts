@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { computePeriodTimes } from "@/lib/scheduleTimes";
 import { collapseGroupSlotsForDisplay } from "@/lib/timetable/engineHelpers";
 import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
 
-// ── GET /api/timetable/v2/teacher-view ────────────────────────────────────
+// â”€â”€ GET /api/timetable/v2/teacher-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns the personal weekly timetable grid for a teacher.
 // Accessible to the teacher themselves (TEACHER role, own teacherId),
 // and to the principal.
 //
 // Query params:
-//   teacherId — required for PRINCIPAL callers; auto-resolved for TEACHER callers.
-//   versionId — optional; defaults to the published version / legacy slots.
+//   teacherId â€” required for PRINCIPAL callers; auto-resolved for TEACHER callers.
+//   versionId â€” optional; defaults to the published version / legacy slots.
 
 export async function GET(req: NextRequest) {
   const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   });
   if (!teacher) return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
 
-  // ── Fetch slots ──────────────────────────────────────────────────────────
+  // â”€â”€ Fetch slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   type SlotRow = {
     id: string; classId: string; className: string;
     dayOfWeek: number; period: number;
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     `;
   }
 
-  // ── Fetch group information for display collapse ─────────────────────────
+  // â”€â”€ Fetch group information for display collapse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const electiveGroups = await prisma.electiveGroup.findMany({
     where: { schoolId },
     select: {
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
   // Collapse slots by group for display
   const displaySlots = collapseGroupSlotsForDisplay(slots, groupDescriptors);
 
-  // ── Fetch config for period-to-time mapping ──────────────────────────────
+  // â”€â”€ Fetch config for period-to-time mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const config = await prisma.timetableConfig.findUnique({
     where: { schoolId },
   });
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
   };
   const periodTimes = computePeriodTimes({ ...DEFAULTS, ...(config ?? {}) });
 
-  // ── Fetch special periods (non-lesson slots) ─────────────────────────────
+  // â”€â”€ Fetch special periods (non-lesson slots) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const specialPeriods = await prisma.$queryRaw<
     Array<{ type: string; label: string; dayOfWeek: number | null; period: number }>
   >`SELECT type, label, "dayOfWeek", period
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
     WHERE "schoolId" = ${schoolId} AND "isActive" = true
     ORDER BY period`;
 
-  // ── Fetch operating days ────────────────────────────────────────────────
+  // â”€â”€ Fetch operating days â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const operatingDays = await prisma.$queryRaw<Array<{ dayOfWeek: number; isActive: boolean }>>`
     SELECT "dayOfWeek", "isActive" FROM "OperatingDay"
     WHERE "schoolId" = ${schoolId} ORDER BY "dayOfWeek"
@@ -147,13 +147,13 @@ export async function GET(req: NextRequest) {
   const activeDays = operatingDays.filter((d) => d.isActive).map((d) => d.dayOfWeek);
   const days = activeDays.length > 0 ? activeDays : [0, 1, 2, 3, 4];
 
-  // ── Fetch teacher's unavailability ──────────────────────────────────────
+  // â”€â”€ Fetch teacher's unavailability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const unavailability = await prisma.teacherUnavailability.findMany({
     where: { teacherId: teacher.id },
     select: { dayOfWeek: true, period: true },
   });
 
-  // ── Compute weekly load stats ───────────────────────────────────────────
+  // â”€â”€ Compute weekly load stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const subjectCounts = new Map<string, number>();
   for (const s of displaySlots) {
     subjectCounts.set(s.subjectCode, (subjectCounts.get(s.subjectCode) ?? 0) + 1);
@@ -170,3 +170,4 @@ export async function GET(req: NextRequest) {
     subjectBreakdown: Array.from(subjectCounts.entries()).map(([code, count]) => ({ code, count })),
   });
 }
+

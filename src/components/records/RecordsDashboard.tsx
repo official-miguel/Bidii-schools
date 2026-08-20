@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui";
 import StudentWorkspace from "./StudentWorkspace";
 import QuickIncidentModal from "./QuickIncidentModal";
+import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 import AchievementModal from "./AchievementModal";
 import {
   Avatar,
@@ -105,18 +106,18 @@ export default function RecordsDashboard({
 
   const load = useCallback(async () => {
     const jobs: Promise<void>[] = [
-      fetch("/api/students").then(async (r) => {
-        if (r.ok) {
-          const data = await r.json();
-          setStudents(
-            data.map((s: StudentLite) => ({
-              id: s.id,
-              fullName: s.fullName,
-              admissionNumber: s.admissionNumber,
-              schoolClass: s.schoolClass || null,
-            }))
-          );
-        }
+      fetchAllStudents().then((data) => {
+        setStudents(
+          data.map((s) => {
+            const st = s as StudentLite;
+            return {
+              id: st.id,
+              fullName: st.fullName,
+              admissionNumber: st.admissionNumber,
+              schoolClass: st.schoolClass || null,
+            };
+          })
+        );
       }),
       fetch("/api/classes").then(async (r) => {
         if (r.ok) setClasses(await r.json());

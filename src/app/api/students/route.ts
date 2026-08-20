@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
-import { requirePermission, requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
 
@@ -10,26 +10,26 @@ import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
 // GET /api/students
 //
 // Query parameters
-//   classId  — filter to one class
-//   q        — search string (name or admission number)
-//   by       — "name" (default) | "admission"
-//   limit    — page size, 1–500, default 200
-//   cursor   — admissionNumber of the last row from the previous page
-//              (opaque to the client — just pass back what you received)
+//   classId  â€” filter to one class
+//   q        â€” search string (name or admission number)
+//   by       â€” "name" (default) | "admission"
+//   limit    â€” page size, 1â€“500, default 200
+//   cursor   â€” admissionNumber of the last row from the previous page
+//              (opaque to the client â€” just pass back what you received)
 //
 // Response headers
-//   X-Next-Cursor — present when there is another page; pass as ?cursor=
-//   X-Total-Count — total matching rows (only returned on the first page,
+//   X-Next-Cursor â€” present when there is another page; pass as ?cursor=
+//   X-Total-Count â€” total matching rows (only returned on the first page,
 //                   i.e. when no cursor is supplied), for rendering pagination
 //                   UI without an extra count query on subsequent pages.
 //
 // Performance notes
-//   • "name" search uses a DB-side ILIKE which benefits from the
+//   â€¢ "name" search uses a DB-side ILIKE which benefits from the
 //     Student_fullName_idx trigram/gin index added in migration
 //     20260723000000_add_name_search_indexes.
-//   • "admission" search hits the unique index on admissionNumber.
-//   • Results are ordered by fullName ASC then id ASC (stable for cursor).
-//   • Max page size of 500 prevents a single request from loading all 50k
+//   â€¢ "admission" search hits the unique index on admissionNumber.
+//   â€¢ Results are ordered by fullName ASC then id ASC (stable for cursor).
+//   â€¢ Max page size of 500 prevents a single request from loading all 50k
 //     students.  The offline sync layer uses /api/sync/pull instead.
 // ---------------------------------------------------------------------------
 
@@ -54,12 +54,12 @@ export async function GET(req: NextRequest) {
   const rawLimit = parseInt(sp.get("limit") ?? "200", 10);
   const limit    = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 200, 1), 500);
 
-  // Build the where clause incrementally — Prisma's generated types don't
+  // Build the where clause incrementally â€” Prisma's generated types don't
   // expose a standalone WhereInput via Parameters<> in all versions, so
   // we use an explicit Record shape and let findMany infer the rest.
   const where: Record<string, unknown> = {
     schoolId,
-    archivedAt: null,          // Active students only — archived ones live in /api/history/students
+    archivedAt: null,          // Active students only â€” archived ones live in /api/history/students
     ...(classId ? { classId } : {}),
     ...(q
       ? by === "admission"
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 
   // Cursor-based pagination: fetch limit+1 rows; if we get limit+1 back
   // there is a next page and we return a cursor pointing to it.
-  // The cursor is the admissionNumber of the last row in the current page —
+  // The cursor is the admissionNumber of the last row in the current page â€”
   // simple and stable since admissionNumber is unique.
   if (cursor) {
     where.admissionNumber = { gt: cursor };
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Streams for this form, in registration order — round-robin target list.
+  // Streams for this form, in registration order â€” round-robin target list.
   const streams = await prisma.schoolClass.findMany({
     where: { schoolId, form: data.form },
     orderBy: { createdAt: "asc" },
@@ -198,14 +198,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Retry loop: the (schoolId, admissionNumber) unique constraint is the
-  // concurrency guard — a clash simply recomputes the next number.
+  // concurrency guard â€” a clash simply recomputes the next number.
   for (let attempt = 0; attempt < 3; attempt++) {
     const current = await maxAdmissionNumber(schoolId);
     let next: number;
     if (current === null) {
       if (!data.startingAdmissionNumber) {
         return NextResponse.json(
-          { error: "First student — provide a starting admission number." },
+          { error: "First student â€” provide a starting admission number." },
           { status: 400 }
         );
       }
@@ -215,22 +215,47 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const student = await prisma.student.create({
-        data: {
-          schoolId,
-          fullName: data.fullName,
-          admissionNumber: String(next),
-          dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-          gender: data.gender ?? null,
-          boardingStatus: data.boardingStatus ?? null,
-          classId,
-          parentName: data.parentName || null,
-          parentContact: data.parentContact || null,
-          electives: {
-            create: data.electiveSubjectIds.map((subjectId) => ({ subjectId })),
+      const student = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+
+        const created = await tx.student.create({
+          data: {
+            schoolId,
+            fullName: data.fullName,
+            admissionNumber: String(next),
+            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+            gender: data.gender ?? null,
+            boardingStatus: data.boardingStatus ?? null,
+            classId,
+            parentName: data.parentName || null,
+            parentContact: data.parentContact || null,
+            electives: {
+              create: data.electiveSubjectIds.map((subjectId) => ({ subjectId })),
+            },
           },
-        },
-        include: { schoolClass: true, electives: true },
+          include: { schoolClass: true, electives: true },
+        });
+
+        // Finance: create account and setup notification
+        await tx.studentFinanceAccount.create({
+          data: {
+            schoolId,
+            studentId: created.id,
+            currentBalance: 0,
+            totalInvoiced:  0,
+            totalPaid:      0,
+          },
+        });
+        await tx.financeNotification.create({
+          data: {
+            schoolId,
+            studentId: created.id,
+            type:    "SETUP_REQUIRED",
+            message: `Finance setup required for ${created.fullName} (${created.admissionNumber}).`,
+          },
+        });
+
+        return created;
       });
 
       // Auto-provision a library card for every new student so they can
@@ -264,11 +289,11 @@ export async function POST(req: NextRequest) {
           expiresAt,
         },
       }).catch(() => {
-        // Non-fatal — card will be auto-provisioned on first library access
+        // Non-fatal â€” card will be auto-provisioned on first library access
         // if creation fails here (e.g. race condition on card number).
       });
 
-      // ── Auto-allocate dorm if school policy + student is boarding ──────
+      // â”€â”€ Auto-allocate dorm if school policy + student is boarding â”€â”€â”€â”€â”€â”€
       if (data.boardingStatus === "BOARDING") {
         const school = await prisma.school.findUnique({
           where: { id: schoolId },
@@ -304,9 +329,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(student, { status: 201 });
     } catch (e) {
       const err = e as { code?: string };
-      if (err.code === "P2002") continue; // concurrent insert took this number — retry
+      if (err.code === "P2002") continue; // concurrent insert took this number â€” retry
       return NextResponse.json({ error: "Couldn't register student." }, { status: 500 });
     }
   }
-  return NextResponse.json({ error: "Couldn't register student — please retry." }, { status: 409 });
+  return NextResponse.json({ error: "Couldn't register student â€” please retry." }, { status: 409 });
 }
+

@@ -1,0 +1,5 @@
+admission_number,dorm_name,cubicle_name,bed_label,position,notes
+ADM001,Lioness House,,Bed 1,,
+ADM002,Simba House,,Bunk A,UPPER,
+ADM003,Dove Block,Room 1,Bed 1,,
+ADM004,Eagle Block,Room 2,Bed 1,,Transfer from previous school

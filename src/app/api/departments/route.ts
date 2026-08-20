@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET() {
@@ -57,3 +57,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create department." }, { status: 500 });
   }
 }
+

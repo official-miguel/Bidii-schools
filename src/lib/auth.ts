@@ -39,6 +39,28 @@ export async function destroySession(token: string) {
 }
 
 export const getCurrentUser = cache(async (): Promise<User | null> => {
+  // ── DEV BYPASS ────────────────────────────────────────────────────────────
+  // Set DEV_BYPASS_AUTH=BURSAR (or PRINCIPAL / ADMIN_STAFF) in .env to skip
+  // the session check entirely. NEVER set this in production.
+  if (process.env.NODE_ENV !== "production" && process.env.DEV_BYPASS_AUTH) {
+    const bypassRole = process.env.DEV_BYPASS_AUTH as Role;
+    const schoolId   = process.env.DEV_BYPASS_SCHOOL_ID ?? null;
+    return {
+      id:           "dev-bypass-user",
+      email:        "dev@localhost",
+      name:         "Dev User",
+      passwordHash: "",
+      role:         bypassRole,
+      schoolId,
+      staffRoleId:  null,
+      isActive:     true,
+      createdAt:    new Date(),
+      updatedAt:    new Date(),
+      avatarUrl:    null,
+    } as unknown as User;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const token = cookies().get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
@@ -71,6 +93,10 @@ export type SchoolUser = Omit<User, "schoolId"> & { schoolId: string };
 /**
  * Like requireRole but also asserts schoolId is present.
  * Returns null for SUPER_ADMIN accounts (no school) or unauthenticated requests.
+ *
+ * BURSAR is a valid school-scoped role — pass it explicitly when needed, e.g.:
+ *   requireSchoolRole("ADMIN_STAFF", "BURSAR")
+ * The generic requireRole(...roles) already supports any Role value the caller passes.
  */
 export async function requireSchoolRole(...roles: Role[]): Promise<SchoolUser | null> {
   const user = await requireRole(...roles);

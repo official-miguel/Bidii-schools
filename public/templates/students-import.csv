@@ -1,0 +1,6 @@
+admission_number,full_name,class_name,gender,boarding_status,date_of_birth,elective_subject_codes
+ADM001,Alice Wambui,Form 1 North,FEMALE,BOARDING,2010-03-15,
+ADM002,Brian Otieno,Form 1 South,MALE,DAY,2010-07-22,
+ADM003,Carol Njeri,Form 3 A,FEMALE,BOARDING,2008-11-05,"HIST,GEO"
+ADM004,David Mwangi,Form 3 B,MALE,DAY,2008-06-18,"HIST,FREN"
+ADM005,Eve Akinyi,Form 4 A,FEMALE,BOARDING,2007-02-28,"GEO,COMP"

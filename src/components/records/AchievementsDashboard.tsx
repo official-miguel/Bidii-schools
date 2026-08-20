@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Trophy, Plus, Filter, X, Users, Star, BookOpen, Search } from "lucide-react";
 import StudentWorkspace from "./StudentWorkspace";
 import AchievementModal from "./AchievementModal";
+import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 import {
   Avatar,
   Achievement,
@@ -153,18 +154,18 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
 
   const load = useCallback(async () => {
     await Promise.all([
-      fetch("/api/students").then(async (r) => {
-        if (r.ok) {
-          const data = await r.json();
-          setStudents(
-            data.map((s: StudentLite) => ({
-              id: s.id,
-              fullName: s.fullName,
-              admissionNumber: s.admissionNumber,
-              schoolClass: s.schoolClass || null,
-            }))
-          );
-        }
+      fetchAllStudents().then((data) => {
+        setStudents(
+          data.map((s) => {
+            const st = s as StudentLite;
+            return {
+              id: st.id,
+              fullName: st.fullName,
+              admissionNumber: st.admissionNumber,
+              schoolClass: st.schoolClass || null,
+            };
+          })
+        );
       }),
       fetch("/api/classes").then(async (r) => {
         if (r.ok) setClasses(await r.json());

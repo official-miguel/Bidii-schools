@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/school/upload
  *
  * Uploads a school logo or stamp to Supabase Storage (images bucket).
@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -59,13 +59,13 @@ export async function POST(req: NextRequest) {
   const buffer      = Buffer.from(await file.arrayBuffer());
   const supabase    = createAdminClient();
 
-  // Delete old file — read current URL to derive old path.
+  // Delete old file â€” read current URL to derive old path.
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
     select: { logoUrl: true, stampUrl: true },
   });
 
-  // Old storage paths follow the same naming convention — derive from URL.
+  // Old storage paths follow the same naming convention â€” derive from URL.
   // If the URL contains our bucket path prefix, extract and remove it.
   const oldUrl        = field === "logo" ? school?.logoUrl : school?.stampUrl;
   const bucketPrefix  = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
@@ -93,3 +93,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ url });
 }
+

@@ -22,6 +22,8 @@ type StaffRole = {
   description: string | null;
   permissions: Permission[];
   _count: { users: number };
+  // totalUsers is the combined legacy + multi-role count returned by the API
+  totalUsers?: number;
 };
 
 const MODULE_INFO: Record<string, { label: string; description: string }> = {
@@ -41,6 +43,7 @@ const MODULE_INFO: Record<string, { label: string; description: string }> = {
   REPORTS: { label: "Reports", description: "End-of-term and analytics reports" },
   RECORDS_DISCIPLINE: { label: "Records — Discipline", description: "Discipline cases, files, AI summaries, print/export" },
   RECORDS_ACHIEVEMENTS: { label: "Records — Achievements", description: "Achievements, shared achievements, files, AI summaries" },
+  FEES:                 { label: "Fees Management",         description: "Fee structures, invoicing, payments, and debtor tracking" },
 };
 
 // STAFF_ROLES itself is deliberately not offered here — only the Principal
@@ -145,8 +148,9 @@ export default function StaffRolesPage() {
   }
 
   async function handleDeleteRole(role: StaffRole) {
-    if (role._count.users > 0) {
-      alert(`${role._count.users} staff member(s) still have this role. Reassign them first.`);
+    const count = role.totalUsers ?? role._count.users;
+    if (count > 0) {
+      alert(`${count} staff member(s) still have this role. Reassign them first.`);
       return;
     }
     if (!confirm(`Delete the "${role.name}" role? This can't be undone.`)) return;
@@ -200,7 +204,7 @@ export default function StaffRolesPage() {
                   {r.name}
                 </p>
                 <p className="text-xs text-slate mt-0.5">
-                  {r._count.users} {r._count.users === 1 ? "person" : "people"}
+                  {(r.totalUsers ?? r._count.users)} {(r.totalUsers ?? r._count.users) === 1 ? "person" : "people"}
                 </p>
               </button>
             ))}

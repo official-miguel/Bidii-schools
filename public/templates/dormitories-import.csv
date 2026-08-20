@@ -1,0 +1,5 @@
+name,gender_policy,structure,total_capacity,allocation_policy,description
+Simba House,BOYS_ONLY,OPEN_HALL,80,MIXED_FORMS,Main boys dormitory
+Lioness House,GIRLS_ONLY,OPEN_HALL,80,MIXED_FORMS,Main girls dormitory
+Eagle Block,BOYS_ONLY,CUBICLE_BASED,60,MIXED_FORMS,Senior boys cubicle dorm
+Dove Block,GIRLS_ONLY,CUBICLE_BASED,60,MIXED_FORMS,Senior girls cubicle dorm

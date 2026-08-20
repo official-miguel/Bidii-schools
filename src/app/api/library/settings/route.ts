@@ -1,11 +1,11 @@
-/**
- * GET /api/library/settings   — read library settings
- * PUT /api/library/settings   — upsert library settings
+﻿/**
+ * GET /api/library/settings   â€” read library settings
+ * PUT /api/library/settings   â€” upsert library settings
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
 async function guard() {
@@ -80,3 +80,4 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json(settings);
 }
+

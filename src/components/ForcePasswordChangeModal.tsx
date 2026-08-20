@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * ForcePasswordChangeModal
@@ -90,7 +90,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
       const res  = await fetch("/api/auth/change-password", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ newPassword: newPwd }),
+        body:    JSON.stringify({ newPassword: newPwd, confirmPassword: confirm }),
       });
       const data = await res.json();
       if (!res.ok) {

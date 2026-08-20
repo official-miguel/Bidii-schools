@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /super-admin/modules — Module Management
@@ -66,7 +66,7 @@ interface AuditEntry {
   action: string;
   targetType: string | null;
   targetId: string | null;
-  metadata: any;
+  metadata: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -422,14 +422,14 @@ export default function ModulesPage() {
                   <tr key={entry.id} className="hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors">
                     <td className="px-5 py-3.5 text-xs font-mono text-ink dark:text-dark-text">{entry.action}</td>
                     <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate dark:text-dark-muted font-mono">
-                      {entry.metadata?.module ?? "—"}
+                      {String(entry.metadata?.module ?? "—")}
                     </td>
                     <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate dark:text-dark-muted font-mono truncate max-w-[140px]">
                       {entry.targetId ?? "—"}
                     </td>
                     <td className="px-5 py-3.5">
-                      <Badge variant={entry.metadata?.enabled ? "success" : "warn"}>
-                        {entry.metadata?.enabled ? "On" : "Off"}
+                      <Badge variant={(entry.metadata?.enabled as boolean | undefined) ? "success" : "warn"}>
+                        {(entry.metadata?.enabled as boolean | undefined) ? "On" : "Off"}
                       </Badge>
                     </td>
                     <td className="px-5 py-3.5 text-xs text-slate dark:text-dark-muted text-right whitespace-nowrap">

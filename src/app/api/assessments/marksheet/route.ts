@@ -3,9 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canViewMarksheet } from "@/lib/assessment/auth844";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = prisma as any;
-
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const periodId = params.get("periodId");
@@ -27,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const period = await db.assessmentPeriod.findFirst({
+  const period = await prisma.assessmentPeriod.findFirst({
     where: {
       id: periodId,
       schoolId: user.schoolId!,
@@ -50,7 +47,7 @@ export async function GET(req: NextRequest) {
   if (!subject) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
   const papers: Array<{ id: string; name: string; maxMarks: number; sortOrder: number }> =
-    await db.paper.findMany({
+    await prisma.paper.findMany({
       where: {
         subjectId,
         schoolId: user.schoolId!,
@@ -74,7 +71,7 @@ export async function GET(req: NextRequest) {
   const paperIds = papers.map((p) => p.id);
 
   const items: Array<{ studentId: string; paperId: string | null; numericScore: number | null }> =
-    await db.assessmentItem.findMany({
+    await prisma.assessmentItem.findMany({
       where: {
         studentId: { in: studentIds },
         periodId,

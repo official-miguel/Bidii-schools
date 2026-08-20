@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 
 export async function GET() {
   const user = await requireRole("TEACHER");
@@ -16,7 +16,7 @@ export async function GET() {
           schoolClass: { select: { id: true, name: true } },
         },
       },
-      // For the View tab — direct assignment tables
+      // For the View tab â€” direct assignment tables
       subjectAssignments: {
         select: {
           classId: true,
@@ -41,7 +41,7 @@ export async function GET() {
   }
 
   // Group distinct (subject, class) pairs actually on this teacher's
-  // timetable — that's the set Section 3D.1 says results entry should offer.
+  // timetable â€” that's the set Section 3D.1 says results entry should offer.
   const bySubject = new Map<
     string,
     { subject: { id: string; name: string; code: string }; classes: { id: string; name: string }[] }
@@ -69,3 +69,4 @@ export async function GET() {
     taughtClasses,
   });
 }
+

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, hashPassword, getCurrentUser, requireSchoolRole } from "@/lib/auth";
-import { requirePermission, getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
+import { hashPassword, getCurrentUser, requireSchoolRole } from "@/lib/auth";
+import { getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
 import { sendWelcomeEmail } from "@/lib/email";
 
 export async function GET() {
@@ -45,7 +45,7 @@ export async function GET() {
   if (user && user.role === "TEACHER") {
     const perms = await getTeacherEffectivePermissions(user);
     if (perms.STAFF?.canView) {
-      // Teacher with STAFF.canView via assigned role — full list
+      // Teacher with STAFF.canView via assigned role â€” full list
       const teachers = await prisma.teacher.findMany({
         where: { schoolId: user.schoolId!, archivedAt: null },
         orderBy: { fullName: "asc" },
@@ -58,7 +58,7 @@ export async function GET() {
       });
       return NextResponse.json(teachers);
     }
-    // Plain Subject Teacher — trimmed list (id, fullName, designation, primaryDepartment.name, staffId)
+    // Plain Subject Teacher â€” trimmed list (id, fullName, designation, primaryDepartment.name, staffId)
     const teachers = await prisma.teacher.findMany({
       where: { schoolId: user.schoolId!, archivedAt: null },
       orderBy: { fullName: "asc" },
@@ -104,7 +104,7 @@ const createSchema = z
   });
 
 // ---------------------------------------------------------------------------
-// POST /api/staff — register a new staff member
+// POST /api/staff â€” register a new staff member
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fetch school name and slug — name for the welcome email, slug is the initial password.
+  // Fetch school name and slug â€” name for the welcome email, slug is the initial password.
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
     select: { name: true, slug: true },
@@ -207,10 +207,10 @@ export async function POST(req: NextRequest) {
       schoolName,
       recipientEmail: email,
       recipientName: fullName,
-      // The school slug is the initial password — tell the teacher what to use.
+      // The school slug is the initial password â€” tell the teacher what to use.
       temporaryPassword: `@${schoolSlug}`,
     }).catch(() => {
-      // Non-fatal — the info is also shown in the UI
+      // Non-fatal â€” the info is also shown in the UI
     });
   }
 
@@ -312,7 +312,7 @@ export async function POST(req: NextRequest) {
       if (current === null) {
         if (!data.startingStaffId) {
           return NextResponse.json(
-            { error: "First staff member — provide a starting staff ID number." },
+            { error: "First staff member â€” provide a starting staff ID number." },
             { status: 400 }
           );
         }
@@ -374,7 +374,7 @@ export async function POST(req: NextRequest) {
       if (err.code === "P2002") {
         const target = err.meta?.target ?? [];
         const fields = Array.isArray(target) ? target.join(", ") : String(target);
-        // staffId collision — retry with the next available ID
+        // staffId collision â€” retry with the next available ID
         if (fields.includes("staffId")) continue;
         if (fields.includes("email")) {
           return NextResponse.json(
@@ -392,7 +392,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { error: "Couldn't register staff member — please retry." },
+    { error: "Couldn't register staff member â€” please retry." },
     { status: 409 }
   );
 }
+

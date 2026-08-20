@@ -17,6 +17,7 @@
 "use client";
 
 import { useMemo, useCallback, useState, useEffect } from "react";
+import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -197,39 +198,37 @@ export function useGlobalSearch(query: string, role: string) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [studentsRes, teachersRes, departmentsRes, subjectsRes] = await Promise.allSettled([
-          fetch("/api/students"),
+        const [studentsData, teachersRes, departmentsRes, subjectsRes] = await Promise.all([
+          fetchAllStudents(),
           fetch("/api/staff"),
           fetch("/api/departments"),
           fetch("/api/subjects"),
         ]);
 
         // Process students response
-        if (studentsRes.status === 'fulfilled' && studentsRes.value.ok) {
-          const studentsData: LocalStudent[] = await studentsRes.value.json();
-          // Filter out archived students
-          const activeStudents = studentsData.filter(s => !s.archivedAt);
+        {
+          const activeStudents = (studentsData as LocalStudent[]).filter(s => !s.archivedAt);
           activeStudents.sort((a, b) => a.fullName.localeCompare(b.fullName));
           setStudents(activeStudents);
         }
 
         // Process teachers response
-        if (teachersRes.status === 'fulfilled' && teachersRes.value.ok) {
-          const teachersData: LocalTeacher[] = await teachersRes.value.json();
+        if (teachersRes.ok) {
+          const teachersData: LocalTeacher[] = await teachersRes.json();
           teachersData.sort((a, b) => a.fullName.localeCompare(b.fullName));
           setTeachers(teachersData);
         }
 
         // Process departments response
-        if (departmentsRes.status === 'fulfilled' && departmentsRes.value.ok) {
-          const departmentsData: LocalDepartment[] = await departmentsRes.value.json();
+        if (departmentsRes.ok) {
+          const departmentsData: LocalDepartment[] = await departmentsRes.json();
           departmentsData.sort((a, b) => a.name.localeCompare(b.name));
           setDepartments(departmentsData);
         }
 
         // Process subjects response
-        if (subjectsRes.status === 'fulfilled' && subjectsRes.value.ok) {
-          const subjectsData: LocalSubject[] = await subjectsRes.value.json();
+        if (subjectsRes.ok) {
+          const subjectsData: LocalSubject[] = await subjectsRes.json();
           subjectsData.sort((a, b) => a.name.localeCompare(b.name));
           setSubjects(subjectsData);
         }

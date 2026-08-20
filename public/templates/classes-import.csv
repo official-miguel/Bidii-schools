@@ -1,0 +1,11 @@
+name,form,stream,framework_type
+Form 1 North,1,North,EIGHT_FOUR_FOUR
+Form 1 South,1,South,EIGHT_FOUR_FOUR
+Form 2 East,2,East,EIGHT_FOUR_FOUR
+Form 2 West,2,West,EIGHT_FOUR_FOUR
+Form 3 A,3,A,EIGHT_FOUR_FOUR
+Form 3 B,3,B,EIGHT_FOUR_FOUR
+Form 4 A,4,A,EIGHT_FOUR_FOUR
+PP1 Red,1,Red,CBC
+PP2 Blue,2,Blue,CBC
+Grade 1,1,,CBC

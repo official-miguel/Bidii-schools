@@ -1,0 +1,11 @@
+name,code,department_name,type,applicable_forms
+Biology,BIO,Sciences,CORE,"1,2,3,4"
+Chemistry,CHEM,Sciences,CORE,"1,2,3,4"
+Physics,PHY,Sciences,CORE,"1,2,3,4"
+Mathematics,MATH,Mathematics,CORE,"1,2,3,4"
+English,ENG,Languages,CORE,"1,2,3,4"
+Kiswahili,KSW,Languages,CORE,"1,2,3,4"
+History,HIST,Humanities,ELECTIVE,"3,4"
+Geography,GEO,Humanities,ELECTIVE,"3,4"
+French,FREN,Languages,ELECTIVE,"3,4"
+Computer Studies,COMP,Technical,ELECTIVE,"3,4"

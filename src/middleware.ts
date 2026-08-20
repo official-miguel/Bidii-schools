@@ -78,6 +78,6 @@ export const config = {
      * - /api/auth/* (auth routes must be public)
      * - /login, /signup (public pages)
      */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth|login|signup).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth|login|signup|staff-login).*)",
   ],
 };

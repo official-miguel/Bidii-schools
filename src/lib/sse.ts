@@ -52,7 +52,17 @@ export type SSEEventType =
   | "timetableSlot.updated"
   | "class.updated"
   | "teacher.updated"
-  | "subject.updated";
+  | "subject.updated"
+  // ── Bulk import events — emitted after super-admin CSV imports ─────────────
+  | "import.students.completed"
+  | "import.staff.completed"
+  | "import.departments.completed"
+  | "import.classes.completed"
+  | "import.subjects.completed"
+  | "import.dormitories.completed"
+  | "import.beds.completed"
+  | "import.allocations.completed"
+  | "import.parents.completed";
 
 /**
  * Push a typed event to all SSE clients connected to the given school.

@@ -55,7 +55,7 @@ export default function ClassesPage() {
 
   const load = useCallback(async () => {
     try {
-      const [classRes, teacherRes] = await Promise.all([fetch("/api/classes"), fetch("/api/staff")]);
+      const [classRes, teacherRes] = await Promise.all([fetch("/api/classes", { cache: "no-store" }), fetch("/api/staff", { cache: "no-store" })]);
       const freshClasses  = classRes.ok  ? await classRes.json()  : [];
       const freshTeachers = teacherRes.ok ? await teacherRes.json() : [];
       setClasses(freshClasses);

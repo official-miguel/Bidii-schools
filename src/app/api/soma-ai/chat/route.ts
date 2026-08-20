@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
@@ -67,7 +67,7 @@ function buildSystemPrompt(opts: {
 
 You are speaking with **${opts.displayName}** (${opts.userEmail}), who is ${roleDescriptions[opts.role] ?? "a school user"} at **${opts.schoolName}**.
 
-## Privacy and access rules (CRITICAL — never violate these)
+## Privacy and access rules (CRITICAL â€” never violate these)
 ${accessContext}
 
 - NEVER reveal data about students outside this user's scope
@@ -75,22 +75,22 @@ ${accessContext}
 - Do not compare students across different families (for parent role)
 - For system actions (sending messages, generating reports), always ask for confirmation first
 
-## Answering data questions — IMPORTANT
-You have access to live database tools. **Always call the appropriate tool** when a question requires specific numbers, names, records, or current status. Do NOT say "I don't have access to that data" or tell the user to check the UI manually — use the tools instead.
+## Answering data questions â€” IMPORTANT
+You have access to live database tools. **Always call the appropriate tool** when a question requires specific numbers, names, records, or current status. Do NOT say "I don't have access to that data" or tell the user to check the UI manually â€” use the tools instead.
 
 Examples of when to call tools:
-- "Who is absent today?" → call getTodayAttendance
-- "What are the exam results?" → call getExamResults
-- "How many students do we have?" → call getStudentCount
-- "Which class is performing best?" → call getClassRankings
-- "How full are the dorms?" → call getDormOccupancy
-- "Show me attendance trends" → call getAttendanceTrends
-- "Tell me about [student name]" → call getStudentProfile
+- "Who is absent today?" â†’ call getTodayAttendance
+- "What are the exam results?" â†’ call getExamResults
+- "How many students do we have?" â†’ call getStudentCount
+- "Which class is performing best?" â†’ call getClassRankings
+- "How full are the dorms?" â†’ call getDormOccupancy
+- "Show me attendance trends" â†’ call getAttendanceTrends
+- "Tell me about [student name]" â†’ call getStudentProfile
 
 Only answer from your general knowledge when the question is about concepts (CBC framework, grading systems, best practices) or when drafting/writing text.
 
 ## Communication style
-- Concise, direct, and professional — like a trusted expert colleague
+- Concise, direct, and professional â€” like a trusted expert colleague
 - Use markdown: **bold**, tables, numbered steps
 - Note when you are presenting live database data
 - If uncertain about a specific fact, use a tool rather than guessing
@@ -103,9 +103,9 @@ School: ${opts.schoolName}`;
 
 function getCurrentTerm(): string {
   const m = new Date().getMonth() + 1;
-  if (m <= 3) return "Term 1 (January–March)";
-  if (m <= 7) return "Term 2 (April–July)";
-  return "Term 3 (August–November)";
+  if (m <= 3) return "Term 1 (Januaryâ€“March)";
+  if (m <= 7) return "Term 2 (Aprilâ€“July)";
+  return "Term 3 (Augustâ€“November)";
 }
 
 function buildSuggestionsPrompt(userMessage: string, assistantResponse: string, role: string): string {
@@ -173,13 +173,13 @@ export async function POST(req: NextRequest) {
   const t0 = Date.now();
   maybePruneCache();
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const user = await requireRole("PRINCIPAL", "TEACHER", "ADMIN_STAFF", "PARENT", "STUDENT");
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  // ── Parse ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Parse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   let parsed: z.infer<typeof RequestSchema>;
   try {
     parsed = RequestSchema.parse(await req.json());
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  // ── Resolve permission scope ──────────────────────────────────────────────
+  // â”€â”€ Resolve permission scope â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const scope = await resolveUserScope(user);
 
   // Display role for system prompt and audit
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
   };
   const displayRole = parsed.context?.role ?? roleMap[user.role] ?? "staff";
 
-  // ── Check Gemini credentials ────────────────────────────────────────────
+  // â”€â”€ Check Gemini credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const credentials = await getSchoolIntegrationKey(user.schoolId!, "GEMINI");
   if (!credentials) {
     logSomaAIInteraction({
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(
       {
-        error: "Soma AI is not configured. Ask your Principal to add a Gemini API key under Settings → AI Configuration.",
+        error: "Soma AI is not configured. Ask your Principal to add a Gemini API key under Settings â†’ AI Configuration.",
         configIssue: true,
       },
       { status: 503 }
@@ -232,14 +232,14 @@ export async function POST(req: NextRequest) {
   if (!aiConfig.enabled) {
     return NextResponse.json(
       {
-        error: "Soma AI is currently disabled. The Principal can re-enable it under Settings → AI Configuration.",
+        error: "Soma AI is currently disabled. The Principal can re-enable it under Settings â†’ AI Configuration.",
         configIssue: true,
       },
       { status: 503 }
     );
   }
 
-  // ── Build system prompt (no static data snapshot — tools handle that) ───
+  // â”€â”€ Build system prompt (no static data snapshot â€” tools handle that) â”€â”€â”€
   const systemInstruction = buildSystemPrompt({
     role: displayRole,
     schoolName: parsed.context?.schoolName ?? "your school",
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
     isAdmin: scope.isAdmin,
   });
 
-  // ── Build conversation contents ─────────────────────────────────────────
+  // â”€â”€ Build conversation contents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const contents: { role: string; parts: { text: string }[] }[] = [
     ...(parsed.context?.pagePath
       ? [
@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
     { role: "user", parts: [{ text: parsed.message }] },
   ];
 
-  // ── Streaming response with tool calling ──────────────────────────────
+  // â”€â”€ Streaming response with tool calling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const encoder = new TextEncoder();
   void encoder; // used implicitly by sseEvent
 
@@ -295,7 +295,7 @@ export async function POST(req: NextRequest) {
             model: aiConfig.model,
             tools: SOMA_TOOL_DECLARATIONS,
 
-            // Tool call handler — queries live DB and streams a status hint to the client
+            // Tool call handler â€” queries live DB and streams a status hint to the client
             onToolCall: async (call) => {
               toolsUsed.push(call.name);
               // Send a "thinking" event so the UI can show a loading indicator
@@ -364,3 +364,4 @@ export async function POST(req: NextRequest) {
     },
   });
 }
+

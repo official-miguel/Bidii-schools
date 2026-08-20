@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 
 const schema = z.object({
   slots: z
@@ -15,7 +15,7 @@ const schema = z.object({
         room: z.string().nullable().optional(),
       })
     )
-    .min(1, "Nothing to save — generate a draft first."),
+    .min(1, "Nothing to save â€” generate a draft first."),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const teacherIds = [...new Set(slots.map((s) => s.teacherId))];
 
   // Re-verify every id in this draft still belongs to the school and still
-  // exists — time may have passed since the draft was generated (a class or
+  // exists â€” time may have passed since the draft was generated (a class or
   // subject could have been deleted in the meantime), and the client's JSON
   // is not trusted just because it round-tripped through /generate.
   const [classCount, subjectCount, teacherCount] = await Promise.all([
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Every teacher must actually be assigned to teach the subject they've
-  // been drafted for — the generator only ever picks eligible teachers, but
+  // been drafted for â€” the generator only ever picks eligible teachers, but
   // this is re-checked here too rather than trusted from the request body.
   const assignments = await prisma.teacherSubject.findMany({
     where: { teacherId: { in: teacherIds }, subjectId: { in: subjectIds } },
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // One row per (class, subject) pair used in this draft — this is what
+  // One row per (class, subject) pair used in this draft â€” this is what
   // makes the teacher "stick" as that class's subject teacher going
   // forward, for both future regenerations and the manual builder, instead
   // of only being true for this one generated grid.
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   try {
     await prisma.$transaction([
       // Only the classes actually in this draft have their timetable
-      // replaced — everyone else's is left exactly as it was.
+      // replaced â€” everyone else's is left exactly as it was.
       prisma.timetableSlot.deleteMany({ where: { classId: { in: classIds }, schoolId } }),
       prisma.timetableSlot.createMany({
         data: slots.map((s) => ({ ...s, schoolId })),
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if ((e as { code?: string }).code === "P2002") {
       // The DB's own unique constraints (class_slot / teacher_slot) are the
-      // final safety net — if anything changed between generating this
+      // final safety net â€” if anything changed between generating this
       // draft and saving it (e.g. another class's timetable was edited in
       // the meantime and now clashes), the whole save is rejected atomically
       // rather than partially applied.
@@ -111,3 +111,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't save the timetable." }, { status: 500 });
   }
 }
+

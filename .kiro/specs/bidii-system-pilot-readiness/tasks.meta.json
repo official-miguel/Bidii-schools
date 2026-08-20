@@ -1,0 +1,365 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add explicit inline type annotation to the `diagnostics` variable in `src/app/api/auth/health/route.ts`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822035655
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822052529
+      }
+    ],
+    "2.1 Add `getCurrentUser` 401/403 guard at the top of the `GET` handler in `src/app/api/auth/health/route.ts`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822036705
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822059939
+      }
+    ],
+    "2.2 Replace hardcoded bcrypt hash with runtime `hashPassword` round-trip": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822036875
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822060757
+      }
+    ],
+    "3.1 Extend the Zod schema in `src/app/api/auth/change-password/route.ts` with a `confirmPassword` field and a `.superRefine()` cross-field check": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822037037
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822067411
+      }
+    ],
+    "4.1 Replace the `60 * 60 * 24 * 7` literal in `src/app/api/auth/login/route.ts` with `Math.floor(SESSION_TTL_MS / 1000)`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822037240
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822069290
+      }
+    ],
+    "4.2 Replace the `60 * 60 * 24 * 7` literal in `src/app/api/auth/change-password/route.ts` with `Math.floor(SESSION_TTL_MS / 1000)`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822037388
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822069961
+      }
+    ],
+    "5.1 Replace the exact datetime equality filter `date: today` with a half-open UTC day-boundary range in `src/components/dashboard/UnifiedDashboard.tsx`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822037554
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822070450
+      }
+    ],
+    "6.1 Remove `const db = prisma as any` from `fetchHODData` in `src/components/dashboard/UnifiedDashboard.tsx` and replace all `db.*` calls with `prisma.*`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822037724
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822071396
+      }
+    ],
+    "6.2 Remove `any` casts in `src/app/api/assessments/marksheet/route.ts` and any other assessment route files that cast Prisma results through `any`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822038422
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822071554
+      }
+    ],
+    "7.1 Audit all files under `src/app/api/` for unused `requireRole`, `requirePermission`, and `requireSchoolRole` imports from `@/lib/auth`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822038582
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822073020
+      }
+    ],
+    "8.1 Remove unused Lucide icon imports and dead `useRef` declarations across super-admin page components": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822039332
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822073592
+      }
+    ],
+    "8.2 Replace `any` casts in super-admin page data-fetching map callbacks with named interfaces": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822039461
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822074266
+      }
+    ],
+    "9.1 Remove verbose removed-feature comment blocks from `src/app/signup/page.tsx` and replace with a minimal redirect comment": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822039590
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822075490
+      }
+    ],
+    "10.1 Change the `log` array in `src/lib/prisma.ts` for `NODE_ENV === \"development\"` from `[\"error\"]` to `[\"warn\", \"error\"]`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822039746
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822076553
+      }
+    ],
+    "11.1 Add `@@index([schoolId, date, status])` to the `Attendance` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822040054
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822077291
+      }
+    ],
+    "11.2 Add `@@index([schoolId, classId, date])` to the `Attendance` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822040671
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822077925
+      }
+    ],
+    "11.3 Add `@@index([schoolId, classId, archivedAt])` to the `Student` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822040837
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822078828
+      }
+    ],
+    "11.4 Add `@@index([schoolId, returnedAt])` to the `LibraryBorrow` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822040951
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822079783
+      }
+    ],
+    "11.5 Add `@@index([schoolId, returnedAt, dueAt])` to the `LibraryBorrow` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822041167
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822080625
+      }
+    ],
+    "11.6 Add `@@index([schoolId, status])` to the `DisciplineRecord` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822041778
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822081744
+      }
+    ],
+    "11.7 Add `@@index([schoolId, periodId, subjectId])` to the `AssessmentItem` model in `prisma/schema.prisma`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822041915
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822082673
+      }
+    ],
+    "12.1 Run `prisma migrate dev --name add_performance_indexes` to generate and apply the migration": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822042053
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822083700
+      }
+    ],
+    "13. Final checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822042298
+      },
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822084927
+      }
+    ],
+    "1. Fix health/route.ts TS2698 type errors": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822052694
+      }
+    ],
+    "2. Secure the health endpoint": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822060977
+      }
+    ],
+    "3. Add `confirmPassword` server-side validation to ChangePasswordRoute": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822067553
+      }
+    ],
+    "4. Centralise session cookie `maxAge` using `SESSION_TTL_MS`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822070585
+      }
+    ],
+    "5. Fix attendance DayRange in `fetchSchoolOverview`": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822070936
+      }
+    ],
+    "7. Remove dead imports from API route files": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822073715
+      }
+    ],
+    "8. Clean super-admin pages — remove unused imports, dead variables, and replace `any` casts": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822074804
+      }
+    ],
+    "9. Clean up `src/app/signup/page.tsx` comment block": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822075936
+      }
+    ],
+    "10. Add `\"warn\"` level to Prisma dev logging": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822076680
+      }
+    ],
+    "11. Add 7 composite indexes to Prisma schema": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822082807
+      }
+    ],
+    "12. Generate and apply Prisma migration for performance indexes": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822084181
+      }
+    ],
+    "6. Remove `prisma as any` casts and add explicit return types": [
+      {
+        "executionId": "91195087-fe64-45be-9cd7-ec40270279c8",
+        "chatSessionId": "sess_e12e066d-eafc-420c-a81f-769cd978533b",
+        "timestamp": 1786822104169
+      }
+    ]
+  }
+}

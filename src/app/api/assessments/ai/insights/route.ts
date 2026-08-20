@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser , requireSchoolRole } from "@/lib/auth";
+import { getCurrentUser  } from "@/lib/auth";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { prisma } from "@/lib/prisma";
 import {
@@ -189,3 +189,4 @@ export async function POST(req: NextRequest) {
     contextSummary: contextString,
   });
 }
+

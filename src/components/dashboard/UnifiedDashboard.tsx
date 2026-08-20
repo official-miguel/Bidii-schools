@@ -1,4 +1,4 @@
-/**
+﻿/**
  * src/components/dashboard/UnifiedDashboard.tsx
  *
  * The blended single-homepage that merges ALL active roles for one user into
@@ -340,6 +340,13 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchSchoolOverview(schoolId: string, today: Date) {
+  const startOfDay = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  ));
+  const startOfNextDay = new Date(startOfDay.getTime() + 86_400_000);
+
   const [
     totalStudents, totalTeachers, totalClasses, totalDepts,
     unresolvedDiscipline, classesNoTeacher, classesNoTimetable,
@@ -352,7 +359,7 @@ async function fetchSchoolOverview(schoolId: string, today: Date) {
     prisma.disciplineRecord.count({ where: { schoolId, status: { in: ["OPEN", "UNDER_REVIEW", "ESCALATED"] } } }),
     prisma.schoolClass.count({ where: { schoolId, classTeacherId: null } }),
     prisma.schoolClass.count({ where: { schoolId, timetableSlots: { none: {} } } }),
-    prisma.attendance.count({ where: { schoolId, date: today, status: "ABSENT" } }),
+    prisma.attendance.count({ where: { schoolId, date: { gte: startOfDay, lt: startOfNextDay }, status: "ABSENT" } }),
     prisma.timetableSlot.groupBy({
       by: ["teacherId", "dayOfWeek", "period"],
       where: { schoolId },
@@ -364,9 +371,6 @@ async function fetchSchoolOverview(schoolId: string, today: Date) {
 }
 
 async function fetchHODData(schoolId: string, departmentId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = prisma as any;
-
   const [deptTeachers, deptSubjectsCount, deptClasses] = await Promise.all([
     prisma.teacher.count({ where: { schoolId, primaryDepartmentId: departmentId, archivedAt: null } }),
     prisma.subject.count({ where: { schoolId, departmentId } }),
@@ -385,16 +389,16 @@ async function fetchHODData(schoolId: string, departmentId: string) {
 
   try {
     // 1. Resolve current framework + current period
-    const currentFramework = await db.assessmentFramework.findFirst({
+    const currentFramework = await prisma.assessmentFramework.findFirst({
       where: { schoolId, isActive: true, type: "EIGHT_FOUR_FOUR" },
       select: { id: true },
-    }) as { id: string } | null;
+    });
 
     if (currentFramework) {
-      const currentPeriod = await db.assessmentPeriod.findFirst({
+      const currentPeriod = await prisma.assessmentPeriod.findFirst({
         where: { schoolId, frameworkId: currentFramework.id, isCurrent: true },
         select: { id: true },
-      }) as { id: string } | null;
+      });
 
       // 2. Dept subjects and their paper counts for this framework
       const deptSubjectList = await prisma.subject.findMany({
@@ -404,18 +408,18 @@ async function fetchHODData(schoolId: string, departmentId: string) {
       const deptSubjectIds = deptSubjectList.map((s) => s.id);
 
       if (deptSubjectIds.length > 0) {
-        const paperCounts = await db.paper.groupBy({
+        const paperCounts = (await prisma.paper.groupBy({
           by: ["subjectId"],
           where: { schoolId, frameworkId: currentFramework.id, subjectId: { in: deptSubjectIds } },
           _count: { id: true },
-        }) as Array<{ subjectId: string; _count: { id: number } }>;
+        })) as unknown as Array<{ subjectId: string; _count: { id: number } }>;
 
         const papersPerSubject = new Map(
           paperCounts.map((r) => [r.subjectId, r._count.id])
         );
 
         // 3. Class-subject assignments in this dept (scoped to this school)
-        const assignments = await db.classSubjectTeacher.findMany({
+        const assignments = await prisma.classSubjectTeacher.findMany({
           where: {
             subjectId: { in: deptSubjectIds },
             schoolClass: { schoolId },

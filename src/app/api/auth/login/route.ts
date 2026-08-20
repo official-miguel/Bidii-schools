@@ -25,6 +25,7 @@ import {
   verifyPassword,
   createSession,
   SESSION_COOKIE,
+  SESSION_TTL_MS,
   buildOfflineToken,
 } from "@/lib/auth";
 
@@ -245,7 +246,14 @@ export async function POST(req: NextRequest) {
   // ── Password verification ─────────────────────────────────────────────────
   if (!passwordAlreadyVerified) {
     if (!user.passwordHash) return invalid();
-    const valid = await verifyPassword(password, user.passwordHash).catch(() => false);
+    // Try the password as-is first. If that fails, also try without a leading
+    // "@" — first-login accounts have the school slug hashed as the password
+    // (e.g. "bidii"), but the UI hint and welcome email show "@bidii", so
+    // users naturally type the "@" variant. Trying both covers both cases.
+    const valid =
+      (await verifyPassword(password, user.passwordHash).catch(() => false)) ||
+      (password.startsWith("@") &&
+        (await verifyPassword(password.slice(1), user.passwordHash).catch(() => false)));
     if (!valid) return invalid();
   }
 
@@ -275,7 +283,7 @@ export async function POST(req: NextRequest) {
     secure:   process.env.NODE_ENV === "production",
     sameSite: "lax",
     path:     "/",
-    maxAge:   60 * 60 * 24 * 7,
+    maxAge:   Math.floor(SESSION_TTL_MS / 1000),
   });
 
   return res;

@@ -21,7 +21,7 @@ import { Avatar, Chip, Spinner } from "@/components/ui";
 import {
   Mail, Phone, BookOpen, Users, Building2,
   ShieldCheck, Shield, ExternalLink, CheckCircle2, XCircle,
-  Search, X as XIcon, ShieldPlus,
+  Search, X as XIcon, ShieldPlus, KeyRound, Loader2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -66,8 +66,9 @@ interface Props {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function roleBadge(staff: StaffDetail): { label: string; variant: "teal" | "info" | "default" } {
-  if (!staff.user) return { label: "No login", variant: "default" };
+function roleBadge(staff: StaffDetail): { label: string; variant: "teal" | "info" | "default" | "warn" } {
+  if (!staff.user) return { label: "No account", variant: "default" };
+  if (staff.user.mustChangePassword) return { label: "Never logged in", variant: "warn" };
   if (staff.user.role === "PRINCIPAL") return { label: "Principal", variant: "info" };
   if (staff.user.staffRole) return { label: staff.user.staffRole.name, variant: "info" };
   return { label: "Teacher", variant: "teal" };
@@ -93,6 +94,139 @@ function InfoRow({
         </p>
         <div className="text-sm text-ink">{value}</div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ProvisionLoginCard — shown when the teacher has no login account (imported)
+// ---------------------------------------------------------------------------
+
+function ProvisionLoginCard({
+  staff,
+  onMutate,
+}: {
+  staff: StaffDetail;
+  onMutate: () => void;
+}) {
+  const [email,   setEmail]   = useState(staff.email ?? "");
+  const [role,    setRole]    = useState<"TEACHER" | "ADMIN_STAFF">("TEACHER");
+  const [busy,    setBusy]    = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  async function handleCreate() {
+    setError(null);
+    const trimEmail = email.trim();
+    if (!trimEmail) { setError("Enter an email address for this account."); return; }
+
+    setBusy(true);
+    try {
+      const res  = await fetch(`/api/staff/${staff.id}/provision-login`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email: trimEmail, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Failed to create login."); return; }
+      setSuccess(true);
+      setTimeout(() => onMutate(), 1200);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-4">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 shrink-0">
+          <KeyRound className="h-4 w-4 text-amber-600" aria-hidden="true" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-amber-900">No login account</p>
+          <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+            This staff member was imported and has no login credentials yet.
+            Create an account so they can sign in.
+          </p>
+        </div>
+      </div>
+
+      {success ? (
+        <div className="flex items-center gap-2 rounded-lg bg-success-bg border border-success/20 px-3 py-2.5">
+          <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+          <p className="text-sm text-success font-medium">
+            Login created. Initial password is the school username.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Email */}
+          <div>
+            <label className="block text-xs font-medium text-amber-900 mb-1">
+              Email address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-amber-400 pointer-events-none" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                placeholder="staff@school.com"
+                className="w-full rounded-lg border border-amber-200 bg-white pl-9 pr-3 py-2 text-sm
+                           text-ink placeholder:text-slate/40
+                           focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-300/30
+                           transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Role selector */}
+          <div>
+            <label className="block text-xs font-medium text-amber-900 mb-1">
+              Login type
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as "TEACHER" | "ADMIN_STAFF")}
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm
+                         text-ink focus:outline-none focus:border-amber-400 focus:ring-2
+                         focus:ring-amber-300/30 transition-colors"
+            >
+              <option value="TEACHER">Teacher (teaching staff)</option>
+              <option value="ADMIN_STAFF">Admin staff (non-teaching)</option>
+            </select>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-danger-bg border border-danger/20 px-3 py-2">
+              <XCircle className="h-3.5 w-3.5 text-danger shrink-0" />
+              <p className="text-xs text-danger">{error}</p>
+            </div>
+          )}
+
+          {/* Action */}
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={busy}
+            className="w-full flex items-center justify-center gap-2 rounded-lg
+                       bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold
+                       py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed
+                       focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+          >
+            {busy
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Creating…</>
+              : <><KeyRound className="h-4 w-4" />Create login account</>
+            }
+          </button>
+
+          <p className="text-[11px] text-amber-600 text-center">
+            Initial password will be the school username. They&apos;ll be prompted to change it on first login.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -412,9 +546,6 @@ export default function StaffProfileDrawer({
                       {staff.user.isActive ? "Active" : "Inactive"}
                     </Chip>
                   )}
-                  {staff.user?.mustChangePassword && (
-                    <Chip variant="warn" size="xs">Awaiting first login</Chip>
-                  )}
                 </div>
               </div>
             </div>
@@ -510,6 +641,11 @@ export default function StaffProfileDrawer({
             </div>
           </div>
 
+          {/* ── Provision login (imported staff with no account) ── */}
+          {!staff.user && (
+            <ProvisionLoginCard staff={staff} onMutate={fetchStaff} />
+          )}
+
           {/* ── Login status ── */}
           {staff.user && (
             <div className="bg-white border border-line rounded-xl p-5">
@@ -566,7 +702,6 @@ export default function StaffProfileDrawer({
           {staff.user && (
             <RoleAssignmentCard staff={staff} onMutate={fetchStaff} />
           )}
-
           {/* ── Quick links ── */}
           <div className="bg-white border border-line rounded-xl p-5">
             <h3 className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">

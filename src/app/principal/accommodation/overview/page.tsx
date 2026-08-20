@@ -100,7 +100,7 @@ export default function AccommodationOverviewPage() {
     if (!quiet) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch("/api/accommodation/summary");
+      const res = await fetch("/api/accommodation/summary", { cache: "no-store" });
       if (res.ok) setSummary(await res.json());
     } finally {
       setLoading(false);

@@ -15,7 +15,8 @@
 import { useState, useEffect, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Mail, Lock, School, Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Mail, Lock, School, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 
 const inputCls =
   "w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-3 text-sm text-ink " +
@@ -96,10 +97,12 @@ function LoginForm() {
       // Persist identifier for next visit
       try { sessionStorage.setItem("bidii_login_id", trimId); } catch { /* ignore */ }
 
-      // Redirect based on role
+      // Hard-navigate so the session cookie is guaranteed to be sent with
+      // the very next request. router.push() + router.refresh() together
+      // create a race where the refresh cancels the push, leaving the user
+      // stuck on the login page with the spinner running forever.
       const dest = nextPath || rolePath(data.role);
-      router.push(dest);
-      router.refresh();
+      window.location.href = dest;
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
       setLoading(false);
@@ -253,7 +256,19 @@ function LoginForm() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate dark:text-white/40 mt-6">
+        {/* Staff portal shortcut */}
+        <div className="mt-5 text-center">
+          <Link
+            href="/staff-login"
+            className="inline-flex items-center gap-1.5 text-xs text-slate dark:text-white/40
+                       hover:text-teal dark:hover:text-teal transition-colors group"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+            Sign in to the Staff Portal
+          </Link>
+        </div>
+
+        <p className="text-center text-sm text-slate dark:text-white/40 mt-4">
           Need help signing in? Contact your school administrator.
         </p>
       </div>

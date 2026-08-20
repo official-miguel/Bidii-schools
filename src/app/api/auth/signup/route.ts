@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createSession, SESSION_COOKIE } from "@/lib/auth";
+import { createSession, SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/auth";
 
 function slugify(name: string) {
   return (
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         secure:   process.env.NODE_ENV === "production",
         sameSite: "lax",
         path:     "/",
-        maxAge:   60 * 60 * 24 * 7,
+        maxAge:   Math.floor(SESSION_TTL_MS / 1000),
       });
       return res;
     }

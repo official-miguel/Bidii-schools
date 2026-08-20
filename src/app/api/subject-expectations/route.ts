@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
@@ -38,3 +38,4 @@ export async function PUT(req: NextRequest) {
   });
   return NextResponse.json(expectation);
 }
+

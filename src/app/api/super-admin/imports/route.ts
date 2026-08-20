@@ -34,9 +34,20 @@ export async function GET(req: NextRequest) {
 }
 
 const CreateSchema = z.object({
-  schoolId: z.string(),
-  type:     z.enum(["STUDENTS","STAFF","BOTH","CUSTOM"]),
-  fileName: z.string(),
+  schoolId:  z.string(),
+  type:      z.enum([
+    // Section 1 — School Setup
+    "DEPARTMENTS","CLASSES","SUBJECTS",
+    // Section 2 — Staff
+    "STAFF",
+    // Section 3 — Students
+    "STUDENTS","STUDENT_DORM",
+    // Section 4 — Parents
+    "PARENTS",
+    // Legacy / combined
+    "BOTH","CUSTOM","DORM_SETUP","DORMITORIES","BEDS","ALLOCATIONS",
+  ]),
+  fileName:  z.string(),
   totalRows: z.number().int().min(0),
 });
 

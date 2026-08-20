@@ -1,38 +1,36 @@
-/**
- * GET /api/auth/health
- *
- * Health check endpoint to verify:
- * - Database connectivity
- * - Super admin user exists
- * - Session creation works
- * - Password verification works
- *
- * Returns detailed diagnostics (remove in production or secure this endpoint)
- */
-
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword } from "@/lib/auth";
+import { getCurrentUser, hashPassword, verifyPassword } from "@/lib/auth";
 
 export async function GET() {
-  const diagnostics: Record<string, unknown> = {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
+  const diagnostics: {
+    timestamp: string;
+    checks: Record<string, unknown>;
+    overallStatus?: string;
+  } = {
     timestamp: new Date().toISOString(),
     checks: {},
   };
 
   try {
-    // 1. Check database connection
     try {
       await prisma.$queryRaw`SELECT 1 as test`;
       diagnostics.checks = { ...diagnostics.checks, database: "✅ Connected" };
     } catch (dbErr) {
-      diagnostics.checks = { 
-        ...diagnostics.checks, 
-        database: `❌ Failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`
+      diagnostics.checks = {
+        ...diagnostics.checks,
+        database: `❌ Failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`,
       };
     }
 
-    // 2. Check super admin user exists
     try {
       const superAdmin = await prisma.$queryRaw<Array<{
         id: string;
@@ -53,22 +51,19 @@ export async function GET() {
       `;
 
       if (superAdmin.length > 0) {
-        const user = superAdmin[0];
+        const sa = superAdmin[0];
         diagnostics.checks = {
           ...diagnostics.checks,
           superAdmin: {
             status: "✅ Found",
-            id: user.id,
-            email: user.email,
-            isActive: user.isActive,
-            hasPassword: user.hasPassword,
+            id: sa.id,
+            email: sa.email,
+            isActive: sa.isActive,
+            hasPassword: sa.hasPassword,
           },
         };
       } else {
-        diagnostics.checks = {
-          ...diagnostics.checks,
-          superAdmin: "❌ Not found",
-        };
+        diagnostics.checks = { ...diagnostics.checks, superAdmin: "❌ Not found" };
       }
     } catch (userErr) {
       diagnostics.checks = {
@@ -77,7 +72,6 @@ export async function GET() {
       };
     }
 
-    // 3. Check session table exists
     try {
       const sessionCount = await prisma.session.count();
       diagnostics.checks = {
@@ -91,9 +85,8 @@ export async function GET() {
       };
     }
 
-    // 4. Check bcrypt works
     try {
-      const testHash = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIp3RvZHuy"; // "password"
+      const testHash = await hashPassword("password");
       const testResult = await verifyPassword("password", testHash);
       diagnostics.checks = {
         ...diagnostics.checks,
@@ -106,7 +99,6 @@ export async function GET() {
       };
     }
 
-    // 5. Check environment variables
     diagnostics.checks = {
       ...diagnostics.checks,
       environment: {
@@ -117,18 +109,15 @@ export async function GET() {
       },
     };
 
-    // Overall status
-    const allPassed = Object.values(diagnostics.checks as Record<string, unknown>).every(
-      (check) => {
-        if (typeof check === "string") return check.includes("✅");
-        if (typeof check === "object" && check !== null) {
-          return Object.values(check).every((v) => 
-            typeof v === "string" ? v.includes("✅") || v.includes("⚠️") : true
-          );
-        }
-        return true;
+    const allPassed = Object.values(diagnostics.checks).every((check) => {
+      if (typeof check === "string") return check.includes("✅");
+      if (typeof check === "object" && check !== null) {
+        return Object.values(check as Record<string, unknown>).every((v) =>
+          typeof v === "string" ? v.includes("✅") || v.includes("⚠️") : true
+        );
       }
-    );
+      return true;
+    });
 
     diagnostics.overallStatus = allPassed ? "✅ All checks passed" : "⚠️ Some checks failed";
 

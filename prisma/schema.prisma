@@ -126,6 +126,21 @@ model School {
   systemErrors             SystemError[]
   storageUsages            StorageUsage[]
   importJobs               ImportJob[]
+  /// Fees & Ledger module
+  financeSettings          FinanceSettings?
+  feeStructures            FeeStructure[]
+  expenseCategories        ExpenseCategory[]
+  expenseItems             ExpenseItem[]
+  terms                    Term[]
+  studentFinanceAccounts   StudentFinanceAccount[]
+  ledgerEntries            LedgerEntry[]
+  invoices                 Invoice[]
+  payments                 Payment[]
+  expenseAttachments       StudentExpenseAttachment[]
+  mpesaQueue               MpesaReconciliationQueue[]
+  debtorFlags              DebtorFlag[]
+  financeNotifications     FinanceNotification[]
+  financeImportJobs        FinanceImportJob[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -188,6 +203,15 @@ model User {
   accommodationAllocations  AllocationRecord[]   @relation("AccommodationAllocatedBy")
   dormInspectionsPerformed  DormInspection[]
   accommodationEvents       AccommodationEvent[]
+  /// Fees & Ledger back-relations
+  feeStructuresCreated      FeeStructure[]
+  termsCreated              Term[]
+  ledgerEntriesPosted       LedgerEntry[]
+  invoicesGenerated         Invoice[]
+  paymentsPosted            Payment[]
+  expenseAttachmentsAdded   StudentExpenseAttachment[] @relation("ExpenseAttachedBy")
+  expenseAttachmentsRemoved StudentExpenseAttachment[] @relation("ExpenseDetachedBy")
+  financeImportJobsCreated  FinanceImportJob[]
 
   /// Email uniqueness is scoped to one school — same email OK at different schools
   @@unique([schoolId, email])
@@ -558,6 +582,14 @@ model Student {
   accommodationAllocations AllocationRecord[]
   dormCaptainOf            Dormitory[]          @relation("DormCaptain")
   accommodationEvents      AccommodationEvent[]
+  /// Fees & Ledger back-relations
+  financeAccount           StudentFinanceAccount?
+  ledgerEntries            LedgerEntry[]
+  invoices                 Invoice[]
+  payments                 Payment[]
+  expenseAttachments       StudentExpenseAttachment[]
+  debtorFlags              DebtorFlag[]
+  financeNotifications     FinanceNotification[]
 
   @@unique([schoolId, admissionNumber])
   @@index([classId])
@@ -568,6 +600,7 @@ model Student {
   @@index([schoolId, admissionNumber])
   /// History module queries
   @@index([schoolId, archivedAt])
+  @@index([schoolId, classId, archivedAt])
 }
 
 /// Section 4B — elective subject selections, distinct from core subjects
@@ -1054,6 +1087,8 @@ model Attendance {
   @@index([classId, date])
   /// Supports student attendance-history query: WHERE studentId=? ORDER BY date DESC.
   @@index([studentId, date])
+  @@index([schoolId, date, status])
+  @@index([schoolId, classId, date])
 }
 
 /// Records Module — one discipline case per row. Notes, events, and files
@@ -1086,6 +1121,7 @@ model DisciplineRecord {
   @@index([studentId, dateOfOffence])
   /// Supports student-scoped discipline record listing.
   @@index([schoolId, studentId])
+  @@index([schoolId, status])
 }
 
 /// A dated note added to a discipline case by staff.
@@ -1414,6 +1450,8 @@ model LibraryBorrow {
   @@index([schoolId])
   @@index([cardId])
   @@index([bookId])
+  @@index([schoolId, returnedAt])
+  @@index([schoolId, returnedAt, dueAt])
 }
 
 // =============================================================================
@@ -1789,6 +1827,7 @@ enum Role {
   WATCHMAN
   MARKER
   ADMIN_STAFF
+  BURSAR
   SUPER_ADMIN
 }
 
@@ -1858,10 +1897,24 @@ enum ImportStatus {
 
 /// Type of data being imported.
 enum ImportType {
-  STUDENTS
-  STAFF
+  // ── Section 1: School Setup ──────────────────────────────────────────────
+  DEPARTMENTS       /// Academic departments
+  CLASSES           /// Classes with framework (8-4-4 / CBC / CBE)
+  SUBJECTS          /// Subject catalogue linked to departments
+  // ── Section 2: Staff ────────────────────────────────────────────────────
+  STAFF             /// Staff details + subjects they teach
+  // ── Section 3: Students ─────────────────────────────────────────────────
+  STUDENTS          /// Student details + class + elective subjects
+  STUDENT_DORM      /// Assign students to dormitories / sleeping positions
+  // ── Section 4: Parents ──────────────────────────────────────────────────
+  PARENTS           /// Parent / guardian details linked to students
+  // ── Legacy / compatibility ───────────────────────────────────────────────
   BOTH
   CUSTOM
+  DORM_SETUP    /// Dormitories + cubicles + beds in one file
+  DORMITORIES   /// legacy
+  BEDS          /// legacy
+  ALLOCATIONS   /// legacy
 }
 
 /// Live service health status.
@@ -2092,6 +2145,8 @@ enum Module {
   /// always have this. Granting it to a staff role lets any admin-staff member
   /// take or review attendance across all classes.
   ATTENDANCE
+  /// Finance/Fees module — full access for Bursar; read-only analytics for Principal
+  FEES
 }
 
 /// Every third-party service a school can bring its own credentials for.
@@ -2105,6 +2160,7 @@ enum IntegrationProvider {
   SMS
   WHATSAPP
   EMAIL
+  MPESA_DARAJA
 }
 
 /// Section: School Calendar. HOLIDAY here is a school-declared holiday
@@ -2620,6 +2676,7 @@ model AssessmentItem {
   @@index([periodId, studentId, resultKind])
   /// Supports department analytics: subjectId IN [...] AND periodId filter.
   @@index([subjectId, periodId])
+  @@index([schoolId, periodId, subjectId])
 }
 
 // ---------------------------------------------------------------------------
@@ -3337,4 +3394,452 @@ model AllocationRecord {
   @@index([schoolId, status])
   /// Fast lookup of held allocations for a dorm (used on reactivation).
   @@index([dormId, status])
+}
+
+// =============================================================================
+// Fees / Finance Ledger enums  (tasks 1.1 + 1.2 — fees-ledger spec)
+// =============================================================================
+
+/// The nature of a double-entry ledger line.
+/// INVOICE creates a debit (student owes money).
+/// PAYMENT / CREDIT_ADJUSTMENT reduce the balance.
+/// DEBIT_ADJUSTMENT increases the balance (e.g. penalty).
+/// OPENING_BALANCE is a one-time seed entry when migrating existing balances.
+enum LedgerEntryType {
+  INVOICE
+  PAYMENT
+  CREDIT_ADJUSTMENT
+  DEBIT_ADJUSTMENT
+  OPENING_BALANCE
+}
+
+/// How a payment was tendered.
+enum PaymentMethod {
+  MPESA
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+}
+
+/// Whether an M-Pesa STK-push / C2B callback has been matched to a ledger entry.
+enum ReconciliationStatus {
+  AUTO_MATCHED
+  MANUAL_RECONCILED
+  PENDING
+}
+
+/// Processing state of an M-Pesa callback held in the queue table
+/// (used while the STK-push result is awaited or being re-tried).
+enum MpesaQueueStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+/// Types of fee-related notification events stored in the audit / notification log.
+enum NotificationType {
+  SETUP_REQUIRED
+  REMINDER_SENT
+  PAYMENT_RECEIVED
+  INVOICE_GENERATED
+  RECONCILIATION_NEEDED
+}
+
+/// Sub-type for finance bulk-import jobs (mirrors the existing ImportType enum
+/// but scoped to the finance module to avoid polluting the shared enum).
+enum FinanceImportType {
+  PLAIN_LEDGER
+  OPENING_BALANCE
+}
+
+/// Processing status for a finance bulk-import job.
+enum FinanceImportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// =============================================================================
+// Fees & Ledger Module — Finance Models (tasks 1.3 — fees-ledger spec)
+//
+// Architecture: immutable, append-only LedgerEntry table backed by a
+// materialised balance cache in StudentFinanceAccount. Every monetary event
+// writes a LedgerEntry and updates the account atomically in the same
+// transaction. Corrections are never edits — they are new offsetting rows.
+//
+// Dependency order: FinanceSettings → FeeStructure → ExpenseCategory →
+// ExpenseItem → Term → StudentFinanceAccount → LedgerEntry → Invoice →
+// Payment → StudentExpenseAttachment → MpesaReconciliationQueue →
+// DebtorFlag → FinanceNotification → FinanceImportJob
+// =============================================================================
+
+/// School-level finance configuration — one row per school.
+/// Created when the Bursar first accesses Finance Settings.
+/// mpesaWebhookSecret is always stored AES-256-GCM encrypted via crypto.ts;
+/// never the plaintext value.
+model FinanceSettings {
+  schoolId             String  @id
+  /// Minimum balance (positive value) below which a student is considered in debt.
+  /// e.g. 500 means the student is flagged when balance < -500.
+  balanceThreshold     Decimal @default(0)
+  /// Days overdue before the daily cron escalates a debtor flag.
+  daysOverdueThreshold Int     @default(30)
+  /// Prefix prepended to all receipt numbers, e.g. "REC-".
+  receiptPrefix        String  @default("REC-")
+  /// Prefix prepended to all invoice numbers, e.g. "INV-".
+  invoicePrefix        String  @default("INV-")
+  /// School's M-Pesa paybill or till number (informational).
+  mpesaPaybillNumber   String?
+  /// AES-256-GCM encrypted webhook secret from Daraja — never stored in plaintext.
+  /// Null until the Bursar configures M-Pesa integration.
+  mpesaWebhookSecret   String?
+  /// Stable UUID path component that forms the C2B callback URL.
+  /// Unique so no two schools share the same webhook endpoint.
+  mpesaWebhookUrl      String? @unique
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+/// A fee tier that determines how much a student in a given form/stream/
+/// boarding category owes per term. No delete — soft-retire by creating a
+/// replacement row. The invoicing engine selects the most-specific match
+/// (form + stream + boardingStatus wins over form only).
+model FeeStructure {
+  id             String   @id @default(cuid())
+  schoolId       String
+  /// Form number 1–4.
+  form           Int
+  /// Stream name, e.g. "North". Null = applies to all streams in this form.
+  stream         String?
+  /// "DAY" | "BOARDING" | null = applies to both boarding types.
+  boardingStatus String?
+  /// Base fee per term for students matching this structure.
+  amountPerTerm  Decimal
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  school     School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy  User   @relation(fields: [createdById], references: [id])
+
+  @@index([schoolId, form])
+}
+
+/// A named grouping of expense items, e.g. "Stationery", "Sports".
+/// Used to organise the expense catalogue in the UI.
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  schoolId    String
+  name        String
+  description String?
+  /// Optional icon identifier (e.g. a Lucide icon name) for UI display.
+  icon        String?
+  createdAt   DateTime @default(now())
+
+  school School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  items  ExpenseItem[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
+/// A chargeable expense item within a category, e.g. "Lab fees" at KES 500.
+/// Items are attached to individual students; the attachment drives invoice
+/// line-items on top of the base fee structure amount.
+model ExpenseItem {
+  id           String   @id @default(cuid())
+  schoolId     String
+  categoryId   String
+  name         String
+  description  String?
+  /// Current price in school currency. Updated via PUT — history is implicit
+  /// in already-generated invoice lineItems JSON.
+  currentPrice Decimal
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  school      School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attachments StudentExpenseAttachment[]
+
+  @@index([schoolId])
+  @@index([categoryId])
+}
+
+/// An academic term — the unit of invoicing. One term can span one or more
+/// calendar months. Only one term per school should have isActive = true at a time.
+model Term {
+  id                   String    @id @default(cuid())
+  schoolId             String
+  name                 String
+  academicYear         Int
+  startDate            DateTime
+  endDate              DateTime
+  isActive             Boolean   @default(true)
+  /// Set once runBatchInvoicing completes for this term.
+  invoicingCompletedAt DateTime?
+  createdById          String
+  createdAt            DateTime  @default(now())
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  ledgerEntries LedgerEntry[]
+  invoices      Invoice[]
+  payments      Payment[]
+
+  @@index([schoolId, academicYear])
+  @@index([schoolId, isActive])
+}
+
+/// Materialised per-student finance summary — one row per (school, student).
+/// Updated atomically in the same transaction as every LedgerEntry write.
+/// If the cache ever diverges, balance.ts:computeBalance() rebuilds it from
+/// the ledger without data loss.
+model StudentFinanceAccount {
+  id                      String    @id @default(cuid())
+  schoolId                String
+  studentId               String    @unique
+  /// Running balance: positive = credit (school owes student), negative = student owes school.
+  currentBalance          Decimal   @default(0)
+  totalInvoiced           Decimal   @default(0)
+  totalPaid               Decimal   @default(0)
+  lastActivityAt          DateTime  @default(now())
+  /// Null until the Bursar explicitly completes finance setup for this student.
+  financeSetupCompletedAt DateTime?
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, studentId])
+  @@index([schoolId, currentBalance])
+}
+
+/// Immutable financial event log — the single source of truth for all money
+/// movements. Never updated or deleted. Corrections are new offsetting rows.
+///
+/// Balance delta rules (applied by postLedgerEntry):
+///   PAYMENT, CREDIT_ADJUSTMENT  → +amount  (reduces what student owes)
+///   INVOICE, DEBIT_ADJUSTMENT, OPENING_BALANCE → -amount  (increases what student owes)
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  schoolId    String
+  studentId   String
+  termId      String?
+  entryType   LedgerEntryType
+  /// Always stored as a positive number; sign is implied by entryType.
+  amount      Decimal
+  description String
+  referenceId   String?
+  referenceType String?
+  postedById  String
+  postedAt    DateTime       @default(now())
+  /// Unique M-Pesa transaction ID — prevents duplicate C2B callbacks creating
+  /// duplicate ledger entries (idempotency key).
+  mpesaTransactionId String?        @unique
+  paymentMethod      PaymentMethod?
+  /// True only when a correcting entry has been posted. Set via admin action;
+  /// never deleted. Voided entries are excluded from balance computation.
+  isVoided    Boolean        @default(false)
+
+  school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term     Term?   @relation(fields: [termId], references: [id], onDelete: SetNull)
+  postedBy User    @relation(fields: [postedById], references: [id])
+
+  @@index([schoolId, studentId, postedAt])
+  @@index([schoolId, postedAt])
+  @@index([mpesaTransactionId])
+  @@index([schoolId, entryType])
+}
+
+/// One invoice per student per term — generated by runBatchInvoicing or
+/// individually. The unique constraint makes invoicing idempotent: running
+/// the batch job twice for the same term produces no duplicate invoices.
+model Invoice {
+  id            String   @id @default(cuid())
+  schoolId      String
+  studentId     String
+  termId        String
+  totalAmount   Decimal
+  /// JSON array of line items: [{ description, amount, type }]
+  lineItems     Json
+  invoiceNumber String
+  isProrated    Boolean  @default(false)
+  /// Number of days remaining in the term when the student was enrolled
+  /// (set when isProrated = true).
+  proratedDays  Int?
+  generatedById String
+  generatedAt   DateTime @default(now())
+
+  school       School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term         Term    @relation(fields: [termId], references: [id])
+  generatedBy  User    @relation(fields: [generatedById], references: [id])
+
+  /// Prevents duplicate invoices for the same student in the same term.
+  @@unique([schoolId, studentId, termId])
+  @@index([schoolId, termId])
+  @@index([schoolId, invoiceNumber])
+}
+
+/// A recorded payment — cash, bank transfer, cheque, or M-Pesa.
+/// M-Pesa payments may arrive via the C2B webhook (auto-matched) or be
+/// posted manually by the Bursar. receiptNumber is unique per school and
+/// generated via nextReceiptNumber() using a pg_advisory_xact_lock.
+model Payment {
+  id                   String               @id @default(cuid())
+  schoolId             String
+  studentId            String
+  termId               String?
+  amount               Decimal
+  method               PaymentMethod
+  /// Unique M-Pesa transaction ID — prevents duplicate webhook callbacks
+  /// creating duplicate payment rows.
+  mpesaTransactionId   String?              @unique
+  /// Raw Safaricom C2B callback JSON, stored for audit and re-processing.
+  mpesaRawPayload      Json?
+  reference            String?
+  receiptNumber        String
+  paidAt               DateTime             @default(now())
+  postedById           String
+  reconciliationStatus ReconciliationStatus @default(PENDING)
+
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term     Term?  @relation(fields: [termId], references: [id], onDelete: SetNull)
+  postedBy User   @relation(fields: [postedById], references: [id])
+
+  /// Receipt numbers are unique within a school.
+  @@unique([schoolId, receiptNumber])
+  @@index([schoolId, studentId, paidAt])
+  @@index([schoolId, reconciliationStatus])
+}
+
+/// Links an individual student to an expense item so it appears as a
+/// line item on their next invoice. detachedAt / detachedById support
+/// soft-removal without deleting history.
+model StudentExpenseAttachment {
+  id            String    @id @default(cuid())
+  studentId     String
+  expenseItemId String
+  schoolId      String
+  attachedAt    DateTime  @default(now())
+  attachedById  String
+  detachedAt    DateTime?
+  detachedById  String?
+
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  expenseItem ExpenseItem @relation(fields: [expenseItemId], references: [id])
+  /// Named relations required because User is referenced twice (attach + detach).
+  attachedBy  User        @relation("ExpenseAttachedBy", fields: [attachedById], references: [id])
+  detachedBy  User?       @relation("ExpenseDetachedBy", fields: [detachedById], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, studentId])
+  @@index([schoolId, expenseItemId])
+  @@index([studentId, detachedAt])
+}
+
+/// Holds incoming M-Pesa C2B callbacks whose rawAccountNumber could not be
+/// automatically matched to an admission number with high enough confidence.
+/// The Bursar resolves each entry in the reconciliation UI.
+model MpesaReconciliationQueue {
+  id                  String           @id @default(cuid())
+  schoolId            String
+  /// Safaricom transaction ID — unique to prevent duplicate callbacks.
+  mpesaTransactionId  String           @unique
+  /// Raw account reference from the callback (may be mistyped / partial).
+  rawAccountNumber    String
+  amount              Decimal
+  paidAt              DateTime
+  /// Full Safaricom C2B callback JSON, preserved for audit.
+  rawPayload          Json
+  /// Best-match student found by Levenshtein fuzzy matching (may be null).
+  suggestedStudentId  String?
+  /// Normalised confidence score 0–1 from the fuzzy match.
+  suggestedConfidence Float?
+  status              MpesaQueueStatus @default(PENDING)
+  resolvedById        String?
+  resolvedAt          DateTime?
+  /// Student the Bursar confirmed as the actual payer.
+  resolvedStudentId   String?
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, status])
+  @@index([schoolId, paidAt])
+}
+
+/// Tracks students whose balance falls below the school's configured
+/// threshold. Created/cleared atomically in every postLedgerEntry call and
+/// by the daily cron job. Only one row with isCurrent = true may exist per
+/// student at a time.
+model DebtorFlag {
+  id                String    @id @default(cuid())
+  schoolId          String
+  studentId         String
+  flaggedAt         DateTime  @default(now())
+  /// Balance snapshot at the time the flag was raised.
+  balanceAtFlag     Decimal
+  /// Days since the oldest unpaid INVOICE entry at flag time.
+  daysOverdueAtFlag Int       @default(0)
+  /// True while the student is still in debt. Set to false when balance recovers.
+  isCurrent         Boolean   @default(true)
+  /// Set when the flag is cleared (balance recovered above threshold).
+  unflaggedAt       DateTime?
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, isCurrent])
+  @@index([schoolId, studentId])
+}
+
+/// In-app notification events for the Bursar's notification feed.
+/// Created automatically by the system on invoice generation, payment receipt,
+/// reconciliation needs, and new student setup requirements.
+model FinanceNotification {
+  id        String           @id @default(cuid())
+  schoolId  String
+  /// Null for school-wide notifications (e.g. reconciliation alerts).
+  studentId String?
+  type      NotificationType
+  message   String
+  /// Optional structured payload for rich notification rendering.
+  metadata  Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  school  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, isRead, createdAt])
+  @@index([schoolId, type])
+}
+
+/// Tracks a bulk finance import operation (opening balances or plain ledger
+/// entries from CSV/XLSX). Files under 500 rows are processed synchronously;
+/// larger files are queued and the client polls for status.
+model FinanceImportJob {
+  id            String              @id @default(cuid())
+  schoolId      String
+  importType    FinanceImportType
+  fileName      String
+  /// Resolved column → canonical field mapping saved for audit / re-use.
+  columnMapping Json?
+  status        FinanceImportStatus @default(QUEUED)
+  totalRows     Int                 @default(0)
+  succeeded     Int                 @default(0)
+  failed        Int                 @default(0)
+  /// Array of per-row error objects: [{ row, values, reason }].
+  errorReport   Json?
+  createdById   String
+  createdAt     DateTime            @default(now())
+
+  school     School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy  User   @relation(fields: [createdById], references: [id])
+
+  @@index([schoolId, status])
+  @@index([schoolId, createdAt])
 }

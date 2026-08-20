@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+﻿import { NextResponse } from "next/server";
+import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 async function maxStaffId(schoolId: string): Promise<number | null> {
@@ -23,7 +23,7 @@ async function smallestRecycledId(schoolId: string): Promise<string | null> {
 /// Returns the next staff ID to allocate.
 /// Priority:
 ///   1. The smallest numeric ID in the RecycledStaffId pool (freed by a
-///      departing staff member) — promotes compact reuse.
+///      departing staff member) â€” promotes compact reuse.
 ///   2. max(existing numeric staffId) + 1 (sequential increment).
 ///   3. null when no numeric IDs exist yet (caller shows starting-number input).
 export async function GET() {
@@ -40,3 +40,4 @@ export async function GET() {
   const next = current !== null ? String(current + 1) : null;
   return NextResponse.json({ nextStaffId: next, isRecycled: false });
 }
+

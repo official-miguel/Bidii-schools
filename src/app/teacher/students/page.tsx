@@ -13,6 +13,7 @@ import { useVirtualizer }   from "@tanstack/react-virtual";
 import { SkeletonTable }    from "@/components/ui/ProgressivePage";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import { ExternalLink, Pencil } from "lucide-react";
+import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 
 // ---------------------------------------------------------------------------
 // Debounce hook
@@ -133,12 +134,12 @@ export default function TeacherStudentsPage() {
     let cancelled = false;
     setPageLoading(true);
     Promise.all([
-      fetch("/api/students"),
+      fetchAllStudents(),
       fetch("/api/classes"),
       fetch("/api/teacher/me"),
     ])
-      .then(([stuRes, clsRes, meRes]) => Promise.all([
-        stuRes.ok ? stuRes.json() : [],
+      .then(([stuData, clsRes, meRes]) => Promise.all([
+        stuData,
         clsRes.ok ? clsRes.json() : [],
         meRes.ok ? meRes.json() : null,
       ]))

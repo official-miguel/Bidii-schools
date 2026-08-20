@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /super-admin/health — System Health
@@ -22,11 +22,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Activity, CheckCircle2, AlertCircle, XCircle, Wrench,
-  RefreshCw, Plus, Clock, ChevronDown,
+  CheckCircle2, AlertCircle, XCircle, Wrench,
+  RefreshCw, Plus, Clock,
 } from "lucide-react";
 import {
-  PageHeader, Spinner, ErrorBanner, Badge, Card,
+  PageHeader, Spinner, ErrorBanner, Card,
   primaryButtonClass, secondaryButtonClass, inputClass, labelClass,
 } from "@/components/ui";
 

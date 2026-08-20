@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
-import { ensureDefaultStaffRoles, ALL_MODULES, logPermissionAudit } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { ensureDefaultStaffRoles, logPermissionAudit } from "@/lib/permissions";
 
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
@@ -20,11 +20,20 @@ export async function GET() {
       userRoles: { select: { userId: true } },
     },
   });
-  return NextResponse.json(roles);
+
+  // Normalise: add a `totalUsers` field that combines the legacy staffRoleId
+  // FK count with the multi-role join table count.  Older client pages only
+  // read `_count.users`; newer ones can use `totalUsers` directly.
+  const normalised = roles.map((r) => ({
+    ...r,
+    totalUsers: r._count.users + r.userRoles.length,
+  }));
+
+  return NextResponse.json(normalised);
 }
 
 const permSchema = z.object({
-  module:      z.enum(ALL_MODULES as [string, ...string[]]),
+  module:      z.string().min(1),
   canView:     z.boolean().default(false),
   canCreate:   z.boolean().default(false),
   canEdit:     z.boolean().default(false),
@@ -63,7 +72,9 @@ export async function POST(req: NextRequest) {
           create: permissions
             .filter((p) => p.canView || p.canManage || p.canCreate || p.canEdit)
             .map((p) => ({
-              module: p.module as Module,
+              // Double-cast: Module enum in generated client may lag behind schema migrations.
+              // The DB enum is always authoritative; Prisma passes this string through as-is.
+              module: p.module as unknown as Module,
               canView: p.canView,
               canCreate: p.canCreate ?? false,
               canEdit: p.canEdit ?? false,
@@ -92,6 +103,8 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if ((e as { code?: string }).code === "P2002")
       return NextResponse.json({ error: "A role with that name already exists." }, { status: 409 });
+    console.error("[STAFF-ROLES POST]", e);
     return NextResponse.json({ error: "Couldn't create role." }, { status: 500 });
   }
 }
+

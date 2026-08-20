@@ -1,0 +1,9 @@
+dorm_name,cubicle_name,bed_label,bed_type,custom_occupancy
+Simba House,,Bed 1,SINGLE,
+Simba House,,Bed 2,SINGLE,
+Simba House,,Bunk A,DOUBLE_DECKER,
+Lioness House,,Bed 1,SINGLE,
+Lioness House,,Bunk A,DOUBLE_DECKER,
+Eagle Block,Room 1,Bed 1,SINGLE,
+Eagle Block,Room 1,Bunk A,DOUBLE_DECKER,
+Dove Block,Room 1,Bed 1,CUSTOM,3

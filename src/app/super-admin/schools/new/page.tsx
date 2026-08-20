@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /super-admin/schools/new — School Onboarding form
@@ -11,11 +11,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link          from "next/link";
-import { ChevronLeft, Building2, User, Shield, HardDrive, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Building2, User, Shield, CheckCircle2 } from "lucide-react";
 import {
-  PageHeader, Card, FormField, FormGrid, FormSection,
+  PageHeader, Card, FormField, FormGrid,
   inputClass, labelClass, primaryButtonClass, secondaryButtonClass,
-  ErrorBanner, Badge,
+  ErrorBanner,
 } from "@/components/ui";
 
 const PLAN_TIERS = ["FREE", "STARTER", "GROWTH", "PROFESSIONAL", "ENTERPRISE"] as const;
@@ -119,8 +119,8 @@ export default function SchoolOnboardingPage() {
       if (!res.ok) throw new Error(j.error?.message ?? j.error ?? "Failed to create school");
       setDone(true);
       setTimeout(() => router.push(`/super-admin/schools/${j.school.id}`), 1500);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(err instanceof Error ? err.message : "Failed to create school");
     } finally {
       setSaving(false);
     }

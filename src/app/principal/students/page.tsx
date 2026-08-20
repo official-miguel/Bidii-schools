@@ -25,6 +25,7 @@ import { Pencil, ExternalLink, UserPlus, UserMinus, Camera, X } from "lucide-rea
 import RemoveStudentDialog, { type RemoveStudentTarget } from "@/components/students/RemoveStudentDialog";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 import ClassWorkspaceDrawer from "@/components/entity-drawers/ClassWorkspaceDrawer";
+import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 
 // ---------------------------------------------------------------------------
 // Debounce hook
@@ -345,17 +346,16 @@ export default function StudentsPage() {
   const loadAll = useCallback(async () => {
     setPageLoading(true);
     try {
-      const [stuRes, clsRes, subjRes] = await Promise.all([
-        fetch("/api/students"),
-        fetch("/api/classes"),
-        fetch("/api/subjects"),
+      const [stuData, clsRes, subjRes] = await Promise.all([
+        fetchAllStudents(),
+        fetch("/api/classes",  { cache: "no-store" }),
+        fetch("/api/subjects", { cache: "no-store" }),
       ]);
-      const [stuData, clsData, subjData] = await Promise.all([
-        stuRes.ok ? stuRes.json() : [],
+      const [clsData, subjData] = await Promise.all([
         clsRes.ok ? clsRes.json() : [],
         subjRes.ok ? subjRes.json() : [],
       ]);
-      setRawStudents(stuData);
+      setRawStudents(stuData as Student[]);
       setRawClasses(clsData);
       setSubjects(subjData);
     } finally {

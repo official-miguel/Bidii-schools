@@ -67,9 +67,9 @@ export default function SubjectsPage() {
     setLoading(true);
     try {
       const [subjRes, deptRes, classRes] = await Promise.all([
-        fetch("/api/subjects"),
-        fetch("/api/departments"),
-        fetch("/api/classes"),
+        fetch("/api/subjects",    { cache: "no-store" }),
+        fetch("/api/departments", { cache: "no-store" }),
+        fetch("/api/classes",     { cache: "no-store" }),
       ]);
       const freshSubjects = await subjRes.json();
       setSubjects(freshSubjects);

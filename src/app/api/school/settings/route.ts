@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
@@ -39,7 +39,7 @@ export async function GET() {
   });
 }
 
-// Accept full URLs (https://…) OR relative paths (/uploads/…) OR empty string to clear.
+// Accept full URLs (https://â€¦) OR relative paths (/uploads/â€¦) OR empty string to clear.
 const urlOrRelative = z.string().trim().max(500).refine(
   (v) => v === "" || v.startsWith("/") || /^https?:\/\//.test(v),
   { message: "Must be a URL or a relative path starting with /" }
@@ -93,3 +93,4 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json(school);
 }
+

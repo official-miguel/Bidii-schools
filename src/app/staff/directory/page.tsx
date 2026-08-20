@@ -22,12 +22,13 @@ export default async function StaffDirectoryPage() {
     include: {
       primaryDepartment: { select: { name: true } },
       classTeacherOf:    { select: { name: true } },
-      user: { select: { role: true, isActive: true, staffRole: { select: { name: true } } } },
+      user: { select: { role: true, isActive: true, mustChangePassword: true, staffRole: { select: { name: true } } } },
     },
   });
 
   function roleLabel(t: (typeof teachers)[number]) {
-    if (!t.user) return "No login";
+    if (!t.user) return "No account";
+    if (t.user.mustChangePassword) return "Never logged in";
     if (t.user.staffRole) return t.user.staffRole.name;
     return t.user.role === "TEACHER" ? "Teacher" : t.user.role;
   }

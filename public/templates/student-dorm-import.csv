@@ -1,0 +1,6 @@
+admission_number,dorm_name,cubicle_name,bed_label,position,notes
+ADM001,Lioness House,,Bed 1,,
+ADM003,Dove Block,Room 1,Bed 1,,
+ADM005,Dove Block,Room 1,Bunk A,UPPER,Prefect allocation
+ADM002,Simba House,,Bed 1,,
+ADM004,Eagle Block,Room 2,Bunk A,LOWER,

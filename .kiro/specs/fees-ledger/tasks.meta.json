@@ -1,0 +1,972 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `BURSAR` to the `Role` enum (after `ADMIN_STAFF`) and `FEES` to the `Module` enum in `prisma/schema.prisma`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097025
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046119285
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046223532
+      }
+    ],
+    "1.2 Add all new finance enums to `prisma/schema.prisma`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097291
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046120176
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046224398
+      }
+    ],
+    "1.3 Add all 14 new finance models to `prisma/schema.prisma` in dependency order": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097398
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046230892
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047362345
+      }
+    ],
+    "1.4 Add back-relation arrays to existing `School` and `Student` models for every new finance model": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097500
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047371160
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047381064
+      }
+    ],
+    "1.5 Run `prisma generate` and `prisma migrate dev` to apply the schema changes": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097601
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047388669
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047453088
+      }
+    ],
+    "2.1 Update `requireSchoolRole` in `src/lib/apiAuth.ts` (or equivalent auth utility) to accept `BURSAR` wherever `ADMIN_STAFF` is accepted": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097704
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047460068
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049026866
+      }
+    ],
+    "2.2 Update `requireModuleAccess` (or equivalent) to short-circuit and grant full `FEES` access when `user.role === \"BURSAR\"`, mirroring the existing `PRINCIPAL` short-circuit": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097811
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047461519
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049028192
+      }
+    ],
+    "3.1 Create `src/lib/finance/ledger.ts` — `postLedgerEntry` function": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097897
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049036003
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049342375
+      }
+    ],
+    "3.3 Create `src/lib/finance/balance.ts` — `computeBalance` fallback function": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046097984
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049036669
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049343175
+      }
+    ],
+    "3.4 Create `src/lib/finance/proration.ts` — `computeProratedAmount` function": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046098090
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049037406
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049344082
+      }
+    ],
+    "3.6 Create `src/lib/finance/debtor.ts` — `recomputeDebtorFlag` and `runDailyDebtorJob`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046098160
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049390043
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049856412
+      }
+    ],
+    "4. Checkpoint — Verify shared library compiles and passes unit tests": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046098263
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049876338
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787050159878
+      }
+    ],
+    "5.1 Create `src/lib/finance/mpesa.ts` — `verifyHmac` and `matchAdmissionNumber`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046098343
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787050175530
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051193575
+      }
+    ],
+    "5.3 Create `src/lib/finance/receipts.ts` — `nextReceiptNumber`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046099519
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787050176394
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051194422
+      }
+    ],
+    "5.5 Create `src/lib/finance/invoicing.ts` — `runBatchInvoicing`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046099647
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787050177604
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051195278
+      }
+    ],
+    "6.1 Create `src/lib/finance/imports/columnMapper.ts` — header normalisation": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046099751
+      },
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787050178663
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051196586
+      }
+    ],
+    "6.2 Create `src/lib/finance/imports/processor.ts` — `processImportJob`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046099879
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051203780
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052029757
+      }
+    ],
+    "7.1 Create `POST /api/finance/settings` — upsert `FinanceSettings`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100080
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051204864
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052034385
+      }
+    ],
+    "7.2 Create `GET /api/finance/settings` — read settings with default fallback": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100257
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051205903
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052035399
+      }
+    ],
+    "8.1 Create `POST /api/finance/fee-structures` and `GET /api/finance/fee-structures`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100389
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051207303
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052036323
+      }
+    ],
+    "8.2 Create `POST /api/finance/expense-categories` and `GET /api/finance/expense-categories`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100481
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051208039
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052037003
+      }
+    ],
+    "8.3 Create `POST /api/finance/expense-items` and `GET /api/finance/expense-items`, plus `PATCH /api/finance/expense-items/[id]` for activation toggle": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100564
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052038344
+      }
+    ],
+    "8.4 Create `POST /api/finance/expense-attachments` — attach an expense item to a student": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100653
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052039455
+      }
+    ],
+    "9.1 Create `POST /api/finance/terms` and `GET /api/finance/terms`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100791
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052030505
+      }
+    ],
+    "9.2 Create `POST /api/finance/terms/[termId]/invoice` — trigger batch invoicing": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046100883
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052031313
+      }
+    ],
+    "10.1 Create `POST /api/finance/payments` — manual payment entry": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046101017
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052050003
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054566920
+      }
+    ],
+    "10.2 Create `GET /api/finance/payments/[paymentId]/receipt` — receipt payload": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046101828
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054567610
+      }
+    ],
+    "11.1 Create `POST /api/finance/mpesa/webhook/[webhookToken]` — C2B callback handler": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046102017
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052051347
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054568530
+      }
+    ],
+    "11.3 Create `POST /api/finance/reconciliation/[id]/resolve` — manual reconciliation": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046102478
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052032147
+      }
+    ],
+    "11.4 Create `GET /api/finance/reconciliation` — list pending queue entries": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103042
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052033465
+      }
+    ],
+    "12.1 Update `POST /api/students` to create `StudentFinanceAccount` and `FinanceNotification(SETUP_REQUIRED)` within the existing student creation transaction": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103135
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052053016
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054760901
+      }
+    ],
+    "12.2 Create `PATCH /api/finance/accounts/[studentId]/complete-setup`": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103408
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054569515
+      }
+    ],
+    "12.3 Create `GET /api/finance/students` — paginated student finance list": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103726
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054571316
+      }
+    ],
+    "13.1 Create `GET /api/finance/ledger` — paginated school-wide ledger": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103812
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052054138
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054749513
+      }
+    ],
+    "13.2 Create `GET /api/finance/students/[studentId]/ledger` — individual student ledger": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046103948
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054570453
+      }
+    ],
+    "14.1 Create `GET /api/finance/reports/summary` — collection summary": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104109
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052055166
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054750436
+      }
+    ],
+    "14.2 Create `GET /api/finance/reports/aging` — aging report": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104301
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054751247
+      }
+    ],
+    "14.3 Create `GET /api/finance/reports/payment-volume` — payment volume over time": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104497
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054752111
+      }
+    ],
+    "14.4 Create `GET /api/finance/reports/class-collection` — per-class collection rates": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104646
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054753082
+      }
+    ],
+    "15.1 Create `POST /api/finance/imports` — file upload and job creation": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104755
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054754257
+      }
+    ],
+    "15.2 Create `GET /api/finance/imports/[id]` — job status polling": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046104853
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054756005
+      }
+    ],
+    "15.3 Create `GET /api/finance/imports/template/[importType]` — downloadable CSV template": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105044
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054756309
+      }
+    ],
+    "16.1 Create `PATCH /api/finance/notifications/[id]/read` — mark notification as read": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105129
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054757359
+      }
+    ],
+    "16.2 Create `GET /api/finance/notifications` — list unread notifications": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105231
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054758217
+      }
+    ],
+    "16.3 Create `GET /api/finance/jobs/debtor-refresh` — cron-triggered debtor daily job": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105368
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054759779
+      }
+    ],
+    "17.1 Verify all finance API routes scope queries to `caller.schoolId` and do not accept `schoolId` from request body or query string": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105483
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054784934
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055373684
+      }
+    ],
+    "17.2 Add cron entry for `/api/finance/jobs/debtor-refresh` in `vercel.json` (daily schedule)": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105623
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054762598
+      }
+    ],
+    "18. Checkpoint — Verify all API routes, run full test suite": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105719
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055374403
+      }
+    ],
+    "19.1 Create `src/app/staff/finance/layout.tsx` — server component with auth guard": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105816
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055385173
+      }
+    ],
+    "19.2 Create `src/app/staff/finance/page.tsx` — Bursar dashboard": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046105932
+      }
+    ],
+    "19.3 Add finance navigation link to the existing staff layout navigation menu": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106015
+      }
+    ],
+    "20.1 Create `src/app/staff/finance/students/page.tsx` — student list with \"Finance Pending\" badge": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106095
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055386149
+      }
+    ],
+    "20.2 Create `src/app/staff/finance/students/[studentId]/page.tsx` — individual student ledger view": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106182
+      }
+    ],
+    "21.1 Create `src/app/staff/finance/reconciliation/page.tsx` — M-Pesa reconciliation queue": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106288
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055388510
+      }
+    ],
+    "22.1 Create `src/app/staff/finance/reports/page.tsx` — analytics and charts": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106392
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055387216
+      }
+    ],
+    "23.1 Create `src/app/principal/finance/page.tsx` — read-only Principal finance view": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106643
+      },
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055389358
+      }
+    ],
+    "23.2 Add finance navigation link to the existing principal layout navigation menu": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106766
+      }
+    ],
+    "24.1 Create `src/app/staff/finance/settings/page.tsx` — finance settings form": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046106909
+      }
+    ],
+    "25. Final checkpoint — End-to-end verification": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787046107040
+      }
+    ],
+    "1. Extend Prisma schema — RBAC enums and finance models": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787047453310
+      }
+    ],
+    "2. Extend auth guards to recognise the BURSAR role": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049028332
+      }
+    ],
+    "3. Implement the shared finance library — core ledger primitives": [
+      {
+        "executionId": "89d27bac-2169-40d5-96e4-0a218e6e18aa",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787049856627
+      }
+    ],
+    "5. Implement the shared finance library — M-Pesa, receipts, and invoicing": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787051195909
+      }
+    ],
+    "6. Implement CSV/Excel import library": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052029880
+      }
+    ],
+    "9. Implement Term Management and Batch Invoicing APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052031528
+      }
+    ],
+    "7. Implement Finance Settings API": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052035604
+      }
+    ],
+    "8. Implement Fee Structure, Expense Categories, and Expense Items APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787052039855
+      }
+    ],
+    "10. Implement Manual Payment Posting and Receipts APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054567713
+      }
+    ],
+    "11. Implement M-Pesa C2B Webhook and Reconciliation APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054568621
+      }
+    ],
+    "13. Implement Ledger View APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054749631
+      }
+    ],
+    "14. Implement Analytics and Reports APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054753174
+      }
+    ],
+    "15. Implement Finance Import API and CSV template": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054756453
+      }
+    ],
+    "16. Implement Notifications and Debtor Job APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054759889
+      }
+    ],
+    "12. Implement Student Finance Account and Setup APIs": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787054761013
+      }
+    ],
+    "17. Implement school-wide data scoping and add `vercel.json` cron entry": [
+      {
+        "executionId": "39cdba26-e932-4ad7-98a4-de684164bfc7",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787055373789
+      }
+    ],
+    "20. Build the student finance list page": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056318333
+      }
+    ],
+    "21. Build the reconciliation page": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056319315
+      }
+    ],
+    "19. Build the Bursar finance layout and dashboard page": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056327385
+      }
+    ],
+    "22. Build the reports page": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056328219
+      }
+    ],
+    "23. Build the Principal finance view": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056329004
+      }
+    ],
+    "24. Build Finance Settings UI page": [
+      {
+        "executionId": "c72fc0b4-8334-4fd6-9b03-b208575e04c9",
+        "chatSessionId": "sess_53933071-0198-46a1-be27-cf5f088d770d",
+        "timestamp": 1787056329799
+      }
+    ]
+  }
+}

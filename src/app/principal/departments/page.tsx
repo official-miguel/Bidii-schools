@@ -52,8 +52,8 @@ export default function DepartmentsPage() {
   const load = useCallback(async () => {
     try {
       const [deptRes, teacherRes] = await Promise.all([
-        fetch("/api/departments"),
-        fetch("/api/staff"),
+        fetch("/api/departments", { cache: "no-store" }),
+        fetch("/api/staff",       { cache: "no-store" }),
       ]);
       const freshDepts  = deptRes.ok   ? await deptRes.json()   : [];
       const teacherData = teacherRes.ok ? await teacherRes.json() : [];

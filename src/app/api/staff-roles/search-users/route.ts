@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 
 /**
  * GET /api/staff-roles/search-users?q=<query>&roleId=<staffRoleId>
@@ -76,3 +76,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ users: result });
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /super-admin/errors — Error Monitoring
@@ -10,15 +10,15 @@
  * URL param ?id= opens the drawer directly (linked from Overview)
  */
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useSearchParams }                           from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams }                  from "next/navigation";
 import {
-  Search, RefreshCw, X, ChevronDown, ChevronUp, ChevronsUpDown,
-  AlertTriangle, CheckCircle2, Clock, Eye,
+  RefreshCw, X, ChevronDown, ChevronUp, ChevronsUpDown,
+  CheckCircle2, Eye,
 } from "lucide-react";
 import {
   PageHeader, Spinner, ErrorBanner, Badge,
-  secondaryButtonClass, primaryButtonClass, dangerButtonClass,
+  secondaryButtonClass, primaryButtonClass,
 } from "@/components/ui";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ interface ErrorRow {
   occurrences: number;
   createdAt:   string;
   stackTrace?: string | null;
-  context?:    any;
+  context?:    Record<string, unknown>;
   notes?:      string | null;
   school:      { name: string } | null;
 }
@@ -295,7 +295,7 @@ export default function ErrorsPage() {
   const [sortDir, setSortDir]     = useState<"asc"|"desc">("desc");
 
   // Filters
-  const [fSchool,   setFSchool]   = useState("");
+  const [fSchool, _setFSchool]   = useState("");
   const [fSeverity, setFSeverity] = useState("");
   const [fStatus,   setFStatus]   = useState("");
   const [fModule,   setFModule]   = useState("");
@@ -344,8 +344,8 @@ export default function ErrorsPage() {
       av = a.occurrences; bv = b.occurrences;
     } else if (sortKey === "severity") {
       const order = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
-      av = (order as any)[a.severity] ?? 0;
-      bv = (order as any)[b.severity] ?? 0;
+      av = (order as Record<string, number>)[a.severity] ?? 0;
+      bv = (order as Record<string, number>)[b.severity] ?? 0;
     } else {
       av = new Date(a.createdAt).getTime();
       bv = new Date(b.createdAt).getTime();

@@ -1,0 +1,6 @@
+admission_number,parent_name,parent_contact,relationship
+ADM001,Jane Wambui,0712000001,Mother
+ADM002,Paul Otieno,0712000002,Father
+ADM003,Samuel Njeri,0712000003,Father
+ADM004,Rose Mwangi,0712000004,Mother
+ADM005,George Akinyi,0712000005,Guardian

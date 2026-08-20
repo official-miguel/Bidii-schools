@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { encryptSecret, previewSecret } from "@/lib/crypto";
@@ -9,7 +9,7 @@ import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
 // ---------------------------------------------------------------------------
 // GET /api/soma-ai/config
 // Returns the AI configuration (model, params, usage stats) for this school.
-// Key preview only — never the raw key.
+// Key preview only â€” never the raw key.
 // ---------------------------------------------------------------------------
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
@@ -151,3 +151,4 @@ export async function PATCH(req: NextRequest) {
     },
   });
 }
+

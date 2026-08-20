@@ -23,6 +23,7 @@ import {
   createSession,
   destroySession,
   SESSION_COOKIE,
+  SESSION_TTL_MS,
   getCurrentUser,
 } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -33,6 +34,15 @@ const schema = z.object({
     .min(8, "New password must be at least 8 characters.")
     .regex(/[A-Z]/, "Include at least one uppercase letter.")
     .regex(/[0-9]/, "Include at least one number."),
+  confirmPassword: z.string(),
+}).superRefine((data, ctx) => {
+  if (data.newPassword !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Passwords do not match.",
+      path: ["confirmPassword"],
+    });
+  }
 });
 
 export async function POST(req: NextRequest) {
@@ -94,7 +104,7 @@ export async function POST(req: NextRequest) {
     secure:   process.env.NODE_ENV === "production",
     sameSite: "lax",
     path:     "/",
-    maxAge:   60 * 60 * 24 * 7,
+    maxAge:   Math.floor(SESSION_TTL_MS / 1000),
   });
   return res;
 }

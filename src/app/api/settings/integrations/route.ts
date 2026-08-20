@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { listIntegrationStatuses, setSchoolIntegrationKey, PROVIDER_INFO } from "@/lib/integrations";
 
 const PROVIDERS = Object.keys(PROVIDER_INFO) as [string, ...string[]];
 
 // Managing API keys is Principal-only and deliberately not part of the RBAC
-// module system — a role that could "manage Settings" would be able to swap
+// module system â€” a role that could "manage Settings" would be able to swap
 // in its own Gemini/SMS/email credentials and intercept or run up billing
 // on the school's account. Keeping this one screen un-delegable avoids that
 // class of problem entirely rather than trying to permission it carefully.
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(statuses, { status: 201 });
   } catch (e) {
     const err = e as { message?: string };
-    // Most likely INTEGRATION_ENCRYPTION_KEY missing from server env — a
+    // Most likely INTEGRATION_ENCRYPTION_KEY missing from server env â€” a
     // deploy-config problem, not something the Principal can fix by
     // retrying, so say so plainly.
     return NextResponse.json(
@@ -59,3 +59,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

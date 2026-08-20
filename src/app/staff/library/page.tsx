@@ -249,9 +249,9 @@ export default function LibraryDashboard() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
         {[
-          { href: "/staff/library/circulate",    icon: <QrCode className="h-5 w-5" />,   label: "Circulation Desk",  desc: "Borrow, return & renew with policy checks" },
-          { href: "/staff/library/inventory",    icon: <BookOpen className="h-5 w-5" />, label: "Book Inventory",    desc: "Manage catalogue and copies" },
-          { href: "/staff/library/analytics",    icon: <Users className="h-5 w-5" />,    label: "Analytics",         desc: "KPIs, trends, reports & exports" },
+          { href: "/staff/library/circulate",    icon: <QrCode className="h-5 w-5" />,   label: "Circulation Desk", desc: "Borrow, return & renew with policy checks" },
+          { href: "/staff/library/inventory",    icon: <BookOpen className="h-5 w-5" />, label: "Book Inventory",   desc: "Manage catalogue and copies" },
+          { href: "/staff/library/analytics",    icon: <Users className="h-5 w-5" />,    label: "Analytics",        desc: "KPIs, trends, reports & exports" },
         ].map(a => (
           <Link key={a.href} href={a.href}
             className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /super-admin/schools/[id] — School Detail page
@@ -14,12 +14,12 @@ import { useRouter, useParams }              from "next/navigation";
 import Link                                  from "next/link";
 import {
   ChevronLeft, Building2, Users, GraduationCap, HardDrive,
-  AlertTriangle, Puzzle, Upload, ShieldCheck, PauseCircle,
-  PlayCircle, ExternalLink, RefreshCw, CheckCircle2,
+  AlertTriangle, Puzzle, Upload, PauseCircle,
+  PlayCircle, ExternalLink, CheckCircle2,
 } from "lucide-react";
 import {
   Card, Badge, Spinner, ErrorBanner, ProgressBar,
-  PageHeader, Toggle, primaryButtonClass, secondaryButtonClass, dangerButtonClass,
+  Toggle, primaryButtonClass, secondaryButtonClass, dangerButtonClass,
 } from "@/components/ui";
 
 // ── Shared badges ─────────────────────────────────────────────────────────────
@@ -79,12 +79,40 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+interface SchoolMetaShape {
+  slug?:          string | null;
+  status:        string;
+  planTier:      string;
+  storageQuotaGb: number;
+  contactPerson?: string | null;
+  contactEmail?:  string | null;
+  contactPhone?:  string | null;
+  studentCount?:  number;
+  staffCount?:    number;
+}
+
+interface ModuleToggle   { module: string; enabled: boolean }
+interface StorageUsage   { sizeBytes: string; type: string }
+interface SchoolDetail {
+  id:                   string;
+  name:                 string;
+  email?:               string | null;
+  phone?:               string | null;
+  address?:             string | null;
+  createdAt:            string;
+  schoolMeta?:          SchoolMetaShape | null;
+  schoolModuleToggles?: ModuleToggle[];
+  storageUsages?:       StorageUsage[];
+  _count?:              { students?: number; teachers?: number; systemErrors?: number };
+  systemErrors?:        { id: string; message: string; severity: string; status: string; module?: string | null; occurrences: number; createdAt: string }[];
+  importJobs?:          { id: string; type: string; fileName: string; totalRows: number; succeeded: number; failed: number; status: string; createdAt: string }[];
+}
 
 export default function SchoolDetailPage() {
   const { id }    = useParams<{ id: string }>();
   const router    = useRouter();
 
-  const [data, setData]         = useState<any>(null);
+  const [data, setData]         = useState<SchoolDetail | null>(null);
   const [loading, setLoading]   = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [tab, setTab]           = useState<TabId>("overview");
@@ -103,8 +131,8 @@ export default function SchoolDetailPage() {
       const j = await res.json();
       setData(j.school);
       setNewPlan(j.school?.schoolMeta?.planTier ?? "STARTER");
-    } catch (e: any) {
-      setApiError(e.message);
+    } catch (e: unknown) {
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -122,8 +150,8 @@ export default function SchoolDetailPage() {
       if (!res.ok) throw new Error("Failed to update status");
       setSuccessMsg(status === "SUSPENDED" ? "School suspended" : "School reactivated");
       await load();
-    } catch (e: any) {
-      setApiError(e.message);
+    } catch (e: unknown) {
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -141,8 +169,8 @@ export default function SchoolDetailPage() {
       setEditPlan(false);
       setSuccessMsg("Plan tier updated");
       await load();
-    } catch (e: any) {
-      setApiError(e.message);
+    } catch (e: unknown) {
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -159,8 +187,8 @@ export default function SchoolDetailPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Failed to toggle module");
       await load();
-    } catch (e: any) {
-      setApiError(e.message);
+    } catch (e: unknown) {
+      setApiError(e instanceof Error ? e.message : String(e));
     } finally {
       setModulesBusy(null);
     }
@@ -173,8 +201,8 @@ export default function SchoolDetailPage() {
       const j   = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Impersonation failed");
       router.push(j.redirectTo);
-    } catch (e: any) {
-      setApiError(e.message);
+    } catch (e: unknown) {
+      setApiError(e instanceof Error ? e.message : String(e));
       setImpersonating(false);
     }
   }
@@ -188,7 +216,7 @@ export default function SchoolDetailPage() {
 
   const meta    = data.schoolMeta;
   const status  = meta?.status ?? "ONBOARDING";
-  const usedBytes = (data.storageUsages ?? []).reduce((a: number, u: any) => a + Number(u.sizeBytes), 0);
+  const usedBytes = (data.storageUsages ?? []).reduce((a: number, u: StorageUsage) => a + Number(u.sizeBytes), 0);
   const usedGb  = usedBytes / (1024 ** 3);
   const quotaGb = meta?.storageQuotaGb ?? 5;
   const pct     = Math.min((usedGb / quotaGb) * 100, 100);
@@ -273,7 +301,7 @@ export default function SchoolDetailPage() {
           { label: "Students",    value: data._count?.students ?? 0, Icon: GraduationCap, bg: "bg-info-bg",     text: "text-info"    },
           { label: "Staff",       value: data._count?.teachers ?? 0, Icon: Users,         bg: "bg-success-bg",  text: "text-success" },
           { label: "Storage",     value: `${usedGb.toFixed(1)} / ${quotaGb} GB`, Icon: HardDrive, bg: "bg-warn-bg", text: "text-warn" },
-          { label: "Open Errors", value: (data.systemErrors ?? []).filter((e: any) => e.status !== "RESOLVED").length,
+          { label: "Open Errors", value: (data.systemErrors ?? []).filter((e) => e.status !== "RESOLVED").length,
             Icon: AlertTriangle, bg: "bg-danger-bg", text: "text-danger" },
         ].map(({ label, value, Icon, bg, text }) => (
           <div key={label} className="bg-card border border-line dark:bg-dark-surface dark:border-dark-border rounded-xl p-4 shadow-xs">
@@ -396,7 +424,7 @@ export default function SchoolDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
-                {(data.systemErrors ?? []).map((err: any) => (
+                {(data.systemErrors ?? []).map((err) => (
                   <tr key={err.id}
                     onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
                     className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors">
@@ -433,8 +461,8 @@ export default function SchoolDetailPage() {
             <div className="space-y-2 pt-2 border-t border-line dark:border-dark-border">
               {["documents","media","database","backups"].map(type => {
                 const bytes = (data.storageUsages ?? [])
-                  .filter((u: any) => u.type === type)
-                  .reduce((a: number, u: any) => a + Number(u.sizeBytes), 0);
+                  .filter((u) => u.type === type)
+                  .reduce((a: number, u: StorageUsage) => a + Number(u.sizeBytes), 0);
                 const gb = bytes / (1024 ** 3);
                 const p  = quotaGb > 0 ? (gb / quotaGb) * 100 : 0;
                 return (
@@ -513,7 +541,7 @@ export default function SchoolDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
-                {(data.importJobs ?? []).map((job: any) => (
+                {(data.importJobs ?? []).map((job) => (
                   <tr key={job.id}
                     onClick={() => router.push(`/super-admin/imports?school=${id}`)}
                     className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors">

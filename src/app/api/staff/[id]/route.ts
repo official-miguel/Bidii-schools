@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, getCurrentUser, requireSchoolRole } from "@/lib/auth";
-import { requirePermission, getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
+import { getCurrentUser, requireSchoolRole } from "@/lib/auth";
+import { getTeacherEffectivePermissions, requireSchoolPermission } from "@/lib/permissions";
 
 // ---------------------------------------------------------------------------
 // GET /api/staff/[id] — single staff member detail for entity drawers

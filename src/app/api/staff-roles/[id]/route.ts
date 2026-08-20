@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
-import { ALL_MODULES, logPermissionAudit } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { logPermissionAudit } from "@/lib/permissions";
 
 const permSchema = z.object({
-  module:       z.enum(ALL_MODULES as [string, ...string[]]),
+  module:       z.string().min(1),
   canView:      z.boolean().default(false),
   canCreate:    z.boolean().default(false),
   canEdit:      z.boolean().default(false),
@@ -50,7 +50,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           await tx.rolePermission.createMany({
             data: rows.map((p) => ({
               staffRoleId:  params.id,
-              module:       p.module as Module,
+              // Double-cast: Module enum in generated client may lag behind schema migrations.
+              // The DB enum is always authoritative; Prisma passes this string through as-is.
+              module:       p.module as unknown as Module,
               canView:      p.canView || p.canManage,
               canCreate:    p.canCreate || p.canManage,
               canEdit:      p.canEdit  || p.canManage,
@@ -88,6 +90,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (e) {
     if ((e as { code?: string }).code === "P2002")
       return NextResponse.json({ error: "A role with that name already exists." }, { status: 409 });
+    console.error("[STAFF-ROLES PATCH]", e);
     return NextResponse.json({ error: "Couldn't update role." }, { status: 500 });
   }
 }

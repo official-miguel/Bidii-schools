@@ -1,0 +1,6 @@
+staff_id,full_name,email,phone,designation,department_name,subject_codes
+T001,John Kamau,jkamau@school.ac.ke,0712345678,Teacher,Sciences,"BIO,CHEM"
+T002,Mary Wanjiku,mwanjiku@school.ac.ke,0723456789,Teacher,Mathematics,MATH
+T003,Peter Omondi,pomondi@school.ac.ke,0734567890,Head of Department,Languages,"ENG,KSW"
+T004,Grace Achieng,gachieng@school.ac.ke,0745678901,Teacher,Humanities,"HIST,GEO"
+T005,James Mwenda,jmwenda@school.ac.ke,0756789012,Teacher,Sciences,PHY

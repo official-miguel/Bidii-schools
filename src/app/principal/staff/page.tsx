@@ -29,10 +29,10 @@ type Teacher = {
   primaryDepartment: Department | null;
   classTeacherOf: { id: string; name: string } | null;
   teacherSubjects: { subject: Subject }[];
-  user: { email: string; isActive: boolean; role: string; staffRole: StaffRole | null } | null;
+  user: { email: string; isActive: boolean; role: string; mustChangePassword: boolean; staffRole: StaffRole | null } | null;
 };
 type Permission = { module: string; canView: boolean; canManage: boolean };
-type FullRole   = { id: string; name: string; description: string | null; permissions: Permission[]; _count: { users: number } };
+type FullRole   = { id: string; name: string; description: string | null; permissions: Permission[]; _count: { users: number }; totalUsers?: number };
 
 const TEACHING_STAFF = "__teacher__";
 
@@ -53,6 +53,7 @@ const MODULE_INFO: Record<string, { label: string; description: string }> = {
   RECORDS_DISCIPLINE:   { label: "Records — Discipline",   description: "Discipline cases, files, AI summaries" },
   RECORDS_ACHIEVEMENTS: { label: "Records — Achievements", description: "Achievements, shared achievements, files" },
   LIBRARY:              { label: "Library",                description: "Book catalogue, borrowing, and fines" },
+  FEES:                 { label: "Fees Management",        description: "Fee structures, invoicing, payments, and debtor tracking" },
 };
 const ASSIGNABLE_MODULES = Object.keys(MODULE_INFO);
 
@@ -135,9 +136,9 @@ function DirectoryTab() {
 
   const load = useCallback(async () => {
     const [staffRes, deptRes, subjRes] = await Promise.all([
-      fetch("/api/staff"),
-      fetch("/api/departments"),
-      fetch("/api/subjects"),
+      fetch("/api/staff",        { cache: "no-store" }),
+      fetch("/api/departments",  { cache: "no-store" }),
+      fetch("/api/subjects",     { cache: "no-store" }),
     ]);
     const [freshStaff, freshDepts, freshSubjs] = await Promise.all([
       staffRes.ok ? staffRes.json() : [],
@@ -255,7 +256,8 @@ function DirectoryTab() {
   }
 
   function roleLabel(t: Teacher): { label: string; variant: "teacher" | "staff" | "none" } {
-    if (!t.user) return { label: "No login", variant: "none" };
+    if (!t.user) return { label: "No account", variant: "none" };
+    if (t.user.mustChangePassword) return { label: "Never logged in", variant: "none" };
     if (t.user.role === "PRINCIPAL") return { label: "Principal", variant: "staff" };
     if (t.user.staffRole) return { label: t.user.staffRole.name, variant: "staff" };
     return { label: "Teacher", variant: "teacher" };
@@ -771,7 +773,8 @@ function RolesTab() {
   }
 
   async function handleDeleteRole(role: FullRole) {
-    if (role._count.users > 0) { alert(`${role._count.users} staff member(s) still have this role. Reassign them first.`); return; }
+    const count = role.totalUsers ?? role._count.users;
+    if (count > 0) { alert(`${count} staff member(s) still have this role. Reassign them first.`); return; }
     if (!confirm(`Delete the "${role.name}" role? This can't be undone.`)) return;
     const res = await fetch(`/api/staff-roles/${role.id}`, { method: "DELETE" });
     if (!res.ok) { const data = await res.json(); alert(data.error || "Couldn't delete."); return; }
@@ -808,7 +811,7 @@ function RolesTab() {
               <button key={r.id} onClick={() => setSelectedId(r.id)}
                 className={`w-full text-left px-4 py-3.5 border-b border-line last:border-0 transition-colors ${r.id === selectedId ? "bg-teal-50" : "hover:bg-slate-50"}`}>
                 <p className={`text-sm font-semibold ${r.id === selectedId ? "text-teal" : "text-ink"}`}>{r.name}</p>
-                <p className="text-xs text-slate mt-0.5">{r._count.users} {r._count.users === 1 ? "person" : "people"}</p>
+                <p className="text-xs text-slate mt-0.5">{r.totalUsers ?? r._count.users} {(r.totalUsers ?? r._count.users) === 1 ? "person" : "people"}</p>
               </button>
             ))}
           </div>
@@ -823,7 +826,7 @@ function RolesTab() {
                     <p className="text-sm text-slate mt-0.5 leading-relaxed">{selected.description}</p>
                   )}
                   <p className="text-xs text-slate mt-1">
-                    {selected._count.users} {selected._count.users === 1 ? "person" : "people"} with this role
+                    {selected.totalUsers ?? selected._count.users} {(selected.totalUsers ?? selected._count.users) === 1 ? "person" : "people"} with this role
                   </p>
                 </div>
                 <button className={dangerLinkClass} onClick={() => handleDeleteRole(selected)}>

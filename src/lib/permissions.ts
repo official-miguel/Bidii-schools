@@ -37,6 +37,7 @@ export const MODULE_INFO: Record<
   HISTORY:              { label: "History",                   description: "Archived institutional records",                                    hub: "people" },
   ACCOMMODATION:        { label: "Accommodation",             description: "Dormitories, cubicles, beds, and student boarding allocations",     hub: "student-life" },
   ATTENDANCE:           { label: "Attendance",                description: "Take and review daily class attendance for any class",               hub: "academic" },
+  FEES:                 { label: "Fees Management",           description: "School finance: fee structures, invoicing, payments, debtor tracking, and reports", hub: "administration" },
 };
 
 export const ALL_MODULES = Object.keys(MODULE_INFO) as Module[];
@@ -127,12 +128,13 @@ function mergeAccess(a: ModuleAccess, b: ModuleAccess): ModuleAccess {
 //
 // Resolution order:
 //  1. PRINCIPAL → unconditional full access to all modules.
-//  2. ADMIN_STAFF → union of all assigned StaffRole permissions (multi-role).
+//  2. BURSAR → full FEES access + read/export/print STUDENTS + send COMMUNICATION.
+//  3. ADMIN_STAFF → union of all assigned StaffRole permissions (multi-role).
 //     Falls back to legacy User.staffRoleId if UserStaffRole table is empty.
-//  3. TEACHER → same multi-role union as ADMIN_STAFF when the teacher has
+//  4. TEACHER → same multi-role union as ADMIN_STAFF when the teacher has
 //     StaffRole assignments. Returns empty when no roles assigned (teacher
 //     layout then falls back to "show all hubs" default).
-//  4. STUDENT / PARENT / others → empty.
+//  5. STUDENT / PARENT / others → empty.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getEffectivePermissions(user: User): Promise<EffectivePermissions> {
@@ -140,6 +142,15 @@ export async function getEffectivePermissions(user: User): Promise<EffectivePerm
     const full: EffectivePermissions = {};
     for (const m of ALL_MODULES) full[m] = { ...FULL_ACCESS };
     return full;
+  }
+
+  // BURSAR: full access to FEES module + read/export/print STUDENTS + send COMMUNICATION
+  if (user.role === "BURSAR") {
+    return {
+      FEES:          { ...FULL_ACCESS },
+      STUDENTS:      { canView: true, canCreate: false, canEdit: false, canDelete: false, canApprove: false, canExport: true, canPrint: true, canManage: false, canConfigure: false, canAIAccess: false },
+      COMMUNICATION: { canView: true, canCreate: true, canEdit: false, canDelete: false, canApprove: false, canExport: false, canPrint: false, canManage: false, canConfigure: false, canAIAccess: false },
+    };
   }
 
   // TEACHER: use the five-source resolver
@@ -668,6 +679,8 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
     return "subject_teacher";
   }
 
+  if (user.role === "BURSAR") return "staff_generic"; // will use finance dashboard
+
   if (user.role === "ADMIN_STAFF") {
     const roleNames = await getAssignedRoleNames(user);
     const lower = roleNames.map((n) => n.toLowerCase());
@@ -701,6 +714,62 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
   return "staff_generic";
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// resolveModulePortal
+//
+// Single source of truth for the "should this user bypass their default
+// dashboard and land directly in a module portal?" decision.
+//
+// Called by:
+//   • src/app/page.tsx  — root dispatcher (avoids an intermediate page load)
+//   • src/app/teacher/page.tsx — fallback when user navigates to /teacher directly
+//   • src/app/staff/page.tsx   — fallback when user navigates to /staff directly
+//
+// Returns:
+//   "/staff/finance"  — user has FEES canManage (and no broad oversight role)
+//   "/staff/library"  — user has LIBRARY canManage (and no broad oversight role)
+//   null              — render the default dashboard for this user
+//
+// "Broad oversight" roles (deputy, HOD, secretary, etc.) always stay on the
+// unified dashboard even if they also carry module-manage permissions, because
+// they need the full school-wide view.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function resolveModulePortal(
+  user: User
+): Promise<"/staff/finance" | "/staff/library" | null> {
+  // TEACHER path — use the six-source resolver
+  if (user.role === "TEACHER") {
+    const perms = await getTeacherEffectivePermissions(user);
+    if (perms.FEES?.canManage)    return "/staff/finance";
+    if (perms.LIBRARY?.canManage) return "/staff/library";
+    return null;
+  }
+
+  // ADMIN_STAFF path — check broad-oversight guard first
+  if (user.role === "ADMIN_STAFF") {
+    const [perms, roleNames] = await Promise.all([
+      getEffectivePermissions(user),
+      getAssignedRoleNames(user),
+    ]);
+
+    const lower = roleNames.map((n) => n.toLowerCase());
+    const hasBroadRole =
+      lower.some((n) => n.includes("deputy") || n.includes("principal")) ||
+      lower.some((n) => n.includes("head of department") || n.includes("hod")) ||
+      lower.some((n) => n.includes("secretary") || n.includes("registrar")) ||
+      lower.some((n) => n.includes("examination") || n.includes("games master"));
+
+    if (hasBroadRole) return null;
+
+    if (perms.FEES?.canManage)    return "/staff/finance";
+    if (perms.LIBRARY?.canManage) return "/staff/library";
+    return null;
+  }
+
+  return null;
+}
+
 /** Returns all role names assigned to a user (multi-role aware). */
 export async function getAssignedRoleNames(user: User): Promise<string[]> {
   const multiRows = await prisma.userStaffRole.findMany({
@@ -724,6 +793,7 @@ export async function getAssignedRoleNames(user: User): Promise<string[]> {
 export async function getRoleDisplayLabel(user: User): Promise<string> {
   if (user.role === "PRINCIPAL") return "Principal";
   if (user.role === "TEACHER")   return "Teacher";
+  if (user.role === "BURSAR")    return "Bursar";
   if (user.role === "PARENT")    return "Parent";
   if (user.role === "STUDENT")   return "Student";
 
@@ -762,7 +832,7 @@ export interface FullRoleContext {
 export async function getFullRoleContext(user: User): Promise<FullRoleContext> {
   const isPrincipal  = user.role === "PRINCIPAL";
   const isTeacher    = user.role === "TEACHER";
-  const isAdminStaff = user.role === "ADMIN_STAFF";
+  const isAdminStaff = user.role === "ADMIN_STAFF" || user.role === "BURSAR";
 
   const [assignedRoleNames, modulePermissions] = await Promise.all([
     isAdminStaff ? getAssignedRoleNames(user) : Promise.resolve([] as string[]),

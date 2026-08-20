@@ -1,0 +1,16 @@
+dorm_name,gender_policy,structure,allocation_policy,description,bed_label,cubicle_name,bed_type,custom_occupancy
+Simba House,BOYS_ONLY,OPEN_HALL,MIXED_FORMS,Main boys dormitory,,,, 
+Simba House,,,,,Bed 1,,SINGLE,
+Simba House,,,,,Bed 2,,SINGLE,
+Simba House,,,,,Bunk A,,DOUBLE_DECKER,
+Simba House,,,,,Bunk B,,DOUBLE_DECKER,
+Lioness House,GIRLS_ONLY,OPEN_HALL,MIXED_FORMS,Main girls dormitory,,,,
+Lioness House,,,,,Bed 1,,SINGLE,
+Lioness House,,,,,Bunk A,,DOUBLE_DECKER,
+Eagle Block,BOYS_ONLY,CUBICLE_BASED,MIXED_FORMS,Senior boys cubicle dorm,,,,
+Eagle Block,,,,,Bed 1,Room 1,SINGLE,
+Eagle Block,,,,,Bunk A,Room 1,DOUBLE_DECKER,
+Eagle Block,,,,,Triple 1,Room 2,CUSTOM,3
+Dove Block,GIRLS_ONLY,CUBICLE_BASED,MIXED_FORMS,Senior girls cubicle dorm,,,,
+Dove Block,,,,,Bed 1,Room 1,SINGLE,
+Dove Block,,,,,Bunk A,Room 1,DOUBLE_DECKER,

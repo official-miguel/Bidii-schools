@@ -1,0 +1,69 @@
+"use client";
+
+import Link from "next/link";
+import { Layers, CalendarDays, Tag, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/ui";
+
+const tiles = [
+  {
+    href:  "/staff/finance/fee-structures",
+    icon:  <Layers className="h-6 w-6" />,
+    label: "Fee Structures",
+    desc:  "Define and manage the fee items charged per class or term.",
+  },
+  {
+    href:  "/staff/finance/terms",
+    icon:  <CalendarDays className="h-6 w-6" />,
+    label: "Terms",
+    desc:  "Configure academic term periods and their billing windows.",
+  },
+  {
+    href:  "/staff/finance/expenses",
+    icon:  <Tag className="h-6 w-6" />,
+    label: "Expenses",
+    desc:  "Record and categorise school expenditure.",
+  },
+];
+
+export default function SetupPage() {
+  return (
+    <div>
+      <PageHeader
+        title="Setup"
+        description="Configure fee structures, academic terms, and school expenses."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        {tiles.map((tile) => (
+          <Link
+            key={tile.href}
+            href={tile.href}
+            className="group flex items-start gap-4 rounded-xl border border-line bg-white p-5
+                       hover:border-teal/40 hover:shadow-sm transition-all duration-150
+                       dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/40"
+          >
+            <div
+              className="h-12 w-12 rounded-xl bg-teal/10 text-teal flex items-center justify-center
+                         shrink-0 group-hover:bg-teal group-hover:text-white transition-colors duration-150"
+              aria-hidden="true"
+            >
+              {tile.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-semibold text-ink dark:text-dark-text">
+                {tile.label}
+              </p>
+              <p className="text-sm text-slate mt-1 leading-snug dark:text-dark-muted">
+                {tile.desc}
+              </p>
+            </div>
+            <ArrowRight
+              className="h-4 w-4 text-slate/40 shrink-0 mt-1 group-hover:text-teal transition-colors duration-150"
+              aria-hidden="true"
+            />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

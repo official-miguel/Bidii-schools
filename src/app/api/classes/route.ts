@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
-import { requirePermission, requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
   // Records users need class names for the class/stream filters.
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Use a lean select instead of include — avoids loading extra join rows.
+  // Use a lean select instead of include â€” avoids loading extra join rows.
   // _count.students is an aggregate field, not a full join, so it's cheap.
   const classes = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
@@ -32,20 +32,22 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // ETag based on the number of classes + their latest updatedAt — classes
+  // ETag based on the number of classes + their latest updatedAt â€” classes
   // rarely change so most requests return 304 after the first load.
+  // Count is included so bulk imports (new rows) always bust the ETag.
+  // max-age removed: no-cache means browsers always revalidate after an import.
   const latest  = classes.reduce((m, c) => Math.max(m, c.updatedAt.getTime()), 0);
   const etag    = `"cls-${classes.length}-${latest}"`;
 
   if (req.headers.get("if-none-match") === etag) {
     return new NextResponse(null, {
       status: 304,
-      headers: { ETag: etag, "Cache-Control": "private, max-age=60" },
+      headers: { ETag: etag, "Cache-Control": "private, no-cache" },
     });
   }
 
   return NextResponse.json(classes, {
-    headers: { ETag: etag, "Cache-Control": "private, max-age=60" },
+    headers: { ETag: etag, "Cache-Control": "private, no-cache" },
   });
 }
 
@@ -106,3 +108,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create class." }, { status: 500 });
   }
 }
+

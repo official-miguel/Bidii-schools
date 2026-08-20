@@ -86,6 +86,21 @@ export async function requireModuleAccess(
 ): Promise<NextResponse | null> {
   if (user.role === "PRINCIPAL") return null;
 
+  // BURSAR has full access to FEES and scoped access to STUDENTS + COMMUNICATION
+  if (user.role === "BURSAR") {
+    // Full access to FEES module
+    if (module === "FEES") return null;
+    // Bursars can view/export/print students (needed for ledger lookups)
+    if (module === "STUDENTS" && (action === "view" || action === "export" || action === "print")) return null;
+    // Bursars can view and send communications (bulk SMS/email to debtors)
+    if (module === "COMMUNICATION" && (action === "view" || action === "create")) return null;
+    // No other module access
+    return NextResponse.json(
+      { error: `You don't have permission to ${action} ${module}.` },
+      { status: 403 }
+    );
+  }
+
   const perms = await getEffectivePermissions(user);
   const entry = perms[module];
 
@@ -166,6 +181,33 @@ export async function requirePrincipalOrPermission(
   if (result.user.role === "PRINCIPAL") return result;
 
   const permError = await requireModuleAccess(result.user, module, action);
+  if (permError) {
+    return { user: null, schoolId: null, error: permError };
+  }
+
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// requireBursarOrPrincipal
+//
+// Go-to guard for finance (fees/ledger) API routes.
+// Passes for BURSAR and PRINCIPAL unconditionally.
+// ADMIN_STAFF with FEES.canView also passes (checked via requireModuleAccess).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function requireBursarOrPrincipal(): Promise<
+  { user: User; schoolId: string; error: null } |
+  { user: null;  schoolId: null;   error: NextResponse }
+> {
+  const result = await enforceAuth();
+  if (result.error) return result;
+
+  const { user } = result;
+  if (user.role === "PRINCIPAL" || user.role === "BURSAR") return result;
+
+  // ADMIN_STAFF (or TEACHER) with FEES module permission also passes
+  const permError = await requireModuleAccess(user, "FEES", "view");
   if (permError) {
     return { user: null, schoolId: null, error: permError };
   }

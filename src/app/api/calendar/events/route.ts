@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { getKenyaPublicHolidaysForMonth } from "@/lib/kenyaHolidays";
 import { emitSSE } from "@/lib/sse";
 
 /// GET is readable by PRINCIPAL and TEACHER unconditionally (neither is
-/// governed by the RBAC module table — see src/lib/permissions.ts), and by
+/// governed by the RBAC module table â€” see src/lib/permissions.ts), and by
 /// ADMIN_STAFF only if their role grants CALENDAR view.
 async function requireCalendarViewer() {
   return (await requireSchoolRole("PRINCIPAL", "TEACHER")) ?? (await requireSchoolPermission("CALENDAR", "view"));
@@ -120,3 +120,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create event." }, { status: 500 });
   }
 }
+

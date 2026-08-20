@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   // The teacher of a subject for a class is a standing assignment, not a
-  // per-lesson choice — once set, it stays until explicitly changed (see
+  // per-lesson choice â€” once set, it stays until explicitly changed (see
   // ClassSubjectTeacher). The first lesson added for a (class, subject)
   // establishes it; every lesson after that must use the same teacher, so
   // a class never ends up with two different Maths teachers by accident.
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "This class's teacher for this subject is already set to someone else. Change the subject teacher first if you want to switch them — every lesson for this subject will move with them.",
+          "This class's teacher for this subject is already set to someone else. Change the subject teacher first if you want to switch them â€” every lesson for this subject will move with them.",
       },
       { status: 409 }
     );
@@ -135,3 +135,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create timetable slot." }, { status: 500 });
   }
 }
+

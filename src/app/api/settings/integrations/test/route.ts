@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 
 const schema = z.object({ provider: z.literal("GEMINI") });
-// Only Gemini has a real connection test today — it's the only provider
+// Only Gemini has a real connection test today â€” it's the only provider
 // currently wired to a live call anywhere in the app (the AI features).
 // The others (Calendar/SMS/WhatsApp/Email) get a real test added alongside
 // their own feature, once there's something to actually call.
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    // Lightweight ListModels call — confirms the key is valid and has
+    // Lightweight ListModels call â€” confirms the key is valid and has
     // Gemini API access, without spending a generation call or depending on
     // any particular model name still existing.
     const res = await fetch(
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const err = e as { name?: string };
     // Never let a flaky network call or Google-side outage surface as a
-    // 500 — the whole point of testing the key is to give the Principal a
+    // 500 â€” the whole point of testing the key is to give the Principal a
     // clear answer, not a crash.
     const timedOut = err?.name === "AbortError";
     return NextResponse.json(
@@ -68,3 +68,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

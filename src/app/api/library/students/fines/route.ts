@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
+import { requireSchoolRole } from "@/lib/auth";
 
 /** GET /api/library/students/fines
  *  Returns all library cards with a positive fine balance, ordered by
@@ -27,3 +27,4 @@ export async function GET() {
 
   return NextResponse.json(cards);
 }
+

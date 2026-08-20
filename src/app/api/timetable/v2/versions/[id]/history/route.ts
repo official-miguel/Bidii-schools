@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma }                   from "@/lib/prisma";
-import { requireRole, requireSchoolRole } from "@/lib/auth";
-import { requirePermission, requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 type Ctx = { params: { id: string } };
 
