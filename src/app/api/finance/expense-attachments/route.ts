@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   const activeTerm = await prisma.term.findFirst({
     where:   { schoolId, isActive: true, invoicingCompletedAt: { not: null } },
     orderBy: { startDate: "desc" },
-    select:  { id: true, startDate: true, endDate: true, name: true, invoicingCompletedAt: true },
+    select:  { id: true, startDate: true, endDate: true, academicYear: true, name: true, invoicingCompletedAt: true },
   });
 
   const created: string[] = [];
@@ -138,8 +138,10 @@ export async function POST(req: NextRequest) {
 
         // If invoicing already completed for the active term, post a prorated debit
         if (activeTerm) {
+          const termStart = activeTerm.startDate ?? new Date(activeTerm.academicYear, 0, 1);
+          const termEnd   = activeTerm.endDate   ?? new Date(activeTerm.academicYear, 11, 31);
           const proratedAmount = computeProratedAmount(
-            { startDate: activeTerm.startDate, endDate: activeTerm.endDate },
+            { startDate: termStart, endDate: termEnd },
             new Decimal(expenseItem.currentPrice.toString())
           );
 

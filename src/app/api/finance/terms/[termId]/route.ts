@@ -9,9 +9,8 @@ import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 
 const updateSchema = z.object({
   name:         z.string().trim().min(1, "Name is required.").optional(),
+  termNameId:   z.string().optional().nullable(),
   academicYear: z.number().int().min(2000).max(2100).optional(),
-  startDate:    z.string().datetime({ message: "Invalid start date." }).optional(),
-  endDate:      z.string().datetime({ message: "Invalid end date." }).optional(),
   isActive:     z.boolean().optional(),
 });
 
@@ -25,7 +24,11 @@ export async function GET(
 
   const term = await prisma.term.findFirst({
     where:  { id: params.termId, schoolId },
-    select: { id: true, name: true, academicYear: true, startDate: true, endDate: true, isActive: true, invoicingCompletedAt: true, createdAt: true },
+    select: {
+      id: true, name: true, termNameId: true, academicYear: true,
+      isActive: true, invoicingCompletedAt: true, createdAt: true,
+      termName: { select: { id: true, name: true } },
+    },
   });
 
   if (!term) return NextResponse.json({ error: "Term not found." }, { status: 404 });
@@ -66,21 +69,23 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { startDate, endDate, ...rest } = parsed.data;
-
-  if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
-    return NextResponse.json({ error: "End date must be after start date." }, { status: 400 });
+  // Verify termNameId belongs to this school if provided
+  if (parsed.data.termNameId) {
+    const tn = await prisma.financialTermName.findFirst({
+      where: { id: parsed.data.termNameId, schoolId },
+    });
+    if (!tn) return NextResponse.json({ error: "Selected term name not found." }, { status: 400 });
   }
 
   try {
     const term = await prisma.term.update({
       where: { id: params.termId },
-      data:  {
-        ...rest,
-        ...(startDate ? { startDate: new Date(startDate) } : {}),
-        ...(endDate   ? { endDate:   new Date(endDate)   } : {}),
+      data:  parsed.data,
+      select: {
+        id: true, name: true, termNameId: true, academicYear: true,
+        isActive: true, invoicingCompletedAt: true, createdAt: true,
+        termName: { select: { id: true, name: true } },
       },
-      select: { id: true, name: true, academicYear: true, startDate: true, endDate: true, isActive: true, invoicingCompletedAt: true, createdAt: true },
     });
     return NextResponse.json({ term });
   } catch (err) {

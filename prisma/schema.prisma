@@ -128,6 +128,7 @@ model School {
   importJobs               ImportJob[]
   /// Fees & Ledger module
   financeSettings          FinanceSettings?
+  financialTermNames       FinancialTermName[]
   feeStructures            FeeStructure[]
   expenseCategories        ExpenseCategory[]
   expenseItems             ExpenseItem[]
@@ -3501,6 +3502,22 @@ model FinanceSettings {
   school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
+/// A named term definition used as the "term label" in the financial module.
+/// e.g. "Term 1", "Term 2", "Term 3". Schools create these once in Settings
+/// and then reference them when setting up financial terms.
+model FinancialTermName {
+  id        String   @id @default(cuid())
+  schoolId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  terms  Term[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
 /// A fee tier that determines how much a student in a given form/stream/
 /// boarding category owes per term. No delete — soft-retire by creating a
 /// replacement row. The invoicing engine selects the most-specific match
@@ -3512,8 +3529,10 @@ model FeeStructure {
   form           Int
   /// Stream name, e.g. "North". Null = applies to all streams in this form.
   stream         String?
-  /// "DAY" | "BOARDING" | null = applies to both boarding types.
+  /// "DAY" | "BOARDING" | null = applies to both boarding types. Kept for legacy.
   boardingStatus String?
+  /// Optional: link to a specific term this fee structure applies to.
+  termId         String?
   /// Base fee per term for students matching this structure.
   amountPerTerm  Decimal
   createdById    String
@@ -3521,6 +3540,7 @@ model FeeStructure {
 
   school     School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdBy  User   @relation(fields: [createdById], references: [id])
+  term       Term?  @relation(fields: [termId], references: [id])
 
   @@index([schoolId, form])
 }
@@ -3567,15 +3587,16 @@ model ExpenseItem {
   @@index([categoryId])
 }
 
-/// An academic term — the unit of invoicing. One term can span one or more
-/// calendar months. Only one term per school should have isActive = true at a time.
+/// An academic term — the unit of invoicing. One term per school should have isActive = true at a time.
+/// termNameId links to a FinancialTermName definition; academicYear describes the calendar year.
+/// startDate/endDate are kept optional for legacy compatibility but are no longer required.
 model Term {
   id                   String    @id @default(cuid())
   schoolId             String
   name                 String
   academicYear         Int
-  startDate            DateTime
-  endDate              DateTime
+  startDate            DateTime?
+  endDate              DateTime?
   isActive             Boolean   @default(true)
   /// Set once runBatchInvoicing completes for this term.
   invoicingCompletedAt DateTime?
@@ -3584,6 +3605,9 @@ model Term {
 
   school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdBy     User          @relation(fields: [createdById], references: [id])
+  termName      FinancialTermName? @relation(fields: [termNameId], references: [id])
+  termNameId    String?
+  feeStructures FeeStructure[]
   ledgerEntries LedgerEntry[]
   invoices      Invoice[]
   payments      Payment[]

@@ -83,7 +83,7 @@ export async function runBatchInvoicing(
   // Load term details
   const term = await prisma.term.findUnique({
     where: { id: termId },
-    select: { id: true, name: true, startDate: true, endDate: true, schoolId: true },
+    select: { id: true, name: true, startDate: true, endDate: true, academicYear: true, schoolId: true },
   });
 
   if (!term || term.schoolId !== schoolId) {
@@ -265,7 +265,7 @@ export async function createProratedInvoice(opts: {
     }),
     prisma.term.findUnique({
       where:  { id: termId },
-      select: { name: true, startDate: true, endDate: true },
+      select: { name: true, startDate: true, endDate: true, academicYear: true },
     }),
     prisma.financeSettings.findUnique({
       where:  { schoolId },
@@ -298,15 +298,18 @@ export async function createProratedInvoice(opts: {
     if (!structure) throw new Error("No fee structure found for this student.");
 
     const now = new Date();
+    // startDate / endDate are always set (sentinel values used when not explicitly provided)
+    const termStart = term.startDate ?? new Date(term.academicYear, 0, 1);
+    const termEnd   = term.endDate   ?? new Date(term.academicYear, 11, 31);
     invoiceAmount = computeProratedAmount(
-      { startDate: term.startDate, endDate: term.endDate },
+      { startDate: termStart, endDate: termEnd },
       structure.amountPerTerm,
       now
     );
     isProrated    = true;
     proratedDays  = Math.max(
       0,
-      Math.floor((term.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      Math.floor((termEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     );
   }
 

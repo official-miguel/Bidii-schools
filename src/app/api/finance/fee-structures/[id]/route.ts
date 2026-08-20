@@ -9,9 +9,9 @@ import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 
 const updateSchema = z.object({
-  amountPerTerm:  z.number().positive("Amount per term must be positive.").optional(),
-  stream:         z.string().trim().optional().nullable(),
-  boardingStatus: z.enum(["DAY", "BOARDING"]).optional().nullable(),
+  amountPerTerm: z.number().positive("Basic school fees must be a positive amount.").optional(),
+  stream:        z.string().trim().optional().nullable(),
+  termId:        z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -24,7 +24,7 @@ export async function GET(
 
   const structure = await prisma.feeStructure.findFirst({
     where:  { id: params.id, schoolId },
-    select: { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true, createdAt: true },
+    select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
   });
 
   if (!structure) return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -61,11 +61,19 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
+  const { termId, ...rest } = parsed.data;
+
+  // Verify the termId belongs to this school if provided
+  if (termId) {
+    const term = await prisma.term.findFirst({ where: { id: termId, schoolId } });
+    if (!term) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
+  }
+
   try {
     const updated = await prisma.feeStructure.update({
       where:  { id: params.id },
-      data:   parsed.data,
-      select: { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true, createdAt: true },
+      data:   { ...rest, termId: termId ?? null },
+      select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
     });
 
     return NextResponse.json({

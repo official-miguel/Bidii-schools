@@ -1,7 +1,6 @@
 /**
  * GET    /api/finance/fee-structures  — List all fee structures for the school
  * POST   /api/finance/fee-structures  — Create a new fee structure
- * DELETE /api/finance/fee-structures  — 405 (blocked)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -9,10 +8,10 @@ import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 
 const createSchema = z.object({
-  form:           z.number().int().min(1).max(4),
-  stream:         z.string().trim().optional().nullable(),
-  boardingStatus: z.enum(["DAY", "BOARDING"]).optional().nullable(),
-  amountPerTerm:  z.number().positive("Amount per term must be positive."),
+  form:          z.number().int().min(1),
+  stream:        z.string().trim().optional().nullable(),
+  termId:        z.string().optional().nullable(),
+  amountPerTerm: z.number().positive("Basic school fees must be a positive amount."),
 });
 
 export async function GET() {
@@ -23,11 +22,14 @@ export async function GET() {
   const structures = await prisma.feeStructure.findMany({
     where:   { schoolId },
     orderBy: [{ form: "asc" }, { stream: "asc" }],
-    select:  { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true, createdAt: true },
+    select:  { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
   });
 
   return NextResponse.json({
-    feeStructures: structures.map((s) => ({ ...s, amountPerTerm: s.amountPerTerm.toString() })),
+    feeStructures: structures.map((s) => ({
+      ...s,
+      amountPerTerm: s.amountPerTerm.toString(),
+    })),
   });
 }
 
@@ -36,7 +38,6 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
   const { schoolId, user } = auth;
 
-  // Principals are read-only for write operations
   if (user.role === "PRINCIPAL") {
     return NextResponse.json({ error: "Principals cannot create fee structures." }, { status: 403 });
   }
@@ -50,19 +51,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { form, stream, boardingStatus, amountPerTerm } = parsed.data;
+  const { form, stream, termId, amountPerTerm } = parsed.data;
+
+  // Verify the termId belongs to this school if provided
+  if (termId) {
+    const term = await prisma.term.findFirst({ where: { id: termId, schoolId } });
+    if (!term) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
+  }
 
   try {
     const structure = await prisma.feeStructure.create({
       data: {
         schoolId,
         form,
-        stream:         stream ?? null,
-        boardingStatus: boardingStatus ?? null,
+        stream:        stream ?? null,
+        boardingStatus: null,
+        termId:        termId ?? null,
         amountPerTerm,
-        createdById:    user.id,
+        createdById:   user.id,
       },
-      select: { id: true, form: true, stream: true, boardingStatus: true, amountPerTerm: true, createdAt: true },
+      select: { id: true, form: true, stream: true, termId: true, amountPerTerm: true, createdAt: true },
     });
 
     return NextResponse.json(
