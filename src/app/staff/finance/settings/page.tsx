@@ -13,12 +13,10 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface FinanceSettings {
-  balanceThreshold:     string;
-  daysOverdueThreshold: number;
-  receiptPrefix:        string;
-  invoicePrefix:        string;
-  mpesaPaybillNumber:   string | null;
-  mpesaWebhookUrl:      string | null;
+  receiptPrefix:      string;
+  invoicePrefix:      string;
+  mpesaPaybillNumber: string | null;
+  mpesaWebhookUrl:    string | null;
 }
 
 interface FinancialTermName {
@@ -223,12 +221,10 @@ function TermNamesSection() {
 export default function FinanceSettingsPage() {
   const [settings, setSettings] = useState<FinanceSettings | null>(null);
   const [form, setForm] = useState({
-    balanceThreshold:     "0",
-    daysOverdueThreshold: "30",
-    receiptPrefix:        "REC-",
-    invoicePrefix:        "INV-",
-    mpesaPaybillNumber:   "",
-    mpesaWebhookSecret:   "",
+    receiptPrefix:      "REC-",
+    invoicePrefix:      "INV-",
+    mpesaPaybillNumber: "",
+    mpesaWebhookSecret: "",
   });
   const [loading,    setLoading]    = useState(true);
   const [saving,     setSaving]     = useState(false);
@@ -246,11 +242,9 @@ export default function FinanceSettingsPage() {
           setSettings(s);
           setForm(f => ({
             ...f,
-            balanceThreshold:     s.balanceThreshold ?? "0",
-            daysOverdueThreshold: String(s.daysOverdueThreshold ?? 30),
-            receiptPrefix:        s.receiptPrefix ?? "REC-",
-            invoicePrefix:        s.invoicePrefix ?? "INV-",
-            mpesaPaybillNumber:   s.mpesaPaybillNumber ?? "",
+            receiptPrefix:      s.receiptPrefix ?? "REC-",
+            invoicePrefix:      s.invoicePrefix ?? "INV-",
+            mpesaPaybillNumber: s.mpesaPaybillNumber ?? "",
           }));
         }
         setLoading(false);
@@ -264,11 +258,9 @@ export default function FinanceSettingsPage() {
     setSuccess(null);
 
     const body: Record<string, unknown> = {
-      balanceThreshold:     parseFloat(form.balanceThreshold) || 0,
-      daysOverdueThreshold: parseInt(form.daysOverdueThreshold, 10) || 30,
-      receiptPrefix:        form.receiptPrefix.trim() || "REC-",
-      invoicePrefix:        form.invoicePrefix.trim() || "INV-",
-      mpesaPaybillNumber:   form.mpesaPaybillNumber.trim() || null,
+      receiptPrefix:      form.receiptPrefix.trim() || "REC-",
+      invoicePrefix:      form.invoicePrefix.trim() || "INV-",
+      mpesaPaybillNumber: form.mpesaPaybillNumber.trim() || null,
     };
     if (form.mpesaWebhookSecret.trim()) {
       body.mpesaWebhookSecret = form.mpesaWebhookSecret.trim();
@@ -336,32 +328,6 @@ export default function FinanceSettingsPage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Balance threshold (KES)"
-                helper="Students are flagged as debtors when their balance falls below this amount."
-              >
-                <input
-                  type="number" min="0" step="0.01"
-                  value={form.balanceThreshold}
-                  onChange={e => setForm(f => ({ ...f, balanceThreshold: e.target.value }))}
-                  className={inputClass}
-                  placeholder="e.g. 500"
-                />
-              </FormField>
-
-              <FormField
-                label="Days overdue threshold"
-                helper="Number of days before a flagged debtor is escalated."
-              >
-                <input
-                  type="number" min="1"
-                  value={form.daysOverdueThreshold}
-                  onChange={e => setForm(f => ({ ...f, daysOverdueThreshold: e.target.value }))}
-                  className={inputClass}
-                  placeholder="e.g. 30"
-                />
-              </FormField>
-
               <FormField label="Receipt prefix">
                 <input
                   type="text"
