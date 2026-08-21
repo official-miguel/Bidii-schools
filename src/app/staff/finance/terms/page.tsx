@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { CalendarDays, Plus, Pencil, X, AlertTriangle, CheckCircle2, Users } from "lucide-react";
+import { CalendarDays, Plus, Pencil, Trash2, X, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
@@ -157,6 +157,72 @@ function InvoicingResultPanel({ result, termName, onClose }: {
   );
 }
 
+// ── Delete Confirm Modal ───────────────────────────────────────────────────
+
+function DeleteConfirmModal({ term, onClose, onDeleted }: {
+  term:      Term;
+  onClose:   () => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+
+  async function confirm() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res  = await fetch(`/api/finance/terms/${term.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Failed to delete."); setDeleting(false); return; }
+      onDeleted(term.id);
+    } catch {
+      setError("Network error. Please try again.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
+          <h2 className="text-base font-semibold text-ink dark:text-dark-text">Delete term?</h2>
+          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          {error && (
+            <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{error}</p>
+          )}
+          <p className="text-sm text-ink dark:text-dark-text">
+            You are about to permanently delete <span className="font-semibold">{term.termName?.name ?? term.name} ({term.academicYear})</span>.
+          </p>
+          <p className="text-sm text-slate dark:text-dark-muted">
+            This will also delete all invoices, ledger entries, and payments linked to this term. Student balances will be reversed accordingly. <span className="font-medium text-danger">This cannot be undone.</span>
+          </p>
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirm}
+              disabled={deleting}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-danger text-white text-sm font-medium hover:bg-danger/90 disabled:opacity-60 transition-colors"
+            >
+              {deleting ? "Deleting…" : "Delete term"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Term Modal ─────────────────────────────────────────────────────────────
 
 interface ModalProps {
@@ -205,7 +271,17 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
 
       const res  = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to save."); setSaving(false); return; }
+      if (!res.ok) {
+        if (res.status === 422 && data.classesWithoutFees?.length > 0) {
+          setError(
+            `Cannot create term — these classes have no fee structure: ${(data.classesWithoutFees as { name: string }[]).map(c => c.name).join(", ")}. Set up fee structures first.`
+          );
+        } else {
+          setError(data.error ?? "Failed to save.");
+        }
+        setSaving(false);
+        return;
+      }
 
       onSaved(data.term, data.invoicing);
     } catch {
@@ -276,7 +352,7 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
 
           {!isEdit && (
             <p className="text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border dark:text-dark-muted">
-              When you add this term, all students will be automatically invoiced based on their class fee structures. Students in classes without a fee structure will not be charged.
+              When you add this term, all students will be automatically invoiced based on their class fee structures. All classes must have a fee structure configured before a term can be created.
             </p>
           )}
 
@@ -304,6 +380,7 @@ export default function TermsPage() {
   const [error,          setError]          = useState<string | null>(null);
   const [modal,          setModal]          = useState<"add" | Term | null>(null);
   const [invoicingPanel, setInvoicingPanel] = useState<{ result: InvoicingResult; termName: string } | null>(null);
+  const [deleteTarget,   setDeleteTarget]   = useState<Term | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -337,6 +414,11 @@ export default function TermsPage() {
     if (invoicing) {
       setInvoicingPanel({ result: invoicing, termName: t.termName?.name ?? t.name });
     }
+  }
+
+  function handleDeleted(id: string) {
+    setTerms(prev => prev.filter(t => t.id !== id));
+    setDeleteTarget(null);
   }
 
   return (
@@ -404,14 +486,23 @@ export default function TermsPage() {
                       </div>
                     </td>
                     <td className={premiumTdClass}>
-                      <button
-                        onClick={() => setModal(t)}
-                        disabled={!!t.invoicingCompletedAt}
-                        title={t.invoicingCompletedAt ? "Invoicing completed — term locked" : "Edit term"}
-                        className="text-slate hover:text-teal transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setModal(t)}
+                          disabled={!!t.invoicingCompletedAt}
+                          title={t.invoicingCompletedAt ? "Invoicing completed — term locked" : "Edit term"}
+                          className="text-slate hover:text-teal transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(t)}
+                          title="Delete term"
+                          className="text-slate hover:text-danger transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -435,6 +526,14 @@ export default function TermsPage() {
           result={invoicingPanel.result}
           termName={invoicingPanel.termName}
           onClose={() => setInvoicingPanel(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          term={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={handleDeleted}
         />
       )}
     </div>

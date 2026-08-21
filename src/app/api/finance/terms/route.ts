@@ -58,6 +58,64 @@ export async function POST(req: NextRequest) {
     if (!tn) return NextResponse.json({ error: "Selected term name not found." }, { status: 400 });
   }
 
+  // ── Pre-flight: ensure every class in the school has a fee structure ──────
+  // Fetch all classes
+  const allClasses = await prisma.schoolClass.findMany({
+    where:  { schoolId },
+    select: { id: true, name: true, form: true, stream: true },
+  });
+
+  if (allClasses.length === 0) {
+    return NextResponse.json(
+      { error: "No classes found. Create classes before adding a term." },
+      { status: 422 }
+    );
+  }
+
+  // Fetch all fee structures — either specific to the selected termName or generic (null)
+  const structures = await prisma.feeStructure.findMany({
+    where: {
+      schoolId,
+      OR: [
+        { termNameId: termNameId ?? null },
+        { termNameId: null },
+      ],
+    },
+    select: { form: true, stream: true, termNameId: true },
+  });
+
+  // Build a lookup of covered form:stream combos — term-specific wins over generic
+  const coveredKeys = new Set<string>();
+  // First pass: add term-specific matches
+  for (const s of structures) {
+    if (s.termNameId !== null) {
+      coveredKeys.add(`${s.form}:${s.stream ?? ""}`);
+    }
+  }
+  // Second pass: add generic matches only if not already covered by term-specific
+  for (const s of structures) {
+    if (s.termNameId === null) {
+      coveredKeys.add(`${s.form}:${s.stream ?? ""}`);
+    }
+  }
+
+  // Check each class
+  const classesWithoutFees = allClasses.filter(cls => {
+    const key = `${cls.form}:${cls.stream ?? ""}`;
+    return !coveredKeys.has(key);
+  });
+
+  if (classesWithoutFees.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Cannot create term — ${classesWithoutFees.length} class${classesWithoutFees.length !== 1 ? "es" : ""} do not have a fee structure: ${classesWithoutFees.map(c => c.name).join(", ")}.`,
+        classesWithoutFees: classesWithoutFees.map(c => ({ id: c.id, name: c.name, form: c.form, stream: c.stream })),
+      },
+      { status: 422 }
+    );
+  }
+  // ── End pre-flight ──────────────────────────────────────────────────────────
+
   // Create the term
   let term;
   try {
