@@ -86,16 +86,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
 
   // Resolve a real userId for postedById — required FK on Payment/LedgerEntry.
   // Use the school's first BURSAR, fallback to any user in the school.
-  const systemUser = await prisma.user.findFirst({
-    where:   { schoolId, role: { in: ["BURSAR", "PRINCIPAL", "ADMIN_STAFF"] } },
-    orderBy: { createdAt: "asc" },
-    select:  { id: true },
-  });
-  const postedById = systemUser?.id;
-  if (!postedById) {
-    console.log(`[C2B] REJECTED — no user found for schoolId=${schoolId}`);
-    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" }); // still 200 to Daraja
-  }
+  // Only needed for the exact-match auto-credit path, so we defer this lookup.
+  let postedById: string | null = null;
 
   // Always return 200 to Daraja from here on (even on duplicates)
 
@@ -138,6 +130,19 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   const prefix = receiptPrefix ?? "REC-";
 
   if (matchResult?.confidence === 1.0) {
+    // 5a. Exact match — auto-credit. Look up any active user for postedById FK.
+    const systemUser = await prisma.user.findFirst({
+      where:   { schoolId, isActive: true },
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      select:  { id: true },
+    });
+    postedById = systemUser?.id ?? null;
+    if (!postedById) {
+      console.log(`[C2B] no user found for schoolId=${schoolId}, falling back to queue`);
+    }
+  }
+
+  if (matchResult?.confidence === 1.0 && postedById) {
     // 5a. Exact match — auto-credit
     try {
       await prisma.$transaction(async (tx) => {
