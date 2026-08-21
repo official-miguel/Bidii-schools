@@ -182,27 +182,27 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     }
   } else {
     // 5b. Fuzzy or no match — queue for manual reconciliation
+    // Use direct inserts (no transaction) to avoid RLS SET LOCAL issues.
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
-
-        await tx.mpesaReconciliationQueue.create({
-          data: {
-            schoolId, mpesaTransactionId, rawAccountNumber, amount, paidAt,
-            rawPayload:          payload as object,
-            suggestedStudentId:  matchResult?.studentId ?? null,
-            suggestedConfidence: matchResult?.confidence ?? null,
-            status:              "PENDING",
-          },
-        });
-
-        await tx.financeNotification.create({
-          data: {
-            schoolId, studentId: null, type: "RECONCILIATION_NEEDED",
-            message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" requires manual reconciliation.`,
-          },
-        });
+      await prisma.mpesaReconciliationQueue.create({
+        data: {
+          schoolId, mpesaTransactionId, rawAccountNumber, amount, paidAt,
+          rawPayload:          payload as object,
+          suggestedStudentId:  matchResult?.studentId ?? null,
+          suggestedConfidence: matchResult?.confidence ?? null,
+          status:              "PENDING",
+        },
       });
+      console.log(`[C2B] queued txId=${mpesaTransactionId} for reconciliation`);
+
+      // Notification is best-effort — don't let it block the queue insert
+      prisma.financeNotification.create({
+        data: {
+          schoolId, studentId: null, type: "RECONCILIATION_NEEDED",
+          message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" requires manual reconciliation.`,
+        },
+      }).catch(e => console.error("[C2B] notification failed (non-fatal):", e));
+
     } catch (err) {
       console.error("[C2B/WEBHOOK] queue failed:", err);
     }
