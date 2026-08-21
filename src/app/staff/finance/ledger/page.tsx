@@ -404,12 +404,6 @@ export default function LedgerPage() {
   const [termFilter,      setTermFilter]      = useState("");
   const [showPanel,       setShowPanel]       = useState(false);
   const [terms,           setTerms]           = useState<Term[]>([]);
-  const [schoolStats,     setSchoolStats]     = useState<{
-    totalInvoiced: string;
-    totalPaid:     string;
-    totalOutstanding: string;
-  } | null>(null);
-  // Server-computed per-term batch stats — stable across all pages.
   const [termBatchStats,  setTermBatchStats]  = useState<Record<string, TermBatchStat>>({});
 
   const tableRef    = useRef<HTMLDivElement | null>(null);
@@ -444,9 +438,6 @@ export default function LedgerPage() {
       const newEntries: LedgerEntry[] = data.entries ?? [];
       setEntries(prev => p === 1 ? newEntries : [...prev, ...newEntries]);
       setTotal(data.total ?? 0);
-      // schoolStats and termBatchStats are stable across all pages — always
-      // update from the latest response so the first page load populates them.
-      if (data.schoolStats)    setSchoolStats(data.schoolStats);
       if (data.termBatchStats) setTermBatchStats(data.termBatchStats);
     } catch {
       setError("Could not load ledger. Please try again.");
@@ -617,25 +608,7 @@ export default function LedgerPage() {
         )}
       </div>
 
-      {/* ── School outstanding stats ── */}
-      {schoolStats && !initialLoading && (
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          {[
-            { label: "Total invoiced",    value: schoolStats.totalInvoiced,    color: "text-ink dark:text-dark-text" },
-            { label: "Total collected",   value: schoolStats.totalPaid,         color: "text-success" },
-            { label: "Total outstanding", value: schoolStats.totalOutstanding,  color: parseFloat(schoolStats.totalOutstanding) > 0 ? "text-danger" : "text-success" },
-          ].map(s => (
-            <div key={s.label} className="rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-3">
-              <p className={`font-bold tabular-nums leading-tight ${s.color} ${
-                s.value.length > 14 ? "text-sm" : s.value.length > 10 ? "text-base" : "text-lg"
-              }`}>
-                {formatKES(s.value)}
-              </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
+
 
       {/* ── Scrollable ledger table ── */}
       {initialLoading ? (
