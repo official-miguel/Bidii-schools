@@ -84,6 +84,19 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     }
   }
 
+  // Resolve a real userId for postedById — required FK on Payment/LedgerEntry.
+  // Use the school's first BURSAR, fallback to any user in the school.
+  const systemUser = await prisma.user.findFirst({
+    where:   { schoolId, role: { in: ["BURSAR", "PRINCIPAL", "ADMIN_STAFF"] } },
+    orderBy: { createdAt: "asc" },
+    select:  { id: true },
+  });
+  const postedById = systemUser?.id;
+  if (!postedById) {
+    console.log(`[C2B] REJECTED — no user found for schoolId=${schoolId}`);
+    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" }); // still 200 to Daraja
+  }
+
   // Always return 200 to Daraja from here on (even on duplicates)
 
   let payload: Record<string, unknown>;
@@ -140,7 +153,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
             mpesaRawPayload: payload as object,
             receiptNumber,
             paidAt,
-            postedById:           "system",
+            postedById,
             reconciliationStatus: "AUTO_MATCHED",
           },
         });
@@ -154,7 +167,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
           referenceType:     "PAYMENT",
           paymentMethod:     "MPESA",
           mpesaTransactionId,
-          postedById:        "system",
+          postedById,
         });
 
         await tx.financeNotification.create({
