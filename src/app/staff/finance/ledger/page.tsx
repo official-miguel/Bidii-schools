@@ -16,7 +16,6 @@ interface LedgerEntry {
   id:             string;
   entryType:      string;
   amount:         string;
-  runningBalance: string;
   description:    string;
   postedAt:       string;
   isVoided:       boolean;
@@ -46,7 +45,6 @@ interface BatchRow {
   totalAmount:    number;
   count:          number;
   entries:        LedgerEntry[];
-  runningBalance: string;
   postedAt:       string;
 }
 type DisplayRow = SingleRow | BatchRow;
@@ -135,7 +133,6 @@ function groupEntries(entries: LedgerEntry[]): DisplayRow[] {
           totalAmount:    total,
           count:          batch.length,
           entries:        batch,
-          runningBalance: batch[batch.length - 1].runningBalance, // oldest in batch = lowest balance
           postedAt:       e.postedAt,
         });
         i = j;
@@ -169,7 +166,6 @@ const TYPE_OPTIONS = [
 function SingleEntryRow({ e }: { e: LedgerEntry }) {
   const [expanded, setExpanded] = useState(false);
   const { label, variant } = entryTypeLabel(e.entryType);
-  const rb     = parseFloat(e.runningBalance);
   const cashIn = isCashIn(e.entryType);
   const isOpeningBal = e.entryType === "OPENING_BALANCE" || e.referenceType === "CARRY_FORWARD";
 
@@ -209,14 +205,11 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
           <span className="text-xs mr-0.5">{cashIn ? "+" : "−"}</span>
           {formatKES(e.amount)}
         </td>
-        <td className={`${premiumTdClass} text-right tabular-nums font-bold ${rb >= 0 ? "text-success" : "text-danger"}`}>
-          {rb < 0 ? "(" : ""}{formatKES(e.runningBalance)}{rb < 0 ? ")" : ""}
-        </td>
       </tr>
 
       {expanded && (
         <tr className="bg-paper/60 dark:bg-dark-border/10">
-          <td colSpan={5} className="px-8 py-3 border-b border-line/60 dark:border-dark-border/60">
+          <td colSpan={4} className="px-8 py-3 border-b border-line/60 dark:border-dark-border/60">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
                 <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Description</p>
@@ -238,7 +231,6 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
 
 function BatchInvoiceRow({ row }: { row: BatchRow }) {
   const [expanded, setExpanded] = useState(false);
-  const rb = parseFloat(row.runningBalance);
 
   return (
     <>
@@ -275,9 +267,6 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
         <td className={`${premiumTdClass} text-right tabular-nums font-bold text-danger`}>
           − {formatKES(row.totalAmount)}
         </td>
-        <td className={`${premiumTdClass} text-right tabular-nums font-bold ${rb >= 0 ? "text-success" : "text-danger"}`}>
-          {rb < 0 ? "(" : ""}{formatKES(row.runningBalance)}{rb < 0 ? ")" : ""}
-        </td>
       </tr>
 
       {/* Expanded: individual student invoices */}
@@ -295,7 +284,6 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
             {e.referenceId && <p className="text-[10px] text-slate dark:text-dark-muted font-mono">{e.referenceId}</p>}
           </td>
           <td className={`${premiumTdClass} text-right tabular-nums text-danger`}>− {formatKES(e.amount)}</td>
-          <td className={`${premiumTdClass} text-right tabular-nums text-xs text-slate dark:text-dark-muted`}>—</td>
         </tr>
       ))}
     </>
@@ -315,6 +303,11 @@ export default function LedgerPage() {
   const [termFilter,     setTermFilter]     = useState("");
   const [showPanel,      setShowPanel]      = useState(false);
   const [terms,          setTerms]          = useState<Term[]>([]);
+  const [schoolStats,    setSchoolStats]    = useState<{
+    totalInvoiced: string;
+    totalPaid: string;
+    totalOutstanding: string;
+  } | null>(null);
 
   const tableRef    = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -346,6 +339,7 @@ export default function LedgerPage() {
       const newEntries: LedgerEntry[] = data.entries ?? [];
       setEntries(prev => p === 1 ? newEntries : [...prev, ...newEntries]);
       setTotal(data.total ?? 0);
+      if (data.schoolStats) setSchoolStats(data.schoolStats);
     } catch {
       setError("Could not load ledger. Please try again.");
     } finally {
@@ -491,6 +485,26 @@ export default function LedgerPage() {
         )}
       </div>
 
+      {/* ── School outstanding stats ── */}
+      {schoolStats && !initialLoading && (
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          {[
+            { label: "Total invoiced",    value: schoolStats.totalInvoiced,    color: "text-ink dark:text-dark-text" },
+            { label: "Total collected",   value: schoolStats.totalPaid,         color: "text-success" },
+            { label: "Total outstanding", value: schoolStats.totalOutstanding,  color: parseFloat(schoolStats.totalOutstanding) > 0 ? "text-danger" : "text-success" },
+          ].map(s => (
+            <div key={s.label} className="rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-3">
+              <p className={`font-bold tabular-nums leading-tight ${s.color} ${
+                s.value.length > 14 ? "text-sm" : s.value.length > 10 ? "text-base" : "text-lg"
+              }`}>
+                {formatKES(s.value)}
+              </p>
+              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Scrollable ledger table ── */}
       {initialLoading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
@@ -528,7 +542,6 @@ export default function LedgerPage() {
                   <th className={premiumThClass}>Type</th>
                   <th className={premiumThClass}>Details</th>
                   <th className={`${premiumThClass} text-right`}>Amount</th>
-                  <th className={`${premiumThClass} text-right`}>School Balance</th>
                 </tr>
               </thead>
               <tbody>

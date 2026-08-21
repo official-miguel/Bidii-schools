@@ -1,5 +1,9 @@
 /**
- * GET /api/finance/ledger — Paginated school-wide ledger with filtering and running balance
+ * GET /api/finance/ledger — Paginated school-wide ledger
+ *
+ * Returns entries in descending order + a single stable outstanding balance
+ * computed from StudentFinanceAccount aggregates (sum of all currentBalance
+ * where currentBalance < 0 = what students owe).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/library";
@@ -23,9 +27,9 @@ export async function GET(req: NextRequest) {
   const entryType    = entryTypeRaw && VALID_ENTRY_TYPES.has(entryTypeRaw)
     ? (entryTypeRaw as LedgerEntryType)
     : null;
-  const fromDate       = searchParams.get("fromDate");
-  const toDate         = searchParams.get("toDate");
-  const isVoidedParam  = searchParams.get("isVoided");
+  const fromDate      = searchParams.get("fromDate");
+  const toDate        = searchParams.get("toDate");
+  const isVoidedParam = searchParams.get("isVoided");
   const isVoided =
     isVoidedParam === "true"  ? true  :
     isVoidedParam === "false" ? false : undefined;
@@ -45,7 +49,6 @@ export async function GET(req: NextRequest) {
         ...(toDate   ? { lte: new Date(toDate) }   : {}),
       },
     } : {}),
-    // Name / admission number search
     ...(search ? {
       student: {
         OR: [
@@ -58,10 +61,11 @@ export async function GET(req: NextRequest) {
 
   const whereTyped = where as Prisma.LedgerEntryWhereInput;
 
-  const [entries, total] = await Promise.all([
+  // Fetch entries and total in parallel, plus the stable school outstanding balance
+  const [entries, total, accounts] = await Promise.all([
     prisma.ledgerEntry.findMany({
       where:   whereTyped,
-      orderBy: { postedAt: "desc" },
+      orderBy: [{ postedAt: "desc" }, { id: "desc" }],
       skip:    (page - 1) * pageSize,
       take:    pageSize,
       select: {
@@ -70,76 +74,34 @@ export async function GET(req: NextRequest) {
         postedAt: true, isVoided: true,
         student:  { select: { id: true, fullName: true, admissionNumber: true } },
         term:     { select: { name: true } },
-        postedBy: { select: { id: true } },
       },
     }),
     prisma.ledgerEntry.count({ where: whereTyped }),
+    // Aggregate total outstanding: sum of negative balances (what students owe)
+    prisma.studentFinanceAccount.aggregate({
+      where:  { schoolId, currentBalance: { lt: 0 } },
+      _sum:   { currentBalance: true, totalInvoiced: true, totalPaid: true },
+    }),
   ]);
 
-  // Compute school-wide running balance up to and including each page entry.
-  // We need the balance just BEFORE the first entry on this page, then walk
-  // forward (oldest-first) adding deltas, then reverse back to desc order.
-  //
-  // School balance rule (opposite of per-student):
-  //   PAYMENT / CREDIT_ADJUSTMENT → school receives money → +amount
-  //   INVOICE / DEBIT_ADJUSTMENT / OPENING_BALANCE → school is owed more → treated as pending (+amount for display)
-  //
-  // For the "school total received" running balance we track:
-  //   PAYMENT / CREDIT_ADJUSTMENT = +  (cash in)
-  //   INVOICE                     = -  (money goes out as a debt obligation)
-  //   DEBIT_ADJUSTMENT            = -
-  //   OPENING_BALANCE             = -
-
-  // Sum of all non-voided entries AFTER the current page (older entries)
-  // to get the balance at the start of this page.
-  let balanceBeforePage = new Decimal(0);
-  if (entries.length > 0) {
-    // The oldest entry on this page — everything before this (older) was
-    // already processed in previous pages.
-    const oldestOnPage  = entries[entries.length - 1].postedAt;
-    const olderEntries  = await prisma.ledgerEntry.findMany({
-      where: {
-        schoolId,
-        isVoided: false,
-        postedAt: { lt: oldestOnPage },
-      } as Prisma.LedgerEntryWhereInput,
-      select: { entryType: true, amount: true },
-    });
-    for (const e of olderEntries) {
-      const amt = new Decimal(e.amount.toString());
-      if (e.entryType === "PAYMENT" || e.entryType === "CREDIT_ADJUSTMENT") {
-        balanceBeforePage = balanceBeforePage.plus(amt);
-      } else {
-        balanceBeforePage = balanceBeforePage.minus(amt);
-      }
-    }
-  }
-
-  // Walk entries oldest-first to build running totals, then reverse.
-  const reversed = [...entries].reverse();
-  let running = balanceBeforePage;
-  const runningMap = new Map<string, string>();
-  for (const e of reversed) {
-    if (!e.isVoided) {
-      const amt = new Decimal(e.amount.toString());
-      if (e.entryType === "PAYMENT" || e.entryType === "CREDIT_ADJUSTMENT") {
-        running = running.plus(amt);
-      } else {
-        running = running.minus(amt);
-      }
-    }
-    runningMap.set(e.id, running.toString());
-  }
+  // Stable outstanding = abs(sum of negative balances)
+  const totalInvoiced   = new Decimal(accounts._sum.totalInvoiced?.toString()  ?? "0");
+  const totalPaid       = new Decimal(accounts._sum.totalPaid?.toString()       ?? "0");
+  const outstandingDebt = new Decimal(accounts._sum.currentBalance?.toString()  ?? "0").abs();
 
   return NextResponse.json({
     entries: entries.map((e) => ({
       ...e,
-      amount:         e.amount.toString(),
-      runningBalance: runningMap.get(e.id) ?? "0",
-      voided:         e.isVoided,
+      amount: e.amount.toString(),
     })),
     total,
     page,
     pageSize,
+    // Stable school-wide aggregates — same value regardless of which page is loaded
+    schoolStats: {
+      totalInvoiced:    totalInvoiced.toString(),
+      totalPaid:        totalPaid.toString(),
+      totalOutstanding: outstandingDebt.toString(),
+    },
   });
 }

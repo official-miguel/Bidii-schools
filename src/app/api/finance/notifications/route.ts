@@ -15,7 +15,13 @@ export async function GET() {
   const { schoolId } = auth;
 
   const notifications = await prisma.financeNotification.findMany({
-    where:   { schoolId, isRead: false },
+    where:   {
+      schoolId,
+      isRead: false,
+      // Invoice-generated notifications are too noisy (100s at once during
+      // batch invoicing). Only show payment-related and setup notifications.
+      type: { not: "INVOICE_GENERATED" },
+    },
     orderBy: { createdAt: "desc" },
     take:    50,
     select: {
