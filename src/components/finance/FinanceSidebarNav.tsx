@@ -49,6 +49,7 @@ const TABS: NavTab[] = [
       "/staff/finance/ledger",
       "/staff/finance/payments",
       "/staff/finance/debtors",
+      "/staff/finance/reconciliation",
     ],
   },
   {

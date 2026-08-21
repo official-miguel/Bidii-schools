@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import {
-  Users,
-  BookOpen,
-  CreditCard,
-  AlertTriangle,
-  ArrowRight,
+  Users, BookOpen, CreditCard,
+  AlertTriangle, GitMerge, ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 
@@ -34,6 +31,12 @@ const tiles = [
     icon:  <AlertTriangle className="h-6 w-6" />,
     label: "Debtors",
     desc:  "Students with outstanding balances past the threshold.",
+  },
+  {
+    href:  "/staff/finance/reconciliation",
+    icon:  <GitMerge className="h-6 w-6" />,
+    label: "M-Pesa Reconciliation",
+    desc:  "Match unrecognised M-Pesa payments to students before crediting their accounts.",
   },
 ];
 
