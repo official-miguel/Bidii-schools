@@ -44,6 +44,7 @@ export type SSEEventType =
   | "libraryCopy.created"
   | "libraryCopy.updated"
   | "libraryCopy.archived"
+  | "libraryCopy.qrReissued"
   | "calendarEvent.created"
   | "calendarEvent.updated"
   | "calendarEvent.deleted"
@@ -62,7 +63,8 @@ export type SSEEventType =
   | "import.dormitories.completed"
   | "import.beds.completed"
   | "import.allocations.completed"
-  | "import.parents.completed";
+  | "import.parents.completed"
+  | "import.finance.completed";
 
 /**
  * Push a typed event to all SSE clients connected to the given school.
