@@ -69,7 +69,6 @@ function entryTypeLabel(type: string): { label: string; variant: "success" | "in
   }
 }
 
-// Is this entry a cash-in (positive for the school)?
 function isCashIn(type: string) {
   return type === "PAYMENT" || type === "CREDIT_ADJUSTMENT";
 }
@@ -81,6 +80,15 @@ const inputCls =
 
 const PAGE_SIZE = 50;
 
+const TYPE_OPTIONS = [
+  { value: "",                 label: "All transactions" },
+  { value: "PAYMENT",          label: "Payments" },
+  { value: "INVOICE",          label: "Invoices" },
+  { value: "CREDIT_ADJUSTMENT",label: "Credit Adj." },
+  { value: "DEBIT_ADJUSTMENT", label: "Debit Adj." },
+  { value: "OPENING_BALANCE",  label: "Opening Bal." },
+];
+
 // ── Expandable row ─────────────────────────────────────────────────────────
 
 function EntryRow({ e }: { e: LedgerEntry }) {
@@ -91,12 +99,10 @@ function EntryRow({ e }: { e: LedgerEntry }) {
 
   return (
     <>
-      {/* Main row */}
       <tr
         className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""} cursor-pointer hover:bg-teal/5 transition-colors`}
         onClick={() => setExpanded(v => !v)}
       >
-        {/* Expand chevron + date */}
         <td className={`${premiumTdClass} whitespace-nowrap`}>
           <div className="flex items-center gap-1.5">
             {expanded
@@ -110,19 +116,17 @@ function EntryRow({ e }: { e: LedgerEntry }) {
           </div>
         </td>
 
-        {/* Type */}
         <td className={premiumTdClass}>
           <Badge variant={variant}>{label}</Badge>
           {e.isVoided && <span className="ml-1 text-xs text-slate">(voided)</span>}
         </td>
 
-        {/* From / To */}
         <td className={premiumTdClass}>
           {e.student ? (
             <div>
               <p className="text-sm font-medium text-ink dark:text-dark-text">
-                {cashIn ? "From: " : "For: "}
-                <span className="font-semibold">{e.student.fullName}</span>
+                <span className="text-slate dark:text-dark-muted font-normal text-xs">{cashIn ? "From " : "For "}</span>
+                {e.student.fullName}
               </p>
               <p className="text-xs font-mono text-slate dark:text-dark-muted">{e.student.admissionNumber}</p>
             </div>
@@ -131,19 +135,16 @@ function EntryRow({ e }: { e: LedgerEntry }) {
           )}
         </td>
 
-        {/* Amount — green for cash-in, red for obligations */}
         <td className={`${premiumTdClass} text-right tabular-nums font-semibold ${cashIn ? "text-success" : "text-danger"}`}>
           <span className="text-xs mr-0.5">{cashIn ? "+" : "−"}</span>
           {formatKES(e.amount)}
         </td>
 
-        {/* Running school total */}
         <td className={`${premiumTdClass} text-right tabular-nums font-bold ${rb >= 0 ? "text-success" : "text-danger"}`}>
           {rb < 0 ? "(" : ""}{formatKES(e.runningBalance)}{rb < 0 ? ")" : ""}
         </td>
       </tr>
 
-      {/* Expanded detail panel */}
       {expanded && (
         <tr className="bg-paper/60 dark:bg-dark-border/10">
           <td colSpan={5} className="px-8 py-3 border-b border-line/60 dark:border-dark-border/60">
@@ -191,35 +192,32 @@ function EntryRow({ e }: { e: LedgerEntry }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function LedgerPage() {
-  const [entries,  setEntries]  = useState<LedgerEntry[]>([]);
-  const [total,    setTotal]    = useState(0);
-  const [page,     setPage]     = useState(1);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-
-  // Filters
-  const [search,    setSearch]    = useState("");
+  const [entries,    setEntries]    = useState<LedgerEntry[]>([]);
+  const [total,      setTotal]      = useState(0);
+  const [page,       setPage]       = useState(1);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [search,     setSearch]     = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [showPanel, setShowPanel]  = useState(false);
+  const [showPanel,  setShowPanel]  = useState(false);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Debounce timer ref for search input
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether filters changed (to reset page to 1)
+  const filtersRef   = useRef({ search: "", typeFilter: "" });
 
   const load = useCallback(async (p: number, q: string, type: string) => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        page:     String(p),
-        pageSize: String(PAGE_SIZE),
-      });
-      if (q.trim())   params.set("q",         q.trim());
-      if (type)       params.set("entryType",  type);
-
+      const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
+      if (q.trim()) params.set("q",          q.trim());
+      if (type)     params.set("entryType",  type);
       const res  = await fetch(`/api/finance/ledger?${params}`);
-      if (!res.ok) throw new Error("Failed to load ledger");
+      if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
       setEntries(data.entries ?? []);
-      setTotal(data.total ?? 0);
+      setTotal(data.total    ?? 0);
     } catch {
       setError("Could not load ledger. Please try again.");
     } finally {
@@ -227,16 +225,30 @@ export default function LedgerPage() {
     }
   }, []);
 
+  // Initial load on mount — show everything immediately
   useEffect(() => {
+    load(1, "", "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-load when search or type filter changes (debounced, resets to page 1)
+  useEffect(() => {
+    const prev = filtersRef.current;
+    if (prev.search === search && prev.typeFilter === typeFilter) return;
+    filtersRef.current = { search, typeFilter };
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(1);
       load(1, search, typeFilter);
     }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, typeFilter]);
 
+  // Re-load when page changes (but NOT on initial mount — handled above)
+  const isFirstPageRender = useRef(true);
   useEffect(() => {
+    if (isFirstPageRender.current) { isFirstPageRender.current = false; return; }
     load(page, search, typeFilter);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
@@ -247,14 +259,13 @@ export default function LedgerPage() {
     <div>
       <PageHeader
         title="School Ledger"
-        description="Complete financial history — all transactions treated as the school's single ledger."
+        description="Complete financial history — all transactions as the school's single ledger. Click any row to expand."
       />
 
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
-      {/* Filter bar */}
+      {/* ── Filter bar ── */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {/* Search */}
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
           <input
@@ -271,7 +282,6 @@ export default function LedgerPage() {
           )}
         </div>
 
-        {/* Type filter toggle */}
         <button
           type="button"
           onClick={() => setShowPanel(v => !v)}
@@ -282,16 +292,16 @@ export default function LedgerPage() {
           }`}
         >
           <SlidersHorizontal className="h-4 w-4" />
-          Filter
+          {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label ?? "Filter" : "Filter"}
           {typeFilter && <span className="ml-1 bg-teal text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>}
         </button>
 
-        {/* Refresh */}
         <button
           type="button"
           onClick={() => load(page, search, typeFilter)}
           disabled={loading}
           className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+          title="Refresh"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
@@ -303,41 +313,48 @@ export default function LedgerPage() {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-danger transition-colors"
           >
             <X className="h-3.5 w-3.5" />
-            Clear
+            Clear filters
           </button>
         )}
       </div>
 
-      {/* Filter panel */}
+      {/* ── Filter panel ── */}
       {showPanel && (
-        <div className="mb-5 rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-4 flex flex-wrap items-end gap-3 shadow-sm">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate dark:text-dark-muted">Transaction type</label>
-            <div className="flex flex-wrap gap-1.5">
-              {["", "PAYMENT", "INVOICE", "CREDIT_ADJUSTMENT", "DEBIT_ADJUSTMENT", "OPENING_BALANCE"].map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTypeFilter(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    typeFilter === t
-                      ? "bg-teal text-white border-teal"
-                      : "bg-white border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
-                  }`}
-                >
-                  {t === "" ? "All" : t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-                </button>
-              ))}
-            </div>
+        <div className="mb-5 rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-4 shadow-sm">
+          <p className="text-xs font-medium text-slate dark:text-dark-muted mb-2">Transaction type</p>
+          <div className="flex flex-wrap gap-1.5">
+            {TYPE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setTypeFilter(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  typeFilter === opt.value
+                    ? "bg-teal text-white border-teal"
+                    : "bg-white border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
+      {/* ── Entry count summary ── */}
+      {!loading && total > 0 && (
+        <p className="text-xs text-slate dark:text-dark-muted mb-3">
+          {total.toLocaleString()} {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label?.toLowerCase() ?? "entries" : "entries"} total
+          {search && <span> matching &ldquo;{search}&rdquo;</span>}
+        </p>
+      )}
+
+      {/* ── Table ── */}
       {loading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : entries.length === 0 ? (
         <EmptyState
-          message="No transactions recorded yet."
+          message={search || typeFilter ? "No entries match the current filter." : "No transactions recorded yet."}
           icon={<DollarSign className="h-6 w-6" />}
         />
       ) : (
@@ -355,19 +372,17 @@ export default function LedgerPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((e) => (
-                    <EntryRow key={e.id} e={e} />
-                  ))}
+                  {entries.map(e => <EntryRow key={e.id} e={e} />)}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Pagination */}
+          {/* ── Pagination ── */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 px-1">
               <p className="text-xs text-slate dark:text-dark-muted">
-                Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)} of {total.toLocaleString()} entries
+                Page {page} of {totalPages} · {total.toLocaleString()} entries
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -379,7 +394,7 @@ export default function LedgerPage() {
                   <ChevronLeft className="h-4 w-4" />
                   Prev
                 </button>
-                <span className="px-3 py-1.5 text-sm text-ink dark:text-dark-text font-medium">
+                <span className="px-3 text-sm text-ink dark:text-dark-text font-medium tabular-nums">
                   {page} / {totalPages}
                 </span>
                 <button
