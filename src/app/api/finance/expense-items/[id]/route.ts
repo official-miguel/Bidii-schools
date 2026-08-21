@@ -1,4 +1,5 @@
 /**
+ * GET   /api/finance/expense-items/[id]  — Fetch a single expense item
  * PATCH /api/finance/expense-items/[id]  — Update name, description, or price
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -11,6 +12,33 @@ const updateSchema = z.object({
   description:  z.string().trim().optional().nullable(),
   currentPrice: z.number().positive().optional(),
 });
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const auth = await requireBursarOrPrincipal();
+  if (auth.error) return auth.error;
+  const { schoolId } = auth;
+
+  const item = await prisma.expenseItem.findFirst({
+    where:  { id: params.id, schoolId },
+    select: {
+      id:           true,
+      name:         true,
+      description:  true,
+      currentPrice: true,
+      isActive:     true,
+      category:     { select: { name: true } },
+    },
+  });
+
+  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+  return NextResponse.json({
+    item: { ...item, currentPrice: item.currentPrice.toString() },
+  });
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireBursarOrPrincipal();
