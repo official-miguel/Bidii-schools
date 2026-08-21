@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import {
   Plus, ChevronDown, ChevronRight, X, Pencil, Tag, Users,
   CheckCircle2, AlertTriangle, Search, Loader2,
@@ -705,9 +706,12 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
           items.map(item => (
             <tr key={item.id} className="border-b border-line/50 dark:border-dark-border/50 bg-paper/40 dark:bg-dark-bg/30">
               <td className={`${premiumTdClass} pl-10`}>
-                <p className={`text-sm text-ink dark:text-dark-text ${!item.isActive ? "line-through opacity-50" : ""}`}>
+                <Link
+                  href={`/staff/finance/expenses/${item.id}`}
+                  className={`text-sm font-medium hover:text-teal transition-colors ${!item.isActive ? "line-through opacity-50 text-slate" : "text-ink dark:text-dark-text"}`}
+                >
                   {item.name}
-                </p>
+                </Link>
                 {item.description && (
                   <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{item.description}</p>
                 )}
