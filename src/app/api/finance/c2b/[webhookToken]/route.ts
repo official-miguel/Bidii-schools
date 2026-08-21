@@ -107,7 +107,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
 
   console.log(`[C2B] schoolId=${schoolId} txId=${mpesaTransactionId} ref=${rawAccountNumber} amount=${amount}`);
 
-  if (!mpesaTransactionId) return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
+  if (!mpesaTransactionId) return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "no_txid" });
 
   // 3. Idempotency check
   const [existingEntry, existingQueue] = await Promise.all([
@@ -115,7 +115,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     prisma.mpesaReconciliationQueue.findUnique({ where: { mpesaTransactionId }, select: { id: true } }),
   ]);
   if (existingEntry || existingQueue) {
-    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" }); // idempotent
+    console.log(`[C2B] duplicate txId=${mpesaTransactionId}`);
+    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "duplicate" }); // idempotent
   }
 
   // 4. Load all admission numbers for fuzzy matching
@@ -191,7 +192,6 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     }
   } else {
     // 5b. Fuzzy or no match — queue for manual reconciliation
-    // Use direct inserts (no transaction) to avoid RLS SET LOCAL issues.
     try {
       await prisma.mpesaReconciliationQueue.create({
         data: {
@@ -204,7 +204,6 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
       });
       console.log(`[C2B] queued txId=${mpesaTransactionId} for reconciliation`);
 
-      // Notification is best-effort — don't let it block the queue insert
       prisma.financeNotification.create({
         data: {
           schoolId, studentId: null, type: "RECONCILIATION_NEEDED",
@@ -212,10 +211,13 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
         },
       }).catch(e => console.error("[C2B] notification failed (non-fatal):", e));
 
+      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "queued" });
+
     } catch (err) {
       console.error("[C2B/WEBHOOK] queue failed:", err);
+      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: `queue_err:${String(err)}` });
     }
   }
 
-  return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
+  return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "auto_credited" });
 }
