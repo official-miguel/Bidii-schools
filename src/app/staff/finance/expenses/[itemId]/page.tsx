@@ -151,7 +151,7 @@ function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: Attac
     if (s.alreadyAttached) return;
     setSelectedMap(prev => {
       const next = new Map(prev);
-      next.has(s.id) ? next.delete(s.id) : next.set(s.id, s);
+      if (next.has(s.id)) { next.delete(s.id); } else { next.set(s.id, s); }
       return next;
     });
   }
@@ -161,7 +161,7 @@ function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: Attac
   function toggleAll() {
     setSelectedMap(prev => {
       const next = new Map(prev);
-      allSelected ? available.forEach(s => next.delete(s.id)) : available.forEach(s => next.set(s.id, s));
+      if (allSelected) { available.forEach(s => next.delete(s.id)); } else { available.forEach(s => next.set(s.id, s)); }
       return next;
     });
   }
