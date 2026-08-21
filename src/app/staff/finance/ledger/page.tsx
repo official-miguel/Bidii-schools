@@ -28,11 +28,19 @@ interface LedgerEntry {
   term:           { name: string } | null;
 }
 
+interface Term {
+  id:          string;
+  name:        string;
+  academicYear:number;
+  isActive:    boolean;
+  termName:    { name: string } | null;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function formatKES(s: string) {
-  const n = parseFloat(s);
-  return isNaN(n) ? s : `KES ${Math.abs(n).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
+function formatKES(s: string | number) {
+  const n = typeof s === "number" ? s : parseFloat(s);
+  return isNaN(n) ? String(s) : `KES ${Math.abs(n).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 }
 
 function formatDate(iso: string) {
@@ -81,12 +89,12 @@ const inputCls =
 const PAGE_SIZE = 50;
 
 const TYPE_OPTIONS = [
-  { value: "",                 label: "All transactions" },
-  { value: "PAYMENT",          label: "Payments" },
-  { value: "INVOICE",          label: "Invoices" },
-  { value: "CREDIT_ADJUSTMENT",label: "Credit Adj." },
-  { value: "DEBIT_ADJUSTMENT", label: "Debit Adj." },
-  { value: "OPENING_BALANCE",  label: "Opening Bal." },
+  { value: "",                  label: "All transactions" },
+  { value: "PAYMENT",           label: "Payments" },
+  { value: "INVOICE",           label: "Invoices" },
+  { value: "CREDIT_ADJUSTMENT", label: "Credit Adj." },
+  { value: "DEBIT_ADJUSTMENT",  label: "Debit Adj." },
+  { value: "OPENING_BALANCE",   label: "Opening Bal." },
 ];
 
 // ── Expandable row ─────────────────────────────────────────────────────────
@@ -189,6 +197,37 @@ function EntryRow({ e }: { e: LedgerEntry }) {
   );
 }
 
+// ── Term summary banner ────────────────────────────────────────────────────
+
+function TermSummaryBanner({ entries, termName }: { entries: LedgerEntry[]; termName: string }) {
+  let totalInvoiced = 0;
+  let totalPaid     = 0;
+
+  for (const e of entries) {
+    if (e.isVoided) continue;
+    const amt = Math.abs(parseFloat(e.amount));
+    if (e.entryType === "INVOICE") totalInvoiced += amt;
+    if (e.entryType === "PAYMENT") totalPaid     += amt;
+  }
+
+  const outstanding = totalInvoiced - totalPaid;
+
+  return (
+    <div className="mb-5 grid grid-cols-3 gap-3">
+      {[
+        { label: "Total invoiced",  value: totalInvoiced,  color: "text-ink dark:text-dark-text",   bg: "bg-white dark:bg-dark-surface" },
+        { label: "Total collected", value: totalPaid,      color: "text-success",                   bg: "bg-white dark:bg-dark-surface" },
+        { label: "Outstanding",     value: outstanding,    color: outstanding > 0 ? "text-danger" : "text-success", bg: outstanding > 0 ? "bg-danger-bg/30 dark:bg-danger/10" : "bg-white dark:bg-dark-surface" },
+      ].map(c => (
+        <div key={c.label} className={`rounded-xl border border-line dark:border-dark-border p-4 ${c.bg}`}>
+          <p className={`text-lg font-bold tabular-nums leading-tight ${c.color}`}>{formatKES(c.value)}</p>
+          <p className="text-xs text-slate dark:text-dark-muted mt-1">{c.label} · {termName}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function LedgerPage() {
@@ -199,20 +238,29 @@ export default function LedgerPage() {
   const [error,      setError]      = useState<string | null>(null);
   const [search,     setSearch]     = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [termFilter, setTermFilter] = useState("");
   const [showPanel,  setShowPanel]  = useState(false);
+  const [terms,      setTerms]      = useState<Term[]>([]);
 
-  // Debounce timer ref for search input
-  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track whether filters changed (to reset page to 1)
-  const filtersRef   = useRef({ search: "", typeFilter: "" });
+  const debounceRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filtersRef       = useRef({ search: "", typeFilter: "", termFilter: "" });
+  const isFirstPageRender = useRef(true);
 
-  const load = useCallback(async (p: number, q: string, type: string) => {
+  // Fetch all terms once for the filter dropdown
+  useEffect(() => {
+    fetch("/api/finance/terms")
+      .then(r => r.ok ? r.json() : { terms: [] })
+      .then(d => setTerms(d.terms ?? []));
+  }, []);
+
+  const load = useCallback(async (p: number, q: string, type: string, term: string) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
-      if (q.trim()) params.set("q",          q.trim());
-      if (type)     params.set("entryType",  type);
+      if (q.trim()) params.set("q",         q.trim());
+      if (type)     params.set("entryType", type);
+      if (term)     params.set("termId",    term);
       const res  = await fetch(`/api/finance/ledger?${params}`);
       if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
@@ -225,35 +273,37 @@ export default function LedgerPage() {
     }
   }, []);
 
-  // Initial load on mount — show everything immediately
+  // Initial load
   useEffect(() => {
-    load(1, "", "");
+    load(1, "", "", "");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-load when search or type filter changes (debounced, resets to page 1)
+  // Filter changes
   useEffect(() => {
     const prev = filtersRef.current;
-    if (prev.search === search && prev.typeFilter === typeFilter) return;
-    filtersRef.current = { search, typeFilter };
+    if (prev.search === search && prev.typeFilter === typeFilter && prev.termFilter === termFilter) return;
+    filtersRef.current = { search, typeFilter, termFilter };
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(1);
-      load(1, search, typeFilter);
+      load(1, search, typeFilter, termFilter);
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, typeFilter]);
+  }, [search, typeFilter, termFilter]);
 
-  // Re-load when page changes (but NOT on initial mount — handled above)
-  const isFirstPageRender = useRef(true);
+  // Page changes
   useEffect(() => {
     if (isFirstPageRender.current) { isFirstPageRender.current = false; return; }
-    load(page, search, typeFilter);
+    load(page, search, typeFilter, termFilter);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages     = Math.ceil(total / PAGE_SIZE);
+  const activeFilters  = [search, typeFilter, termFilter].filter(Boolean).length;
+  const selectedTerm   = terms.find(t => t.id === termFilter);
+  const termLabel      = selectedTerm ? (selectedTerm.termName?.name ?? selectedTerm.name) : "";
 
   return (
     <div>
@@ -266,13 +316,14 @@ export default function LedgerPage() {
 
       {/* ── Filter bar ── */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search student name or admission no…"
+            placeholder="Search by student name or admission no…"
             className={inputCls + " pl-9 w-full"}
           />
           {search && (
@@ -282,6 +333,22 @@ export default function LedgerPage() {
           )}
         </div>
 
+        {/* Term filter — inline select */}
+        <select
+          value={termFilter}
+          onChange={e => setTermFilter(e.target.value)}
+          className={inputCls + " max-w-[180px]"}
+        >
+          <option value="">All terms</option>
+          {terms.map(t => (
+            <option key={t.id} value={t.id}>
+              {t.termName?.name ?? t.name} {t.academicYear}
+              {t.isActive ? " (current)" : ""}
+            </option>
+          ))}
+        </select>
+
+        {/* Type filter toggle */}
         <button
           type="button"
           onClick={() => setShowPanel(v => !v)}
@@ -292,13 +359,14 @@ export default function LedgerPage() {
           }`}
         >
           <SlidersHorizontal className="h-4 w-4" />
-          {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label ?? "Filter" : "Filter"}
+          {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label ?? "Type" : "Type"}
           {typeFilter && <span className="ml-1 bg-teal text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>}
         </button>
 
+        {/* Refresh */}
         <button
           type="button"
-          onClick={() => load(page, search, typeFilter)}
+          onClick={() => load(page, search, typeFilter, termFilter)}
           disabled={loading}
           className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
           title="Refresh"
@@ -306,19 +374,20 @@ export default function LedgerPage() {
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
 
-        {(search || typeFilter) && (
+        {/* Clear all */}
+        {activeFilters > 0 && (
           <button
             type="button"
-            onClick={() => { setSearch(""); setTypeFilter(""); }}
+            onClick={() => { setSearch(""); setTypeFilter(""); setTermFilter(""); }}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-danger transition-colors"
           >
             <X className="h-3.5 w-3.5" />
-            Clear filters
+            Clear ({activeFilters})
           </button>
         )}
       </div>
 
-      {/* ── Filter panel ── */}
+      {/* ── Type filter panel ── */}
       {showPanel && (
         <div className="mb-5 rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-4 shadow-sm">
           <p className="text-xs font-medium text-slate dark:text-dark-muted mb-2">Transaction type</p>
@@ -341,10 +410,17 @@ export default function LedgerPage() {
         </div>
       )}
 
-      {/* ── Entry count summary ── */}
+      {/* ── Term summary — shown when a term is selected ── */}
+      {!loading && termFilter && entries.length > 0 && (
+        <TermSummaryBanner entries={entries} termName={termLabel} />
+      )}
+
+      {/* ── Entry count ── */}
       {!loading && total > 0 && (
         <p className="text-xs text-slate dark:text-dark-muted mb-3">
-          {total.toLocaleString()} {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label?.toLowerCase() ?? "entries" : "entries"} total
+          {total.toLocaleString()} {total === 1 ? "entry" : "entries"}
+          {termFilter && termLabel && <span> in <span className="font-medium text-ink dark:text-dark-text">{termLabel}</span></span>}
+          {typeFilter && <span> · {TYPE_OPTIONS.find(o => o.value === typeFilter)?.label}</span>}
           {search && <span> matching &ldquo;{search}&rdquo;</span>}
         </p>
       )}
@@ -354,7 +430,7 @@ export default function LedgerPage() {
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : entries.length === 0 ? (
         <EmptyState
-          message={search || typeFilter ? "No entries match the current filter." : "No transactions recorded yet."}
+          message={activeFilters > 0 ? "No entries match the current filter." : "No transactions recorded yet."}
           icon={<DollarSign className="h-6 w-6" />}
         />
       ) : (
