@@ -90,9 +90,12 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
   const [result,       setResult]       = useState<{ created: number; errors: string[] } | null>(null);
   const [fetchErr,     setFetchErr]     = useState<string | null>(null);
 
+  // Full student objects for already-attached students (shown before any search)
+  const [attachedStudents, setAttachedStudents] = useState<StudentOption[]>([]);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── One-time init: load attached IDs + class map ──────────────────────
+  // ── One-time init: load attached students + class map ────────────────
   useEffect(() => {
     async function init() {
       try {
@@ -101,22 +104,37 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           fetch("/api/classes"),
         ]);
 
+        let attachedStudentList: StudentOption[] = [];
+
         if (attachRes.ok) {
           const d = await attachRes.json();
-          setAttachedIds(new Set(
-            (d.attachments ?? []).map((a: { studentId: string }) => a.studentId)
-          ));
+          const rawAttachments: Array<{
+            studentId: string;
+            attachedAt: string;
+            student: { fullName: string; admissionNumber: string; className: string };
+          }> = d.attachments ?? [];
+
+          setAttachedIds(new Set(rawAttachments.map(a => a.studentId)));
+          attachedStudentList = rawAttachments.map(a => ({
+            id:              a.studentId,
+            fullName:        a.student.fullName,
+            admissionNumber: a.student.admissionNumber,
+            classId:         null,
+            className:       a.student.className,
+            alreadyAttached: true,
+          }));
         }
 
         if (classRes.ok) {
           const d = await classRes.json();
           const arr: Array<{ id: string; name: string }> = Array.isArray(d)
-            ? d
-            : (d.classes ?? []);
+            ? d : (d.classes ?? []);
           const map = new Map<string, string>();
           for (const c of arr) map.set(c.id, c.name);
           setClassMap(map);
         }
+
+        setAttachedStudents(attachedStudentList);
       } catch {
         setFetchErr("Could not initialise. Please close and try again.");
       } finally {
@@ -219,6 +237,11 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
       );
       setResult({ created: data.created ?? 0, errors: data.errors ?? [] });
       setSelectedMap(new Map());
+      // Add newly attached students to the visible attached list
+      const newlyAttached = Array.from(selectedMap.values())
+        .filter(s => successIds.has(s.id))
+        .map(s => ({ ...s, alreadyAttached: true }));
+      setAttachedStudents(prev => [...newlyAttached, ...prev]);
     } catch {
       setResult({ created: 0, errors: ["Network error. Please try again."] });
     } finally {
@@ -317,9 +340,37 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           ) : fetchErr ? (
             <p className="text-sm text-danger py-4 text-center">{fetchErr}</p>
           ) : !search.trim() ? (
-            <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
-              Search for a student above to get started.
-            </p>
+            attachedStudents.length === 0 ? (
+              <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
+                No students attached yet. Search above to attach students.
+              </p>
+            ) : (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-slate dark:text-dark-muted px-1 pb-1">
+                  Already attached ({attachedStudents.length})
+                </p>
+                {attachedStudents.map(s => (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-teal/5 border border-teal/10"
+                  >
+                    <div className="h-4 w-4 shrink-0 rounded border border-teal/40 bg-teal/10 flex items-center justify-center">
+                      <svg className="h-2.5 w-2.5 text-teal" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
+                      <p className="text-xs text-slate dark:text-dark-muted">
+                        <span className="font-mono">{s.admissionNumber}</span>
+                        {s.className !== "—" && <span> · {s.className}</span>}
+                        <span className="ml-2 text-teal font-medium">Attached</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : searching && results.length === 0 ? (
             <div className="flex justify-center py-8"><Spinner size="md" /></div>
           ) : results.length === 0 ? (

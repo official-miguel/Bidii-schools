@@ -45,6 +45,13 @@ export async function GET(req: NextRequest) {
       studentId:     true,
       expenseItemId: true,
       attachedAt:    true,
+      student: {
+        select: {
+          fullName:        true,
+          admissionNumber: true,
+          schoolClass:     { select: { name: true } },
+        },
+      },
       expenseItem: {
         select: {
           name:         true,
@@ -58,6 +65,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     attachments: attachments.map((a) => ({
       ...a,
+      student: {
+        fullName:        a.student.fullName,
+        admissionNumber: a.student.admissionNumber,
+        className:       a.student.schoolClass?.name ?? "—",
+      },
       expenseItem: {
         ...a.expenseItem,
         currentPrice: a.expenseItem.currentPrice.toString(),
@@ -129,23 +141,13 @@ export async function POST(req: NextRequest) {
 
     try {
       await prisma.$transaction(async (tx) => {
-        // Set RLS session variable for PgBouncer-safe isolation
-        // $executeRaw sends schoolId as a $1 parameter which Postgres rejects
-        // for SET statements — use $executeRawUnsafe with a literal string instead.
-        // schoolId is a server-controlled cuid (no user input) so interpolation is safe.
+        // schoolId is a server-controlled cuid — interpolation is safe here
         await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
-        // Create the attachment record
         await tx.studentExpenseAttachment.create({
-          data: {
-            studentId,
-            expenseItemId,
-            schoolId,
-            attachedById: user.id,
-          },
+          data: { studentId, expenseItemId, schoolId, attachedById: user.id },
         });
 
-        // If invoicing already completed for the active term, post a prorated debit
         if (activeTerm) {
           const termStart = activeTerm.startDate ?? new Date(activeTerm.academicYear, 0, 1);
           const termEnd   = activeTerm.endDate   ?? new Date(activeTerm.academicYear, 11, 31);
