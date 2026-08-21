@@ -47,17 +47,22 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     ?? paybillRecord?.school?.financeSettings?.receiptPrefix
     ?? "REC-";
 
-  if (!schoolId || !rawSecret) {
+  // Must match a known paybill — but secret is optional (sandbox has none)
+  if (!schoolId) {
     return NextResponse.json({ ResultCode: 1, ResultDesc: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Read raw body for HMAC verification
+  // 2. Read raw body
   const rawBody = await req.text();
-  const sig     = req.headers.get("x-mpesa-signature") ?? "";
-  const secret  = decryptSecret(rawSecret);
 
-  if (!verifyHmac(secret, rawBody, sig)) {
-    return NextResponse.json({ ResultCode: 1, ResultDesc: "Invalid signature" }, { status: 401 });
+  // HMAC verification — only enforced when a secret is configured.
+  // Daraja sandbox does not send x-mpesa-signature so we skip it there.
+  if (rawSecret) {
+    const sig    = req.headers.get("x-mpesa-signature") ?? "";
+    const secret = decryptSecret(rawSecret);
+    if (sig && !verifyHmac(secret, rawBody, sig)) {
+      return NextResponse.json({ ResultCode: 1, ResultDesc: "Invalid signature" }, { status: 401 });
+    }
   }
 
   // Always return 200 to Daraja from here on (even on duplicates)
