@@ -222,23 +222,40 @@ export async function runBatchInvoicing(
         // see the term starting position. This does NOT change currentBalance
         // (which already carries the debt) — it's a display-only journal entry.
         const previousBalance = balanceByStudent.get(student.id) ?? new Decimal(0);
-        if (previousBalance.isNegative()) {
-          // Amount is the absolute debt value (positive number per ledger convention)
-          const carryForwardAmount = previousBalance.abs();
-          await tx.ledgerEntry.create({
-            data: {
-              schoolId,
-              studentId:    student.id,
-              termId,
-              entryType:    "OPENING_BALANCE",
-              amount:       carryForwardAmount,
-              description:  `Opening balance carried forward to ${term.name}`,
-              referenceId:  null,
-              referenceType: "CARRY_FORWARD",
-              postedById:   userId,
-              isVoided:     false,
-            },
-          });
+        if (!previousBalance.isZero()) {
+          if (previousBalance.isNegative()) {
+            // Student owes money — post informational debt carry-forward
+            await tx.ledgerEntry.create({
+              data: {
+                schoolId,
+                studentId:    student.id,
+                termId,
+                entryType:    "OPENING_BALANCE",
+                amount:       previousBalance.abs(),
+                description:  `Opening balance (debt) carried forward to ${term.name}`,
+                referenceId:  null,
+                referenceType: "CARRY_FORWARD",
+                postedById:   userId,
+                isVoided:     false,
+              },
+            });
+          } else {
+            // Student has a credit (overpayment) — post informational credit carry-forward
+            await tx.ledgerEntry.create({
+              data: {
+                schoolId,
+                studentId:    student.id,
+                termId,
+                entryType:    "CREDIT_ADJUSTMENT",
+                amount:       previousBalance,
+                description:  `Opening balance (credit) carried forward to ${term.name}`,
+                referenceId:  null,
+                referenceType: "CARRY_FORWARD",
+                postedById:   userId,
+                isVoided:     false,
+              },
+            });
+          }
         }
         // ── End carry-forward ────────────────────────────────────────────────────
 
@@ -286,7 +303,7 @@ export async function runBatchInvoicing(
       result.succeeded++;
       // Count students who had a carry-forward posted
       const bal = balanceByStudent.get(student.id) ?? new Decimal(0);
-      if (bal.isNegative()) result.carriedForward++;
+      if (!bal.isZero()) result.carriedForward++;
     } catch (err) {
       result.errors.push({
         studentId:       student.id,

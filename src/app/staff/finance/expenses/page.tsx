@@ -11,12 +11,14 @@
  *   - List of categories, each expandable to show its items.
  *   - "Add category" button at the top.
  *   - "Add item" button per category row.
- *   - Inline modals for both.
+ *   - "Attach to students" button per item row.
+ *   - Inline modals for all.
  */
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Plus, ChevronDown, ChevronRight, X, Pencil, Tag,
+  Plus, ChevronDown, ChevronRight, X, Pencil, Tag, Users,
+  CheckCircle2, AlertTriangle, Search,
 } from "lucide-react";
 import {
   PageHeader, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
@@ -42,6 +44,14 @@ interface ExpenseCategory {
   _count:      { items: number };
 }
 
+interface StudentOption {
+  id:              string;
+  fullName:        string;
+  admissionNumber: string;
+  className:       string;
+  alreadyAttached: boolean;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function formatKES(s: string) {
@@ -54,6 +64,255 @@ const inputCls =
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
   "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
 const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1";
+
+// ── Attach to Students Modal ───────────────────────────────────────────────
+
+interface AttachModalProps {
+  item:    ExpenseItem;
+  onClose: () => void;
+}
+
+function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
+  const [students,  setStudents]  = useState<StudentOption[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [search,    setSearch]    = useState("");
+  const [selected,  setSelected]  = useState<Set<string>>(new Set());
+  const [saving,    setSaving]    = useState(false);
+  const [result,    setResult]    = useState<{ created: number; errors: string[] } | null>(null);
+  const [fetchErr,  setFetchErr]  = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Fetch all students and existing attachments for this item in parallel
+        const [studentsRes, attachRes] = await Promise.all([
+          fetch("/api/students?pageSize=2000&includeArchived=false"),
+          fetch(`/api/finance/expense-attachments?expenseItemId=${item.id}`),
+        ]);
+
+        const studentsData = studentsRes.ok ? await studentsRes.json() : { students: [] };
+        const attachData   = attachRes.ok  ? await attachRes.json()  : { attachments: [] };
+
+        const attachedIds = new Set<string>(
+          (attachData.attachments ?? []).map((a: { studentId: string }) => a.studentId)
+        );
+
+        const options: StudentOption[] = (studentsData.students ?? []).map((s: {
+          id: string; fullName: string; admissionNumber: string;
+          schoolClass?: { name: string };
+        }) => ({
+          id:              s.id,
+          fullName:        s.fullName,
+          admissionNumber: s.admissionNumber,
+          className:       s.schoolClass?.name ?? "—",
+          alreadyAttached: attachedIds.has(s.id),
+        }));
+
+        setStudents(options);
+      } catch {
+        setFetchErr("Could not load students. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [item.id]);
+
+  const filtered = students.filter(s =>
+    s.fullName.toLowerCase().includes(search.toLowerCase()) ||
+    s.admissionNumber.toLowerCase().includes(search.toLowerCase()) ||
+    s.className.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const available   = filtered.filter(s => !s.alreadyAttached);
+  const allSelected = available.length > 0 && available.every(s => selected.has(s.id));
+
+  function toggle(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(prev => {
+        const next = new Set(prev);
+        available.forEach(s => next.delete(s.id));
+        return next;
+      });
+    } else {
+      setSelected(prev => {
+        const next = new Set(prev);
+        available.forEach(s => next.add(s.id));
+        return next;
+      });
+    }
+  }
+
+  async function submit() {
+    if (selected.size === 0) return;
+    setSaving(true);
+    try {
+      const res  = await fetch("/api/finance/expense-attachments", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ expenseItemId: item.id, studentIds: Array.from(selected) }),
+      });
+      const data = await res.json();
+      setResult({ created: data.created ?? 0, errors: data.errors ?? [] });
+      // Mark newly attached students in the local list
+      setStudents(prev => prev.map(s =>
+        selected.has(s.id) && !(data.errors ?? []).some((e: string) => e.includes(s.id))
+          ? { ...s, alreadyAttached: true }
+          : s
+      ));
+      setSelected(new Set());
+    } catch {
+      setResult({ created: 0, errors: ["Network error. Please try again."] });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-ink dark:text-dark-text">Attach to students</h2>
+            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              {item.name} — {formatKES(item.currentPrice)}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Result banner */}
+        {result && (
+          <div className={`mx-5 mt-4 rounded-xl border px-4 py-3 text-sm shrink-0 ${
+            result.errors.length > 0 && result.created === 0
+              ? "border-danger/30 bg-danger-bg/40 text-danger"
+              : "border-success/30 bg-success/5 text-success"
+          }`}>
+            <div className="flex items-center gap-2">
+              {result.created > 0
+                ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+                : <AlertTriangle className="h-4 w-4 shrink-0" />}
+              <span>
+                {result.created > 0 && `${result.created} student${result.created !== 1 ? "s" : ""} attached.`}
+                {result.errors.length > 0 && ` ${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}.`}
+              </span>
+            </div>
+            {result.errors.length > 0 && (
+              <ul className="mt-2 space-y-0.5 text-xs text-slate dark:text-dark-muted">
+                {result.errors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="px-5 pt-4 shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name, admission no. or class…"
+              className={inputCls + " pl-9"}
+            />
+          </div>
+        </div>
+
+        {/* Select all row */}
+        {!loading && available.length > 0 && (
+          <div className="px-5 pt-3 shrink-0">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm text-ink dark:text-dark-text">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleAll}
+                className="h-4 w-4 rounded border-line accent-teal"
+              />
+              {allSelected ? "Deselect all" : `Select all (${available.length} available)`}
+            </label>
+          </div>
+        )}
+
+        {/* Student list */}
+        <div className="overflow-y-auto flex-1 px-5 py-3 space-y-1">
+          {loading ? (
+            <div className="flex justify-center py-8"><Spinner size="md" /></div>
+          ) : fetchErr ? (
+            <p className="text-sm text-danger py-4">{fetchErr}</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-slate dark:text-dark-muted py-4 text-center">No students found.</p>
+          ) : (
+            filtered.map(s => (
+              <label
+                key={s.id}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors ${
+                  s.alreadyAttached
+                    ? "opacity-50 cursor-not-allowed"
+                    : selected.has(s.id)
+                      ? "bg-teal/5 border border-teal/20"
+                      : "hover:bg-paper dark:hover:bg-dark-border/20"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(s.id) || s.alreadyAttached}
+                  disabled={s.alreadyAttached}
+                  onChange={() => !s.alreadyAttached && toggle(s.id)}
+                  className="h-4 w-4 rounded border-line accent-teal shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
+                  <p className="text-xs text-slate dark:text-dark-muted">
+                    {s.admissionNumber} · {s.className}
+                    {s.alreadyAttached && <span className="ml-2 text-teal font-medium">Already attached</span>}
+                  </p>
+                </div>
+              </label>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-line dark:border-dark-border shrink-0 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate dark:text-dark-muted">
+            {selected.size > 0 ? `${selected.size} student${selected.size !== 1 ? "s" : ""} selected` : "No students selected"}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+            >
+              {result ? "Close" : "Cancel"}
+            </button>
+            {!result && (
+              <button
+                type="button"
+                onClick={submit}
+                disabled={saving || selected.size === 0}
+                className={primaryButtonClass}
+              >
+                {saving ? "Attaching…" : `Attach to ${selected.size || "…"} student${selected.size !== 1 ? "s" : ""}`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Category modal ─────────────────────────────────────────────────────────
 
@@ -196,15 +455,16 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
 // ── Category row ───────────────────────────────────────────────────────────
 
 interface CategoryRowProps {
-  category: ExpenseCategory;
+  category:  ExpenseCategory;
   onAddItem: (cat: ExpenseCategory) => void;
 }
 
 function CategoryRow({ category, onAddItem }: CategoryRowProps) {
-  const [open,    setOpen]    = useState(false);
-  const [items,   setItems]   = useState<ExpenseItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState<ExpenseItem | null>(null);
+  const [open,        setOpen]        = useState(false);
+  const [items,       setItems]       = useState<ExpenseItem[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const [editing,     setEditing]     = useState<ExpenseItem | null>(null);
+  const [attaching,   setAttaching]   = useState<ExpenseItem | null>(null);
 
   async function loadItems() {
     if (items.length > 0) { setOpen(true); return; }
@@ -296,13 +556,25 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
                 {formatKES(item.currentPrice)}
               </td>
               <td className={premiumTdClass}>
-                <button
-                  onClick={() => setEditing(item)}
-                  className="text-slate hover:text-teal transition-colors"
-                  aria-label={`Edit ${item.name}`}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setEditing(item)}
+                    className="text-slate hover:text-teal transition-colors"
+                    aria-label={`Edit ${item.name}`}
+                    title="Edit item"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setAttaching(item)}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-teal hover:text-teal/80 transition-colors"
+                    aria-label={`Attach ${item.name} to students`}
+                    title="Attach to students"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Attach
+                  </button>
+                </div>
               </td>
             </tr>
           ))
@@ -316,6 +588,13 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
           existing={editing}
           onClose={() => setEditing(null)}
           onSaved={handleItemSaved}
+        />
+      )}
+
+      {attaching && (
+        <AttachToStudentsModal
+          item={attaching}
+          onClose={() => setAttaching(null)}
         />
       )}
     </>
@@ -353,13 +632,11 @@ export default function ExpensesPage() {
   useEffect(() => { load(); }, [load]);
 
   function handleCategorySaved(cat: ExpenseCategory) {
-    // New category always has 0 items
     setCategories(prev => [{ ...cat, _count: { items: 0 } }, ...prev]);
     setModal(null);
   }
 
   function handleItemSaved() {
-    // Reload to get updated _count
     load();
     setModal(null);
   }
@@ -368,7 +645,7 @@ export default function ExpensesPage() {
     <div>
       <PageHeader
         title="Expenses"
-        description="Manage expense categories and the chargeable items within them."
+        description="Manage expense categories and items. Attach items to individual students — they get invoiced at the start of each term."
         action={
           <button className={primaryButtonClass} onClick={() => setModal({ kind: "category" })}>
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -400,7 +677,7 @@ export default function ExpensesPage() {
                 <tr>
                   <th className={premiumThClass}>Category / Item</th>
                   <th className={premiumThClass}>Items / Price</th>
-                  <th className={premiumThClass}></th>
+                  <th className={premiumThClass}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -432,8 +709,6 @@ export default function ExpensesPage() {
           onSaved={handleItemSaved}
         />
       )}
-
-      {/* Inline add-item trigger also uses ItemModal — handled inside CategoryRow */}
     </div>
   );
 }

@@ -29,10 +29,16 @@ export async function GET(req: NextRequest) {
   const { schoolId } = auth;
 
   const { searchParams } = new URL(req.url);
-  const studentId = searchParams.get("studentId");
+  const studentId     = searchParams.get("studentId");
+  const expenseItemId = searchParams.get("expenseItemId");
 
   const attachments = await prisma.studentExpenseAttachment.findMany({
-    where:   { schoolId, ...(studentId ? { studentId } : {}), detachedAt: null },
+    where:   {
+      schoolId,
+      detachedAt: null,
+      ...(studentId     ? { studentId }     : {}),
+      ...(expenseItemId ? { expenseItemId } : {}),
+    },
     orderBy: { attachedAt: "desc" },
     select: {
       id:            true,
