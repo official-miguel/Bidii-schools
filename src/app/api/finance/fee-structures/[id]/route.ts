@@ -1,6 +1,7 @@
 /**
  * GET    /api/finance/fee-structures/[id]  — Fetch a single fee structure
  * PUT    /api/finance/fee-structures/[id]  — Update a fee structure
+ * DELETE /api/finance/fee-structures/[id]  — Delete a fee structure
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -8,9 +9,10 @@ import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 
 const updateSchema = z.object({
-  amountPerTerm: z.number().positive("Basic school fees must be a positive amount.").optional(),
+  form:          z.number().int().min(1).optional(),
   stream:        z.string().trim().optional().nullable(),
   termNameId:    z.string().optional().nullable(),
+  amountPerTerm: z.number().positive("Basic school fees must be a positive amount.").optional(),
 });
 
 export async function GET(
@@ -50,7 +52,7 @@ export async function PUT(
 
   const existing = await prisma.feeStructure.findFirst({
     where:  { id: params.id, schoolId },
-    select: { id: true },
+    select: { id: true, form: true, stream: true, termNameId: true },
   });
   if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
@@ -63,7 +65,7 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { termNameId, ...rest } = parsed.data;
+  const { termNameId, form, stream, amountPerTerm } = parsed.data;
 
   // Verify the termNameId belongs to this school if provided
   if (termNameId) {
@@ -71,10 +73,36 @@ export async function PUT(
     if (!tn) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
   }
 
+  // Uniqueness check: no two structures for the same form+stream+termNameId in this school
+  const effectiveForm       = form       ?? existing.form;
+  const effectiveStream     = stream     !== undefined ? (stream || null)     : existing.stream;
+  const effectiveTermNameId = termNameId !== undefined ? (termNameId || null) : existing.termNameId;
+
+  const conflict = await prisma.feeStructure.findFirst({
+    where: {
+      schoolId,
+      form:       effectiveForm,
+      stream:     effectiveStream,
+      termNameId: effectiveTermNameId,
+      id:         { not: params.id },  // exclude self
+    },
+  });
+  if (conflict) {
+    return NextResponse.json(
+      { error: "A fee structure for this class, stream, and term already exists." },
+      { status: 409 }
+    );
+  }
+
   try {
     const updated = await prisma.feeStructure.update({
-      where:  { id: params.id },
-      data:   { ...rest, termNameId: termNameId ?? null },
+      where: { id: params.id },
+      data: {
+        ...(form          !== undefined ? { form }                        : {}),
+        ...(stream        !== undefined ? { stream: stream || null }      : {}),
+        ...(termNameId    !== undefined ? { termNameId: termNameId || null } : {}),
+        ...(amountPerTerm !== undefined ? { amountPerTerm }               : {}),
+      },
       select: {
         id: true, form: true, stream: true, termNameId: true, amountPerTerm: true, createdAt: true,
         termName: { select: { id: true, name: true } },
@@ -90,6 +118,24 @@ export async function PUT(
   }
 }
 
-export async function DELETE() {
-  return NextResponse.json({ error: "Fee structures cannot be deleted." }, { status: 405 });
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const auth = await requireBursarOrPrincipal();
+  if (auth.error) return auth.error;
+  const { schoolId, user } = auth;
+
+  if (user.role === "PRINCIPAL") {
+    return NextResponse.json({ error: "Principals cannot delete fee structures." }, { status: 403 });
+  }
+
+  const existing = await prisma.feeStructure.findFirst({
+    where:  { id: params.id, schoolId },
+    select: { id: true },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+  await prisma.feeStructure.delete({ where: { id: params.id } });
+  return NextResponse.json({ success: true });
 }

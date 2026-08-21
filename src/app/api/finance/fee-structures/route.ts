@@ -62,6 +62,22 @@ export async function POST(req: NextRequest) {
     if (!tn) return NextResponse.json({ error: "Selected term not found." }, { status: 400 });
   }
 
+  // Uniqueness check: one fee structure per (form, stream, termNameId) per school
+  const conflict = await prisma.feeStructure.findFirst({
+    where: {
+      schoolId,
+      form,
+      stream:     stream ?? null,
+      termNameId: termNameId ?? null,
+    },
+  });
+  if (conflict) {
+    return NextResponse.json(
+      { error: "A fee structure for this class, stream, and term already exists." },
+      { status: 409 }
+    );
+  }
+
   try {
     const structure = await prisma.feeStructure.create({
       data: {
@@ -93,6 +109,3 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function DELETE() {
-  return NextResponse.json({ error: "Fee structures cannot be deleted." }, { status: 405 });
-}
