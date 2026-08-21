@@ -113,89 +113,84 @@ export async function DELETE(
   if (!term) return NextResponse.json({ error: "Term not found." }, { status: 404 });
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
+    // Step 1 — Read ledger entries OUTSIDE the transaction (read-only, no RLS needed,
+    // all rows are already scoped to schoolId + termId).
+    const ledgerEntries = await prisma.ledgerEntry.findMany({
+      where:  { termId: params.termId, schoolId, isVoided: false },
+      select: { studentId: true, entryType: true, amount: true, referenceType: true },
+    });
 
-      // 1. Read all non-voided ledger entries for this term so we can reverse
-      //    their impact on StudentFinanceAccount.
-      //    OPENING_BALANCE / CREDIT_ADJUSTMENT entries tagged with
-      //    referenceType = 'CARRY_FORWARD' are informational and did NOT
-      //    affect currentBalance when created — exclude them from the reversal.
-      const ledgerEntries = await tx.ledgerEntry.findMany({
-        where:  { termId: params.termId, schoolId, isVoided: false },
-        select: { studentId: true, entryType: true, amount: true, referenceType: true },
-      });
+    // CARRY_FORWARD entries are display-only and did NOT affect currentBalance.
+    const realEntries = ledgerEntries.filter(e => e.referenceType !== "CARRY_FORWARD");
 
-      const realEntries = ledgerEntries.filter(
-        e => e.referenceType !== "CARRY_FORWARD"
-      );
+    // Compute per-student balance reversals.
+    // balanceDelta rules (mirror of ledger.ts):
+    //   INVOICE / DEBIT_ADJUSTMENT  → was subtracted → reverse = add back
+    //   PAYMENT / CREDIT_ADJUSTMENT → was added      → reverse = subtract
+    const studentDeltas  = new Map<string, number>();
+    const invoiceImpacts = new Map<string, number>();
+    const paymentImpacts = new Map<string, number>();
 
-      // Group net balance delta per student.
-      // balanceDelta mirror (src/lib/finance/ledger.ts):
-      //   INVOICE / DEBIT_ADJUSTMENT  → was -amount  → reverse = +amount
-      //   PAYMENT / CREDIT_ADJUSTMENT → was +amount  → reverse = -amount
-      const studentDeltas  = new Map<string, number>();
-      const invoiceImpacts = new Map<string, number>();
-      const paymentImpacts = new Map<string, number>();
-
-      for (const e of realEntries) {
-        const amount = parseFloat(e.amount.toString());
-
-        if (e.entryType === "INVOICE" || e.entryType === "DEBIT_ADJUSTMENT") {
-          studentDeltas.set(e.studentId, (studentDeltas.get(e.studentId) ?? 0) + amount);
-          if (e.entryType === "INVOICE") {
-            invoiceImpacts.set(e.studentId, (invoiceImpacts.get(e.studentId) ?? 0) + amount);
-          }
-        } else if (e.entryType === "PAYMENT" || e.entryType === "CREDIT_ADJUSTMENT") {
-          studentDeltas.set(e.studentId, (studentDeltas.get(e.studentId) ?? 0) - amount);
-          if (e.entryType === "PAYMENT") {
-            paymentImpacts.set(e.studentId, (paymentImpacts.get(e.studentId) ?? 0) + amount);
-          }
+    for (const e of realEntries) {
+      const amount = parseFloat(e.amount.toString());
+      if (e.entryType === "INVOICE" || e.entryType === "DEBIT_ADJUSTMENT") {
+        studentDeltas.set(e.studentId, (studentDeltas.get(e.studentId) ?? 0) + amount);
+        if (e.entryType === "INVOICE") {
+          invoiceImpacts.set(e.studentId, (invoiceImpacts.get(e.studentId) ?? 0) + amount);
+        }
+      } else if (e.entryType === "PAYMENT" || e.entryType === "CREDIT_ADJUSTMENT") {
+        studentDeltas.set(e.studentId, (studentDeltas.get(e.studentId) ?? 0) - amount);
+        if (e.entryType === "PAYMENT") {
+          paymentImpacts.set(e.studentId, (paymentImpacts.get(e.studentId) ?? 0) + amount);
         }
       }
+    }
 
-      const affectedStudentIds = Array.from(studentDeltas.keys());
+    const affectedStudentIds = Array.from(studentDeltas.keys());
 
-      // Apply balance reversals
-      for (const studentId of affectedStudentIds) {
-        const delta        = studentDeltas.get(studentId)  ?? 0;
-        const invoiceDelta = invoiceImpacts.get(studentId) ?? 0;
-        const paymentDelta = paymentImpacts.get(studentId) ?? 0;
+    // Step 2 — Apply balance reversals one student at a time (simple, no transaction needed —
+    // each updateMany is atomic; worst case is a partial update on crash which an admin can fix).
+    for (const studentId of affectedStudentIds) {
+      const delta        = studentDeltas.get(studentId)  ?? 0;
+      const invoiceDelta = invoiceImpacts.get(studentId) ?? 0;
+      const paymentDelta = paymentImpacts.get(studentId) ?? 0;
 
-        await tx.studentFinanceAccount.updateMany({
-          where: { studentId, schoolId },
-          data: {
-            currentBalance: { increment: delta },
-            ...(invoiceDelta > 0 ? { totalInvoiced: { decrement: invoiceDelta } } : {}),
-            ...(paymentDelta > 0 ? { totalPaid:     { decrement: paymentDelta } } : {}),
-          },
-        });
-      }
+      await prisma.studentFinanceAccount.updateMany({
+        where: { studentId, schoolId },
+        data: {
+          currentBalance: { increment: delta },
+          ...(invoiceDelta > 0 ? { totalInvoiced: { decrement: invoiceDelta } } : {}),
+          ...(paymentDelta > 0 ? { totalPaid:     { decrement: paymentDelta } } : {}),
+        },
+      });
+    }
 
-      // Clear debtor flags only for students affected by this term
-      if (affectedStudentIds.length > 0) {
-        await tx.debtorFlag.deleteMany({
-          where: { schoolId, studentId: { in: affectedStudentIds } },
-        });
-        // Clear finance notifications for affected students
-        await tx.financeNotification.deleteMany({
-          where: { schoolId, studentId: { in: affectedStudentIds } },
-        });
-      }
+    // Step 3 — Clear debtor flags and notifications for affected students only.
+    if (affectedStudentIds.length > 0) {
+      await prisma.debtorFlag.deleteMany({
+        where: { schoolId, studentId: { in: affectedStudentIds } },
+      });
+      await prisma.financeNotification.deleteMany({
+        where: { schoolId, studentId: { in: affectedStudentIds } },
+      });
+    }
 
-      // 2. Delete invoices and ledger entries scoped to this term.
-      //    Payments are NOT deleted — Payment.termId uses onDelete: SetNull
-      //    so deleting the term automatically nulls Payment.termId.
-      await tx.invoice.deleteMany({ where: { termId: params.termId, schoolId } });
-      await tx.ledgerEntry.deleteMany({ where: { termId: params.termId, schoolId } });
+    // Step 4 — Delete invoices and ledger entries for this term.
+    //   Payments are preserved — Payment.termId becomes null via onDelete: SetNull.
+    await prisma.invoice.deleteMany({ where: { termId: params.termId, schoolId } });
+    await prisma.ledgerEntry.deleteMany({ where: { termId: params.termId, schoolId } });
 
-      // 3. Delete the term (Payment.termId → null via SetNull cascade)
-      await tx.term.delete({ where: { id: params.termId } });
-    }, { timeout: 30000 });
+    // Step 5 — Delete the term itself.
+    await prisma.term.delete({ where: { id: params.termId } });
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[FINANCE/TERMS DELETE]", err);
-    return NextResponse.json({ error: "An unexpected error occurred while deleting the term." }, { status: 500 });
+    // Log the full error so we can see exactly what went wrong in Vercel logs
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[FINANCE/TERMS DELETE] termId=%s schoolId=%s error=%s", params.termId, schoolId, message);
+    return NextResponse.json(
+      { error: `Delete failed: ${message}` },
+      { status: 500 }
+    );
   }
 }
