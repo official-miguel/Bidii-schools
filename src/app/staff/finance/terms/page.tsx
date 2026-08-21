@@ -28,6 +28,7 @@ interface Term {
 interface InvoicingResult {
   succeeded:          number;
   skipped:            number;
+  carriedForward?:    number;
   errors:             Array<{ studentId: string; admissionNumber: string; reason: string }>;
   classesWithoutFees: Array<{ form: number; stream: string | null; className: string }>;
   fatalError?:        string;
@@ -73,11 +74,12 @@ function InvoicingResultPanel({ result, termName, onClose }: {
 
           {/* Summary stats */}
           {!result.fatalError && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {[
-                { label: "Invoiced",  value: result.succeeded, color: "text-success" },
-                { label: "Skipped",   value: result.skipped,   color: "text-slate dark:text-dark-muted" },
-                { label: "Errors",    value: result.errors.length, color: result.errors.length > 0 ? "text-danger" : "text-slate dark:text-dark-muted" },
+                { label: "Invoiced",        value: result.succeeded,           color: "text-success" },
+                { label: "Carried forward", value: result.carriedForward ?? 0, color: result.carriedForward ? "text-warn" : "text-slate dark:text-dark-muted" },
+                { label: "Skipped",         value: result.skipped,             color: "text-slate dark:text-dark-muted" },
+                { label: "Errors",          value: result.errors.length,       color: result.errors.length > 0 ? "text-danger" : "text-slate dark:text-dark-muted" },
               ].map(s => (
                 <div key={s.label} className="rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-border/20 p-3 text-center">
                   <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
@@ -85,6 +87,12 @@ function InvoicingResultPanel({ result, termName, onClose }: {
                 </div>
               ))}
             </div>
+          )}
+
+          {(result.carriedForward ?? 0) > 0 && (
+            <p className="text-xs text-slate dark:text-dark-muted bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border">
+              {result.carriedForward} student{result.carriedForward !== 1 ? "s" : ""} had an unpaid balance from a previous term. Their opening balance has been recorded on this term&apos;s ledger.
+            </p>
           )}
 
           {/* Classes without fee structures */}

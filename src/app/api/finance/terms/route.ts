@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
       invoicing: {
         succeeded:          invoicingResult.succeeded,
         skipped:            invoicingResult.skipped,
+        carriedForward:     invoicingResult.carriedForward,
         errors:             invoicingResult.errors,
         classesWithoutFees: invoicingResult.classesWithoutFees,
       },

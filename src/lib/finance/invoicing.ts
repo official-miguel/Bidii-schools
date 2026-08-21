@@ -22,6 +22,7 @@ import { computeProratedAmount } from "./proration";
 export interface BatchInvoicingResult {
   succeeded:          number;
   skipped:            number;
+  carriedForward:     number;  // students who had a previous debt carried into this term
   errors:             Array<{ studentId: string; admissionNumber: string; reason: string }>;
   classesWithoutFees: Array<{ form: number; stream: string | null; className: string }>;
 }
@@ -138,6 +139,15 @@ export async function runBatchInvoicing(
   });
   const alreadyInvoiced = new Set(existingInvoices.map((i) => i.studentId));
 
+  // Fetch current balances for all students to determine carry-forward amounts
+  const financeAccounts = await prisma.studentFinanceAccount.findMany({
+    where:  { schoolId },
+    select: { studentId: true, currentBalance: true },
+  });
+  const balanceByStudent = new Map<string, Decimal>(
+    financeAccounts.map(a => [a.studentId, new Decimal(a.currentBalance.toString())])
+  );
+
   // Load finance settings for invoice prefix
   const settings = await prisma.financeSettings.findUnique({
     where:  { schoolId },
@@ -146,7 +156,7 @@ export async function runBatchInvoicing(
   const invoicePrefix = settings?.invoicePrefix ?? "INV-";
 
   const missingFeeClasses = new Map<string, { form: number; stream: string | null; className: string }>();
-  const result: BatchInvoicingResult = { succeeded: 0, skipped: 0, errors: [], classesWithoutFees: [] };
+  const result: BatchInvoicingResult = { succeeded: 0, skipped: 0, carriedForward: 0, errors: [], classesWithoutFees: [] };
 
   for (const student of students) {
     // Skip already-invoiced students (idempotency)
@@ -206,6 +216,32 @@ export async function runBatchInvoicing(
         // Set RLS for this transaction
         await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
 
+        // ── Carry-forward: post an informational OPENING_BALANCE entry ──────────
+        // If the student has an outstanding debt from previous terms, record it
+        // as an opening balance entry on this new term's ledger so the bursar can
+        // see the term starting position. This does NOT change currentBalance
+        // (which already carries the debt) — it's a display-only journal entry.
+        const previousBalance = balanceByStudent.get(student.id) ?? new Decimal(0);
+        if (previousBalance.isNegative()) {
+          // Amount is the absolute debt value (positive number per ledger convention)
+          const carryForwardAmount = previousBalance.abs();
+          await tx.ledgerEntry.create({
+            data: {
+              schoolId,
+              studentId:    student.id,
+              termId,
+              entryType:    "OPENING_BALANCE",
+              amount:       carryForwardAmount,
+              description:  `Opening balance carried forward to ${term.name}`,
+              referenceId:  null,
+              referenceType: "CARRY_FORWARD",
+              postedById:   userId,
+              isVoided:     false,
+            },
+          });
+        }
+        // ── End carry-forward ────────────────────────────────────────────────────
+
         // Generate sequential invoice number
         const invoiceNumber = await nextInvoiceNumber(tx, schoolId, invoicePrefix);
 
@@ -248,6 +284,9 @@ export async function runBatchInvoicing(
       });
 
       result.succeeded++;
+      // Count students who had a carry-forward posted
+      const bal = balanceByStudent.get(student.id) ?? new Decimal(0);
+      if (bal.isNegative()) result.carriedForward++;
     } catch (err) {
       result.errors.push({
         studentId:       student.id,
