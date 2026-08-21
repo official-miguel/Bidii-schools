@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { GitMerge, BarChart2, ArrowRight } from "lucide-react";
+import { BarChart2, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 
 const tiles = [
-  {
-    href:  "/staff/finance/reconciliation",
-    icon:  <GitMerge className="h-6 w-6" />,
-    label: "Reconciliation",
-    desc:  "Match unrecognised M-Pesa C2B payments to student accounts.",
-  },
   {
     href:  "/staff/finance/reports",
     icon:  <BarChart2 className="h-6 w-6" />,
@@ -24,7 +18,7 @@ export default function AnalysisPage() {
     <div>
       <PageHeader
         title="Analysis"
-        description="Reconcile M-Pesa payments and view finance analytics."
+        description="View finance analytics and reports."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">

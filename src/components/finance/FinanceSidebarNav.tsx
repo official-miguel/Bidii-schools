@@ -69,7 +69,6 @@ const TABS: NavTab[] = [
     label:         "Analysis",
     icon:          <BarChart2 className="h-4 w-4" />,
     childPrefixes: [
-      "/staff/finance/reconciliation",
       "/staff/finance/reports",
     ],
   },
