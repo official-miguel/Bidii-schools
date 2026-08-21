@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getEffectivePermissions } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 import FinanceSidebarNav from "@/components/finance/FinanceSidebarNav";
 
 export default async function FinanceLayout({
@@ -25,17 +26,17 @@ export default async function FinanceLayout({
     if (!perms.FEES?.canView) redirect("/staff");
   }
 
+  // Fetch the school name for the sidebar header
+  const school = user.schoolId
+    ? await prisma.school.findUnique({
+        where:  { id: user.schoolId },
+        select: { name: true },
+      })
+    : null;
+
   return (
-    /*
-     * FinanceSidebarNav renders as a fixed full-height panel on desktop (z-40,
-     * w-64), visually replacing the generic HubSidebar icon rail.
-     * DashboardShell is told to use md:pl-64 via hideHubSidebar=true on the
-     * outer staff layout, so no extra wrapper is needed here.
-     *
-     * On mobile, FinanceSidebarNav renders a top accordion instead.
-     */
     <>
-      <FinanceSidebarNav />
+      <FinanceSidebarNav schoolName={school?.name ?? "Finance"} />
       {children}
     </>
   );
