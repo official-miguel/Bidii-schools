@@ -66,7 +66,7 @@ export async function postLedgerEntry(
   payload: LedgerPayload
 ): Promise<LedgerEntry> {
   // 1. Set RLS session variable for this transaction (PgBouncer safe)
-  await tx.$executeRaw`SET LOCAL app.current_school_id = ${payload.schoolId}`;
+  await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${payload.schoolId}'`);
 
   // 2. Insert the immutable ledger row
   const entry = await tx.ledgerEntry.create({

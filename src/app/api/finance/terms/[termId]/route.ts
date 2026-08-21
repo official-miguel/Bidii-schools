@@ -114,7 +114,7 @@ export async function DELETE(
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+      await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
       // 1. Read all non-voided ledger entries for this term so we can reverse
       //    their impact on StudentFinanceAccount.

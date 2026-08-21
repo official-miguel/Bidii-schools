@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const student = await prisma.$transaction(async (tx) => {
-        await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
         const created = await tx.student.create({
           data: {

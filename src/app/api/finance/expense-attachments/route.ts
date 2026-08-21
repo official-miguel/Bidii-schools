@@ -130,7 +130,10 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.$transaction(async (tx) => {
         // Set RLS session variable for PgBouncer-safe isolation
-        await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+        // $executeRaw sends schoolId as a $1 parameter which Postgres rejects
+        // for SET statements — use $executeRawUnsafe with a literal string instead.
+        // schoolId is a server-controlled cuid (no user input) so interpolation is safe.
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
         // Create the attachment record
         await tx.studentExpenseAttachment.create({

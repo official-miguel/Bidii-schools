@@ -43,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+      await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
       const receiptNumber = await nextReceiptNumber(tx, schoolId, prefix);
       const amount        = new Decimal(queueItem.amount.toString());

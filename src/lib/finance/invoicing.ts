@@ -214,7 +214,7 @@ export async function runBatchInvoicing(
     try {
       await prisma.$transaction(async (tx) => {
         // Set RLS for this transaction
-        await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
         // ── Carry-forward: post an informational OPENING_BALANCE entry ──────────
         // If the student has an outstanding debt from previous terms, record it
@@ -391,7 +391,7 @@ export async function createProratedInvoice(opts: {
   let invoiceNumber = "";
 
   await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+    await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
 
     invoiceNumber = await nextInvoiceNumber(tx, schoolId, invoicePrefix);
 
