@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   FileText,
   CreditCard,
   Printer,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   PageHeader,
@@ -35,6 +37,7 @@ interface LedgerEntry {
   paymentMethod: string | null;
   isVoided: boolean;
   runningBalance: string;
+  referenceId: string | null;
   term: { name: string } | null;
 }
 
@@ -121,6 +124,9 @@ export default function StudentLedgerPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("ledger");
 
+  // Track which invoice ledger entry is expanded (by ledger entry id)
+  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -142,6 +148,14 @@ export default function StudentLedgerPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Build a map from invoiceNumber → lineItems for O(1) lookup in ledger rows
+  const invoiceByNumber = new Map<string, { description: string; amount: number; type: string }[]>();
+  for (const inv of invoices) {
+    if (inv.invoiceNumber && Array.isArray(inv.lineItems)) {
+      invoiceByNumber.set(inv.invoiceNumber, inv.lineItems as { description: string; amount: number; type: string }[]);
+    }
+  }
 
   const balance = parseFloat(account?.currentBalance ?? "0");
 
@@ -337,42 +351,86 @@ export default function StudentLedgerPage() {
                   {entries.map((e) => {
                     const { label, variant } = entryTypeLabel(e.entryType);
                     const rb = parseFloat(e.runningBalance);
+                    const isInvoice = e.entryType === "INVOICE" && e.referenceId;
+                    const lineItems = isInvoice ? (invoiceByNumber.get(e.referenceId!) ?? []) : [];
+                    const isExpanded = expandedEntryId === e.id;
+                    const hasBreakdown = isInvoice && lineItems.length > 1;
+
                     return (
-                      <tr
-                        key={e.id}
-                        className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""}`}
-                      >
-                        <td
-                          className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted whitespace-nowrap`}
+                      <React.Fragment key={e.id}>
+                        <tr
+                          className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""} ${hasBreakdown ? "cursor-pointer hover:bg-teal/5" : ""}`}
+                          onClick={() => hasBreakdown && setExpandedEntryId(isExpanded ? null : e.id)}
                         >
-                          {formatDate(e.postedAt)}
-                        </td>
-                        <td className={premiumTdClass}>
-                          <Badge variant={variant}>{label}</Badge>
-                          {e.isVoided && (
-                            <span className="ml-1 text-xs text-slate">
-                              (voided)
-                            </span>
-                          )}
-                        </td>
-                        <td
-                          className={`${premiumTdClass} text-ink dark:text-dark-text max-w-[220px] truncate`}
-                        >
-                          {e.description}
-                        </td>
-                        <td
-                          className={`${premiumTdClass} text-right tabular-nums font-medium text-ink dark:text-dark-text`}
-                        >
-                          {formatKES(e.amount)}
-                        </td>
-                        <td
-                          className={`${premiumTdClass} text-right tabular-nums font-semibold ${
-                            rb < 0 ? "text-danger" : "text-success"
-                          }`}
-                        >
-                          {formatKES(e.runningBalance)}
-                        </td>
-                      </tr>
+                          <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted whitespace-nowrap`}>
+                            {formatDate(e.postedAt)}
+                          </td>
+                          <td className={premiumTdClass}>
+                            <div className="flex items-center gap-1.5">
+                              {hasBreakdown && (
+                                isExpanded
+                                  ? <ChevronDown className="h-3.5 w-3.5 text-teal shrink-0" />
+                                  : <ChevronRight className="h-3.5 w-3.5 text-slate/50 shrink-0" />
+                              )}
+                              <Badge variant={variant}>{label}</Badge>
+                            </div>
+                            {e.isVoided && <span className="ml-1 text-xs text-slate">(voided)</span>}
+                          </td>
+                          <td className={`${premiumTdClass} text-ink dark:text-dark-text max-w-[220px]`}>
+                            <span className="truncate block">{e.description}</span>
+                            {hasBreakdown && !isExpanded && (
+                              <span className="text-xs text-slate dark:text-dark-muted">
+                                {lineItems.length} item{lineItems.length !== 1 ? "s" : ""} — click to expand
+                              </span>
+                            )}
+                          </td>
+                          <td className={`${premiumTdClass} text-right tabular-nums font-medium text-ink dark:text-dark-text`}>
+                            {formatKES(e.amount)}
+                          </td>
+                          <td className={`${premiumTdClass} text-right tabular-nums font-semibold ${rb < 0 ? "text-danger" : "text-success"}`}>
+                            {formatKES(e.runningBalance)}
+                          </td>
+                        </tr>
+
+                        {/* Expanded line items breakdown */}
+                        {isExpanded && hasBreakdown && (
+                          <>
+                            {lineItems.map((li, idx) => (
+                              <tr key={`${e.id}-li-${idx}`} className="bg-paper/60 dark:bg-dark-border/10 border-b border-line/40 dark:border-dark-border/40">
+                                <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted`} />
+                                <td className={premiumTdClass}>
+                                  <span className={`text-xs rounded-full px-2 py-0.5 font-medium border ${
+                                    li.type === "BASE_FEE"
+                                      ? "bg-teal/5 text-teal border-teal/20"
+                                      : "bg-warn/5 text-warn border-warn/20"
+                                  }`}>
+                                    {li.type === "BASE_FEE" ? "Base fee" : "Expense"}
+                                  </span>
+                                </td>
+                                <td className={`${premiumTdClass} text-slate dark:text-dark-muted pl-8`}>
+                                  {li.description}
+                                </td>
+                                <td className={`${premiumTdClass} text-right tabular-nums text-slate dark:text-dark-muted`}>
+                                  {formatKES(String(li.amount))}
+                                </td>
+                                <td className={premiumTdClass} />
+                              </tr>
+                            ))}
+                            {/* Total row */}
+                            <tr className="bg-paper/80 dark:bg-dark-border/20 border-b-2 border-line dark:border-dark-border">
+                              <td className={premiumTdClass} />
+                              <td className={premiumTdClass} />
+                              <td className={`${premiumTdClass} pl-8 text-xs font-semibold text-ink dark:text-dark-text`}>
+                                Total invoice
+                              </td>
+                              <td className={`${premiumTdClass} text-right tabular-nums font-bold text-ink dark:text-dark-text`}>
+                                {formatKES(e.amount)}
+                              </td>
+                              <td className={premiumTdClass} />
+                            </tr>
+                          </>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
