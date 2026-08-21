@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, UserX } from "lucide-react";
+import { ArrowLeft, Users, UserX, Search, X } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
@@ -53,6 +53,7 @@ export default function ExpenseItemDetailPage() {
   const [students,   setStudents]   = useState<AttachedStudent[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
+  const [search,     setSearch]     = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,6 +79,17 @@ export default function ExpenseItemDetailPage() {
   }, [itemId]);
 
   useEffect(() => { load(); }, [load]);
+
+  const filtered = search.trim()
+    ? students.filter(a => {
+        const q = search.trim().toLowerCase();
+        return (
+          a.student.fullName.toLowerCase().includes(q) ||
+          a.student.admissionNumber.toLowerCase().includes(q) ||
+          a.student.className.toLowerCase().includes(q)
+        );
+      })
+    : students;
 
   return (
     <div>
@@ -160,6 +172,41 @@ export default function ExpenseItemDetailPage() {
         </div>
       )}
 
+      {/* Search bar */}
+      {!loading && students.length > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name, admission no. or class…"
+              className={
+                "w-full rounded-lg border border-line bg-white px-3 py-2 pl-9 text-sm text-ink " +
+                "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
+                "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              }
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink dark:text-dark-muted transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {search.trim() && (
+            <p className="text-xs text-slate dark:text-dark-muted shrink-0">
+              {filtered.length} of {students.length} shown
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Students table */}
       {loading ? (
         <div className="space-y-2">
@@ -199,7 +246,20 @@ export default function ExpenseItemDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {students.map(a => (
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-10 text-center text-sm text-slate dark:text-dark-muted">
+                      No students match &ldquo;{search}&rdquo;.{" "}
+                      <button
+                        type="button"
+                        onClick={() => setSearch("")}
+                        className="text-teal font-medium hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    </td>
+                  </tr>
+                ) : filtered.map(a => (
                   <tr key={a.studentId} className={premiumTrClass}>
                     <td className={premiumTdClass}>
                       <p className="font-medium text-ink dark:text-dark-text">{a.student.fullName}</p>
