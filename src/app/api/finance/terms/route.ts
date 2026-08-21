@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Pre-flight: ensure every class in the school has a fee structure ──────
-  // Fetch all classes
   const allClasses = await prisma.schoolClass.findMany({
     where:  { schoolId },
     select: { id: true, name: true, form: true, stream: true },
@@ -72,7 +71,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Fetch all fee structures — either specific to the selected termName or generic (null)
+  // Fetch fee structures relevant to this term (term-specific OR generic/null)
   const structures = await prisma.feeStructure.findMany({
     where: {
       schoolId,
@@ -84,31 +83,23 @@ export async function POST(req: NextRequest) {
     select: { form: true, stream: true, termNameId: true },
   });
 
-  // Build a lookup of covered form:stream combos — term-specific wins over generic
-  const coveredKeys = new Set<string>();
-  // First pass: add term-specific matches
-  for (const s of structures) {
-    if (s.termNameId !== null) {
-      coveredKeys.add(`${s.form}:${s.stream ?? ""}`);
-    }
-  }
-  // Second pass: add generic matches only if not already covered by term-specific
-  for (const s of structures) {
-    if (s.termNameId === null) {
-      coveredKeys.add(`${s.form}:${s.stream ?? ""}`);
-    }
-  }
-
-  // Check each class
+  // For each class, check whether there is a matching fee structure using the
+  // same logic as selectFeeStructure in invoicing.ts:
+  //   - A structure with stream = null covers ALL streams for that form.
+  //   - A structure with a specific stream only covers that stream.
+  //   - Term-specific structures (termNameId matches) take priority but a
+  //     generic (termNameId = null) structure also counts as covered.
   const classesWithoutFees = allClasses.filter(cls => {
-    const key = `${cls.form}:${cls.stream ?? ""}`;
-    return !coveredKeys.has(key);
+    return !structures.some(s =>
+      s.form === cls.form &&
+      (s.stream === null || s.stream === cls.stream)
+    );
   });
 
   if (classesWithoutFees.length > 0) {
     return NextResponse.json(
       {
-        error: `Cannot create term — ${classesWithoutFees.length} class${classesWithoutFees.length !== 1 ? "es" : ""} do not have a fee structure: ${classesWithoutFees.map(c => c.name).join(", ")}.`,
+        error: `Cannot create term — ${classesWithoutFees.length} class${classesWithoutFees.length !== 1 ? "es" : ""} ${classesWithoutFees.length === 1 ? "does" : "do"} not have a fee structure: ${classesWithoutFees.map(c => c.name).join(", ")}.`,
         classesWithoutFees: classesWithoutFees.map(c => ({ id: c.id, name: c.name, form: c.form, stream: c.stream })),
       },
       { status: 422 }
