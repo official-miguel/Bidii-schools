@@ -26,6 +26,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
@@ -143,8 +144,8 @@ export async function GET(req: NextRequest) {
       { status: 400 }
     );
 
-  let whereClause: Parameters<typeof prisma.libraryCopy.findMany>[0]["where"] = {
-    schoolId:  user.schoolId!,
+  let whereClause: Prisma.LibraryCopyWhereInput = {
+    schoolId:   user.schoolId!,
     archivedAt: null,
   };
 
