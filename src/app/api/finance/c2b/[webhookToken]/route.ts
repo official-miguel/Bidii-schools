@@ -22,16 +22,32 @@ import { decryptSecret } from "@/lib/crypto";
 import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
 
+// GET — health check so you can confirm the URL is reachable and the token resolves.
+// Visit the webhook URL in a browser: should return {"ok":true,"schoolFound":true/false}
+export async function GET(req: NextRequest, { params }: { params: { webhookToken: string } }) {
+  const paybill = await prisma.schoolMpesaPaybill.findFirst({
+    where:  { webhookUrl: params.webhookToken, isActive: true },
+    select: { schoolId: true, paybillNumber: true, label: true },
+  });
+  return NextResponse.json({
+    ok:          true,
+    schoolFound: !!paybill,
+    paybill:     paybill ? { label: paybill.label, paybillNumber: paybill.paybillNumber } : null,
+  });
+}
+
 export async function POST(req: NextRequest, { params }: { params: { webhookToken: string } }) {
+  const token = params.webhookToken;
+
   // 1. Look up school by webhook token
   // Check both legacy FinanceSettings.mpesaWebhookUrl and new SchoolMpesaPaybill.webhookUrl
   const [legacySettings, paybillRecord] = await Promise.all([
     prisma.financeSettings.findFirst({
-      where:  { mpesaWebhookUrl: { contains: params.webhookToken } },
+      where:  { mpesaWebhookUrl: { contains: token } },
       select: { schoolId: true, mpesaWebhookSecret: true, receiptPrefix: true },
     }),
     prisma.schoolMpesaPaybill.findFirst({
-      where:  { webhookUrl: params.webhookToken, isActive: true },
+      where:  { webhookUrl: token, isActive: true },
       select: {
         schoolId: true,
         webhookSecret: true,
@@ -39,6 +55,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
       },
     }),
   ]);
+
+  console.log(`[C2B] token=${token} legacy=${!!legacySettings} paybill=${!!paybillRecord}`);
 
   // Resolve whichever matched
   const schoolId      = legacySettings?.schoolId ?? paybillRecord?.schoolId;
@@ -49,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
 
   // Must match a known paybill — but secret is optional (sandbox has none)
   if (!schoolId) {
+    console.log(`[C2B] REJECTED — no school found for token=${token}`);
     return NextResponse.json({ ResultCode: 1, ResultDesc: "Unauthorized" }, { status: 401 });
   }
 
@@ -77,6 +96,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   const paidAt             = new Date(String(payload.TransTime ?? Date.now()));
   const amount             = new Decimal(amountStr.replace(/[^0-9.]/g, "") || "0");
 
+  console.log(`[C2B] schoolId=${schoolId} txId=${mpesaTransactionId} ref=${rawAccountNumber} amount=${amount}`);
+
   if (!mpesaTransactionId) return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
   // 3. Idempotency check
@@ -98,6 +119,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     allStudents.map((s) => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
     rawAccountNumber
   );
+
+  console.log(`[C2B] students=${allStudents.length} match=${JSON.stringify(matchResult)}`);
 
   const prefix = receiptPrefix ?? "REC-";
 
