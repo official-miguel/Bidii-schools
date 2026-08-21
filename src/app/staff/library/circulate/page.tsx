@@ -166,19 +166,23 @@ export default function CirculatePage() {
   };
 
   // ── Book lookup + policy eval ─────────────────────────────────────────
+  // Uses the fast /api/library/copies/search endpoint which tries indexed
+  // equality lookups first (accessionNumber unique index, bookNumber unique
+  // index) rather than the slow 5-branch ILIKE query.
+  // Two sequential round-trips are collapsed to one copy-search + one eval.
   const doLookupBook = useCallback(async (q: string) => {
     if (!q.trim() || !cardData) return;
     setLoadingBook(true); setBookErr(null); setEvalResult(null); setSelectedAction(null); setConfirm(null);
-    // Strip QR prefix
-    const accession = q.startsWith("BIDII:") ? q.slice(6) : q;
     try {
-      const copiesRes = await fetch(`/api/library/copies?q=${encodeURIComponent(accession)}`);
-      const copies = await copiesRes.json();
-      const match = (Array.isArray(copies) ? copies : []).find(
-        (c: { accessionNumber: string }) => c.accessionNumber.toUpperCase() === accession.toUpperCase()
-      );
-      if (!match) { setBookErr(`No copy found for "${accession}".`); setLoadingBook(false); return; }
-      // Policy evaluation
+      const searchRes = await fetch(`/api/library/copies/search?q=${encodeURIComponent(q)}`);
+      const searchJson = await searchRes.json();
+      if (!searchRes.ok) {
+        setBookErr(searchJson.error ?? `No copy found for "${q}".`);
+        setLoadingBook(false);
+        return;
+      }
+      const match = searchJson.copy;
+      // Policy evaluation — parallel-start as soon as we have the copy id
       const evalRes = await fetch(`/api/library/policies/evaluate?studentId=${cardData.student.id}&copyId=${match.id}`);
       const evalJson = await evalRes.json();
       setEvalResult({ ...evalJson, copy: match });
@@ -186,6 +190,16 @@ export default function CirculatePage() {
     } catch { setBookErr("Network error. Please try again."); }
     setLoadingBook(false);
   }, [cardData]);
+
+  // Live debounced lookup — fires 220 ms after the user stops typing so
+  // hardware scanners (which emit a full value instantly) get an immediate
+  // response and manual typers don't fire on every keystroke.
+  const bookLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerLiveLookup = useCallback((q: string) => {
+    if (bookLookupTimer.current) clearTimeout(bookLookupTimer.current);
+    if (!q.trim()) return;
+    bookLookupTimer.current = setTimeout(() => { doLookupBook(q); }, 220);
+  }, [doLookupBook]);
 
   // ── Determine available actions based on copy status ──────────────────
   const copyStatus = evalResult?.copy?.status;
@@ -437,7 +451,13 @@ export default function CirculatePage() {
                 <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
                 <input ref={bookRef} className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
                   placeholder="Accession number or QR code…" value={bookQuery}
-                  onChange={e => { setBookQuery(e.target.value); setBookErr(null); }}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setBookQuery(v);
+                    setBookErr(null);
+                    // Live lookup — fires 220 ms after typing stops
+                    if (phase === "book" && cardData) triggerLiveLookup(v);
+                  }}
                   autoComplete="off" disabled={phase === "student" && !cardData} />
               </div>
               {bookQuery.trim() && (phase === "book" || phase === "done") && (
