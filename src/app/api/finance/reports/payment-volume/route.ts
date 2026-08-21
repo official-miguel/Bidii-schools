@@ -12,12 +12,15 @@ export async function GET(req: NextRequest) {
   const { schoolId } = auth;
 
   const { searchParams } = new URL(req.url);
-  const from = searchParams.get("from")
-    ? new Date(searchParams.get("from")!)
-    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // default: last 30 days
-  const to = searchParams.get("to")
-    ? new Date(searchParams.get("to")!)
-    : new Date();
+  const fromParam = searchParams.get("from");
+  const from = fromParam
+    ? new Date(fromParam)
+    : new Date(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) + "T00:00:00.000Z");
+  // End of today — not current time — so payments made later today are included
+  const toParam = searchParams.get("to");
+  const to = toParam
+    ? new Date(toParam)
+    : new Date(new Date().toISOString().slice(0, 10) + "T23:59:59.999Z");
 
   const payments = await prisma.payment.findMany({
     where:   { schoolId, paidAt: { gte: from, lte: to } },
