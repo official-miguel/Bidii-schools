@@ -102,8 +102,18 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   const mpesaTransactionId = String(payload.TransID ?? payload.transID ?? "");
   const rawAccountNumber   = String(payload.BillRefNumber ?? payload.AccountReference ?? "");
   const amountStr          = String(payload.TransAmount ?? payload.Amount ?? "0");
-  const paidAt             = new Date(String(payload.TransTime ?? Date.now()));
   const amount             = new Decimal(amountStr.replace(/[^0-9.]/g, "") || "0");
+
+  // Parse Safaricom TransTime format: YYYYMMDDHHmmss → ISO Date
+  const transTimeRaw = String(payload.TransTime ?? "");
+  let paidAt: Date;
+  if (/^\d{14}$/.test(transTimeRaw)) {
+    // "20260821160000" → "2026-08-21T16:00:00"
+    const iso = `${transTimeRaw.slice(0,4)}-${transTimeRaw.slice(4,6)}-${transTimeRaw.slice(6,8)}T${transTimeRaw.slice(8,10)}:${transTimeRaw.slice(10,12)}:${transTimeRaw.slice(12,14)}`;
+    paidAt = new Date(iso);
+  } else {
+    paidAt = new Date();
+  }
 
   console.log(`[C2B] schoolId=${schoolId} txId=${mpesaTransactionId} ref=${rawAccountNumber} amount=${amount}`);
 
