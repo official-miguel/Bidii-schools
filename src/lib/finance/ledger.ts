@@ -89,15 +89,26 @@ export async function postLedgerEntry(
   // 3. Compute the balance delta for this entry type
   const delta = balanceDelta(payload.entryType, payload.amount);
 
-  // 4. Update the materialised finance account atomically
-  await tx.studentFinanceAccount.update({
+  // 4. Upsert the materialised finance account atomically.
+  //    Some students may not have a StudentFinanceAccount row yet (finance setup
+  //    not yet completed). Rather than hard-failing, we create the account
+  //    on first use so any monetary event works regardless of setup status.
+  await tx.studentFinanceAccount.upsert({
     where: {
       schoolId_studentId: {
         schoolId:  payload.schoolId,
         studentId: payload.studentId,
       },
     },
-    data: {
+    create: {
+      schoolId:       payload.schoolId,
+      studentId:      payload.studentId,
+      currentBalance: delta,
+      totalInvoiced:  payload.entryType === "INVOICE" ? payload.amount : new Decimal(0),
+      totalPaid:      payload.entryType === "PAYMENT" ? payload.amount : new Decimal(0),
+      lastActivityAt: new Date(),
+    },
+    update: {
       currentBalance: { increment: delta },
       ...(payload.entryType === "INVOICE"
         ? { totalInvoiced: { increment: payload.amount } }
