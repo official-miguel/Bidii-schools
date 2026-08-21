@@ -13,17 +13,17 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface LedgerEntry {
-  id:             string;
-  entryType:      string;
-  amount:         string;
-  description:    string;
-  postedAt:       string;
-  isVoided:       boolean;
-  referenceId:    string | null;
-  referenceType:  string | null;
-  paymentMethod:  string | null;
-  student:        { id: string; fullName: string; admissionNumber: string; financeAccount: { currentBalance: string } | null } | null;
-  term:           { name: string } | null;
+  id:            string;
+  entryType:     string;
+  amount:        string;
+  description:   string;
+  postedAt:      string;
+  isVoided:      boolean;
+  referenceId:   string | null;
+  referenceType: string | null;
+  paymentMethod: string | null;
+  student:       { id: string; fullName: string; admissionNumber: string } | null;
+  term:          { id: string; name: string } | null;
 }
 
 interface Term {
@@ -34,19 +34,35 @@ interface Term {
   termName:     { name: string } | null;
 }
 
-// A display row is either a single entry or a group of batch invoices
+/**
+ * Server-computed per-term batch statistics returned by the ledger API.
+ * outstanding = live SUM(abs(currentBalance)) for debtors in this term.
+ * invoiced    = frozen SUM(Invoice.totalAmount) at the time invoices were issued.
+ * count       = number of students with an invoice for this term.
+ * postedAt    = earliest invoice generatedAt (the batch creation timestamp).
+ */
+interface TermBatchStat {
+  outstanding: string;
+  invoiced:    string;
+  count:       number;
+  postedAt:    string;
+  termName:    string;
+}
+
+// A display row is either a single ledger entry or a batch invoice summary.
 interface SingleRow {
-  kind:    "single";
-  entry:   LedgerEntry;
+  kind:  "single";
+  entry: LedgerEntry;
 }
 interface BatchRow {
-  kind:             "batch";
-  termName:         string;
-  totalAmount:      number;
-  totalOutstanding: number;
-  count:            number;
-  entries:          LedgerEntry[];
-  postedAt:         string;
+  kind:        "batch";
+  termId:      string;
+  termName:    string;
+  outstanding: number; // live, server-computed
+  invoiced:    number; // frozen invoice total
+  count:       number; // total students in batch (not just current page)
+  postedAt:    string;
+  entries:     LedgerEntry[]; // individual entries loaded so far (for expansion)
 }
 type DisplayRow = SingleRow | BatchRow;
 
@@ -56,7 +72,6 @@ function formatKES(s: string | number) {
   const n = typeof s === "number" ? s : parseFloat(s as string);
   return isNaN(n) ? String(s) : `KES ${Math.abs(n).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 }
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -89,65 +104,81 @@ function isCashIn(type: string) {
   return type === "PAYMENT" || type === "CREDIT_ADJUSTMENT";
 }
 
-// Group entries into display rows:
-// - Consecutive INVOICE entries with the same term.name, within 5 minutes → BatchRow
-// - Everything else → SingleRow
-function groupEntries(entries: LedgerEntry[]): DisplayRow[] {
-  const rows: DisplayRow[] = [];
-  let i = 0;
-  // entries are in desc order (newest first). Group batches.
-  while (i < entries.length) {
-    const e = entries[i];
-    // Check if this is the start of a batch: INVOICE with a term, referenceType = INVOICE
+/**
+ * Groups ledger entries into display rows using server-side termBatchStats.
+ *
+ * Strategy:
+ *  - Any INVOICE entry whose termId exists in termBatchStats (and that term
+ *    has count > 1) is a batch member. All such entries for the same termId
+ *    are collected into one BatchRow keyed by termId.
+ *  - The batch row's outstanding/invoiced/count/postedAt all come from the
+ *    server — NOT from the entries themselves. This means the batch row is
+ *    correct even when only a partial page of its entries has been loaded.
+ *  - Everything else (non-invoice entries, carry-forward entries, single
+ *    invoices) renders as a SingleRow.
+ *  - Batch rows appear at the position of their first-seen member entry so
+ *    the chronological order of the ledger is preserved.
+ */
+function groupEntries(
+  entries:        LedgerEntry[],
+  termBatchStats: Record<string, TermBatchStat>,
+): DisplayRow[] {
+  // Collect batch members by termId first (all pages merged)
+  const batchEntriesByTerm = new Map<string, LedgerEntry[]>();
+
+  for (const e of entries) {
+    const tId = e.term?.id;
     if (
       e.entryType === "INVOICE" &&
-      e.term &&
-      e.referenceType !== "CARRY_FORWARD"
+      tId &&
+      e.referenceType !== "CARRY_FORWARD" &&
+      termBatchStats[tId] &&
+      termBatchStats[tId].count > 1
     ) {
-      const termName  = e.term.name;
-      const batchTime = new Date(e.postedAt).getTime();
-      const batch: LedgerEntry[] = [e];
-
-      // Collect consecutive INVOICE entries for the same term within 5 min
-      let j = i + 1;
-      while (j < entries.length) {
-        const next = entries[j];
-        const nextTime = new Date(next.postedAt).getTime();
-        if (
-          next.entryType === "INVOICE" &&
-          next.term?.name === termName &&
-          Math.abs(batchTime - nextTime) <= 5 * 60 * 1000 &&
-          next.referenceType !== "CARRY_FORWARD"
-        ) {
-          batch.push(next);
-          j++;
-        } else {
-          break;
-        }
-      }
-
-      if (batch.length > 1) {
-        const total = batch.reduce((sum, b) => sum + Math.abs(parseFloat(b.amount)), 0);
-        const totalOutstanding = batch.reduce((sum, b) => {
-          const bal = parseFloat(b.student?.financeAccount?.currentBalance ?? "0");
-          return sum + (bal < 0 ? Math.abs(bal) : 0);
-        }, 0);
-        rows.push({
-          kind:             "batch",
-          termName,
-          totalAmount:      total,
-          totalOutstanding,
-          count:            batch.length,
-          entries:          batch,
-          postedAt:         e.postedAt,
-        });
-        i = j;
-        continue;
-      }
+      const list = batchEntriesByTerm.get(tId) ?? [];
+      list.push(e);
+      batchEntriesByTerm.set(tId, list);
     }
-    rows.push({ kind: "single", entry: e });
-    i++;
   }
+
+  const rows: DisplayRow[]        = [];
+  const renderedBatches           = new Set<string>(); // termIds already emitted as BatchRow
+
+  for (const e of entries) {
+    const tId = e.term?.id;
+
+    // ── Batch invoice member ──────────────────────────────────────────────
+    if (
+      e.entryType === "INVOICE" &&
+      tId &&
+      e.referenceType !== "CARRY_FORWARD" &&
+      termBatchStats[tId] &&
+      termBatchStats[tId].count > 1
+    ) {
+      if (!renderedBatches.has(tId)) {
+        // First time we see this termId: emit the BatchRow (server stats drive it)
+        const stat = termBatchStats[tId];
+        rows.push({
+          kind:        "batch",
+          termId:      tId,
+          termName:    stat.termName,
+          outstanding: parseFloat(stat.outstanding),
+          invoiced:    parseFloat(stat.invoiced),
+          count:       stat.count,
+          postedAt:    stat.postedAt,
+          entries:     batchEntriesByTerm.get(tId) ?? [],
+        });
+        renderedBatches.add(tId);
+      }
+      // Subsequent entries for the same batch are already in entries[] above —
+      // don't emit them as SingleRows.
+      continue;
+    }
+
+    // ── Everything else ───────────────────────────────────────────────────
+    rows.push({ kind: "single", entry: e });
+  }
+
   return rows;
 }
 
@@ -172,7 +203,7 @@ const TYPE_OPTIONS = [
 function SingleEntryRow({ e }: { e: LedgerEntry }) {
   const [expanded, setExpanded] = useState(false);
   const { label, variant } = entryTypeLabel(e.entryType);
-  const cashIn = isCashIn(e.entryType);
+  const cashIn       = isCashIn(e.entryType);
   const isOpeningBal = e.entryType === "OPENING_BALANCE" || e.referenceType === "CARRY_FORWARD";
 
   return (
@@ -183,7 +214,9 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
       >
         <td className={`${premiumTdClass} whitespace-nowrap`}>
           <div className="flex items-center gap-1.5">
-            {expanded ? <ChevronDown className="h-3.5 w-3.5 text-teal shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-slate/40 shrink-0" />}
+            {expanded
+              ? <ChevronDown  className="h-3.5 w-3.5 text-teal shrink-0" />
+              : <ChevronRight className="h-3.5 w-3.5 text-slate/40 shrink-0" />}
             <div>
               <p className="text-xs text-ink dark:text-dark-text font-medium">{formatDate(e.postedAt)}</p>
               <p className="text-[10px] text-slate dark:text-dark-muted">{timeAgo(e.postedAt)}</p>
@@ -221,10 +254,28 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
                 <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Description</p>
                 <p className="text-ink dark:text-dark-text">{e.description || "—"}</p>
               </div>
-              {e.term && <div><p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Term</p><p className="text-ink dark:text-dark-text">{e.term.name}</p></div>}
-              {e.referenceId && <div><p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Reference</p><p className="font-mono text-ink dark:text-dark-text">{e.referenceId}</p></div>}
-              {e.paymentMethod && <div><p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Method</p><p className="text-ink dark:text-dark-text capitalize">{e.paymentMethod.replace(/_/g, " ")}</p></div>}
-              <div><p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Time</p><p className="text-ink dark:text-dark-text">{formatDate(e.postedAt)} at {formatTime(e.postedAt)}</p></div>
+              {e.term && (
+                <div>
+                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Term</p>
+                  <p className="text-ink dark:text-dark-text">{e.term.name}</p>
+                </div>
+              )}
+              {e.referenceId && (
+                <div>
+                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Reference</p>
+                  <p className="font-mono text-ink dark:text-dark-text">{e.referenceId}</p>
+                </div>
+              )}
+              {e.paymentMethod && (
+                <div>
+                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Method</p>
+                  <p className="text-ink dark:text-dark-text capitalize">{e.paymentMethod.replace(/_/g, " ")}</p>
+                </div>
+              )}
+              <div>
+                <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Time</p>
+                <p className="text-ink dark:text-dark-text">{formatDate(e.postedAt)} at {formatTime(e.postedAt)}</p>
+              </div>
             </div>
           </td>
         </tr>
@@ -238,6 +289,12 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
 function BatchInvoiceRow({ row }: { row: BatchRow }) {
   const [expanded, setExpanded] = useState(false);
 
+  // When all students have paid, outstanding is 0 — show green instead of red.
+  const allPaid       = row.outstanding === 0;
+  // How much has been collected: invoiced total minus what's still owed.
+  const collected     = Math.max(0, row.invoiced - row.outstanding);
+  const collectedPct  = row.invoiced > 0 ? Math.round((collected / row.invoiced) * 100) : 0;
+
   return (
     <>
       {/* Summary row */}
@@ -247,51 +304,89 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
       >
         <td className={`${premiumTdClass} whitespace-nowrap`}>
           <div className="flex items-center gap-1.5">
-            {expanded ? <ChevronDown className="h-3.5 w-3.5 text-teal shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-teal/60 shrink-0" />}
+            {expanded
+              ? <ChevronDown  className="h-3.5 w-3.5 text-teal shrink-0" />
+              : <ChevronRight className="h-3.5 w-3.5 text-teal/60 shrink-0" />}
             <div>
               <p className="text-xs text-ink dark:text-dark-text font-medium">{formatDate(row.postedAt)}</p>
               <p className="text-[10px] text-slate dark:text-dark-muted">{timeAgo(row.postedAt)}</p>
             </div>
           </div>
         </td>
+
         <td className={premiumTdClass}>
           <Badge variant="info">Batch Invoice</Badge>
         </td>
+
         <td className={premiumTdClass}>
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-teal shrink-0" />
             <div>
               <p className="text-sm font-semibold text-ink dark:text-dark-text">
-                Total outstanding — {row.termName}
+                {row.termName} — {row.count} students
               </p>
               <p className="text-xs text-slate dark:text-dark-muted">
-                {row.count} students · click to expand
+                {allPaid
+                  ? "Fully collected · click to expand"
+                  : `${collectedPct}% collected · click to expand`}
               </p>
             </div>
           </div>
         </td>
-        <td className={`${premiumTdClass} text-right tabular-nums font-bold text-danger`}>
-          − {formatKES(row.totalOutstanding)}
+
+        {/* Amount column — live outstanding (server-computed) */}
+        <td className={`${premiumTdClass} text-right`}>
+          <p className={`tabular-nums font-bold ${allPaid ? "text-success" : "text-danger"}`}>
+            {allPaid ? "" : "− "}{formatKES(row.outstanding)}
+          </p>
+          <p className="text-[10px] text-slate dark:text-dark-muted tabular-nums">
+            of {formatKES(row.invoiced)} invoiced
+          </p>
         </td>
       </tr>
 
-      {/* Expanded: individual student invoices */}
-      {expanded && row.entries.map(e => (
-        <tr key={e.id} className="bg-teal/5 border-b border-line/40 dark:border-dark-border/40">
-          <td className={`${premiumTdClass} pl-10 text-xs text-slate dark:text-dark-muted whitespace-nowrap`}>
-            {formatDate(e.postedAt)}
-          </td>
-          <td className={premiumTdClass}>
-            <Badge variant="info">Invoice</Badge>
-          </td>
-          <td className={premiumTdClass}>
-            <p className="text-sm font-medium text-ink dark:text-dark-text">{e.student?.fullName ?? "—"}</p>
-            <p className="text-xs font-mono text-slate dark:text-dark-muted">{e.student?.admissionNumber ?? ""}</p>
-            {e.referenceId && <p className="text-[10px] text-slate dark:text-dark-muted font-mono">{e.referenceId}</p>}
-          </td>
-          <td className={`${premiumTdClass} text-right tabular-nums text-danger`}>− {formatKES(e.amount)}</td>
-        </tr>
-      ))}
+      {/* Expanded: individual student invoice rows loaded in this session */}
+      {expanded && (
+        <>
+          {row.entries.length === 0 ? (
+            <tr className="bg-teal/5">
+              <td colSpan={4} className="px-10 py-3 text-xs text-slate dark:text-dark-muted italic border-b border-line/40 dark:border-dark-border/40">
+                Scroll up to load individual invoices for this batch.
+              </td>
+            </tr>
+          ) : (
+            row.entries.map(e => (
+              <tr key={e.id} className="bg-teal/5 border-b border-line/40 dark:border-dark-border/40">
+                <td className={`${premiumTdClass} pl-10 text-xs text-slate dark:text-dark-muted whitespace-nowrap`}>
+                  {formatDate(e.postedAt)}
+                </td>
+                <td className={premiumTdClass}>
+                  <Badge variant="info">Invoice</Badge>
+                </td>
+                <td className={premiumTdClass}>
+                  <p className="text-sm font-medium text-ink dark:text-dark-text">{e.student?.fullName ?? "—"}</p>
+                  <p className="text-xs font-mono text-slate dark:text-dark-muted">{e.student?.admissionNumber ?? ""}</p>
+                  {e.referenceId && (
+                    <p className="text-[10px] text-slate dark:text-dark-muted font-mono">{e.referenceId}</p>
+                  )}
+                </td>
+                {/* Individual entries show the frozen invoice amount — not live balance */}
+                <td className={`${premiumTdClass} text-right tabular-nums text-danger`}>
+                  − {formatKES(e.amount)}
+                </td>
+              </tr>
+            ))
+          )}
+
+          {row.entries.length > 0 && row.entries.length < row.count && (
+            <tr className="bg-teal/5">
+              <td colSpan={4} className="px-10 py-2 text-[11px] text-slate dark:text-dark-muted italic border-b border-line/40 dark:border-dark-border/40">
+                Showing {row.entries.length} of {row.count} · scroll up to load more
+              </td>
+            </tr>
+          )}
+        </>
+      )}
     </>
   );
 }
@@ -299,21 +394,23 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function LedgerPage() {
-  const [entries,        setEntries]        = useState<LedgerEntry[]>([]);
-  const [total,          setTotal]          = useState(0);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingMore,    setLoadingMore]    = useState(false);
-  const [error,          setError]          = useState<string | null>(null);
-  const [search,         setSearch]         = useState("");
-  const [typeFilter,     setTypeFilter]     = useState("");
-  const [termFilter,     setTermFilter]     = useState("");
-  const [showPanel,      setShowPanel]      = useState(false);
-  const [terms,          setTerms]          = useState<Term[]>([]);
-  const [schoolStats,    setSchoolStats]    = useState<{
+  const [entries,         setEntries]         = useState<LedgerEntry[]>([]);
+  const [total,           setTotal]           = useState(0);
+  const [initialLoading,  setInitialLoading]  = useState(true);
+  const [loadingMore,     setLoadingMore]      = useState(false);
+  const [error,           setError]           = useState<string | null>(null);
+  const [search,          setSearch]          = useState("");
+  const [typeFilter,      setTypeFilter]      = useState("");
+  const [termFilter,      setTermFilter]      = useState("");
+  const [showPanel,       setShowPanel]       = useState(false);
+  const [terms,           setTerms]           = useState<Term[]>([]);
+  const [schoolStats,     setSchoolStats]     = useState<{
     totalInvoiced: string;
-    totalPaid: string;
+    totalPaid:     string;
     totalOutstanding: string;
   } | null>(null);
+  // Server-computed per-term batch stats — stable across all pages.
+  const [termBatchStats,  setTermBatchStats]  = useState<Record<string, TermBatchStat>>({});
 
   const tableRef    = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -330,7 +427,9 @@ export default function LedgerPage() {
       .then(d => setTerms(d.terms ?? []));
   }, []);
 
-  const fetchPage = useCallback(async (p: number, q: string, type: string, term: string, scrollToBottom = false) => {
+  const fetchPage = useCallback(async (
+    p: number, q: string, type: string, term: string, scrollToBottom = false,
+  ) => {
     if (p === 1) { setInitialLoading(true); setEntries([]); setTotal(0); }
     else           setLoadingMore(true);
     setError(null);
@@ -345,14 +444,16 @@ export default function LedgerPage() {
       const newEntries: LedgerEntry[] = data.entries ?? [];
       setEntries(prev => p === 1 ? newEntries : [...prev, ...newEntries]);
       setTotal(data.total ?? 0);
-      if (data.schoolStats) setSchoolStats(data.schoolStats);
+      // schoolStats and termBatchStats are stable across all pages — always
+      // update from the latest response so the first page load populates them.
+      if (data.schoolStats)    setSchoolStats(data.schoolStats);
+      if (data.termBatchStats) setTermBatchStats(data.termBatchStats);
     } catch {
       setError("Could not load ledger. Please try again.");
     } finally {
       setInitialLoading(false);
       setLoadingMore(false);
       fetchingRef.current = false;
-      // Scroll table to bottom after initial load
       if (scrollToBottom) {
         requestAnimationFrame(() => {
           const el = tableRef.current;
@@ -362,13 +463,13 @@ export default function LedgerPage() {
     }
   }, []);
 
-  // Initial load — scroll to bottom so latest is visible
+  // Initial load
   useEffect(() => {
     fetchPage(1, "", "", "", true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter changes
+  // Filter changes — debounced
   useEffect(() => {
     const prev = filtersRef.current;
     if (prev.search === search && prev.typeFilter === typeFilter && prev.termFilter === termFilter) return;
@@ -381,7 +482,7 @@ export default function LedgerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, typeFilter, termFilter]);
 
-  // Infinite scroll — load older entries when sentinel visible (scrolling up)
+  // Infinite scroll — loads older entries when sentinel scrolls into view
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -406,7 +507,7 @@ export default function LedgerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoading]);
 
-  const displayRows   = groupEntries(entries);
+  const displayRows   = groupEntries(entries, termBatchStats);
   const activeFilters = [search, typeFilter, termFilter].filter(Boolean).length;
   const selectedTerm  = terms.find(t => t.id === termFilter);
   const termLabel     = selectedTerm ? (selectedTerm.termName?.name ?? selectedTerm.name) : "";
@@ -417,7 +518,7 @@ export default function LedgerPage() {
       <div className="shrink-0">
         <PageHeader
           title="School Ledger"
-          description="Complete financial history — batch invoices are grouped. Click any row to expand."
+          description="Complete financial history — batch invoices are grouped by term. Click any row to expand."
         />
 
         {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
@@ -431,7 +532,11 @@ export default function LedgerPage() {
               placeholder="Search by student name or admission no…"
               className={inputCls + " pl-9 w-full"}
             />
-            {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink"><X className="h-4 w-4" /></button>}
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <select value={termFilter} onChange={e => setTermFilter(e.target.value)} className={inputCls + " max-w-[180px]"}>
@@ -446,22 +551,34 @@ export default function LedgerPage() {
           <button
             type="button" onClick={() => setShowPanel(v => !v)}
             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              showPanel || typeFilter ? "border-teal bg-teal/5 text-teal" : "border-line bg-white text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+              showPanel || typeFilter
+                ? "border-teal bg-teal/5 text-teal"
+                : "border-line bg-white text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
             }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
             {typeFilter ? TYPE_OPTIONS.find(o => o.value === typeFilter)?.label ?? "Type" : "Type"}
-            {typeFilter && <span className="ml-1 bg-teal text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>}
+            {typeFilter && (
+              <span className="ml-1 bg-teal text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>
+            )}
           </button>
 
-          <button type="button" onClick={() => fetchPage(1, search, typeFilter, termFilter, true)} disabled={initialLoading}
-            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted" title="Refresh">
+          <button
+            type="button"
+            onClick={() => fetchPage(1, search, typeFilter, termFilter, true)}
+            disabled={initialLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+            title="Refresh"
+          >
             <RefreshCw className={`h-4 w-4 ${initialLoading ? "animate-spin" : ""}`} />
           </button>
 
           {activeFilters > 0 && (
-            <button type="button" onClick={() => { setSearch(""); setTypeFilter(""); setTermFilter(""); }}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-danger transition-colors">
+            <button
+              type="button"
+              onClick={() => { setSearch(""); setTypeFilter(""); setTermFilter(""); }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-danger transition-colors"
+            >
               <X className="h-3.5 w-3.5" />Clear ({activeFilters})
             </button>
           )}
@@ -472,10 +589,15 @@ export default function LedgerPage() {
             <p className="text-xs font-medium text-slate dark:text-dark-muted mb-2">Transaction type</p>
             <div className="flex flex-wrap gap-1.5">
               {TYPE_OPTIONS.map(opt => (
-                <button key={opt.value} type="button" onClick={() => setTypeFilter(opt.value)}
+                <button
+                  key={opt.value} type="button"
+                  onClick={() => setTypeFilter(opt.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    typeFilter === opt.value ? "bg-teal text-white border-teal" : "bg-white border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
-                  }`}>
+                    typeFilter === opt.value
+                      ? "bg-teal text-white border-teal"
+                      : "bg-white border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                  }`}
+                >
                   {opt.label}
                 </button>
               ))}
@@ -485,8 +607,12 @@ export default function LedgerPage() {
 
         {!initialLoading && total > 0 && (
           <p className="text-xs text-slate dark:text-dark-muted mb-2">
-            {entries.length < total ? `${entries.length.toLocaleString()} of ${total.toLocaleString()} loaded` : `All ${total.toLocaleString()} entries`}
-            {termLabel && <span> · <span className="font-medium text-ink dark:text-dark-text">{termLabel}</span></span>}
+            {entries.length < total
+              ? `${entries.length.toLocaleString()} of ${total.toLocaleString()} loaded`
+              : `All ${total.toLocaleString()} entries`}
+            {termLabel && (
+              <span> · <span className="font-medium text-ink dark:text-dark-text">{termLabel}</span></span>
+            )}
           </p>
         )}
       </div>
@@ -554,8 +680,8 @@ export default function LedgerPage() {
                 {/* Entries are newest-first from API; reverse so oldest renders at top */}
                 {[...displayRows].reverse().map((row, idx) =>
                   row.kind === "batch"
-                    ? <BatchInvoiceRow key={`batch-${idx}`} row={row} />
-                    : <SingleEntryRow  key={row.entry.id}   e={row.entry} />
+                    ? <BatchInvoiceRow key={`batch-${row.termId}`} row={row} />
+                    : <SingleEntryRow  key={row.entry.id}          e={row.entry} />
                 )}
               </tbody>
             </table>
