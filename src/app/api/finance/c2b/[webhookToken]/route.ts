@@ -2,17 +2,22 @@
  * POST /api/finance/c2b/[webhookToken]
  *
  * Public endpoint — no session cookie auth.
- * Authentication is via HMAC-SHA256 signature on the request body.
+ * Authentication is via HMAC-SHA256 signature on the request body (production).
+ * Sandbox: no signature header is sent by Safaricom, so HMAC is skipped when
+ * no webhook secret is configured on the paybill.
  *
- * Renamed from /api/finance/mpesa/webhook/[webhookToken] because Safaricom
- * Daraja rejects any Confirmation/Validation URL that contains the word "mpesa".
+ * URL deliberately avoids the word "mpesa" — Safaricom Daraja rejects any
+ * Confirmation/Validation URL that contains that word.
  *
  * Daraja C2B confirmation flow:
- *  1. Verify HMAC signature
- *  2. Check idempotency (mpesaTransactionId)
- *  3. Match rawAccountNumber to admission number
- *  4. Auto-credit (exact match) or queue (fuzzy/no match)
- *  5. Always return HTTP 200 to Daraja after HMAC passes
+ *  1. Look up school by webhook token
+ *  2. Verify HMAC signature (if secret configured)
+ *  3. Parse body — Safaricom TransTime is YYYYMMDDHHmmss, not ISO
+ *  4. Idempotency check on mpesaTransactionId
+ *  5. Fuzzy-match BillRefNumber → admission number
+ *  6a. Exact match  → auto-credit (Payment + LedgerEntry)
+ *  6b. No/fuzzy match → queue for Bursar reconciliation
+ *  7. Always return HTTP 200 { ResultCode: 0 } to Daraja
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -22,8 +27,9 @@ import { decryptSecret } from "@/lib/crypto";
 import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
 
-// GET — health check so you can confirm the URL is reachable and the token resolves.
-// Visit the webhook URL in a browser: should return {"ok":true,"schoolFound":true/false}
+const OK = { ResultCode: 0, ResultDesc: "Accepted" } as const;
+
+// GET — health check: open the webhook URL in a browser to confirm it resolves.
 export async function GET(req: NextRequest, { params }: { params: { webhookToken: string } }) {
   const paybill = await prisma.schoolMpesaPaybill.findFirst({
     where:  { webhookUrl: params.webhookToken, isActive: true },
@@ -39,8 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { webhookToken
 export async function POST(req: NextRequest, { params }: { params: { webhookToken: string } }) {
   const token = params.webhookToken;
 
-  // 1. Look up school by webhook token
-  // Check both legacy FinanceSettings.mpesaWebhookUrl and new SchoolMpesaPaybill.webhookUrl
+  // 1. Look up school by webhook token (new paybill table or legacy settings row)
   const [legacySettings, paybillRecord] = await Promise.all([
     prisma.financeSettings.findFirst({
       where:  { mpesaWebhookUrl: { contains: token } },
@@ -49,185 +54,148 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
     prisma.schoolMpesaPaybill.findFirst({
       where:  { webhookUrl: token, isActive: true },
       select: {
-        schoolId: true,
+        schoolId:     true,
         webhookSecret: true,
         school: { select: { financeSettings: { select: { receiptPrefix: true } } } },
       },
     }),
   ]);
 
-  console.log(`[C2B] token=${token} legacy=${!!legacySettings} paybill=${!!paybillRecord}`);
-
-  // Resolve whichever matched
-  const schoolId      = legacySettings?.schoolId ?? paybillRecord?.schoolId;
+  const schoolId      = legacySettings?.schoolId      ?? paybillRecord?.schoolId;
   const rawSecret     = legacySettings?.mpesaWebhookSecret ?? paybillRecord?.webhookSecret;
   const receiptPrefix = legacySettings?.receiptPrefix
     ?? paybillRecord?.school?.financeSettings?.receiptPrefix
     ?? "REC-";
 
-  // Must match a known paybill — but secret is optional (sandbox has none)
   if (!schoolId) {
-    console.log(`[C2B] REJECTED — no school found for token=${token}`);
     return NextResponse.json({ ResultCode: 1, ResultDesc: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Read raw body
   const rawBody = await req.text();
-  console.log(`[C2B] rawBody length=${rawBody.length} preview=${rawBody.slice(0,100)}`);
 
-  // HMAC verification — only enforced when a secret is configured.
-  // Daraja sandbox does not send x-mpesa-signature so we skip it there.
+  // HMAC verification — only when a secret is configured AND the header is present.
+  // Daraja sandbox never sends x-mpesa-signature.
   if (rawSecret) {
-    const sig    = req.headers.get("x-mpesa-signature") ?? "";
-    const secret = decryptSecret(rawSecret);
-    if (sig && !verifyHmac(secret, rawBody, sig)) {
+    const sig = req.headers.get("x-mpesa-signature") ?? "";
+    if (sig && !verifyHmac(decryptSecret(rawSecret), rawBody, sig)) {
       return NextResponse.json({ ResultCode: 1, ResultDesc: "Invalid signature" }, { status: 401 });
     }
   }
 
-  // Resolve a real userId for postedById — required FK on Payment/LedgerEntry.
-  // Use the school's first BURSAR, fallback to any user in the school.
-  // Only needed for the exact-match auto-credit path, so we defer this lookup.
-  let postedById: string | null = null;
-
-  // Always return 200 to Daraja from here on (even on duplicates)
-
+  // 3. Parse body
   let payload: Record<string, unknown>;
   try { payload = JSON.parse(rawBody); }
-  catch {
-    console.log(`[C2B] JSON parse failed, rawBody="${rawBody}"`);
-    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug_bodyLen: rawBody.length });
-  }
+  catch { return NextResponse.json(OK); }
 
-  const mpesaTransactionId = String(payload.TransID ?? payload.transID ?? "");
+  const mpesaTransactionId = String(payload.TransID   ?? payload.transID         ?? "");
   const rawAccountNumber   = String(payload.BillRefNumber ?? payload.AccountReference ?? "");
-  const amountStr          = String(payload.TransAmount ?? payload.Amount ?? "0");
+  const amountStr          = String(payload.TransAmount ?? payload.Amount          ?? "0");
   const amount             = new Decimal(amountStr.replace(/[^0-9.]/g, "") || "0");
 
-  // Parse Safaricom TransTime format: YYYYMMDDHHmmss → ISO Date
-  const transTimeRaw = String(payload.TransTime ?? "");
-  let paidAt: Date;
-  if (/^\d{14}$/.test(transTimeRaw)) {
-    // "20260821160000" → "2026-08-21T16:00:00"
-    const iso = `${transTimeRaw.slice(0,4)}-${transTimeRaw.slice(4,6)}-${transTimeRaw.slice(6,8)}T${transTimeRaw.slice(8,10)}:${transTimeRaw.slice(10,12)}:${transTimeRaw.slice(12,14)}`;
-    paidAt = new Date(iso);
-  } else {
-    paidAt = new Date();
-  }
+  // Safaricom TransTime format: YYYYMMDDHHmmss (not ISO)
+  const t = String(payload.TransTime ?? "");
+  const paidAt = /^\d{14}$/.test(t)
+    ? new Date(`${t.slice(0,4)}-${t.slice(4,6)}-${t.slice(6,8)}T${t.slice(8,10)}:${t.slice(10,12)}:${t.slice(12,14)}`)
+    : new Date();
 
-  console.log(`[C2B] schoolId=${schoolId} txId=${mpesaTransactionId} ref=${rawAccountNumber} amount=${amount}`);
+  if (!mpesaTransactionId) return NextResponse.json(OK);
 
-  if (!mpesaTransactionId) return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "no_txid" });
-
-  // 3. Idempotency check
+  // 4. Idempotency — prevent duplicate processing
   const [existingEntry, existingQueue] = await Promise.all([
     prisma.ledgerEntry.findUnique({ where: { mpesaTransactionId }, select: { id: true } }),
     prisma.mpesaReconciliationQueue.findUnique({ where: { mpesaTransactionId }, select: { id: true } }),
   ]);
-  if (existingEntry || existingQueue) {
-    console.log(`[C2B] duplicate txId=${mpesaTransactionId}`);
-    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "duplicate" }); // idempotent
-  }
+  if (existingEntry || existingQueue) return NextResponse.json(OK);
 
-  // 4. Load all admission numbers for fuzzy matching
+  // 5. Fuzzy-match admission number
   const allStudents = await prisma.student.findMany({
     where:  { schoolId, archivedAt: null },
     select: { id: true, admissionNumber: true },
   });
-
   const matchResult = matchAdmissionNumber(
-    allStudents.map((s) => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
+    allStudents.map(s => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
     rawAccountNumber
   );
-
-  console.log(`[C2B] students=${allStudents.length} match=${JSON.stringify(matchResult)}`);
 
   const prefix = receiptPrefix ?? "REC-";
 
   if (matchResult?.confidence === 1.0) {
-    // 5a. Exact match — auto-credit. Look up any active user for postedById FK.
+    // 6a. Exact match — look up a real user for the postedById FK
     const systemUser = await prisma.user.findFirst({
       where:   { schoolId, isActive: true },
       orderBy: [{ role: "asc" }, { createdAt: "asc" }],
       select:  { id: true },
     });
-    postedById = systemUser?.id ?? null;
-    if (!postedById) {
-      console.log(`[C2B] no user found for schoolId=${schoolId}, falling back to queue`);
-    }
-  }
 
-  if (matchResult?.confidence === 1.0 && postedById) {
-    // 5a. Exact match — auto-credit
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
+    if (systemUser) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
+          const receiptNumber = await nextReceiptNumber(tx, schoolId, prefix);
 
-        const receiptNumber = await nextReceiptNumber(tx, schoolId, prefix);
+          await tx.payment.create({
+            data: {
+              schoolId, studentId: matchResult.studentId!, termId: null,
+              amount, method: "MPESA", mpesaTransactionId,
+              mpesaRawPayload: payload as object,
+              receiptNumber, paidAt,
+              postedById:           systemUser.id,
+              reconciliationStatus: "AUTO_MATCHED",
+            },
+          });
 
-        await tx.payment.create({
-          data: {
-            schoolId, studentId: matchResult.studentId!, termId: null,
-            amount, method: "MPESA",
+          await postLedgerEntry(tx, {
+            schoolId, studentId: matchResult.studentId!,
+            entryType: "PAYMENT", amount,
+            description:       `M-Pesa C2B ${mpesaTransactionId}`,
+            referenceId:       mpesaTransactionId,
+            referenceType:     "PAYMENT",
+            paymentMethod:     "MPESA",
             mpesaTransactionId,
-            mpesaRawPayload: payload as object,
-            receiptNumber,
-            paidAt,
-            postedById,
-            reconciliationStatus: "AUTO_MATCHED",
-          },
+            postedById:        systemUser.id,
+          });
+
+          await tx.financeNotification.create({
+            data: {
+              schoolId, studentId: matchResult.studentId!,
+              type:    "PAYMENT_RECEIVED",
+              message: `M-Pesa payment ${mpesaTransactionId} auto-credited — KES ${amount.toFixed(2)}`,
+            },
+          });
         });
-
-        await postLedgerEntry(tx, {
-          schoolId, studentId: matchResult.studentId!,
-          entryType:         "PAYMENT",
-          amount,
-          description:       `M-Pesa C2B ${mpesaTransactionId}`,
-          referenceId:       mpesaTransactionId,
-          referenceType:     "PAYMENT",
-          paymentMethod:     "MPESA",
-          mpesaTransactionId,
-          postedById,
-        });
-
-        await tx.financeNotification.create({
-          data: {
-            schoolId, studentId: matchResult.studentId!, type: "PAYMENT_RECEIVED",
-            message: `M-Pesa payment ${mpesaTransactionId} auto-credited — KES ${amount.toFixed(2)}`,
-          },
-        });
-      });
-    } catch (err) {
-      console.error("[C2B/WEBHOOK] auto-credit failed:", err);
-    }
-  } else {
-    // 5b. Fuzzy or no match — queue for manual reconciliation
-    try {
-      await prisma.mpesaReconciliationQueue.create({
-        data: {
-          schoolId, mpesaTransactionId, rawAccountNumber, amount, paidAt,
-          rawPayload:          payload as object,
-          suggestedStudentId:  matchResult?.studentId ?? null,
-          suggestedConfidence: matchResult?.confidence ?? null,
-          status:              "PENDING",
-        },
-      });
-      console.log(`[C2B] queued txId=${mpesaTransactionId} for reconciliation`);
-
-      prisma.financeNotification.create({
-        data: {
-          schoolId, studentId: null, type: "RECONCILIATION_NEEDED",
-          message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" requires manual reconciliation.`,
-        },
-      }).catch(e => console.error("[C2B] notification failed (non-fatal):", e));
-
-      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "queued" });
-
-    } catch (err) {
-      console.error("[C2B/WEBHOOK] queue failed:", err);
-      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: `queue_err:${String(err)}` });
+        return NextResponse.json(OK);
+      } catch (err) {
+        console.error("[C2B] auto-credit failed, falling back to queue:", err);
+        // Fall through to queue on error
+      }
     }
   }
 
-  return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug: "auto_credited" });
+  // 6b. No/fuzzy match (or auto-credit fallback) — queue for reconciliation
+  try {
+    await prisma.mpesaReconciliationQueue.create({
+      data: {
+        schoolId, mpesaTransactionId, rawAccountNumber, amount, paidAt,
+        rawPayload:          payload as object,
+        suggestedStudentId:  matchResult?.studentId   ?? null,
+        suggestedConfidence: matchResult?.confidence  ?? null,
+        status:              "PENDING",
+      },
+    });
+
+    // Notification is best-effort
+    prisma.financeNotification.create({
+      data: {
+        schoolId, studentId: null,
+        type:    "RECONCILIATION_NEEDED",
+        message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" needs reconciliation.`,
+      },
+    }).catch(() => {});
+
+  } catch (err) {
+    console.error("[C2B] queue insert failed:", err);
+  }
+
+  return NextResponse.json(OK);
 }
