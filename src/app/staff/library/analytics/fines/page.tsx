@@ -1,9 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { DollarSign, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, KpiCard, Section, ChartCard, TrendBarChart,
+  KpiCard, Section, ChartCard, TrendBarChart,
   RankRow, WindowSelector, AnalyticsSkeleton, CHART_COLORS, exportToCSV,
 } from "../_shared";
 import { secondaryButtonClass } from "@/components/ui";
@@ -44,7 +43,6 @@ export default function FineAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Fine Analytics</h1>

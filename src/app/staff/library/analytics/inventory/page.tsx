@@ -1,9 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Package, DollarSign, AlertTriangle, BarChart3, RefreshCw } from "lucide-react";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, KpiCard, Section, ChartCard, DonutChart, TrendBarChart,
+  KpiCard, Section, ChartCard, DonutChart, TrendBarChart,
   WindowSelector, AnalyticsSkeleton, CHART_COLORS, CONDITION_COLORS,
 } from "../_shared";
 
@@ -50,7 +49,6 @@ export default function InventoryAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Inventory Analytics</h1>

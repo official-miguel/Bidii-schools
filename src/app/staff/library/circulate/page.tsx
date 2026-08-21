@@ -23,7 +23,7 @@ import {
   Badge, ErrorBanner,
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -99,16 +99,6 @@ function useHardwareScanner(onScan: (v: string) => void, enabled: boolean) {
     window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h);
   }, [enabled, onScan]);
 }
-
-// ── NavItems ───────────────────────────────────────────────────────────────
-const navItems = [
-  { href: "/staff/library",              label: "Dashboard",     exact: true },
-  { href: "/staff/library/circulate",    label: "Circulate" },
-  { href: "/staff/library/inventory",    label: "Inventory" },
-  { href: "/staff/library/cards",        label: "Student Cards" },
-  { href: "/staff/library/reservations", label: "Reservations" },
-  { href: "/staff/library/scan",         label: "Scan Mode" },
-];
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -288,7 +278,6 @@ export default function CirculatePage() {
 
   return (
     <div>
-      <ContextNavigation items={navItems} />
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Circulation Desk</h1>

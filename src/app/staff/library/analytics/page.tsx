@@ -6,9 +6,8 @@ import {
   BookOpen, Package, Users, AlertTriangle, DollarSign,
   BarChart3, Archive, Clock, Activity,
 } from "lucide-react";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, KpiCard, Section, ChartCard, TrendLineChart,
+  KpiCard, Section, ChartCard, TrendLineChart,
   TrendBarChart, DonutChart, RankRow, WindowSelector, AnalyticsSkeleton,
   CHART_COLORS, CONDITION_COLORS, DOW_LABELS,
 } from "./_shared";
@@ -84,8 +83,6 @@ export default function LibraryAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
-
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Library Analytics</h1>

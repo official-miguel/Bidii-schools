@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 /** Map of path prefix → Tailwind left-padding class for the content area. */
 const MODULE_PADDING: Array<{ prefix: string; cls: string }> = [
   { prefix: "/staff/finance", cls: "md:pl-64" },
+  { prefix: "/staff/library", cls: "md:pl-64" },
 ];
 
 const DEFAULT_PADDING = "md:pl-16";

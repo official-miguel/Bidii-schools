@@ -6,7 +6,7 @@ import {
   PageHeader, Badge, EmptyState, ErrorBanner, FormField,
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import SlideOver from "@/components/workspace/SlideOver";
 import Modal from "@/components/Modal";
@@ -38,15 +38,6 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
-
-const navItems = [
-  { href: "/staff/library",              label: "Dashboard",     exact: true },
-  { href: "/staff/library/circulate",    label: "Circulate" },
-  { href: "/staff/library/inventory",    label: "Inventory" },
-  { href: "/staff/library/cards",        label: "Student Cards" },
-  { href: "/staff/library/reservations", label: "Reservations" },
-  { href: "/staff/library/scan",         label: "Scan Mode" },
-];
 
 // ── Create Reservation Modal ───────────────────────────────────────────────
 
@@ -265,7 +256,6 @@ export default function ReservationsPage() {
 
   return (
     <div>
-      <ContextNavigation items={navItems} />
       <PageHeader title="Reservations" description="Individual, classroom, department, and waitlist reservations."
         action={<button className={primaryButtonClass} onClick={() => setShowCreate(true)}><Plus className="h-4 w-4" />New Reservation</button>} />
 

@@ -8,7 +8,7 @@ import {
   PageHeader, Badge, ErrorBanner, SuccessBanner, FormField,
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import Modal from "@/components/Modal";
 
@@ -39,13 +39,6 @@ const PATRON_LABELS: Record<string,string> = {
   BOARDING: "Boarding Students", DAY_SCHOLAR: "Day Scholars",
   JUNIOR: "Junior Classes (Forms 1–2)", SENIOR: "Senior Classes (Forms 3–4)",
 };
-
-const navItems = [
-  { href: "/staff/library",          label: "Dashboard",  exact: true },
-  { href: "/staff/library/circulate",label: "Circulate" },
-  { href: "/staff/library/inventory",label: "Inventory" },
-  { href: "/staff/library/policies", label: "Policies" },
-];
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 
@@ -221,7 +214,6 @@ export default function PoliciesPage() {
 
   return (
     <div>
-      <ContextNavigation items={navItems} />
       <PageHeader title="Library Policy Engine" description="Configure circulation rules per patron type, manage fine pauses, and view the audit log." />
 
       {saveOk && <SuccessBanner message="Policy saved successfully." />}

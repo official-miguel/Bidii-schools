@@ -9,7 +9,7 @@ import {
   PageHeader, Badge, EmptyState, ErrorBanner, FormField,
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import SlideOver from "@/components/workspace/SlideOver";
 
@@ -419,19 +419,8 @@ export default function StudentCardsPage() {
     setProvisioning(false); load();
   }
 
-  const navItems = [
-    { href: "/staff/library",              label: "Dashboard",   exact: true },
-    { href: "/staff/library/circulate",    label: "Circulate" },
-    { href: "/staff/library/inventory",    label: "Inventory" },
-    { href: "/staff/library/cards",        label: "Student Cards" },
-    { href: "/staff/library/reservations", label: "Reservations" },
-    { href: "/staff/library/policies",     label: "Policies" },
-    { href: "/staff/library/scan",         label: "Scan Mode" },
-  ];
-
   return (
     <div>
-      <ContextNavigation items={navItems} />
       <PageHeader
         title="Student Library Cards"
         description="View and manage student digital library cards."

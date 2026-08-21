@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState, useId } from "react";
 import { Download, Printer, BarChart3, RefreshCw, Filter } from "lucide-react";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, Section, ChartCard, TrendBarChart, RankRow,
+  Section, ChartCard, TrendBarChart, RankRow,
   CHART_COLORS, exportToCSV, printSection,
 } from "../_shared";
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui";
@@ -109,7 +108,6 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
 
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
