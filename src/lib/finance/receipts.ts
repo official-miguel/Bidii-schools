@@ -42,12 +42,22 @@ export async function nextReceiptNumber(
   // transaction trying the same lock waits until this one commits or rolls back.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${schoolId}))`;
 
-  // Find the highest existing receipt number for this school
-  const last = await tx.payment.findFirst({
-    where:   { schoolId },
-    orderBy: { paidAt: "desc" },    // Most recent first is a good proxy
-    select:  { receiptNumber: true },
+  // Find the highest existing receipt number for this school.
+  // Order by receiptNumber desc (not paidAt) — payments posted at the same
+  // timestamp (e.g. bulk reconciliation) would otherwise all find the same
+  // "last" row and generate duplicate receipt numbers.
+  const payments = await tx.payment.findMany({
+    where:  { schoolId, receiptNumber: { startsWith: prefix } },
+    select: { receiptNumber: true },
   });
+  // Pick the highest numeric suffix across all matching receipts
+  const last = payments.length > 0
+    ? payments.reduce((best, p) => {
+        const n = parseInt(p.receiptNumber.slice(prefix.length), 10);
+        const b = parseInt(best.receiptNumber.slice(prefix.length), 10);
+        return n > b ? p : best;
+      })
+    : null;
 
   let nextNum = 1;
 

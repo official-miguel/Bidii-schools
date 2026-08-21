@@ -90,9 +90,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const e = err as { code?: string };
-    if (e.code === "P2002") return NextResponse.json({ error: "This M-Pesa transaction has already been processed." }, { status: 409 });
+    const e = err as { code?: string; message?: string };
+    // P2002 = unique constraint violation — surface which constraint, not a generic message
+    if (e.code === "P2002") {
+      const meta = (err as { meta?: { target?: string[] } }).meta;
+      const field = meta?.target?.join(", ") ?? "unknown field";
+      // If it's the mpesaTransactionId constraint, the payment truly exists already
+      if (field.includes("mpesaTransactionId")) {
+        return NextResponse.json({ error: "This M-Pesa transaction has already been processed." }, { status: 409 });
+      }
+      // Any other constraint (e.g. receiptNumber race) — report it clearly
+      console.error("[FINANCE/RECONCILIATION/RESOLVE] P2002 on:", field, err);
+      return NextResponse.json({ error: `Database constraint violation on ${field}. Please try again.` }, { status: 409 });
+    }
     console.error("[FINANCE/RECONCILIATION/RESOLVE]", err);
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    return NextResponse.json({ error: `An unexpected error occurred: ${e.message ?? String(err)}` }, { status: 500 });
   }
 }
