@@ -22,7 +22,7 @@ interface LedgerEntry {
   referenceId:    string | null;
   referenceType:  string | null;
   paymentMethod:  string | null;
-  student:        { id: string; fullName: string; admissionNumber: string } | null;
+  student:        { id: string; fullName: string; admissionNumber: string; financeAccount: { currentBalance: string } | null } | null;
   term:           { name: string } | null;
 }
 
@@ -40,12 +40,13 @@ interface SingleRow {
   entry:   LedgerEntry;
 }
 interface BatchRow {
-  kind:           "batch";
-  termName:       string;
-  totalAmount:    number;
-  count:          number;
-  entries:        LedgerEntry[];
-  postedAt:       string;
+  kind:             "batch";
+  termName:         string;
+  totalAmount:      number;
+  totalOutstanding: number;
+  count:            number;
+  entries:          LedgerEntry[];
+  postedAt:         string;
 }
 type DisplayRow = SingleRow | BatchRow;
 
@@ -127,13 +128,18 @@ function groupEntries(entries: LedgerEntry[]): DisplayRow[] {
 
       if (batch.length > 1) {
         const total = batch.reduce((sum, b) => sum + Math.abs(parseFloat(b.amount)), 0);
+        const totalOutstanding = batch.reduce((sum, b) => {
+          const bal = parseFloat(b.student?.financeAccount?.currentBalance ?? "0");
+          return sum + (bal < 0 ? Math.abs(bal) : 0);
+        }, 0);
         rows.push({
-          kind:           "batch",
+          kind:             "batch",
           termName,
-          totalAmount:    total,
-          count:          batch.length,
-          entries:        batch,
-          postedAt:       e.postedAt,
+          totalAmount:      total,
+          totalOutstanding,
+          count:            batch.length,
+          entries:          batch,
+          postedAt:         e.postedAt,
         });
         i = j;
         continue;
@@ -256,7 +262,7 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
             <Users className="h-3.5 w-3.5 text-teal shrink-0" />
             <div>
               <p className="text-sm font-semibold text-ink dark:text-dark-text">
-                Total invoiced — {row.termName}
+                Total outstanding — {row.termName}
               </p>
               <p className="text-xs text-slate dark:text-dark-muted">
                 {row.count} students · click to expand
@@ -265,7 +271,7 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
           </div>
         </td>
         <td className={`${premiumTdClass} text-right tabular-nums font-bold text-danger`}>
-          − {formatKES(row.totalAmount)}
+          − {formatKES(row.totalOutstanding)}
         </td>
       </tr>
 
