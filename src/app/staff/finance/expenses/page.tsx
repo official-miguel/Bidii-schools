@@ -11,14 +11,14 @@
  *   - List of categories, each expandable to show its items.
  *   - "Add category" button at the top.
  *   - "Add item" button per category row.
- *   - "Attach to students" button per item row.
+ *   - "Attach to students" button per item row — opens live-search modal.
  *   - Inline modals for all.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plus, ChevronDown, ChevronRight, X, Pencil, Tag, Users,
-  CheckCircle2, AlertTriangle, Search,
+  CheckCircle2, AlertTriangle, Search, Loader2,
 } from "lucide-react";
 import {
   PageHeader, EmptyState, Spinner, ErrorBanner, primaryButtonClass,
@@ -48,6 +48,7 @@ interface StudentOption {
   id:              string;
   fullName:        string;
   admissionNumber: string;
+  classId:         string | null;
   className:       string;
   alreadyAttached: boolean;
 }
@@ -73,102 +74,151 @@ interface AttachModalProps {
 }
 
 function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
-  const [students,  setStudents]  = useState<StudentOption[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [search,    setSearch]    = useState("");
-  const [selected,  setSelected]  = useState<Set<string>>(new Set());
-  const [saving,    setSaving]    = useState(false);
-  const [result,    setResult]    = useState<{ created: number; errors: string[] } | null>(null);
-  const [fetchErr,  setFetchErr]  = useState<string | null>(null);
+  // IDs of students who already have this expense attached (fetched once)
+  const [attachedIds,  setAttachedIds]  = useState<Set<string>>(new Set());
+  // classId → class name map for display
+  const [classMap,     setClassMap]     = useState<Map<string, string>>(new Map());
+  // Server search results for the current query
+  const [results,      setResults]      = useState<StudentOption[]>([]);
+  // Persists selections across search changes: studentId → StudentOption
+  const [selectedMap,  setSelectedMap]  = useState<Map<string, StudentOption>>(new Map());
 
+  const [search,       setSearch]       = useState("");
+  const [searching,    setSearching]    = useState(false);
+  const [initialising, setInitialising] = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [result,       setResult]       = useState<{ created: number; errors: string[] } | null>(null);
+  const [fetchErr,     setFetchErr]     = useState<string | null>(null);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── One-time init: load attached IDs + class map ──────────────────────
   useEffect(() => {
-    async function load() {
+    async function init() {
       try {
-        // Fetch all students and existing attachments for this item in parallel
-        const [studentsRes, attachRes] = await Promise.all([
-          fetch("/api/students?pageSize=2000&includeArchived=false"),
+        const [attachRes, classRes] = await Promise.all([
           fetch(`/api/finance/expense-attachments?expenseItemId=${item.id}`),
+          fetch("/api/classes"),
         ]);
 
-        const studentsData = studentsRes.ok ? await studentsRes.json() : { students: [] };
-        const attachData   = attachRes.ok  ? await attachRes.json()  : { attachments: [] };
+        if (attachRes.ok) {
+          const d = await attachRes.json();
+          setAttachedIds(new Set(
+            (d.attachments ?? []).map((a: { studentId: string }) => a.studentId)
+          ));
+        }
 
-        const attachedIds = new Set<string>(
-          (attachData.attachments ?? []).map((a: { studentId: string }) => a.studentId)
-        );
-
-        const options: StudentOption[] = (studentsData.students ?? []).map((s: {
-          id: string; fullName: string; admissionNumber: string;
-          schoolClass?: { name: string };
-        }) => ({
-          id:              s.id,
-          fullName:        s.fullName,
-          admissionNumber: s.admissionNumber,
-          className:       s.schoolClass?.name ?? "—",
-          alreadyAttached: attachedIds.has(s.id),
-        }));
-
-        setStudents(options);
+        if (classRes.ok) {
+          const d = await classRes.json();
+          const arr: Array<{ id: string; name: string }> = Array.isArray(d)
+            ? d
+            : (d.classes ?? []);
+          const map = new Map<string, string>();
+          for (const c of arr) map.set(c.id, c.name);
+          setClassMap(map);
+        }
       } catch {
-        setFetchErr("Could not load students. Please try again.");
+        setFetchErr("Could not initialise. Please close and try again.");
       } finally {
-        setLoading(false);
+        setInitialising(false);
       }
     }
-    load();
+    init();
   }, [item.id]);
 
-  const filtered = students.filter(s =>
-    s.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    s.admissionNumber.toLowerCase().includes(search.toLowerCase()) ||
-    s.className.toLowerCase().includes(search.toLowerCase())
-  );
+  // ── Live search (debounced, server-side) ──────────────────────────────
+  const doSearch = useCallback(async (q: string) => {
+    if (!q.trim()) { setResults([]); setSearching(false); return; }
+    setSearching(true);
+    try {
+      // Heuristic: if the query starts with a digit treat it as an admission number
+      const by  = /^\d/.test(q.trim()) ? "admission" : "name";
+      const url = `/api/students?q=${encodeURIComponent(q.trim())}&by=${by}&limit=50`;
+      const res = await fetch(url);
+      if (!res.ok) { setResults([]); return; }
 
-  const available   = filtered.filter(s => !s.alreadyAttached);
-  const allSelected = available.length > 0 && available.every(s => selected.has(s.id));
+      // /api/students GET returns a flat array
+      const data = await res.json() as Array<{
+        id: string; fullName: string; admissionNumber: string; classId: string | null;
+      }>;
 
-  function toggle(id: string) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      setResults(data.map(s => ({
+        id:              s.id,
+        fullName:        s.fullName,
+        admissionNumber: s.admissionNumber,
+        classId:         s.classId ?? null,
+        className:       s.classId ? (classMap.get(s.classId) ?? "—") : "—",
+        alreadyAttached: attachedIds.has(s.id),
+      })));
+    } catch {
+      setResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }, [attachedIds, classMap]);
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim()) { setResults([]); setSearching(false); return; }
+    setSearching(true);           // show spinner immediately
+    debounceRef.current = setTimeout(() => doSearch(value), 300);
+  }
+
+  // ── Selection helpers ─────────────────────────────────────────────────
+  function toggle(student: StudentOption) {
+    if (student.alreadyAttached) return;
+    setSelectedMap(prev => {
+      const next = new Map(prev);
+      if (next.has(student.id)) next.delete(student.id);
+      else next.set(student.id, student);
       return next;
     });
   }
 
-  function toggleAll() {
-    if (allSelected) {
-      setSelected(prev => {
-        const next = new Set(prev);
-        available.forEach(s => next.delete(s.id));
-        return next;
-      });
-    } else {
-      setSelected(prev => {
-        const next = new Set(prev);
-        available.forEach(s => next.add(s.id));
-        return next;
-      });
-    }
+  const availableInResults = results.filter(s => !s.alreadyAttached);
+  const allResultsSelected =
+    availableInResults.length > 0 &&
+    availableInResults.every(s => selectedMap.has(s.id));
+
+  function toggleAllResults() {
+    setSelectedMap(prev => {
+      const next = new Map(prev);
+      if (allResultsSelected) {
+        availableInResults.forEach(s => next.delete(s.id));
+      } else {
+        availableInResults.forEach(s => next.set(s.id, s));
+      }
+      return next;
+    });
   }
 
+  // ── Submit ────────────────────────────────────────────────────────────
   async function submit() {
-    if (selected.size === 0) return;
+    if (selectedMap.size === 0) return;
     setSaving(true);
     try {
       const res  = await fetch("/api/finance/expense-attachments", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ expenseItemId: item.id, studentIds: Array.from(selected) }),
+        body:    JSON.stringify({
+          expenseItemId: item.id,
+          studentIds:    Array.from(selectedMap.keys()),
+        }),
       });
       const data = await res.json();
+
+      const successIds = new Set(
+        Array.from(selectedMap.keys()).filter(
+          id => !(data.errors ?? []).some((e: string) => e.includes(id))
+        )
+      );
+      setAttachedIds(prev => new Set([...prev, ...successIds]));
+      setResults(prev =>
+        prev.map(s => successIds.has(s.id) ? { ...s, alreadyAttached: true } : s)
+      );
       setResult({ created: data.created ?? 0, errors: data.errors ?? [] });
-      // Mark newly attached students in the local list
-      setStudents(prev => prev.map(s =>
-        selected.has(s.id) && !(data.errors ?? []).some((e: string) => e.includes(s.id))
-          ? { ...s, alreadyAttached: true }
-          : s
-      ));
-      setSelected(new Set());
+      setSelectedMap(new Map());
     } catch {
       setResult({ created: 0, errors: ["Network error. Please try again."] });
     } finally {
@@ -176,9 +226,12 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
     }
   }
 
+  const selectedCount = selectedMap.size;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in flex flex-col max-h-[90vh]">
+
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border shrink-0">
           <div>
@@ -216,67 +269,90 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           </div>
         )}
 
-        {/* Search */}
+        {/* Search box */}
         <div className="px-5 pt-4 shrink-0">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+            {searching
+              ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin pointer-events-none" />
+              : <Search  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+            }
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, admission no. or class…"
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="Search by name or admission number…"
               className={inputCls + " pl-9"}
+              autoFocus
+              disabled={initialising}
             />
           </div>
+          {!initialising && !search && (
+            <p className="text-xs text-slate dark:text-dark-muted mt-1.5">
+              Type a name or admission number to search this school&apos;s students.
+            </p>
+          )}
         </div>
 
-        {/* Select all row */}
-        {!loading && available.length > 0 && (
+        {/* Select all visible */}
+        {!initialising && availableInResults.length > 0 && (
           <div className="px-5 pt-3 shrink-0">
             <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm text-ink dark:text-dark-text">
               <input
                 type="checkbox"
-                checked={allSelected}
-                onChange={toggleAll}
+                checked={allResultsSelected}
+                onChange={toggleAllResults}
                 className="h-4 w-4 rounded border-line accent-teal"
               />
-              {allSelected ? "Deselect all" : `Select all (${available.length} available)`}
+              {allResultsSelected
+                ? "Deselect all visible"
+                : `Select all visible (${availableInResults.length})`}
             </label>
           </div>
         )}
 
-        {/* Student list */}
-        <div className="overflow-y-auto flex-1 px-5 py-3 space-y-1">
-          {loading ? (
+        {/* Results list */}
+        <div className="overflow-y-auto flex-1 px-5 py-3 space-y-1 min-h-[120px]">
+          {initialising ? (
             <div className="flex justify-center py-8"><Spinner size="md" /></div>
           ) : fetchErr ? (
-            <p className="text-sm text-danger py-4">{fetchErr}</p>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-slate dark:text-dark-muted py-4 text-center">No students found.</p>
+            <p className="text-sm text-danger py-4 text-center">{fetchErr}</p>
+          ) : !search.trim() ? (
+            <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
+              Search for a student above to get started.
+            </p>
+          ) : searching && results.length === 0 ? (
+            <div className="flex justify-center py-8"><Spinner size="md" /></div>
+          ) : results.length === 0 ? (
+            <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
+              No students found for &ldquo;{search}&rdquo;.
+            </p>
           ) : (
-            filtered.map(s => (
+            results.map(s => (
               <label
                 key={s.id}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors select-none ${
                   s.alreadyAttached
                     ? "opacity-50 cursor-not-allowed"
-                    : selected.has(s.id)
-                      ? "bg-teal/5 border border-teal/20"
-                      : "hover:bg-paper dark:hover:bg-dark-border/20"
+                    : selectedMap.has(s.id)
+                      ? "bg-teal/5 border border-teal/20 cursor-pointer"
+                      : "hover:bg-paper dark:hover:bg-dark-border/20 cursor-pointer"
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={selected.has(s.id) || s.alreadyAttached}
+                  checked={selectedMap.has(s.id) || s.alreadyAttached}
                   disabled={s.alreadyAttached}
-                  onChange={() => !s.alreadyAttached && toggle(s.id)}
+                  onChange={() => toggle(s)}
                   className="h-4 w-4 rounded border-line accent-teal shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
                   <p className="text-xs text-slate dark:text-dark-muted">
-                    {s.admissionNumber} · {s.className}
-                    {s.alreadyAttached && <span className="ml-2 text-teal font-medium">Already attached</span>}
+                    <span className="font-mono">{s.admissionNumber}</span>
+                    {s.className !== "—" && <span> · {s.className}</span>}
+                    {s.alreadyAttached && (
+                      <span className="ml-2 text-teal font-medium">Already attached</span>
+                    )}
                   </p>
                 </div>
               </label>
@@ -284,10 +360,41 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           )}
         </div>
 
+        {/* Selected chips — persists across search queries */}
+        {selectedCount > 0 && (
+          <div className="px-5 pb-2 shrink-0">
+            <div className="rounded-lg bg-teal/5 border border-teal/20 px-3 py-2">
+              <p className="text-xs font-medium text-teal mb-1.5">
+                {selectedCount} student{selectedCount !== 1 ? "s" : ""} selected
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+                {Array.from(selectedMap.values()).map(s => (
+                  <span
+                    key={s.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-xs text-teal font-medium"
+                  >
+                    {s.fullName}
+                    <button
+                      type="button"
+                      onClick={() => toggle(s)}
+                      className="hover:text-danger transition-colors"
+                      aria-label={`Remove ${s.fullName}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="px-5 py-4 border-t border-line dark:border-dark-border shrink-0 flex items-center justify-between gap-3">
           <p className="text-xs text-slate dark:text-dark-muted">
-            {selected.size > 0 ? `${selected.size} student${selected.size !== 1 ? "s" : ""} selected` : "No students selected"}
+            {selectedCount > 0
+              ? `${selectedCount} student${selectedCount !== 1 ? "s" : ""} selected`
+              : "No students selected"}
           </p>
           <div className="flex gap-2">
             <button
@@ -301,10 +408,12 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
               <button
                 type="button"
                 onClick={submit}
-                disabled={saving || selected.size === 0}
+                disabled={saving || selectedCount === 0}
                 className={primaryButtonClass}
               >
-                {saving ? "Attaching…" : `Attach to ${selected.size || "…"} student${selected.size !== 1 ? "s" : ""}`}
+                {saving
+                  ? "Attaching…"
+                  : `Attach to ${selectedCount || "…"} student${selectedCount !== 1 ? "s" : ""}`}
               </button>
             )}
           </div>
@@ -460,11 +569,11 @@ interface CategoryRowProps {
 }
 
 function CategoryRow({ category, onAddItem }: CategoryRowProps) {
-  const [open,        setOpen]        = useState(false);
-  const [items,       setItems]       = useState<ExpenseItem[]>([]);
-  const [loading,     setLoading]     = useState(false);
-  const [editing,     setEditing]     = useState<ExpenseItem | null>(null);
-  const [attaching,   setAttaching]   = useState<ExpenseItem | null>(null);
+  const [open,      setOpen]      = useState(false);
+  const [items,     setItems]     = useState<ExpenseItem[]>([]);
+  const [loading,   setLoading]   = useState(false);
+  const [editing,   setEditing]   = useState<ExpenseItem | null>(null);
+  const [attaching, setAttaching] = useState<ExpenseItem | null>(null);
 
   async function loadItems() {
     if (items.length > 0) { setOpen(true); return; }
