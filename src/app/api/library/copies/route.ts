@@ -1,6 +1,12 @@
 /**
  * GET  /api/library/copies          — list copies (optionally filtered)
- * POST /api/library/copies          — register a new physical copy
+ * POST /api/library/copies          — register new physical copy/copies
+ *
+ * Each new copy gets:
+ *   - accessionNumber  : ACC-NNNNN   (internal sequential ID, unchanged)
+ *   - bookNumber       : BK-NNNNN    (human-readable sticker number, never reused)
+ *   - qrToken          : signed HMAC-SHA256 token  { copy_id, school_id, issued_at }
+ *   - qrCode           : legacy plain payload kept for backward compat
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -8,6 +14,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
+import { mintQrToken } from "@/lib/library/qr";
+import { bookNumberSequencer } from "@/lib/library/bookNumber";
 
 async function guard() {
   return (
@@ -23,15 +31,14 @@ async function manageGuard() {
 }
 
 // ---------------------------------------------------------------------------
-// Accession number generator — school-scoped sequential
-// Format: ACC-YYYYY  (5-digit zero-padded, e.g. ACC-00042)
+// Accession number generator — internal sequential (ACC-NNNNN)
 // ---------------------------------------------------------------------------
 
-async function generateAccessionNumber(schoolId: string): Promise<string> {
+async function nextAccessionNumber(schoolId: string): Promise<string> {
   const last = await prisma.libraryCopy.findFirst({
-    where: { schoolId },
+    where:   { schoolId },
     orderBy: { createdAt: "desc" },
-    select: { accessionNumber: true },
+    select:  { accessionNumber: true },
   });
 
   let next = 1;
@@ -43,14 +50,6 @@ async function generateAccessionNumber(schoolId: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// QR code value — encode accession number as a compact payload
-// ---------------------------------------------------------------------------
-
-function buildQrPayload(accessionNumber: string): string {
-  return `BIDII:${accessionNumber}`;
-}
-
-// ---------------------------------------------------------------------------
 // GET
 // ---------------------------------------------------------------------------
 
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
   const user = await guard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const sp = req.nextUrl.searchParams;
+  const sp          = req.nextUrl.searchParams;
   const catalogueId = sp.get("catalogueId") ?? undefined;
   const status      = sp.get("status") ?? undefined;
   const archived    = sp.get("archived") === "true";
@@ -70,10 +69,10 @@ export async function GET(req: NextRequest) {
       ...(catalogueId ? { catalogueId } : {}),
       ...(status      ? { status: status as never } : {}),
       archivedAt: archived ? { not: null } : null,
-      // Live search: match accession number directly, or search by catalogue title/bookNumber
       ...(q ? {
         OR: [
           { accessionNumber: { contains: q, mode: "insensitive" } },
+          { bookNumber:      { contains: q, mode: "insensitive" } },
           { catalogue: { title:      { contains: q, mode: "insensitive" } } },
           { catalogue: { bookNumber: { contains: q, mode: "insensitive" } } },
           { catalogue: { author:     { contains: q, mode: "insensitive" } } },
@@ -84,16 +83,22 @@ export async function GET(req: NextRequest) {
     take: q ? 10 : undefined,
     include: {
       catalogue: {
-        select: { id: true, title: true, bookNumber: true, subject: true, form: true, author: true },
+        select: {
+          id: true, title: true, bookNumber: true,
+          subject: true, form: true, level: true, author: true,
+        },
       },
     },
   });
 
-  return NextResponse.json(copies);
+  // Never expose qrToken in list responses — only in single-copy or QR-sheet endpoints
+  return NextResponse.json(
+    copies.map(({ qrToken: _qrToken, ...c }) => c)
+  );
 }
 
 // ---------------------------------------------------------------------------
-// POST — register new copy
+// POST — register new copy/copies
 // ---------------------------------------------------------------------------
 
 const createSchema = z.object({
@@ -103,15 +108,15 @@ const createSchema = z.object({
   condition:       z.enum(["EXCELLENT", "GOOD", "FAIR", "DAMAGED", "LOST"]).optional(),
   acquisitionDate: z.string().optional().nullable(),
   cost:            z.coerce.number().min(0).optional().nullable(),
-  /** Number of copies to register in bulk (default 1) */
-  count:           z.coerce.number().int().min(1).max(100).optional(),
+  /** Number of copies to register in bulk (default 1, max 500) */
+  count:           z.coerce.number().int().min(1).max(500).optional(),
 });
 
 export async function POST(req: NextRequest) {
   const user = await manageGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json().catch(() => null);
+  const body   = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json(
@@ -119,28 +124,28 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
 
-  const d = parsed.data;
+  const d     = parsed.data;
   const count = d.count ?? 1;
 
   // Verify catalogue belongs to this school
   const catalogue = await prisma.libraryCatalogue.findFirst({
-    where: { id: d.catalogueId, schoolId: user.schoolId! },
+    where:  { id: d.catalogueId, schoolId: user.schoolId! },
     select: { id: true, costPerCopy: true },
   });
   if (!catalogue)
     return NextResponse.json({ error: "Catalogue entry not found." }, { status: 404 });
 
-  // If a specific accession number is given, only allow count=1
+  // Explicit accession number only allowed for single-copy registration
   if (d.accessionNumber && count > 1)
     return NextResponse.json(
       { error: "Specify an accession number only when registering a single copy." },
       { status: 400 }
     );
 
-  // Check uniqueness if accession provided
+  // Uniqueness check when explicit accession given
   if (d.accessionNumber) {
     const existing = await prisma.libraryCopy.findFirst({
-      where: { schoolId: user.schoolId!, accessionNumber: d.accessionNumber },
+      where:  { schoolId: user.schoolId!, accessionNumber: d.accessionNumber },
       select: { id: true },
     });
     if (existing)
@@ -150,42 +155,62 @@ export async function POST(req: NextRequest) {
       );
   }
 
+  // Pre-fetch book-number sequencer so bulk creates avoid N DB round-trips
+  const nextBookNum = await bookNumberSequencer(user.schoolId!);
+  const now         = new Date();
+
   const created: Awaited<ReturnType<typeof prisma.libraryCopy.create>>[] = [];
 
   for (let i = 0; i < count; i++) {
     const accessionNumber =
       count === 1 && d.accessionNumber
         ? d.accessionNumber
-        : await generateAccessionNumber(user.schoolId!);
+        : await nextAccessionNumber(user.schoolId!);
 
-    const qrCode = buildQrPayload(accessionNumber);
+    const bookNumber = nextBookNum();
 
-    const copy = await prisma.libraryCopy.create({
-      data: {
-        schoolId: user.schoolId!,
-        catalogueId:     d.catalogueId,
-        accessionNumber,
-        qrCode,
-        barcode:         count === 1 ? (d.barcode || null) : null,
-        condition:       (d.condition ?? "GOOD") as never,
-        status:          "AVAILABLE" as never,
-        acquisitionDate: d.acquisitionDate ? new Date(d.acquisitionDate) : null,
-        cost:            d.cost ?? catalogue.costPerCopy ?? null,
-      },
+    // Mint signed QR token — copy_id not known yet, so we use a placeholder
+    // and update immediately after create inside a transaction.
+    const copy = await prisma.$transaction(async (tx) => {
+      const c = await tx.libraryCopy.create({
+        data: {
+          schoolId:       user.schoolId!,
+          catalogueId:    d.catalogueId,
+          accessionNumber,
+          bookNumber,
+          qrCode:         `BIDII:${accessionNumber}`, // legacy plain payload
+          qrToken:        null, // set below once we have the id
+          qrIssuedAt:     null,
+          barcode:        count === 1 ? (d.barcode || null) : null,
+          condition:      (d.condition ?? "GOOD") as never,
+          status:         "AVAILABLE" as never,
+          acquisitionDate: d.acquisitionDate ? new Date(d.acquisitionDate) : null,
+          cost:           d.cost ?? catalogue.costPerCopy ?? null,
+        },
+      });
+
+      // Now we have the copy id — mint the real signed token
+      const qrToken = mintQrToken(c.id, user.schoolId!);
+      return tx.libraryCopy.update({
+        where: { id: c.id },
+        data:  { qrToken, qrIssuedAt: now },
+      });
     });
+
     created.push(copy);
   }
 
-  // Update totalCopies on catalogue
+  // Increment totalCopies on catalogue
   await prisma.libraryCatalogue.update({
     where: { id: d.catalogueId },
-    data: { totalCopies: { increment: count } },
+    data:  { totalCopies: { increment: count } },
   });
 
   emitSSE(user.schoolId!, "libraryCopy.created", { catalogueId: d.catalogueId, count });
 
-  return NextResponse.json(
-    count === 1 ? created[0] : { created: created.length, copies: created },
-    { status: 201 }
-  );
+  const response = count === 1
+    ? { ...created[0], qrToken: undefined } // strip token from standard response
+    : { created: created.length, copies: created.map(({ qrToken: _t, ...c }) => c) };
+
+  return NextResponse.json(response, { status: 201 });
 }

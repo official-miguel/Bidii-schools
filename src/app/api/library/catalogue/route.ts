@@ -1,6 +1,13 @@
 /**
  * GET  /api/library/catalogue   — list/search catalogue records
  * POST /api/library/catalogue   — create a new catalogue entry
+ *
+ * GET supports two response modes via ?view= param:
+ *   view=list    (default) — summary rows, no copy details
+ *   view=grouped           — each title row includes its copies array with
+ *                            per-copy status, condition, bookNumber, etc.
+ *                            Used by the circulation-search UI so results
+ *                            show "1 title × N copies" rather than N rows.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -34,9 +41,11 @@ export async function GET(req: NextRequest) {
   const q        = sp.get("q")?.trim() ?? "";
   const subject  = sp.get("subject") ?? undefined;
   const form     = sp.get("form") ? Number(sp.get("form")) : undefined;
+  const level    = sp.get("level") ?? undefined;
   const category = sp.get("category") ?? undefined;
   const shelf    = sp.get("shelf") ?? undefined;
   const archived = sp.get("archived") === "true";
+  const view     = sp.get("view") ?? "list";           // "list" | "grouped"
   const take     = Math.min(Number(sp.get("take") ?? "200"), 500);
   const cursor   = sp.get("cursor") ?? undefined;
 
@@ -44,8 +53,9 @@ export async function GET(req: NextRequest) {
     where: {
       schoolId: user.schoolId!,
       archivedAt: archived ? { not: null } : null,
-      ...(subject  ? { subject  } : {}),
+      ...(subject ? { subject } : {}),
       ...(form !== undefined ? { form } : {}),
+      ...(level   ? { level: { contains: level, mode: "insensitive" } } : {}),
       ...(category ? { category: category as never } : {}),
       ...(shelf    ? { shelf    } : {}),
       ...(q ? {
@@ -55,6 +65,7 @@ export async function GET(req: NextRequest) {
           { bookNumber: { contains: q, mode: "insensitive" } },
           { isbn:       { contains: q, mode: "insensitive" } },
           { subject:    { contains: q, mode: "insensitive" } },
+          { level:      { contains: q, mode: "insensitive" } },
           { edition:    { contains: q, mode: "insensitive" } },
         ],
       } : {}),
@@ -63,33 +74,63 @@ export async function GET(req: NextRequest) {
     take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
-      _count: {
-        select: {
-          copies: true,
-          // available copies: status = AVAILABLE
-        },
-      },
+      _count: { select: { copies: true } },
       copies: {
-        where: { archivedAt: null },
-        select: { id: true, status: true, condition: true, accessionNumber: true },
+        where:  { archivedAt: null },
+        select: {
+          id:              true,
+          bookNumber:      true,
+          accessionNumber: true,
+          status:          true,
+          condition:       true,
+        },
+        orderBy: { bookNumber: "asc" },
       },
     },
   });
 
-  const hasMore = rows.length > take;
-  const data = hasMore ? rows.slice(0, take) : rows;
+  const hasMore    = rows.length > take;
+  const data       = hasMore ? rows.slice(0, take) : rows;
   const nextCursor = hasMore ? data[data.length - 1].id : null;
 
-  return NextResponse.json({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    items: (data as any[]).map((c) => ({
-      ...c,
-      totalCopies:     (c.copies as { status: string }[]).length,
-      availableCopies: (c.copies as { status: string }[]).filter((x) => x.status === "AVAILABLE").length,
-      copies: undefined,
-    })),
-    nextCursor,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = (data as any[]).map((c) => {
+    const copies = c.copies as Array<{
+      id: string; bookNumber: string | null;
+      accessionNumber: string; status: string; condition: string;
+    }>;
+
+    const base = {
+      id:              c.id,
+      title:           c.title,
+      author:          c.author,
+      edition:         c.edition,
+      level:           c.level,
+      subject:         c.subject,
+      form:            c.form,
+      bookNumber:      c.bookNumber,
+      category:        c.category,
+      shelf:           c.shelf,
+      shelfRow:        c.shelfRow,
+      language:        c.language,
+      totalCopies:     copies.length,
+      availableCopies: copies.filter((x) => x.status === "AVAILABLE").length,
+      checkedOut:      copies.filter((x) => x.status === "BORROWED").length,
+      reserved:        copies.filter((x) => x.status === "RESERVED").length,
+      lost:            copies.filter((x) => x.status === "ARCHIVED" || x.status === "LOST").length,
+      archivedAt:      c.archivedAt,
+      createdAt:       c.createdAt,
+      updatedAt:       c.updatedAt,
+    };
+
+    // Grouped view: attach copies list for circulation search
+    if (view === "grouped") {
+      return { ...base, copies };
+    }
+    return base;
   });
+
+  return NextResponse.json({ items, nextCursor });
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +141,7 @@ const createSchema = z.object({
   title:       z.string().trim().min(1, "Title is required"),
   bookNumber:  z.string().trim().optional().or(z.literal("")),
   subject:     z.string().trim().optional().or(z.literal("")),
+  level:       z.string().trim().optional().or(z.literal("")),
   form:        z.coerce.number().int().min(1).max(8).optional().nullable(),
   author:      z.string().trim().optional().or(z.literal("")),
   publisher:   z.string().trim().optional().or(z.literal("")),
@@ -147,6 +189,7 @@ export async function POST(req: NextRequest) {
       title:       d.title,
       bookNumber:  d.bookNumber || null,
       subject:     d.subject   || null,
+      level:       d.level     || null,
       form:        d.form      ?? null,
       author:      d.author    || null,
       publisher:   d.publisher || null,
