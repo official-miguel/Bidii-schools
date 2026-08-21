@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import FinanceSidebarNav from "@/components/finance/FinanceSidebarNav";
+import FinanceTopBar from "@/components/finance/FinanceTopBar";
 
 export default async function FinanceLayout({
   children,
@@ -34,10 +35,23 @@ export default async function FinanceLayout({
       })
     : null;
 
+  // Build display name and initials for the top bar chip
+  const roleLabel    = user.role.charAt(0) + user.role.slice(1).toLowerCase();
+  const userInitials = (user.email ?? "?")
+    .split("@")[0]
+    .split(/[._\-]/)
+    .map((p: string) => p[0]?.toUpperCase() ?? "")
+    .slice(0, 2)
+    .join("") || "?";
+
   return (
     <>
       <FinanceSidebarNav schoolName={school?.name ?? "Finance"} />
-      {children}
+      <FinanceTopBar roleLabel={roleLabel} userInitials={userInitials} />
+      {/* pt-16 offsets content below the fixed top bar */}
+      <div className="pt-16">
+        {children}
+      </div>
     </>
   );
 }
