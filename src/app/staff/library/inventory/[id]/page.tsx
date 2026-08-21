@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronRight, Lightbulb, BarChart3,
 } from "lucide-react";
 import { Badge, PageHeader, Spinner } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,13 +35,6 @@ function statCard(label: string, value: string | number, icon: React.ReactNode, 
     </div>
   );
 }
-
-const navItems = [
-  { href: "/staff/library",           label: "Dashboard", exact: true },
-  { href: "/staff/library/circulate", label: "Circulate" },
-  { href: "/staff/library/inventory", label: "Inventory" },
-  { href: "/staff/library/cards",     label: "Student Cards" },
-];
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
@@ -71,8 +64,6 @@ export default function BookIntelligencePage() {
 
   return (
     <div>
-      <ContextNavigation items={navItems} />
-
       <PageHeader title={catalogue.title} description={[catalogue.author, catalogue.subject, catalogue.form ? `Form ${catalogue.form}` : null, catalogue.bookNumber].filter(Boolean).join(" · ")} />
 
       {/* Stat cards */}

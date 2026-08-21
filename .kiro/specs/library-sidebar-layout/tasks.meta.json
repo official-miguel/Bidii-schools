@@ -1,0 +1,285 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Audit LibrarySidebarNav accordion mutual exclusivity and active-group auto-open": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334333770
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334346973
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335424351
+      }
+    ],
+    "1.2 Verify ItemTile active-state logic covers the exact-match Dashboard case": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334333962
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334347722
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335425736
+      }
+    ],
+    "1.3 Verify dark teal gradient values exactly match FinanceSidebarNav": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334334159
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334348684
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335426595
+      }
+    ],
+    "2.1 Remove `<ContextNavigation items={analyticsNavItems} />` from the analytics overview page": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334334719
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335438447
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335583926
+      }
+    ],
+    "2.2 Remove ContextNavigation from the six analytics sub-pages": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334334874
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335439484
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335584988
+      }
+    ],
+    "3.1 Audit LibraryLayout for all user role cases": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334335091
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334349813
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335427852
+      }
+    ],
+    "3.2 Verify school name fetch and top bar props in LibraryLayout": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334335306
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334350317
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335428903
+      }
+    ],
+    "4.1 Confirm resolveModulePortal returns \"/staff/library\" for LIBRARY.canManage": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334335680
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334354916
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335429823
+      }
+    ],
+    "4.2 Confirm teacher/page.tsx and root page.tsx both call resolveModulePortal": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334335839
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335440466
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335586022
+      }
+    ],
+    "5.1 Confirm ConditionalHubSidebar suppresses HubSidebar for /staff/library": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334336042
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334355862
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335430888
+      }
+    ],
+    "5.2 Confirm ShellContentWrapper applies md:pl-64 for /staff/library": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334336223
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334356895
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335431930
+      }
+    ],
+    "6. Checkpoint — Ensure all tests pass, ask the user if questions arise.": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334336571
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335593262
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335722801
+      }
+    ],
+    "7.1 Write a unit test for the accordion toggle and auto-open logic": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334337174
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335594238
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335721443
+      }
+    ],
+    "8. Final checkpoint — Ensure all tests pass, ask the user if questions arise.": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787334337338
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335757489
+      },
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335774868
+      }
+    ],
+    "1. Verify and harden the existing LibrarySidebarNav component": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335426683
+      }
+    ],
+    "3. Verify LibraryLayout permission guard completeness": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335428979
+      }
+    ],
+    "5. Verify shell integration": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335431995
+      }
+    ],
+    "2. Remove ContextNavigation strips from analytics sub-pages": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335585167
+      }
+    ],
+    "4. Verify teacher portal redirect wiring": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335586219
+      }
+    ],
+    "7. Smoke-test the full navigation flow": [
+      {
+        "executionId": "e0051b6b-8c7c-4215-a641-8eb7401cb16c",
+        "chatSessionId": "sess_30d56602-b1e8-44cf-9c95-aceb88dd1749",
+        "timestamp": 1787335721508
+      }
+    ]
+  }
+}

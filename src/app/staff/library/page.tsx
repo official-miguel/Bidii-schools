@@ -10,7 +10,7 @@ import {
   PageHeader, Badge, EmptyState,
   primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -134,21 +134,8 @@ export default function LibraryDashboard() {
     }
   }
 
-  const navItems = [
-    { href: "/staff/library",              label: "Dashboard",   exact: true },
-    { href: "/staff/library/circulate",    label: "Circulate" },
-    { href: "/staff/library/inventory",    label: "Inventory" },
-    { href: "/staff/library/cards",        label: "Student Cards" },
-    { href: "/staff/library/reservations", label: "Reservations" },
-    { href: "/staff/library/analytics",    label: "Analytics" },
-    { href: "/staff/library/policies",     label: "Policies" },
-    { href: "/staff/library/scan",         label: "Scan Mode" },
-  ];
-
   return (
     <div>
-      <ContextNavigation items={navItems} />
-
       <PageHeader
         title="Library"
         description="Overview of the school library — catalogue, cards, borrows, and fines."

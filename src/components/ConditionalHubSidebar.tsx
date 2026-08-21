@@ -22,7 +22,7 @@ interface Props {
 }
 
 /** Path prefixes that render their own fixed sidebar. */
-const MODULE_SIDEBAR_PATHS = ["/staff/finance"];
+const MODULE_SIDEBAR_PATHS = ["/staff/finance", "/staff/library"];
 
 export default function ConditionalHubSidebar(props: Props) {
   const pathname = usePathname();

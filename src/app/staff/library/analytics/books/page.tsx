@@ -2,9 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, AlertTriangle, RefreshCw, Archive } from "lucide-react";
 import Link from "next/link";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, KpiCard, Section, ChartCard, DonutChart,
+  KpiCard, Section, ChartCard, DonutChart,
   TrendBarChart, RankRow, WindowSelector, AnalyticsSkeleton,
   CHART_COLORS, CONDITION_COLORS, exportToCSV,
 } from "../_shared";
@@ -46,7 +45,6 @@ export default function BookAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Book Analytics</h1>

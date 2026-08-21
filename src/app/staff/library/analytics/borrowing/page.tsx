@@ -1,9 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Users, Clock, BarChart3, TrendingUp } from "lucide-react";
-import ContextNavigation from "@/components/ContextNavigation";
 import {
-  analyticsNavItems, KpiCard, Section, ChartCard, TrendLineChart,
+  KpiCard, Section, ChartCard, TrendLineChart,
   TrendBarChart, RankRow, WindowSelector, AnalyticsSkeleton,
   CHART_COLORS, DOW_LABELS, exportToCSV,
 } from "../_shared";
@@ -53,7 +52,6 @@ export default function BorrowingAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={analyticsNavItems} />
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Borrowing Analytics</h1>

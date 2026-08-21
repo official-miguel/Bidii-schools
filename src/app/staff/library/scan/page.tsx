@@ -30,7 +30,7 @@ import {
   Badge, ErrorBanner,
   primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
-import ContextNavigation from "@/components/ContextNavigation";
+
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -530,13 +530,6 @@ export default function ScanModePage() {
   const card   = cardData?.card;
   const active = card?.borrows.filter(b => !b.returnedAt) ?? [];
 
-  const navItems = [
-    { href: "/staff/library",           label: "Dashboard", exact: true },
-    { href: "/staff/library/inventory", label: "Inventory" },
-    { href: "/staff/library/cards",     label: "Student Cards" },
-    { href: "/staff/library/scan",      label: "Scan Mode" },
-  ];
-
   const methodIcon = method === "QR_CAMERA" ? <Camera className="h-4 w-4" />
     : method === "QR_HARDWARE" ? <Usb className="h-4 w-4" />
     : <Keyboard className="h-4 w-4" />;
@@ -547,8 +540,6 @@ export default function ScanModePage() {
 
   return (
     <div>
-      <ContextNavigation items={navItems} />
-
       {/* Header bar */}
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
