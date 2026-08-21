@@ -73,6 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
 
   // 2. Read raw body
   const rawBody = await req.text();
+  console.log(`[C2B] rawBody length=${rawBody.length} preview=${rawBody.slice(0,100)}`);
 
   // HMAC verification — only enforced when a secret is configured.
   // Daraja sandbox does not send x-mpesa-signature so we skip it there.
@@ -93,7 +94,10 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
 
   let payload: Record<string, unknown>;
   try { payload = JSON.parse(rawBody); }
-  catch { return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" }); }
+  catch {
+    console.log(`[C2B] JSON parse failed, rawBody="${rawBody}"`);
+    return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted", debug_bodyLen: rawBody.length });
+  }
 
   const mpesaTransactionId = String(payload.TransID ?? payload.transID ?? "");
   const rawAccountNumber   = String(payload.BillRefNumber ?? payload.AccountReference ?? "");
