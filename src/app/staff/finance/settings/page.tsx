@@ -303,7 +303,7 @@ function PaybillsSection() {
   }
 
   async function copyUrl(webhookUrl: string) {
-    const url = `${window.location.origin}/api/finance/mpesa/webhook/${webhookUrl}`;
+    const url = `${window.location.origin}/api/finance/c2b/${webhookUrl}`;
     await navigator.clipboard.writeText(url);
     setCopied(webhookUrl);
     setTimeout(() => setCopied(null), 2500);
@@ -357,7 +357,7 @@ function PaybillsSection() {
                   </div>
                   <div className="flex gap-2 items-center">
                     <code className="flex-1 text-[10px] font-mono bg-paper border border-line rounded px-2 py-1 text-ink truncate dark:bg-dark-border/30 dark:border-dark-border dark:text-dark-text">
-                      {typeof window !== "undefined" ? `${window.location.origin}/api/finance/mpesa/webhook/${p.webhookUrl}` : `/api/finance/mpesa/webhook/${p.webhookUrl}`}
+                      {typeof window !== "undefined" ? `${window.location.origin}/api/finance/c2b/${p.webhookUrl}` : `/api/finance/c2b/${p.webhookUrl}`}
                     </code>
                     <button
                       type="button"

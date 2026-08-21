@@ -1,8 +1,11 @@
 /**
- * POST /api/finance/mpesa/webhook/[webhookToken]
+ * POST /api/finance/c2b/[webhookToken]
  *
  * Public endpoint — no session cookie auth.
  * Authentication is via HMAC-SHA256 signature on the request body.
+ *
+ * Renamed from /api/finance/mpesa/webhook/[webhookToken] because Safaricom
+ * Daraja rejects any Confirmation/Validation URL that contains the word "mpesa".
  *
  * Daraja C2B confirmation flow:
  *  1. Verify HMAC signature
@@ -38,8 +41,8 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   ]);
 
   // Resolve whichever matched
-  const schoolId     = legacySettings?.schoolId ?? paybillRecord?.schoolId;
-  const rawSecret    = legacySettings?.mpesaWebhookSecret ?? paybillRecord?.webhookSecret;
+  const schoolId      = legacySettings?.schoolId ?? paybillRecord?.schoolId;
+  const rawSecret     = legacySettings?.mpesaWebhookSecret ?? paybillRecord?.webhookSecret;
   const receiptPrefix = legacySettings?.receiptPrefix
     ?? paybillRecord?.school?.financeSettings?.receiptPrefix
     ?? "REC-";
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
             mpesaRawPayload: payload as object,
             receiptNumber,
             paidAt,
-            postedById: "system", // system-generated
+            postedById:           "system",
             reconciliationStatus: "AUTO_MATCHED",
           },
         });
@@ -127,11 +130,14 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
         });
 
         await tx.financeNotification.create({
-          data: { schoolId, studentId: matchResult.studentId!, type: "PAYMENT_RECEIVED", message: `M-Pesa payment ${mpesaTransactionId} auto-credited — KES ${amount.toFixed(2)}` },
+          data: {
+            schoolId, studentId: matchResult.studentId!, type: "PAYMENT_RECEIVED",
+            message: `M-Pesa payment ${mpesaTransactionId} auto-credited — KES ${amount.toFixed(2)}`,
+          },
         });
       });
     } catch (err) {
-      console.error("[MPESA/WEBHOOK] auto-credit failed:", err);
+      console.error("[C2B/WEBHOOK] auto-credit failed:", err);
     }
   } else {
     // 5b. Fuzzy or no match — queue for manual reconciliation
@@ -150,11 +156,14 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
         });
 
         await tx.financeNotification.create({
-          data: { schoolId, studentId: null, type: "RECONCILIATION_NEEDED", message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" requires manual reconciliation.` },
+          data: {
+            schoolId, studentId: null, type: "RECONCILIATION_NEEDED",
+            message: `Unmatched M-Pesa payment ${mpesaTransactionId} — KES ${amount.toFixed(2)} from "${rawAccountNumber}" requires manual reconciliation.`,
+          },
         });
       });
     } catch (err) {
-      console.error("[MPESA/WEBHOOK] queue failed:", err);
+      console.error("[C2B/WEBHOOK] queue failed:", err);
     }
   }
 
