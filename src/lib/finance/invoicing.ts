@@ -300,15 +300,7 @@ export async function runBatchInvoicing(
           postedById:   userId,
         });
 
-        // Create notification
-        await tx.financeNotification.create({
-          data: {
-            schoolId,
-            studentId: student.id,
-            type:      "INVOICE_GENERATED",
-            message:   `Invoice ${invoiceNumber} generated for ${student.fullName} — ${term.name} (KES ${totalAmount.toFixed(2)})`,
-          },
-        });
+
       });
 
       result.succeeded++;
@@ -432,14 +424,7 @@ export async function createProratedInvoice(opts: {
       postedById:   userId,
     });
 
-    await tx.financeNotification.create({
-      data: {
-        schoolId,
-        studentId,
-        type:    "INVOICE_GENERATED",
-        message: `Invoice ${invoiceNumber} generated — ${term.name} (KES ${invoiceAmount.toFixed(2)})`,
-      },
-    });
+
   });
 
   return { invoiceNumber, amount: invoiceAmount };
