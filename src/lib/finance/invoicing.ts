@@ -115,12 +115,23 @@ export async function runBatchInvoicing(
     },
   });
 
-  // Load all active expense attachments for this school (non-detached)
+  // Load all active expense attachments for this school (non-detached).
+  // Only include expenses that apply to ALL terms (termNameId = null) OR
+  // specifically to the term being invoiced (termNameId = term.termNameId).
   const attachments = await prisma.studentExpenseAttachment.findMany({
-    where:   { schoolId, detachedAt: null },
-    select:  {
+    where: {
+      schoolId,
+      detachedAt: null,
+      expenseItem: {
+        OR: [
+          { termNameId: null },
+          { termNameId: term.termNameId ?? undefined },
+        ],
+      },
+    },
+    select: {
       studentId:   true,
-      expenseItem: { select: { currentPrice: true, name: true } },
+      expenseItem: { select: { currentPrice: true, name: true, termNameId: true } },
     },
   });
 

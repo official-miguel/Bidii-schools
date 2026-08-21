@@ -12,6 +12,7 @@ const createSchema = z.object({
   name:         z.string().trim().min(1, "Name is required."),
   description:  z.string().trim().optional().nullable(),
   currentPrice: z.number().positive("Price must be positive."),
+  termNameId:   z.string().optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {
@@ -32,6 +33,8 @@ export async function GET(req: NextRequest) {
       currentPrice: true,
       isActive:     true,
       categoryId:   true,
+      termNameId:   true,
+      termName:     { select: { id: true, name: true } },
       category:     { select: { name: true } },
       createdAt:    true,
       updatedAt:    true,
@@ -77,6 +80,7 @@ export async function POST(req: NextRequest) {
         name:         parsed.data.name,
         description:  parsed.data.description ?? null,
         currentPrice: parsed.data.currentPrice,
+        termNameId:   parsed.data.termNameId ?? null,
       },
       select: {
         id:           true,
@@ -85,6 +89,8 @@ export async function POST(req: NextRequest) {
         currentPrice: true,
         isActive:     true,
         categoryId:   true,
+        termNameId:   true,
+        termName:     { select: { id: true, name: true } },
         createdAt:    true,
       },
     });

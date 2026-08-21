@@ -3514,6 +3514,7 @@ model FinancialTermName {
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   terms         Term[]
   feeStructures FeeStructure[]
+  expenseItems  ExpenseItem[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -3580,8 +3581,13 @@ model ExpenseItem {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  school      School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  category    ExpenseCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  /// Optional: links to a FinancialTermName — expense only applies in that term.
+  /// Null = applies to all terms (default).
+  termNameId   String?
+
+  school      School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  termName    FinancialTermName?  @relation(fields: [termNameId], references: [id], onDelete: SetNull)
   attachments StudentExpenseAttachment[]
 
   @@index([schoolId])

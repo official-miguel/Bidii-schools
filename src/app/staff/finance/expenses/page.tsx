@@ -29,6 +29,11 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+interface FinancialTermName {
+  id:   string;
+  name: string;
+}
+
 interface ExpenseItem {
   id:           string;
   name:         string;
@@ -36,6 +41,8 @@ interface ExpenseItem {
   currentPrice: string;
   isActive:     boolean;
   categoryId:   string;
+  termNameId:   string | null;
+  termName:     { id: string; name: string } | null;
 }
 
 interface ExpenseCategory {
@@ -550,8 +557,17 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
   const [name,         setName]         = useState(existing?.name ?? "");
   const [description,  setDescription]  = useState(existing?.description ?? "");
   const [currentPrice, setCurrentPrice] = useState(existing?.currentPrice ?? "");
+  const [termNameId,   setTermNameId]   = useState(existing?.termNameId ?? "");
+  const [termNames,    setTermNames]    = useState<FinancialTermName[]>([]);
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState<string | null>(null);
+
+  // Load financial term names for the dropdown
+  useEffect(() => {
+    fetch("/api/finance/academic-term-names")
+      .then(r => r.ok ? r.json() : { termNames: [] })
+      .then(d => setTermNames(d.termNames ?? []));
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -564,8 +580,8 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
       const url    = isEdit ? `/api/finance/expense-items/${existing!.id}` : "/api/finance/expense-items";
       const method = isEdit ? "PATCH" : "POST";
       const body   = isEdit
-        ? { name: name.trim(), description: description.trim() || null, currentPrice: price }
-        : { categoryId, name: name.trim(), description: description.trim() || null, currentPrice: price };
+        ? { name: name.trim(), description: description.trim() || null, currentPrice: price, termNameId: termNameId || null }
+        : { categoryId, name: name.trim(), description: description.trim() || null, currentPrice: price, termNameId: termNameId || null };
 
       const res  = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
@@ -602,6 +618,22 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
           <div>
             <label className={labelCls}>Price (KES)</label>
             <input type="number" min="1" step="0.01" value={currentPrice} onChange={e => setCurrentPrice(e.target.value)} placeholder="e.g. 500" className={inputCls} required />
+          </div>
+          <div>
+            <label className={labelCls}>Term</label>
+            <select
+              value={termNameId}
+              onChange={e => setTermNameId(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">All terms (applies every term)</option>
+              {termNames.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+              Leave as &ldquo;All terms&rdquo; to invoice this expense every term, or pick a specific term.
+            </p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted">Cancel</button>
@@ -712,9 +744,19 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
                 >
                   {item.name}
                 </Link>
-                {item.description && (
-                  <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{item.description}</p>
-                )}
+                <div className="flex items-center gap-2 mt-0.5">
+                  {item.description && (
+                    <p className="text-xs text-slate dark:text-dark-muted">{item.description}</p>
+                  )}
+                  {item.termName && (
+                    <span className="text-[10px] font-medium bg-teal/10 text-teal px-1.5 py-0.5 rounded">
+                      {item.termName.name}
+                    </span>
+                  )}
+                  {!item.termName && (
+                    <span className="text-[10px] text-slate dark:text-dark-muted">All terms</span>
+                  )}
+                </div>
               </td>
               <td className={`${premiumTdClass} tabular-nums font-semibold text-ink dark:text-dark-text`}>
                 {formatKES(item.currentPrice)}

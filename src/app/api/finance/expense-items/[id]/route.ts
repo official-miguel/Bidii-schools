@@ -11,6 +11,7 @@ const updateSchema = z.object({
   name:         z.string().trim().min(1).optional(),
   description:  z.string().trim().optional().nullable(),
   currentPrice: z.number().positive().optional(),
+  termNameId:   z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -29,6 +30,8 @@ export async function GET(
       description:  true,
       currentPrice: true,
       isActive:     true,
+      termNameId:   true,
+      termName:     { select: { id: true, name: true } },
       category:     { select: { name: true } },
     },
   });
@@ -66,7 +69,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   try {
     const updated = await prisma.expenseItem.update({
       where:  { id: params.id },
-      data:   parsed.data,
+      data:   {
+        ...parsed.data,
+        ...(parsed.data.termNameId !== undefined ? { termNameId: parsed.data.termNameId ?? null } : {}),
+      },
       select: {
         id:           true,
         name:         true,
@@ -74,6 +80,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         currentPrice: true,
         isActive:     true,
         categoryId:   true,
+        termNameId:   true,
+        termName:     { select: { id: true, name: true } },
         updatedAt:    true,
       },
     });
