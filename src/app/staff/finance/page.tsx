@@ -132,11 +132,11 @@ function StatCard({
       >
         {icon}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <p
-          className={`text-2xl font-semibold leading-none tabular-nums ${
-            highlight ? "text-danger" : "text-ink dark:text-dark-text"
-          }`}
+          className={`font-semibold tabular-nums leading-tight break-words ${
+            value.length > 14 ? "text-base" : value.length > 10 ? "text-lg" : "text-2xl"
+          } ${highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}
         >
           {value}
         </p>

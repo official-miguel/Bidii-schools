@@ -109,8 +109,10 @@ export default function PrincipalFinancePage() {
                   <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
                     c.highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
                   }`} aria-hidden="true">{c.icon}</div>
-                  <div>
-                    <p className={`text-2xl font-semibold tabular-nums leading-none ${c.highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}>{c.value}</p>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className={`font-semibold tabular-nums leading-tight break-words ${
+                      c.value.length > 14 ? "text-base" : c.value.length > 10 ? "text-lg" : "text-2xl"
+                    } ${c.highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}>{c.value}</p>
                     <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{c.label}</p>
                     {"sub" in c && c.sub && <p className="text-slate/60 text-xs mt-0.5">{c.sub}</p>}
                   </div>
