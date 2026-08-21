@@ -21,26 +21,43 @@ import { nextReceiptNumber } from "@/lib/finance/receipts";
 
 export async function POST(req: NextRequest, { params }: { params: { webhookToken: string } }) {
   // 1. Look up school by webhook token
-  const financeSettings = await prisma.financeSettings.findFirst({
-    where:  { mpesaWebhookUrl: { contains: params.webhookToken } },
-    select: { schoolId: true, mpesaWebhookSecret: true, receiptPrefix: true },
-  });
+  // Check both legacy FinanceSettings.mpesaWebhookUrl and new SchoolMpesaPaybill.webhookUrl
+  const [legacySettings, paybillRecord] = await Promise.all([
+    prisma.financeSettings.findFirst({
+      where:  { mpesaWebhookUrl: { contains: params.webhookToken } },
+      select: { schoolId: true, mpesaWebhookSecret: true, receiptPrefix: true },
+    }),
+    prisma.schoolMpesaPaybill.findFirst({
+      where:  { webhookUrl: params.webhookToken, isActive: true },
+      select: {
+        schoolId: true,
+        webhookSecret: true,
+        school: { select: { financeSettings: { select: { receiptPrefix: true } } } },
+      },
+    }),
+  ]);
 
-  if (!financeSettings?.mpesaWebhookSecret) {
+  // Resolve whichever matched
+  const schoolId     = legacySettings?.schoolId ?? paybillRecord?.schoolId;
+  const rawSecret    = legacySettings?.mpesaWebhookSecret ?? paybillRecord?.webhookSecret;
+  const receiptPrefix = legacySettings?.receiptPrefix
+    ?? paybillRecord?.school?.financeSettings?.receiptPrefix
+    ?? "REC-";
+
+  if (!schoolId || !rawSecret) {
     return NextResponse.json({ ResultCode: 1, ResultDesc: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Read raw body for HMAC verification
-  const rawBody  = await req.text();
-  const sig      = req.headers.get("x-mpesa-signature") ?? "";
-  const secret   = decryptSecret(financeSettings.mpesaWebhookSecret);
+  const rawBody = await req.text();
+  const sig     = req.headers.get("x-mpesa-signature") ?? "";
+  const secret  = decryptSecret(rawSecret);
 
   if (!verifyHmac(secret, rawBody, sig)) {
     return NextResponse.json({ ResultCode: 1, ResultDesc: "Invalid signature" }, { status: 401 });
   }
 
   // Always return 200 to Daraja from here on (even on duplicates)
-  const { schoolId, receiptPrefix } = financeSettings;
 
   let payload: Record<string, unknown>;
   try { payload = JSON.parse(rawBody); }
