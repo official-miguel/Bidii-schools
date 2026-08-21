@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   DollarSign, ChevronDown, ChevronRight, Search, X,
-  SlidersHorizontal, RefreshCw, ChevronLeft, ChevronRight as ChevronRightIcon,
+  SlidersHorizontal, RefreshCw, Loader2,
 } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, Spinner, ErrorBanner,
@@ -29,17 +29,17 @@ interface LedgerEntry {
 }
 
 interface Term {
-  id:          string;
-  name:        string;
-  academicYear:number;
-  isActive:    boolean;
-  termName:    { name: string } | null;
+  id:           string;
+  name:         string;
+  academicYear: number;
+  isActive:     boolean;
+  termName:     { name: string } | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function formatKES(s: string | number) {
-  const n = typeof s === "number" ? s : parseFloat(s);
+  const n = typeof s === "number" ? s : parseFloat(s as string);
   return isNaN(n) ? String(s) : `KES ${Math.abs(n).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 }
 
@@ -202,14 +202,12 @@ function EntryRow({ e }: { e: LedgerEntry }) {
 function TermSummaryBanner({ entries, termName }: { entries: LedgerEntry[]; termName: string }) {
   let totalInvoiced = 0;
   let totalPaid     = 0;
-
   for (const e of entries) {
     if (e.isVoided) continue;
     const amt = Math.abs(parseFloat(e.amount));
     if (e.entryType === "INVOICE") totalInvoiced += amt;
     if (e.entryType === "PAYMENT") totalPaid     += amt;
   }
-
   const outstanding = totalInvoiced - totalPaid;
 
   return (
@@ -231,10 +229,12 @@ function TermSummaryBanner({ entries, termName }: { entries: LedgerEntry[]; term
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function LedgerPage() {
+  // All loaded entries (accumulate across pages)
   const [entries,    setEntries]    = useState<LedgerEntry[]>([]);
   const [total,      setTotal]      = useState(0);
   const [page,       setPage]       = useState(1);
-  const [loading,    setLoading]    = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore,    setLoadingMore]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [search,     setSearch]     = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -242,19 +242,33 @@ export default function LedgerPage() {
   const [showPanel,  setShowPanel]  = useState(false);
   const [terms,      setTerms]      = useState<Term[]>([]);
 
-  const debounceRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const filtersRef       = useRef({ search: "", typeFilter: "", termFilter: "" });
-  const isFirstPageRender = useRef(true);
+  // Infinite scroll sentinel
+  const sentinelRef  = useRef<HTMLDivElement | null>(null);
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Prevent double-firing the observer during a fetch
+  const fetchingRef  = useRef(false);
+  // Track current filters so the observer closure always has fresh values
+  const filtersRef   = useRef({ search: "", typeFilter: "", termFilter: "" });
 
-  // Fetch all terms once for the filter dropdown
+  const hasMore = entries.length < total;
+
+  // Fetch terms once for the dropdown
   useEffect(() => {
     fetch("/api/finance/terms")
       .then(r => r.ok ? r.json() : { terms: [] })
       .then(d => setTerms(d.terms ?? []));
   }, []);
 
-  const load = useCallback(async (p: number, q: string, type: string, term: string) => {
-    setLoading(true);
+  // Core fetch — appends to list when p > 1, replaces when p === 1
+  const fetchPage = useCallback(async (p: number, q: string, type: string, term: string) => {
+    if (p === 1) {
+      setInitialLoading(true);
+      setEntries([]);
+      setTotal(0);
+      setPage(1);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
     try {
       const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
@@ -264,46 +278,72 @@ export default function LedgerPage() {
       const res  = await fetch(`/api/finance/ledger?${params}`);
       if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
-      setEntries(data.entries ?? []);
-      setTotal(data.total    ?? 0);
+      const newEntries: LedgerEntry[] = data.entries ?? [];
+      setEntries(prev => p === 1 ? newEntries : [...prev, ...newEntries]);
+      setTotal(data.total ?? 0);
+      if (p > 1) setPage(p);
     } catch {
       setError("Could not load ledger. Please try again.");
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setLoadingMore(false);
+      fetchingRef.current = false;
     }
   }, []);
 
-  // Initial load
+  // Initial load on mount
   useEffect(() => {
-    load(1, "", "", "");
+    fetchPage(1, "", "", "");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter changes
+  // Re-load from page 1 when filters change (debounced)
   useEffect(() => {
     const prev = filtersRef.current;
     if (prev.search === search && prev.typeFilter === typeFilter && prev.termFilter === termFilter) return;
     filtersRef.current = { search, typeFilter, termFilter };
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setPage(1);
-      load(1, search, typeFilter, termFilter);
+      fetchPage(1, search, typeFilter, termFilter);
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, typeFilter, termFilter]);
 
-  // Page changes
+  // IntersectionObserver: load next page when sentinel enters viewport
   useEffect(() => {
-    if (isFirstPageRender.current) { isFirstPageRender.current = false; return; }
-    load(page, search, typeFilter, termFilter);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
 
-  const totalPages     = Math.ceil(total / PAGE_SIZE);
-  const activeFilters  = [search, typeFilter, termFilter].filter(Boolean).length;
-  const selectedTerm   = terms.find(t => t.id === termFilter);
-  const termLabel      = selectedTerm ? (selectedTerm.termName?.name ?? selectedTerm.name) : "";
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !fetchingRef.current) {
+          // Read current state via ref to avoid stale closure
+          setEntries(currentEntries => {
+            setTotal(currentTotal => {
+              if (currentEntries.length < currentTotal) {
+                fetchingRef.current = true;
+                const nextPage = Math.floor(currentEntries.length / PAGE_SIZE) + 1;
+                const f = filtersRef.current;
+                fetchPage(nextPage, f.search, f.typeFilter, f.termFilter);
+              }
+              return currentTotal;
+            });
+            return currentEntries;
+          });
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const activeFilters = [search, typeFilter, termFilter].filter(Boolean).length;
+  const selectedTerm  = terms.find(t => t.id === termFilter);
+  const termLabel     = selectedTerm ? (selectedTerm.termName?.name ?? selectedTerm.name) : "";
 
   return (
     <div>
@@ -316,7 +356,6 @@ export default function LedgerPage() {
 
       {/* ── Filter bar ── */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {/* Search */}
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
           <input
@@ -333,7 +372,7 @@ export default function LedgerPage() {
           )}
         </div>
 
-        {/* Term filter — inline select */}
+        {/* Term filter */}
         <select
           value={termFilter}
           onChange={e => setTermFilter(e.target.value)}
@@ -342,8 +381,7 @@ export default function LedgerPage() {
           <option value="">All terms</option>
           {terms.map(t => (
             <option key={t.id} value={t.id}>
-              {t.termName?.name ?? t.name} {t.academicYear}
-              {t.isActive ? " (current)" : ""}
+              {t.termName?.name ?? t.name} {t.academicYear}{t.isActive ? " ✓" : ""}
             </option>
           ))}
         </select>
@@ -366,15 +404,14 @@ export default function LedgerPage() {
         {/* Refresh */}
         <button
           type="button"
-          onClick={() => load(page, search, typeFilter, termFilter)}
-          disabled={loading}
+          onClick={() => fetchPage(1, search, typeFilter, termFilter)}
+          disabled={initialLoading}
           className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
           title="Refresh"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 ${initialLoading ? "animate-spin" : ""}`} />
         </button>
 
-        {/* Clear all */}
         {activeFilters > 0 && (
           <button
             type="button"
@@ -410,15 +447,17 @@ export default function LedgerPage() {
         </div>
       )}
 
-      {/* ── Term summary — shown when a term is selected ── */}
-      {!loading && termFilter && entries.length > 0 && (
+      {/* ── Term summary ── */}
+      {!initialLoading && termFilter && entries.length > 0 && (
         <TermSummaryBanner entries={entries} termName={termLabel} />
       )}
 
       {/* ── Entry count ── */}
-      {!loading && total > 0 && (
+      {!initialLoading && total > 0 && (
         <p className="text-xs text-slate dark:text-dark-muted mb-3">
-          {total.toLocaleString()} {total === 1 ? "entry" : "entries"}
+          {entries.length < total
+            ? `Showing ${entries.length.toLocaleString()} of ${total.toLocaleString()} entries`
+            : `All ${total.toLocaleString()} entries`}
           {termFilter && termLabel && <span> in <span className="font-medium text-ink dark:text-dark-text">{termLabel}</span></span>}
           {typeFilter && <span> · {TYPE_OPTIONS.find(o => o.value === typeFilter)?.label}</span>}
           {search && <span> matching &ldquo;{search}&rdquo;</span>}
@@ -426,7 +465,7 @@ export default function LedgerPage() {
       )}
 
       {/* ── Table ── */}
-      {loading ? (
+      {initialLoading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : entries.length === 0 ? (
         <EmptyState
@@ -454,36 +493,20 @@ export default function LedgerPage() {
             </div>
           </div>
 
-          {/* ── Pagination ── */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 px-1">
-              <p className="text-xs text-slate dark:text-dark-muted">
-                Page {page} of {totalPages} · {total.toLocaleString()} entries
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-line text-sm text-slate hover:text-ink disabled:opacity-40 dark:border-dark-border dark:text-dark-muted"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Prev
-                </button>
-                <span className="px-3 text-sm text-ink dark:text-dark-text font-medium tabular-nums">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages || loading}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-line text-sm text-slate hover:text-ink disabled:opacity-40 dark:border-dark-border dark:text-dark-muted"
-                >
-                  Next
-                  <ChevronRightIcon className="h-4 w-4" />
-                </button>
-              </div>
+          {/* ── Infinite scroll sentinel + loading indicator ── */}
+          <div ref={sentinelRef} className="h-px" />
+
+          {loadingMore && (
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate dark:text-dark-muted">
+              <Loader2 className="h-4 w-4 animate-spin text-teal" />
+              Loading more…
             </div>
+          )}
+
+          {!hasMore && entries.length > 0 && !initialLoading && (
+            <p className="text-center text-xs text-slate dark:text-dark-muted py-6">
+              All {total.toLocaleString()} entries loaded
+            </p>
           )}
         </>
       )}
