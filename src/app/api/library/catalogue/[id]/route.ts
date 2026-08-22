@@ -64,15 +64,15 @@ const patchSchema = z.object({
   edition:     z.string().trim().optional().or(z.literal("")).nullable(),
   level:       z.string().trim().optional().or(z.literal("")).nullable(),
   subject:     z.string().trim().optional().or(z.literal("")).nullable(),
-  form:        z.coerce.number().int().min(1).max(8).optional().nullable(),
+  form:        z.union([z.null(), z.undefined(), z.coerce.number().int().min(1).max(8)]).optional(),
   publisher:   z.string().trim().optional().or(z.literal("")).nullable(),
   isbn:        z.string().trim().optional().or(z.literal("")).nullable(),
   category:    z.string().optional(),
   shelf:       z.string().trim().optional().or(z.literal("")).nullable(),
   shelfRow:    z.string().trim().optional().or(z.literal("")).nullable(),
   language:    z.string().trim().optional().nullable(),
-  publishYear: z.coerce.number().int().min(1000).max(2100).optional().nullable(),
-  costPerCopy: z.coerce.number().min(0).optional().nullable(),
+  publishYear: z.union([z.null(), z.undefined(), z.coerce.number().int().min(1000).max(2100)]).optional(),
+  costPerCopy: z.union([z.null(), z.undefined(), z.coerce.number().min(0)]).optional(),
 });
 
 export async function PATCH(

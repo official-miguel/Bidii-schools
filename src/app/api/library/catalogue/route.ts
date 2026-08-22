@@ -142,7 +142,7 @@ const createSchema = z.object({
   bookNumber:  z.string().trim().optional().or(z.literal("")),
   subject:     z.string().trim().optional().or(z.literal("")),
   level:       z.string().trim().optional().or(z.literal("")),
-  form:        z.coerce.number().int().min(1).max(8).optional().nullable(),
+  form:        z.union([z.null(), z.undefined(), z.coerce.number().int().min(1).max(8)]).optional(),
   author:      z.string().trim().optional().or(z.literal("")),
   publisher:   z.string().trim().optional().or(z.literal("")),
   edition:     z.string().trim().optional().or(z.literal("")),
@@ -151,9 +151,9 @@ const createSchema = z.object({
   shelf:       z.string().trim().optional().or(z.literal("")),
   shelfRow:    z.string().trim().optional().or(z.literal("")),
   language:    z.string().trim().optional(),
-  publishYear: z.coerce.number().int().min(1000).max(2100).optional().nullable(),
+  publishYear: z.union([z.null(), z.undefined(), z.coerce.number().int().min(1000).max(2100)]).optional(),
   purchaseDate:z.string().optional().nullable(),
-  costPerCopy: z.coerce.number().min(0).optional().nullable(),
+  costPerCopy: z.union([z.null(), z.undefined(), z.coerce.number().min(0)]).optional(),
 });
 
 export async function POST(req: NextRequest) {
