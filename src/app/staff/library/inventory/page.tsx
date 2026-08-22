@@ -712,15 +712,9 @@ function BookFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Publish Year</label>
-              <input className={inputClass} value={form.publishYear} onChange={set("publishYear")} placeholder="e.g. 2020" type="number" min="1900" max="2099" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Cost per Copy (KES)</label>
-              <input className={inputClass} value={form.costPerCopy} onChange={set("costPerCopy")} placeholder="0.00" type="number" min="0" step="0.01" />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Publish Year</label>
+            <input className={inputClass} value={form.publishYear} onChange={set("publishYear")} placeholder="e.g. 2020" type="number" min="1900" max="2099" />
           </div>
 
           <div className="flex gap-3 pt-2">
