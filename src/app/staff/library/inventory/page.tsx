@@ -241,7 +241,11 @@ export default function LibraryInventoryPage() {
         </div>
       </div>
 
-      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} className="mb-4" />}
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
 
       {/* ── Catalogue list ───────────────────────────────────────────── */}
       {loading ? (
@@ -645,7 +649,11 @@ function BookFormModal({
           </button>
         </div>
 
-        {error && <ErrorBanner message={error} onDismiss={() => setError(null)} className="mb-4" />}
+        {error && (
+          <div className="mb-4">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title — required */}
@@ -780,7 +788,11 @@ function AddCopiesModal({
           Each copy gets a unique <strong>BK-NNNNN</strong> sticker number and a signed QR token automatically.
         </p>
 
-        {error && <ErrorBanner message={error} onDismiss={() => setError(null)} className="mb-4" />}
+        {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -890,7 +902,11 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           <p className="text-slate/70 dark:text-dark-muted/70">First row must be the header row. Each row creates or reuses a Book and registers that many physical copies.</p>
         </div>
 
-        {error && <ErrorBanner message={error} onDismiss={() => setError(null)} className="mb-4" />}
+        {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
 
         {/* File picker */}
         {!result && (

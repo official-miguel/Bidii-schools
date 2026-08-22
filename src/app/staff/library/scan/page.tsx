@@ -213,6 +213,7 @@ export default function ScanModePage() {
   const [bookErr, setBookErr]     = useState<string | null>(null);
   const [confirm, setConfirm]     = useState<ConfirmMsg | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [barcodeDetectorAvailable, setBarcodeDetectorAvailable] = useState<boolean | null>(null);
 
   // ── Live search state ──────────────────────────────────────────────────
   const [studentSuggestions, setStudentSuggestions] = useState<StudentSuggestion[]>([]);
@@ -326,19 +327,28 @@ export default function ScanModePage() {
   }
 
   // ── Live book / copy search (debounced 300ms) ──────────────────────────
+  // Uses GET /api/library/copies?q= for the suggestion dropdown (title/author
+  // fuzzy search returns multiple results for the list) and the faster
+  // GET /api/library/copies/search?q= for exact accession/book-number lookups
+  // (indexed equality — same endpoint the Circulation Desk uses).
 
   function onBookInputChange(value: string) {
     setBookInput(value);
     setBookErr(null);
     if (bookDebounceRef.current) clearTimeout(bookDebounceRef.current);
     if (!value.trim()) { setBookSuggestions([]); setShowBookDrop(false); return; }
+    // Only run live search when we're actually in the book phase
+    if (phase !== "book") return;
     bookDebounceRef.current = setTimeout(async () => {
       try {
-        const res  = await fetch(`/api/library/copies?q=${encodeURIComponent(value.trim())}`);
-        const data = await res.json() as CopyInfo[];
-        setBookSuggestions(Array.isArray(data) ? data.slice(0, 8) : []);
-        setShowBookDrop(true);
-      } catch { /* silent */ }
+        const res  = await fetch(`/api/library/copies?q=${encodeURIComponent(value.trim())}&archived=false`);
+        if (!res.ok) return;
+        const data = await res.json();
+        // GET /api/library/copies returns { copies: [...] } or plain array
+        const list: CopyInfo[] = Array.isArray(data) ? data : (Array.isArray(data?.copies) ? data.copies : []);
+        setBookSuggestions(list.slice(0, 8));
+        if (list.length > 0) setShowBookDrop(true);
+      } catch { /* silent — user can still press Enter */ }
     }, 300);
   }
 
@@ -348,17 +358,19 @@ export default function ScanModePage() {
     setShowBookDrop(false);
     setLoadingBook(true); setBookErr(null);
     try {
-      const accession = q.startsWith("BIDII:") ? q.slice(6) : q;
-      const res  = await fetch(`/api/library/copies?q=${encodeURIComponent(accession)}`);
-      const data = await res.json() as CopyInfo[];
-      const copies = Array.isArray(data) ? data : [];
-      const match  = copies.find(c => c.accessionNumber.toUpperCase() === accession.toUpperCase())
-                   ?? (copies.length === 1 ? copies[0] : null);
-      if (!match) {
-        setBookErr(`No copy found matching "${accession}".`);
+      // Strip known QR prefixes so bare accession/book numbers always work
+      const accession = q.startsWith("BIDII:BOOK:") ? q.slice(11)
+                      : q.startsWith("BIDII:")      ? q.slice(6)
+                      : q;
+      // /copies/search uses indexed lookups (fast, single result)
+      const res  = await fetch(`/api/library/copies/search?q=${encodeURIComponent(accession)}`);
+      const json = await res.json();
+      if (!res.ok || !json.copy) {
+        setBookErr(json.error ?? `No copy found for "${accession}".`);
         setLoadingBook(false); return;
       }
-      setCopyInfo(match);
+      const copy: CopyInfo = json.copy;
+      setCopyInfo(copy);
       setPhase("confirm");
     } catch { setBookErr("Network error. Please try again."); }
     setLoadingBook(false);
@@ -377,23 +389,23 @@ export default function ScanModePage() {
   const lookupBook    = selectBookByAccession;
 
   // ── Actions ────────────────────────────────────────────────────────────
+  // Uses the canonical /api/library/circulate/* endpoints (same as the
+  // Circulation Desk) so policy enforcement is consistent across both pages.
 
   async function handleAction(action: ActionType) {
     if (!cardData || !copyInfo) return;
     setActionLoading(true); setConfirm(null);
     try {
       let res: Response;
-      const studentId = cardData.student.id;
 
       if (action === "borrow") {
-        // Find the legacy book id via the catalogue, or use copy-based borrow
-        res = await fetch(`/api/library/card/${studentId}`, {
+        res = await fetch("/api/library/circulate/borrow", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookId: copyInfo.catalogue.id, copyId: copyInfo.id }),
+          body: JSON.stringify({ studentId: cardData.student.id, copyId: copyInfo.id }),
         });
       } else {
-        // Find active borrow for this copy
+        // return / renew both need the active borrowId
         const activeBorrow = cardData.card.borrows.find(
           b => !b.returnedAt && b.copy?.accessionNumber === copyInfo.accessionNumber
         );
@@ -401,12 +413,20 @@ export default function ScanModePage() {
           setConfirm({ ok: false, text: "No active borrow found for this copy." });
           setActionLoading(false); return;
         }
-        const actionKey = action === "return" ? "return" : "renew";
-        res = await fetch(`/api/library/card/${studentId}/borrow/${activeBorrow.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: actionKey }),
-        });
+
+        if (action === "return") {
+          res = await fetch("/api/library/circulate/return", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ borrowId: activeBorrow.id, returnType: "NORMAL", returnCondition: "GOOD" }),
+          });
+        } else {
+          res = await fetch("/api/library/circulate/renew", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ borrowId: activeBorrow.id }),
+          });
+        }
       }
 
       const json = await res.json();
@@ -414,17 +434,21 @@ export default function ScanModePage() {
         setConfirm({ ok: false, text: json.error ?? "Action failed." });
       } else {
         const msgs: Record<ActionType, string> = {
-          borrow: `"${copyInfo.catalogue.title}" issued to ${cardData.student.fullName}.`,
-          return: `"${copyInfo.catalogue.title}" returned by ${cardData.student.fullName}.`,
-          renew:  `"${copyInfo.catalogue.title}" renewed for ${cardData.student.fullName}.`,
+          borrow: `"${copyInfo.catalogue.title}" issued — due ${fmt(json.dueAt ?? json.borrow?.dueAt)}.`,
+          return: `"${copyInfo.catalogue.title}" returned. Fine: KES ${(json.totalFine ?? 0).toFixed(2)}.`,
+          renew:  `"${copyInfo.catalogue.title}" renewed — due ${fmt(json.newDueAt)}.`,
         };
         setConfirm({ ok: true, text: msgs[action] });
-        // Auto-reset to book scan after 2.5 s (keep student loaded for next book)
+        // Reload card silently so borrows list is fresh for the next book
+        fetch(`/api/library/cards/${cardData.student.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setCardData(d); });
+        // Auto-reset to book scan after 2.5 s (keep student loaded)
         setTimeout(() => {
           setCopyInfo(null); setBookInput(""); setBookErr(null); setConfirm(null); setPhase("book");
         }, 2500);
       }
-    } catch { setConfirm({ ok: false, text: "Network error." }); }
+    } catch { setConfirm({ ok: false, text: "Network error. Please try again." }); }
     setActionLoading(false);
   }
 
@@ -440,6 +464,26 @@ export default function ScanModePage() {
 
   // ── Camera ─────────────────────────────────────────────────────────────
 
+  // After cameraActive flips to true React renders the <video> element.
+  // We wire the MediaStream to it here — AFTER the DOM node is available —
+  // which is the reliable fix for the black-screen bug caused by setting
+  // srcObject on a stale/unmounted video ref.
+  useEffect(() => {
+    if (!cameraActive) return;
+    if (videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+    startQRScanning();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraActive]);
+
+  // Detect BarcodeDetector availability once on mount so we can show a
+  // helpful hint ("QR auto-detected" vs "enter code manually") in the UI.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setBarcodeDetectorAvailable(typeof (window as any).BarcodeDetector !== "undefined");
+  }, []);
+
   async function startCamera() {
     // Camera requires a secure context (HTTPS or localhost).
     // On phones accessing via local network HTTP this will always fail.
@@ -451,12 +495,12 @@ export default function ScanModePage() {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
       });
+      // Store the stream BEFORE calling setCameraActive so the useEffect above
+      // can wire it to the <video> element once React has mounted it.
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraActive(true);
-      startQRScanning();
     } catch (err) {
       const error = err as { name?: string };
       if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
@@ -470,25 +514,31 @@ export default function ScanModePage() {
           "Camera requires HTTPS. When accessing from a phone over Wi-Fi, use manual input or connect via HTTPS."
         );
       } else {
-        setStudentErr("Camera unavailable. Use manual input instead.");
+        setStudentErr(`Camera unavailable (${(err as Error).message ?? "unknown error"}). Use manual input instead.`);
       }
     }
   }
 
   function stopCamera() {
+    if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); scanIntervalRef.current = null; }
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     setCameraActive(false);
   }
 
-  // QR decoding via BarcodeDetector API (supported in Chrome/Android/iOS 17+)
-  // Falls back gracefully — if unavailable, user types the value manually.
+  // QR decoding via BarcodeDetector API (Chrome 83+, Edge 83+, Safari iOS 17+).
+  // Falls back gracefully — if unavailable the video stays live and the user
+  // reads the code visually, then types it manually.
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Keep a stable ref to phase so the interval callback always sees the latest value.
+  const phaseRef = useRef<ScanPhase>(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   function startQRScanning() {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const BD = (window as any).BarcodeDetector;
-    if (!BD) return; // BarcodeDetector not supported — user reads visually / types manually
+    if (!BD) return; // Not supported — camera stays live for visual read
 
     let detector: { detect: (src: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> };
     try {
@@ -499,17 +549,18 @@ export default function ScanModePage() {
 
     scanIntervalRef.current = setInterval(async () => {
       if (!videoRef.current || !streamRef.current) return;
+      // Don't scan if the video hasn't loaded a frame yet
+      if (videoRef.current.readyState < 2) return;
       try {
         const results = await detector.detect(videoRef.current);
         if (results.length > 0) {
           const value = results[0].rawValue;
-          // Stop the camera and fill the input, then trigger lookup
-          stopCamera();
-          if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
-          if (phase === "student") {
+          stopCamera(); // stops interval too
+          const currentPhase = phaseRef.current;
+          if (currentPhase === "student") {
             setStudentInput(value);
             lookupStudent(value);
-          } else if (phase === "book") {
+          } else if (currentPhase === "book") {
             setBookInput(value);
             lookupBook(value);
           }
@@ -520,7 +571,7 @@ export default function ScanModePage() {
     }, 300);
   }
 
-  // Clean up scan interval and camera on unmount
+  // Clean up on unmount
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
@@ -596,7 +647,9 @@ export default function ScanModePage() {
                       <div className="w-40 h-40 border-2 border-teal rounded-xl opacity-70" />
                     </div>
                     <p className="absolute bottom-2 left-0 right-0 text-center text-[11px] text-white/80 bg-black/40 py-1">
-                      Point camera at QR code — auto-detects
+                      {barcodeDetectorAvailable
+                        ? "Point camera at QR code — auto-detects"
+                        : "Point camera at QR code — type the value below"}
                     </p>
                   </div>
                 )}
@@ -778,7 +831,18 @@ export default function ScanModePage() {
 
               {!confirm && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {copyInfo.status === "AVAILABLE" && card?.status === "ACTIVE" && card.fineBalance === 0 && (
+                  {/* Fine warning — shown but doesn't hide the button; API enforces policy */}
+                  {copyInfo.status === "AVAILABLE" && card?.status === "ACTIVE" && (card?.fineBalance ?? 0) > 0 && (
+                    <p className="col-span-full text-xs text-warn flex items-center gap-1.5 bg-warn-bg border border-warn/20 rounded-lg px-3 py-2">
+                      ⚠ Outstanding fine of KES {card!.fineBalance.toFixed(2)} — borrow may be blocked by policy.
+                    </p>
+                  )}
+                  {copyInfo.status !== "AVAILABLE" && copyInfo.status !== "BORROWED" && (
+                    <p className="col-span-full text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2">
+                      Copy is <span className="font-semibold">{copyInfo.status}</span> — cannot borrow or return.
+                    </p>
+                  )}
+                  {copyInfo.status === "AVAILABLE" && card?.status === "ACTIVE" && (
                     <button onClick={() => handleAction("borrow")} disabled={actionLoading} className={primaryButtonClass + " justify-center"}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
                       Borrow
