@@ -44,6 +44,8 @@ const CreateSchema = z.object({
     "STUDENTS","STUDENT_DORM",
     // Section 4 — Parents
     "PARENTS",
+    // Section 5 — Finance
+    "STUDENT_OPENING_BALANCE",
     // Legacy / combined
     "BOTH","CUSTOM","DORM_SETUP","DORMITORIES","BEDS","ALLOCATIONS",
   ]),

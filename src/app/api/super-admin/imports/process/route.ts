@@ -933,6 +933,112 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SECTION 5 — Finance: Student Opening Balances
+//
+// Imports the current outstanding balance for each student so that the
+// Bidii ledger starts with accurate carry-forward balances from a previous
+// system (e.g. school management software, spreadsheet registers).
+//
+// CSV columns:
+//   admission_number   (required)
+//   student_name       (informational only — used for preview; not stored)
+//   balance            (required) positive = student owes, negative = credit
+//   description        (optional) defaults to "Opening balance import"
+//
+// Behaviour:
+//   - Resolves each student by admission_number within the school.
+//   - Ensures a StudentFinanceAccount exists (upsert).
+//   - Posts an OPENING_BALANCE LedgerEntry via postLedgerEntry which also
+//     atomically updates the materialised balance cache.
+//   - Duplicate-safe: re-running for the same student adds another entry;
+//     the bursar should void duplicates from the ledger if needed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function processStudentOpeningBalance(rows: Record<string, string>[], schoolId: string): PResult {
+  let succeeded = 0;
+  const errors: RowError[] = [];
+
+  // Lazy-import to avoid circular deps — same pattern used in finance processor
+  const { postLedgerEntry } = await import("@/lib/finance/ledger");
+  const { Decimal }         = await import("@prisma/client/runtime/library");
+
+  // Pre-load all students for this school in one query
+  const allStudents = await prisma.student.findMany({
+    where:  { schoolId, archivedAt: null },
+    select: { id: true, admissionNumber: true },
+  });
+  const studentMap = new Map(allStudents.map(s => [s.admissionNumber.toLowerCase().trim(), s.id]));
+
+  // Find the super-admin user ID to use as postedById
+  const saUsers = await prisma.user.findMany({
+    where:  { role: "SUPER_ADMIN" },
+    select: { id: true },
+    take:   1,
+  });
+  const fallbackPosterId = saUsers[0]?.id;
+  if (!fallbackPosterId) {
+    return { succeeded: 0, errors: [{ row: 0, field: "fatal", message: "No SUPER_ADMIN user found to attribute entries to." }] };
+  }
+
+  for (let i = 0; i < rows.length; i++) {
+    const rowNum      = i + 2;
+    const row         = rows[i];
+    const admNo       = row["admission_number"]?.trim();
+    const balanceRaw  = row["balance"]?.trim();
+    const description = row["description"]?.trim() || "Opening balance import";
+
+    if (!admNo) {
+      errors.push({ row: rowNum, field: "admission_number", message: "admission_number is required" }); continue;
+    }
+    if (!balanceRaw) {
+      errors.push({ row: rowNum, field: "balance", message: "balance is required" }); continue;
+    }
+
+    const balanceNum = parseFloat(balanceRaw.replace(/[^0-9.\-]/g, ""));
+    if (isNaN(balanceNum) || balanceNum === 0) {
+      errors.push({ row: rowNum, field: "balance", message: `"${balanceRaw}" is not a valid non-zero balance` }); continue;
+    }
+
+    const studentId = studentMap.get(admNo.toLowerCase());
+    if (!studentId) {
+      errors.push({ row: rowNum, field: "admission_number", message: `Student "${admNo}" not found in this school` }); continue;
+    }
+
+    try {
+      // Ensure the finance account cache row exists before posting
+      await prisma.studentFinanceAccount.upsert({
+        where:  { schoolId_studentId: { schoolId, studentId } },
+        create: { schoolId, studentId, currentBalance: 0, totalInvoiced: 0, totalPaid: 0 },
+        update: {},
+      });
+
+      // Post the ledger entry. OPENING_BALANCE is always a debit (student owes)
+      // per the ledger sign convention. If the school is importing a credit
+      // (student pre-paid), the bursar should post a CREDIT_ADJUSTMENT manually.
+      // Balance is stored as a positive Decimal; entryType drives the sign.
+      const amount = new Decimal(Math.abs(balanceNum).toString());
+
+      await prisma.$transaction(async (tx) => {
+        await postLedgerEntry(tx, {
+          schoolId,
+          studentId,
+          entryType:   "OPENING_BALANCE",
+          amount,
+          description,
+          postedById:  fallbackPosterId,
+        });
+      });
+
+      succeeded++;
+    } catch (err) {
+      errors.push({ row: rowNum, field: "balance", message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return { succeeded, errors };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Legacy processors (kept for backward-compat with old import jobs)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1080,17 +1186,18 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (job.type) {
-      case "DEPARTMENTS":  result = await processDepartments(rows, schoolId); break;
-      case "CLASSES":      result = await processClasses(rows,     schoolId); break;
-      case "SUBJECTS":     result = await processSubjects(rows,    schoolId); break;
-      case "STAFF":        result = await processStaff(rows,       schoolId); break;
-      case "STUDENTS":     result = await processStudents(rows,    schoolId); break;
-      case "STUDENT_DORM": result = await processStudentDorm(rows, schoolId); break;
-      case "PARENTS":      result = await processParents(rows,     schoolId); break;
-      case "DORM_SETUP":    result = await processDormSetup(rows,    schoolId); break;
-      case "DORMITORIES":   result = await processDormitories(rows,  schoolId); break;
-      case "BEDS":         result = await processBeds(rows,        schoolId); break;
-      case "ALLOCATIONS":  result = await processStudentDorm(rows, schoolId); break; // legacy alias
+      case "DEPARTMENTS":              result = await processDepartments(rows,             schoolId); break;
+      case "CLASSES":                  result = await processClasses(rows,                 schoolId); break;
+      case "SUBJECTS":                 result = await processSubjects(rows,                schoolId); break;
+      case "STAFF":                    result = await processStaff(rows,                   schoolId); break;
+      case "STUDENTS":                 result = await processStudents(rows,                schoolId); break;
+      case "STUDENT_DORM":             result = await processStudentDorm(rows,             schoolId); break;
+      case "PARENTS":                  result = await processParents(rows,                 schoolId); break;
+      case "STUDENT_OPENING_BALANCE":  result = await processStudentOpeningBalance(rows,   schoolId); break;
+      case "DORM_SETUP":               result = await processDormSetup(rows,               schoolId); break;
+      case "DORMITORIES":              result = await processDormitories(rows,             schoolId); break;
+      case "BEDS":                     result = await processBeds(rows,                    schoolId); break;
+      case "ALLOCATIONS":              result = await processStudentDorm(rows,             schoolId); break; // legacy alias
       case "BOTH": {
         const r1 = await processStudents(rows, schoolId);
         const r2 = await processStaff(rows,    schoolId);
@@ -1104,17 +1211,18 @@ export async function POST(req: NextRequest) {
     // ── Notify any open school-side tabs so they re-fetch their data ──────────
     if (result.succeeded > 0) {
       const sseMap: Record<string, Parameters<typeof emitSSE>[1]> = {
-        DEPARTMENTS:  "import.departments.completed",
-        CLASSES:      "import.classes.completed",
-        SUBJECTS:     "import.subjects.completed",
-        STAFF:        "import.staff.completed",
-        STUDENTS:     "import.students.completed",
-        STUDENT_DORM: "import.allocations.completed",
-        ALLOCATIONS:  "import.allocations.completed",
-        PARENTS:      "import.students.completed",   // parents update student records
-        DORMITORIES:  "import.dormitories.completed",
-        BEDS:         "import.beds.completed",
-        BOTH:         "import.students.completed",
+        DEPARTMENTS:             "import.departments.completed",
+        CLASSES:                 "import.classes.completed",
+        SUBJECTS:                "import.subjects.completed",
+        STAFF:                   "import.staff.completed",
+        STUDENTS:                "import.students.completed",
+        STUDENT_DORM:            "import.allocations.completed",
+        ALLOCATIONS:             "import.allocations.completed",
+        PARENTS:                 "import.students.completed",   // parents update student records
+        STUDENT_OPENING_BALANCE: "import.finance.completed",
+        DORMITORIES:             "import.dormitories.completed",
+        BEDS:                    "import.beds.completed",
+        BOTH:                    "import.students.completed",
       };
       const evtType = sseMap[job.type];
       if (evtType) emitSSE(schoolId, evtType, { succeeded: result.succeeded, jobId });

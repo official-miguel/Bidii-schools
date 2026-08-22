@@ -27,7 +27,7 @@ import {
   Upload, History, CheckCircle2, XCircle, RefreshCw,
   Download, RotateCcw, AlertTriangle, FileText,
   Building2, BookOpen, Users, GraduationCap, BedDouble,
-  DoorOpen, Heart, ChevronDown, ChevronUp, Info,
+  DoorOpen, Heart, ChevronDown, ChevronUp, Info, Banknote,
 } from "lucide-react";
 import {
   PageHeader, Spinner, ErrorBanner, Badge, Card,
@@ -194,6 +194,24 @@ const SECTIONS: Section[] = [
         requiredCols: ["admission_number", "parent_name"],
         optionalCols: ["parent_contact", "relationship"],
         note:         "Linked to student by admission_number. relationship e.g. Mother, Father, Guardian.",
+      },
+    ],
+  },
+  {
+    id:    "finance",
+    title: "Section 5 — Finance",
+    hint:  "Import Students before importing opening balances. Balances are posted as OPENING_BALANCE ledger entries and cannot be undone — verify your CSV carefully before submitting.",
+    types: [
+      {
+        key:          "STUDENT_OPENING_BALANCE",
+        label:        "Student Opening Balances",
+        description:  "Seed the ledger with each student's current outstanding balance from a previous system",
+        icon:         Banknote,
+        iconClass:    "bg-emerald-100 text-emerald-600",
+        template:     "student-opening-balances-import.csv",
+        requiredCols: ["admission_number", "balance"],
+        optionalCols: ["student_name", "description"],
+        note:         "balance: positive = student owes (debit), e.g. 15000. student_name is informational only. description defaults to \"Opening balance import\".",
       },
     ],
   },

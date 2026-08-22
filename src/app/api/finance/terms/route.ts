@@ -9,10 +9,16 @@ import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 import { runBatchInvoicing } from "@/lib/finance/invoicing";
 
 const createSchema = z.object({
-  name:         z.string().trim().min(1, "Term name is required."),
-  termNameId:   z.string().optional().nullable(),
-  academicYear: z.number().int().min(2000).max(2100),
-  isActive:     z.boolean().optional().default(true),
+  name:          z.string().trim().min(1, "Term name is required."),
+  termNameId:    z.string().optional().nullable(),
+  academicYear:  z.number().int().min(2000).max(2100),
+  isActive:      z.boolean().optional().default(true),
+  /**
+   * When true the term is created without requiring fee structures on every
+   * class. No automatic batch invoicing is run — the school will supply
+   * per-student invoice amounts via a CSV import instead.
+   */
+  useCsvInvoice: z.boolean().optional().default(false),
 });
 
 export async function GET() {
@@ -25,7 +31,7 @@ export async function GET() {
     orderBy: [{ academicYear: "desc" }, { createdAt: "desc" }],
     select:  {
       id: true, name: true, termNameId: true, academicYear: true,
-      isActive: true, invoicingCompletedAt: true, createdAt: true,
+      isActive: true, useCsvInvoice: true, invoicingCompletedAt: true, createdAt: true,
       termName: { select: { id: true, name: true } },
     },
   });
@@ -50,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { name, termNameId, academicYear, isActive } = parsed.data;
+  const { name, termNameId, academicYear, isActive, useCsvInvoice } = parsed.data;
 
   // Verify termNameId belongs to this school if provided
   if (termNameId) {
@@ -59,51 +65,55 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Pre-flight: ensure every class in the school has a fee structure ──────
-  const allClasses = await prisma.schoolClass.findMany({
-    where:  { schoolId },
-    select: { id: true, name: true, form: true, stream: true },
-  });
+  // Skipped when useCsvInvoice = true — the school will supply invoice amounts
+  // via a CSV import and no automatic batch invoicing will be run.
+  if (!useCsvInvoice) {
+    const allClasses = await prisma.schoolClass.findMany({
+      where:  { schoolId },
+      select: { id: true, name: true, form: true, stream: true },
+    });
 
-  if (allClasses.length === 0) {
-    return NextResponse.json(
-      { error: "No classes found. Create classes before adding a term." },
-      { status: 422 }
-    );
-  }
+    if (allClasses.length === 0) {
+      return NextResponse.json(
+        { error: "No classes found. Create classes before adding a term." },
+        { status: 422 }
+      );
+    }
 
-  // Fetch fee structures relevant to this term (term-specific OR generic/null)
-  const structures = await prisma.feeStructure.findMany({
-    where: {
-      schoolId,
-      OR: [
-        { termNameId: termNameId ?? null },
-        { termNameId: null },
-      ],
-    },
-    select: { form: true, stream: true, termNameId: true },
-  });
-
-  // For each class, check whether there is a matching fee structure using the
-  // same logic as selectFeeStructure in invoicing.ts:
-  //   - A structure with stream = null covers ALL streams for that form.
-  //   - A structure with a specific stream only covers that stream.
-  //   - Term-specific structures (termNameId matches) take priority but a
-  //     generic (termNameId = null) structure also counts as covered.
-  const classesWithoutFees = allClasses.filter(cls => {
-    return !structures.some(s =>
-      s.form === cls.form &&
-      (s.stream === null || s.stream === cls.stream)
-    );
-  });
-
-  if (classesWithoutFees.length > 0) {
-    return NextResponse.json(
-      {
-        error: `Cannot create term — ${classesWithoutFees.length} class${classesWithoutFees.length !== 1 ? "es" : ""} ${classesWithoutFees.length === 1 ? "does" : "do"} not have a fee structure: ${classesWithoutFees.map(c => c.name).join(", ")}.`,
-        classesWithoutFees: classesWithoutFees.map(c => ({ id: c.id, name: c.name, form: c.form, stream: c.stream })),
+    // Fetch fee structures relevant to this term (term-specific OR generic/null)
+    const structures = await prisma.feeStructure.findMany({
+      where: {
+        schoolId,
+        OR: [
+          { termNameId: termNameId ?? null },
+          { termNameId: null },
+        ],
       },
-      { status: 422 }
-    );
+      select: { form: true, stream: true, termNameId: true },
+    });
+
+    // For each class, check whether there is a matching fee structure using the
+    // same logic as selectFeeStructure in invoicing.ts:
+    //   - A structure with stream = null covers ALL streams for that form.
+    //   - A structure with a specific stream only covers that stream.
+    //   - Term-specific structures (termNameId matches) take priority but a
+    //     generic (termNameId = null) structure also counts as covered.
+    const classesWithoutFees = allClasses.filter(cls => {
+      return !structures.some(s =>
+        s.form === cls.form &&
+        (s.stream === null || s.stream === cls.stream)
+      );
+    });
+
+    if (classesWithoutFees.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot create term — ${classesWithoutFees.length} class${classesWithoutFees.length !== 1 ? "es" : ""} ${classesWithoutFees.length === 1 ? "does" : "do"} not have a fee structure: ${classesWithoutFees.map(c => c.name).join(", ")}.`,
+          classesWithoutFees: classesWithoutFees.map(c => ({ id: c.id, name: c.name, form: c.form, stream: c.stream })),
+        },
+        { status: 422 }
+      );
+    }
   }
   // ── End pre-flight ──────────────────────────────────────────────────────────
 
@@ -117,6 +127,7 @@ export async function POST(req: NextRequest) {
         termNameId: termNameId ?? null,
         academicYear,
         isActive,
+        useCsvInvoice: useCsvInvoice ?? false,
         createdById: user.id,
         // startDate / endDate are now optional — set a sentinel so existing
         // ledger queries that ORDER BY startDate still compile
@@ -125,13 +136,26 @@ export async function POST(req: NextRequest) {
       },
       select: {
         id: true, name: true, termNameId: true, academicYear: true,
-        isActive: true, invoicingCompletedAt: true, createdAt: true,
+        isActive: true, useCsvInvoice: true, invoicingCompletedAt: true, createdAt: true,
         termName: { select: { id: true, name: true } },
       },
     });
   } catch (err) {
     console.error("[FINANCE/TERMS POST] create failed", err);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  }
+
+  // When useCsvInvoice is set, skip auto-invoicing — the school supplies
+  // invoice amounts via CSV upload (Finance > Imports > Opening Balance).
+  if (useCsvInvoice) {
+    return NextResponse.json(
+      {
+        term,
+        invoicing: null,
+        csvInvoiceMode: true,
+      },
+      { status: 201 }
+    );
   }
 
   // Auto-run batch invoicing for the new term

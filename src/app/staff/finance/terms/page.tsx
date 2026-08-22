@@ -22,6 +22,7 @@ interface Term {
   termName:             FinancialTermName | null;
   academicYear:         number;
   isActive:             boolean;
+  useCsvInvoice:        boolean;
   invoicingCompletedAt: string | null;
 }
 
@@ -243,11 +244,12 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
   const isEdit   = !!existing;
   const thisYear = new Date().getFullYear();
 
-  const [termNameId,   setTermNameId]   = useState(existing?.termNameId ?? "");
-  const [academicYear, setAcademicYear] = useState(String(existing?.academicYear ?? thisYear));
-  const [isActive,     setIsActive]     = useState(existing?.isActive ?? true);
-  const [saving,       setSaving]       = useState(false);
-  const [error,        setError]        = useState<string | null>(null);
+  const [termNameId,    setTermNameId]    = useState(existing?.termNameId ?? "");
+  const [academicYear,  setAcademicYear]  = useState(String(existing?.academicYear ?? thisYear));
+  const [isActive,      setIsActive]      = useState(existing?.isActive ?? true);
+  const [useCsvInvoice, setUseCsvInvoice] = useState(existing?.useCsvInvoice ?? false);
+  const [saving,        setSaving]        = useState(false);
+  const [error,         setError]         = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -260,10 +262,11 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
     setSaving(true);
     try {
       const body = {
-        name:         selectedName.name,
+        name:          selectedName.name,
         termNameId,
-        academicYear: parseInt(academicYear, 10),
+        academicYear:  parseInt(academicYear, 10),
         isActive,
+        useCsvInvoice,
       };
 
       const url    = isEdit ? `/api/finance/terms/${existing!.id}` : "/api/finance/terms";
@@ -351,9 +354,32 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
           </p>
 
           {!isEdit && (
-            <p className="text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border dark:text-dark-muted">
-              When you add this term, all students will be automatically invoiced based on their class fee structures. All classes must have a fee structure configured before a term can be created.
-            </p>
+            <>
+              <div className="border-t border-line dark:border-dark-border pt-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={useCsvInvoice}
+                    onChange={e => setUseCsvInvoice(e.target.checked)}
+                    className="h-4 w-4 rounded border-line accent-teal mt-0.5"
+                  />
+                  <span className="text-sm text-ink dark:text-dark-text font-medium">Use CSV invoice (no fee structure required)</span>
+                </label>
+                <p className="text-xs text-slate mt-1 pl-6.5 dark:text-dark-muted">
+                  Enable this when invoice amounts come from an external CSV file rather than the system fee structures. The term will be created without running automatic batch invoicing — you can then import student invoice amounts via <strong>Finance &gt; Imports</strong>.
+                </p>
+              </div>
+
+              {useCsvInvoice ? (
+                <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400">
+                  CSV invoice mode — no fee structures needed. The term will be created immediately without invoicing students. Import balances afterwards via the Opening Balance import.
+                </p>
+              ) : (
+                <p className="text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border dark:text-dark-muted">
+                  When you add this term, all students will be automatically invoiced based on their class fee structures. All classes must have a fee structure configured before a term can be created.
+                </p>
+              )}
+            </>
           )}
 
           <div className="flex justify-end gap-2 pt-2">
@@ -362,7 +388,10 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
               Cancel
             </button>
             <button type="submit" disabled={saving || termNames.length === 0} className={primaryButtonClass}>
-              {saving ? (isEdit ? "Saving…" : "Creating & invoicing…") : isEdit ? "Save changes" : "Add term"}
+              {saving
+                ? (isEdit ? "Saving…" : useCsvInvoice ? "Creating…" : "Creating & invoicing…")
+                : isEdit ? "Save changes" : useCsvInvoice ? "Add term" : "Add term & invoice"
+              }
             </button>
           </div>
         </form>
@@ -482,6 +511,9 @@ export default function TermsPage() {
                         </Badge>
                         {t.invoicingCompletedAt && (
                           <Badge variant="teal">Invoiced</Badge>
+                        )}
+                        {t.useCsvInvoice && (
+                          <Badge variant="default">CSV invoice</Badge>
                         )}
                       </div>
                     </td>
