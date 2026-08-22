@@ -67,7 +67,7 @@ const patchSchema = z.object({
   form:        z.union([z.null(), z.undefined(), z.coerce.number().int().min(1).max(8)]).optional(),
   publisher:   z.string().trim().optional().or(z.literal("")).nullable(),
   isbn:        z.string().trim().optional().or(z.literal("")).nullable(),
-  category:    z.string().optional(),
+  category:    z.string().optional().nullable(),
   shelf:       z.string().trim().optional().or(z.literal("")).nullable(),
   shelfRow:    z.string().trim().optional().or(z.literal("")).nullable(),
   language:    z.string().trim().optional().nullable(),
