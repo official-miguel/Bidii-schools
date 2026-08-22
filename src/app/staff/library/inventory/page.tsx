@@ -14,12 +14,13 @@
  *   - Edit Book modal (PATCH /api/library/catalogue/[id])
  *   - Add Copies inline (POST /api/library/copies)
  *   - Bulk CSV import (POST /api/library/catalogue/import)
- *   - Print QR sheet button per-book (GET /api/library/copies/qr-sheet?catalogueId=)
+ *   - Print QR sheet button per-book (navigates to /inventory/[id]/qr for in-browser view + print)
  *   - Status badges: Available · Checked Out · Reserved
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus, Upload, Search, BookOpen, ChevronRight,
   Edit2, QrCode, Package, X, Loader2, FileText,
@@ -107,6 +108,7 @@ function parseImportCSV(text: string): Record<string, string>[] {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function LibraryInventoryPage() {
+  const router = useRouter();
   const [items,      setItems]      = useState<CatalogueItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading,    setLoading]    = useState(true);
@@ -186,10 +188,10 @@ export default function LibraryInventoryPage() {
     const json = await res.json();
     setCopies(prev => ({ ...prev, [catalogueId]: Array.isArray(json) ? json : [] }));
   };
-  // ── QR sheet download ─────────────────────────────────────────────────
+  // ── QR sheet — navigate to in-browser sticker preview ───────────────────
 
-  const downloadQRSheet = (catalogueId: string) => {
-    window.open(`/api/library/copies/qr-sheet?catalogueId=${catalogueId}`, "_blank");
+  const openQRSheet = (catalogueId: string) => {
+    router.push(`/staff/library/inventory/${catalogueId}/qr`);
   };
 
   return (
@@ -285,7 +287,7 @@ export default function LibraryInventoryPage() {
               onToggle={() => toggleExpand(item)}
               onEdit={() => setEditBook(item)}
               onAddCopies={() => { setAddCopiesFor(item); setExpanded(prev => new Set(prev).add(item.id)); }}
-              onQRSheet={() => downloadQRSheet(item.id)}
+              onQRSheet={() => openQRSheet(item.id)}
               onRefreshCopies={() => refreshCopies(item.id)}
             />
           ))}
@@ -383,7 +385,7 @@ function CatalogueRow({
     const json = await res.json();
     setCopyAction(null);
     if (res.ok) {
-      alert(`New QR token issued for ${json.bookNumber ?? json.accessionNumber}.\nPrint a new sticker from the QR Sheet button.`);
+      alert(`New QR token issued for ${json.bookNumber ?? json.accessionNumber}.\nClick the QR Sheet button to view and print it.`);
       onRefreshCopies();
     }
   };
