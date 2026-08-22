@@ -1,36 +1,32 @@
 /**
  * Circulation Desk — book-first workflow
  *
- * Phase 1: Find book   (accession number / QR scan)
- * Phase 2: Find student — only needed for borrow/renew
- *          (skipped for returns — student is derived from the active borrow)
+ * Phase 1: Find book — camera open by default, keyboard toggle for manual entry
+ * Phase 2: Find student — only for borrow (skipped for returns/renewals)
  * Phase 3: Policy evaluation → confirm action
  * Phase 4: Done
- *
- * Return flow:  scan book → detect BORROWED → auto-load student → eval → confirm
- * Borrow flow:  scan book → detect AVAILABLE → find student → eval → confirm
- * Renew flow:   scan book → detect BORROWED  → auto-load student → eval → confirm
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity,
   TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import {
-  BookOpen, User, RotateCcw, CheckCircle2,
-  AlertCircle, AlertTriangle, X, QrCode,
+  BookOpen, User, CheckCircle2,
+  AlertCircle, AlertTriangle, X, QrCode, Keyboard,
 } from 'lucide-react-native';
 import {
-  ScreenHeader, SearchBar, Card, Badge, Avatar, Button,
+  ScreenHeader, SearchBar, Card, Avatar, Button,
   ErrorBanner, Toast, useToast, ConfirmModal,
 } from '@/components/ui';
 import { StudentListItem } from '@/components/library';
 import {
   api, StudentHit, CardDetail, PolicyEvalResult,
 } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Colors, Spacing, Typography, Radius, SCAN_COOLDOWN_MS } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { syncService } from '@/services/sync';
 import {
@@ -56,10 +52,13 @@ export default function CirculateScreen() {
   const [phase,  setPhase]  = useState<Phase>('book');
   const [action, setAction] = useState<Action | null>(null);
 
-  // Book
+  // Book — camera or keyboard mode
+  const [bookInputMode, setBookInputMode] = useState<'camera' | 'keyboard'>('camera');
   const [bookQuery,     setBookQuery]     = useState('');
   const [searchingBook, setSearchingBook] = useState(false);
   const [bookErr,       setBookErr]       = useState<string | null>(null);
+  const [permission,    requestPermission] = useCameraPermissions();
+  const lastScanRef = useRef<number>(0);
 
   // Student (only needed after book phase for borrow/renew)
   const [studentQuery,     setStudentQuery]     = useState('');
@@ -89,6 +88,11 @@ export default function CirculateScreen() {
   // Pre-load student when navigating from another screen (e.g. student card)
   useEffect(() => {
     if (params.preloadStudentId) loadCard(params.preloadStudentId);
+  }, []); // eslint-disable-line
+
+  // Request camera permission on mount
+  useEffect(() => {
+    if (!permission?.granted) requestPermission();
   }, []); // eslint-disable-line
 
   // ── Book live search ───────────────────────────────────────────────────
@@ -153,7 +157,21 @@ export default function CirculateScreen() {
     }
   }, []);
 
-  // ── Load student card (borrow path) ───────────────────────────────────
+  // ── Camera barcode handler ─────────────────────────────────────────────
+  const onBarcodeScanned = useCallback((r: BarcodeScanningResult) => {
+    const now = Date.now();
+    if (now - lastScanRef.current < SCAN_COOLDOWN_MS) return;
+    lastScanRef.current = now;
+    if (searchingBook) return;
+    // Strip known prefixes
+    const raw = r.data;
+    const accession = raw.startsWith('BIDII:BOOK:') ? raw.slice(11)
+                    : raw.startsWith('BIDII:')       ? raw.slice(6)
+                    : raw;
+    setBookQuery(accession);
+    setBookInputMode('keyboard'); // switch to keyboard so user sees what was scanned
+    lookupBook(accession);
+  }, [searchingBook, lookupBook]);
   const loadCard = useCallback(async (sid: string) => {
     setLoadingCard(true); setStudentErr(null);
     try {
@@ -216,7 +234,8 @@ export default function CirculateScreen() {
   };
 
   const reset = () => {
-    setPhase('book'); setBookQuery(''); setStudentQuery('');
+    setPhase('book'); setBookQuery(''); setBookInputMode('camera');
+    setStudentQuery('');
     setStudentResults([]); setCardDetail(null); setEvalResult(null);
     setAction(null); setActionErr(null); setDoneMsg('');
     setReturnType('NORMAL'); setReturnCondition('GOOD');
@@ -257,35 +276,92 @@ export default function CirculateScreen() {
         {/* ── PHASE 1: Book scan ─────────────────────────────────────── */}
         {phase === 'book' && (
           <View style={{ gap: Spacing[3] }}>
-            <SearchBar
-              value={bookQuery}
-              onChangeText={setBookQuery}
-              placeholder="Accession number (e.g. ACC-00145)…"
-              loading={searchingBook}
-              autoFocus
-            />
+
+            {/* Mode toggle */}
+            <View style={{ flexDirection: 'row', backgroundColor: Colors.card, borderRadius: Radius.button, padding: 3, borderWidth: 1, borderColor: Colors.line }}>
+              <TouchableOpacity
+                onPress={() => setBookInputMode('camera')}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.button - 2, backgroundColor: bookInputMode === 'camera' ? Colors.teal : 'transparent' }}
+              >
+                <QrCode size={15} color={bookInputMode === 'camera' ? Colors.white : Colors.slateText} />
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === 'camera' ? Colors.white : Colors.slateText }}>
+                  Scan QR
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setBookInputMode('keyboard')}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.button - 2, backgroundColor: bookInputMode === 'keyboard' ? Colors.teal : 'transparent' }}
+              >
+                <Keyboard size={15} color={bookInputMode === 'keyboard' ? Colors.white : Colors.slateText} />
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === 'keyboard' ? Colors.white : Colors.slateText }}>
+                  Type Code
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Camera mode */}
+            {bookInputMode === 'camera' && (
+              permission?.granted ? (
+                <View style={{ borderRadius: Radius.card, overflow: 'hidden', height: 260 }}>
+                  <CameraView
+                    style={{ flex: 1 }}
+                    facing="back"
+                    barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'ean13'] }}
+                    onBarcodeScanned={searchingBook ? undefined : onBarcodeScanned}
+                  >
+                    {/* Scan frame overlay */}
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <View style={{ width: 200, height: 200 }}>
+                        {(['tl','tr','bl','br'] as const).map(c => (
+                          <View key={c} style={{
+                            position: 'absolute',
+                            [c.includes('t') ? 'top' : 'bottom']: 0,
+                            [c.includes('l') ? 'left' : 'right']: 0,
+                            width: 32, height: 32,
+                            borderColor: Colors.teal,
+                            borderTopWidth:    c.includes('t') ? 3 : 0,
+                            borderBottomWidth: c.includes('b') ? 3 : 0,
+                            borderLeftWidth:   c.includes('l') ? 3 : 0,
+                            borderRightWidth:  c.includes('r') ? 3 : 0,
+                          }} />
+                        ))}
+                      </View>
+                      <View style={{ marginTop: Spacing[4], backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: Radius.button, paddingHorizontal: Spacing[4], paddingVertical: Spacing[1.5] }}>
+                        <Text style={{ color: Colors.white, fontSize: Typography.fontSize.xs, textAlign: 'center' }}>
+                          {searchingBook ? 'Processing…' : 'Point camera at book QR code'}
+                        </Text>
+                      </View>
+                    </View>
+                  </CameraView>
+                </View>
+              ) : (
+                <View style={{ height: 200, backgroundColor: Colors.ink, borderRadius: Radius.card, alignItems: 'center', justifyContent: 'center', gap: Spacing[3] }}>
+                  <QrCode size={36} color={Colors.muted} />
+                  <Text style={{ color: Colors.muted, textAlign: 'center', fontSize: Typography.fontSize.sm, paddingHorizontal: Spacing[6] }}>
+                    Camera permission needed
+                  </Text>
+                  <Button label="Enable Camera" onPress={requestPermission} size="sm" />
+                </View>
+              )
+            )}
+
+            {/* Keyboard mode */}
+            {bookInputMode === 'keyboard' && (
+              <SearchBar
+                value={bookQuery}
+                onChangeText={setBookQuery}
+                placeholder="Accession number (e.g. ACC-00145)…"
+                loading={searchingBook}
+                autoFocus
+              />
+            )}
+
             {bookErr && <ErrorBanner message={bookErr} onDismiss={() => setBookErr(null)} />}
 
-            <TouchableOpacity
-              onPress={() => router.push('/scan-modal')}
-              style={{ flexDirection:'row', alignItems:'center', gap: Spacing[2], padding: Spacing[3], borderRadius: Radius.button, backgroundColor: Colors.teal50, borderWidth: 1, borderColor: Colors.teal }}
-            >
-              <QrCode size={18} color={Colors.teal} />
-              <Text style={{ color: Colors.teal, fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold }}>
-                Scan Book QR Code
+            {bookInputMode === 'camera' && !searchingBook && (
+              <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, textAlign: 'center' }}>
+                Or tap "Type Code" above to enter manually
               </Text>
-            </TouchableOpacity>
-
-            {!bookQuery && (
-              <View style={{ alignItems:'center', paddingTop: Spacing[10] }}>
-                <BookOpen size={48} color={Colors.muted} />
-                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.sm, marginTop: Spacing[3], textAlign:'center' }}>
-                  Scan a book QR code or type its accession number
-                </Text>
-                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign:'center', paddingHorizontal: Spacing[6] }}>
-                  For borrowed books a return will be offered automatically.{'\n'}For available books you will be asked for the student.
-                </Text>
-              </View>
             )}
           </View>
         )}
@@ -374,8 +450,8 @@ export default function CirculateScreen() {
               label="Another Book for Same Student"
               variant="secondary"
               onPress={() => {
-                setPhase('book'); setBookQuery(''); setEvalResult(null);
-                setAction(null); setActionErr(null);
+                setPhase('book'); setBookQuery(''); setBookInputMode('camera');
+                setEvalResult(null); setAction(null); setActionErr(null);
               }}
               fullWidth
             />
