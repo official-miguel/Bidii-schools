@@ -573,7 +573,6 @@ interface BookFormFields {
   isbn:       string;
   language:   string;
   publishYear:string;
-  costPerCopy:string;
 }
 
 function BookFormModal({
@@ -599,7 +598,6 @@ function BookFormModal({
     isbn:        "",
     language:    initial?.language    ?? "English",
     publishYear: "",
-    costPerCopy: "",
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState<string | null>(null);
@@ -624,7 +622,6 @@ function BookFormModal({
       isbn:        form.isbn        || null,
       language:    form.language    || "English",
       publishYear: form.publishYear ? parseInt(form.publishYear) : null,
-      costPerCopy: form.costPerCopy ? parseFloat(form.costPerCopy) : null,
     };
 
     const url    = initial ? `/api/library/catalogue/${initial.id}` : "/api/library/catalogue";
