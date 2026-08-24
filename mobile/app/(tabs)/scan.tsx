@@ -58,7 +58,7 @@ export default function ScanTabScreen() {
       } else if (parsed.type === 'LOAN') {
         await handleLoanTokenScan(parsed.id);
       } else if (parsed.type === 'STUDENT') {
-        setResult({ state: 'error', message: 'Student QR scanned — use Circulation tab to borrow books' });
+        setResult({ state: 'error', message: 'This is a student QR code. Use the Circulation tab and search by name to identify a student.' });
       } else {
         setResult({ state: 'error', message: `Unknown QR type: ${raw}` });
       }

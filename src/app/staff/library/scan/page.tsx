@@ -9,7 +9,7 @@
  *   QR_HARDWARE  — USB/Bluetooth hardware scanner feeds keyboard events
  *
  * Workflow:
- *   1. Identify student  (admission number / QR / hardware scan)
+ *   1. Identify student  (type admission number or name — no scanning)
  *   2. Card appears with photo — status, fines, current borrows
  *   3. Scan or type book accession number
  *   4. Choose action: Borrow / Return / Reserve / Renew
@@ -24,7 +24,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   QrCode, Search, User, BookOpen, RotateCcw,
   CheckCircle2, AlertCircle, Loader2, X, Camera,
-  Keyboard, Usb, ZapOff,
+  Keyboard, Usb,
 } from "lucide-react";
 import {
   Badge, ErrorBanner,
@@ -261,10 +261,7 @@ export default function ScanModePage() {
 
   // Hardware scanner — routes scans to the active phase
   const handleHardwareScan = useCallback((value: string) => {
-    if (phase === "student") {
-      setStudentInput(value);
-      selectStudentByAdmission(value);
-    } else if (phase === "book") {
+    if (phase === "book") {
       setBookInput(value);
       selectBookByAccession(value);
     }
@@ -559,10 +556,7 @@ export default function ScanModePage() {
           const value = results[0].rawValue;
           stopCamera(); // stops interval too
           const currentPhase = phaseRef.current;
-          if (currentPhase === "student") {
-            setStudentInput(value);
-            lookupStudent(value);
-          } else if (currentPhase === "book") {
+          if (currentPhase === "book") {
             setBookInput(value);
             lookupBook(value);
           }
@@ -621,49 +615,7 @@ export default function ScanModePage() {
               Identify Student
             </p>
 
-            {method === "QR_CAMERA" && (
-              <div className="mb-4">
-                {!cameraActive ? (
-                  <div className="space-y-2">
-                    <button className={primaryButtonClass} onClick={startCamera}>
-                      <Camera className="h-4 w-4" /> Start Camera
-                    </button>
-                    {/* Warn on non-HTTPS (phone over local Wi-Fi) */}
-                    {typeof window !== "undefined" &&
-                      window.location.protocol !== "https:" &&
-                      window.location.hostname !== "localhost" && (
-                      <p className="text-xs text-warn flex items-start gap-1.5 bg-warn-bg border border-warn/20 rounded-lg px-3 py-2">
-                        <ZapOff className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                        Camera requires HTTPS. You&apos;re on HTTP — camera will be blocked by the browser.
-                        Use manual input or switch to HTTPS.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="relative rounded-xl overflow-hidden border border-line">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-48 object-cover bg-black" />
-                    <button onClick={() => { if (scanIntervalRef.current) clearInterval(scanIntervalRef.current); stopCamera(); }} className="absolute top-2 right-2 h-8 w-8 bg-black/60 text-white rounded-lg flex items-center justify-center hover:bg-black/80 transition-colors">
-                      <X className="h-4 w-4" />
-                    </button>
-                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                      <div className="w-40 h-40 border-2 border-teal rounded-xl opacity-70" />
-                    </div>
-                    <p className="absolute bottom-2 left-0 right-0 text-center text-[11px] text-white/80 bg-black/40 py-1">
-                      {barcodeDetectorAvailable
-                        ? "Point camera at QR code — auto-detects"
-                        : "Point camera at QR code — type the value below"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
 
-            {method === "QR_HARDWARE" && (
-              <div className="mb-4 rounded-lg bg-teal-50 border border-teal/20 px-4 py-3 text-sm text-teal flex items-center gap-2">
-                <Usb className="h-4 w-4 shrink-0" />
-                Hardware scanner active — scan student card now.
-              </div>
-            )}
 
             <form onSubmit={e => { e.preventDefault(); selectStudentByAdmission(studentInput); }}>
               <div className="relative">
@@ -875,7 +827,7 @@ export default function ScanModePage() {
               <div className="h-16 w-16 rounded-full bg-teal/10 flex items-center justify-center mb-4">
                 <QrCode className="h-8 w-8 text-teal/50" />
               </div>
-              <p className="text-sm text-slate max-w-xs">Start by scanning or typing a student admission number to identify them, then scan the book copy.</p>
+              <p className="text-sm text-slate max-w-xs">Type a student admission number or name to identify them, then scan or type the book copy.</p>
             </div>
           )}
 

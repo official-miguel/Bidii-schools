@@ -3,7 +3,7 @@
 /**
  * Circulation Desk — student-first, device-adaptive book input
  *
- * Step 1: Identify student (live search — always)
+ * Step 1: Identify student (type name or admission number — always manual input)
  * Step 2: Book input — automatically adapts:
  *   • PC + hardware scanner detected: listens for rapid HID keystroke bursts
  *     (characters arriving < 50ms apart, terminated by Enter) and treats them
@@ -16,12 +16,13 @@
  * The student panel stays persistent across steps 2–3 so librarians can
  * always see the student's photo, card status, fines and active borrows.
  *
- * Hardware scanner detection:
+ * Hardware scanner (books only):
  *   HID barcode scanners emulate a keyboard and send characters in rapid
  *   succession (< 50ms between keystrokes) then fire Enter. We buffer
  *   keystrokes and compare gap times. A scan is confirmed when ≥ 3 chars
  *   arrive within 50ms of each other and are terminated by Enter.
  *   Normal human typing has > 100ms gaps and is never mistaken for a scan.
+ *   Scanner is only active after a student is selected (book phase only).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -695,7 +696,7 @@ export default function CirculatePage() {
               <div className="h-16 w-16 rounded-full bg-teal/10 flex items-center justify-center mb-4">
                 <CreditCard className="h-8 w-8 text-teal/50" />
               </div>
-              <p className="text-sm text-slate max-w-xs">Search for a student by name or admission number, then scan or type the book to borrow, return or renew.</p>
+              <p className="text-sm text-slate max-w-xs">Type a student name or admission number to find them, then scan or type the book accession number.</p>
               <Link href="/staff/library/reservations" className="text-xs text-teal hover:underline mt-3">View reservations →</Link>
             </div>
           )}

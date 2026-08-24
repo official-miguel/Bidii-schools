@@ -281,7 +281,7 @@ export default function CirculateScreen() {
                 </Text>
                 <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign: 'center', paddingHorizontal: Spacing[6] }}>
                   Type their name or admission number above.{'\n'}
-                  The camera opens after you select them.
+                  The camera opens for the book scan after you select them.
                 </Text>
               </View>
             )}
