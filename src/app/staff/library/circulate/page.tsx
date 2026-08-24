@@ -35,6 +35,7 @@ import {
   Badge, ErrorBanner,
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
+import { useReservationToast } from "@/hooks/useReservationToast";
 
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -153,6 +154,7 @@ function useHardwareScanner(
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function CirculatePage() {
+  useReservationToast();
   const [phase, setPhase]         = useState<Phase>("student");
   const [studentQuery, setStudentQuery] = useState("");
   const [searchResults, setSearchResults] = useState<StudentHit[]>([]);

@@ -1,0 +1,293 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create `src/lib/library/borrowHelper.ts` with `BorrowWithRelations` type and `loadBorrowWithRelations(borrowId, schoolId)` function": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560205678
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560220917
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560314179
+      }
+    ],
+    "2.1 Modify `src/lib/sse.ts` — add `\"libraryReservation.activated\"` to the `SSEEventType` union": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560206133
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560221084
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560315363
+      }
+    ],
+    "3.1 Replace the bare `prisma.libraryBorrow.findFirst` call in `src/app/api/library/circulate/return/route.ts` with `loadBorrowWithRelations`": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560206329
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560332977
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560629400
+      }
+    ],
+    "3.2 Add the `UNDER_REPAIR` branch for damaged returns inside the transaction in the Return Route": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560206635
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560660715
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560676739
+      }
+    ],
+    "3.3 Add reservation auto-assignment inside the Return Route transaction (for `AVAILABLE` copies only)": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560206756
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560690292
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560703130
+      }
+    ],
+    "3.4 Extend the Return Route JSON response with `catalogueTitle`, `accessionNumber`, and `studentName`": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560206885
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560710768
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560718629
+      }
+    ],
+    "4. Checkpoint — Ensure all tests pass, ask the user if questions arise.": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207106
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560724642
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560908519
+      }
+    ],
+    "5.1 Modify the POST handler in `src/app/api/library/reservations/route.ts` to compute `queuePosition` for `INDIVIDUAL` reservations": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207284
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560929110
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561141374
+      }
+    ],
+    "6.1 Refactor the `PATCH` handler in `src/app/api/library/reservations/[id]/route.ts` to use `tryAutoAssign` on cancellation": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207416
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560930097
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560939641
+      }
+    ],
+    "6.2 Apply the same cancellation queue-reassignment logic to the `DELETE` handler in the same file": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207650
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560930813
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560941064
+      }
+    ],
+    "7.1 Create `src/app/api/library/reservations/expire/route.ts` — `POST` handler": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207831
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560931863
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561142456
+      }
+    ],
+    "8. Checkpoint — Ensure all tests pass, ask the user if questions arise.": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560207988
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561149777
+      },
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561186225
+      }
+    ],
+    "9.1 Modify `src/app/api/library/summary/route.ts` to add four new concurrent count queries": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560208172
+      }
+    ],
+    "10.1 Create `src/app/api/library/sse/library/route.ts` — `GET` handler as a server-sent events stream": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560208345
+      }
+    ],
+    "11.1 Create `src/hooks/useReservationToast.ts` — client-side SSE listener hook": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560208647
+      }
+    ],
+    "11.2 Add `useReservationToast()` call to `src/app/staff/library/circulate/page.tsx`": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560208784
+      }
+    ],
+    "11.3 Add `useReservationToast()` call to `src/app/staff/library/scan/page.tsx`": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560208892
+      }
+    ],
+    "12. Final checkpoint — Ensure all tests pass, ask the user if questions arise.": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560209074
+      }
+    ],
+    "1. Create the shared borrow loading helper": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560314393
+      }
+    ],
+    "2. Extend SSE event-type union": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560315604
+      }
+    ],
+    "3. Fix the Return Route — guards, damaged flow, and response fields": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560718738
+      }
+    ],
+    "6. Fix cancellation queue-reassignment in the Reservations [id] route": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787560941185
+      }
+    ],
+    "5. Fix INDIVIDUAL queue-position assignment in the Reservations POST route": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561141509
+      }
+    ],
+    "7. Create the Reservation Expiry Cron endpoint": [
+      {
+        "executionId": "30a1a1b2-39cb-48de-8b66-7ecfd3ce34c3",
+        "chatSessionId": "sess_6963d65d-b6b3-441d-99c8-d7a9df3aaee3",
+        "timestamp": 1787561142624
+      }
+    ]
+  }
+}

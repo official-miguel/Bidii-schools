@@ -98,11 +98,16 @@ export async function POST(req: NextRequest) {
     if (!d.departmentName?.trim()) return NextResponse.json({ error: "departmentName is required for department reservations." }, { status: 400 });
   }
 
-  // Calculate queue position for WAITLIST
+  // Calculate queue position for INDIVIDUAL and WAITLIST
   let queuePosition: number | null = null;
-  if (d.reservationType === "WAITLIST") {
+  if (d.reservationType === "INDIVIDUAL" || d.reservationType === "WAITLIST") {
     const maxPos = await prisma.libraryReservation.aggregate({
-      where: { catalogueId: d.catalogueId, schoolId: user.schoolId!, status: { in: ["PENDING","ACTIVE"] }, reservationType: "WAITLIST" },
+      where: {
+        catalogueId:     d.catalogueId,
+        schoolId:        user.schoolId!,
+        status:          { in: ["PENDING","ACTIVE"] },
+        reservationType: d.reservationType as never,
+      },
       _max: { queuePosition: true },
     });
     queuePosition = (maxPos._max.queuePosition ?? 0) + 1;

@@ -1,14 +1,16 @@
-/**
+﻿/**
  * POST /api/library/circulate/return
  *
  * Handles all return types:
- *   NORMAL            — book returned in same/better condition
- *   DAMAGED           — book returned damaged; fine calculated on damage rate
- *   LOST              — book declared lost; replacement fee charged
+ *   NORMAL            — book returned in good condition; copy → AVAILABLE
+ *   DAMAGED           — book returned damaged; copy → UNDER_REPAIR, fine calculated
+ *   LOST              — book declared lost; replacement fee charged; copy → ARCHIVED
  *   REPLACEMENT_RECEIVED — lost book replaced by student; fine cleared
  *   OVERRIDE          — manual override with mandatory reason
  *
  * Every return writes a LibraryFineAudit row and a LibraryCirculationEvent.
+ * On NORMAL/REPLACEMENT_RECEIVED returns, checks for waiting reservations
+ * and auto-assigns the copy to the next PENDING INDIVIDUAL patron if found.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,6 +21,7 @@ import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { PolicyEngine, computeFine } from "@/lib/library/policyEngine";
 import { recordCirculationEvent, recordFineAudit } from "@/lib/library/circulationEvents";
+import { loadBorrowWithRelations } from "@/lib/library/borrowHelper";
 
 async function manageGuard() {
   return (await requireSchoolRole("PRINCIPAL")) ??
@@ -45,36 +48,35 @@ export async function POST(req: NextRequest) {
 
   const { borrowId, returnType, returnCondition, notes, overrideReason, patronType } = parsed.data;
 
-  // ── Load borrow ──────────────────────────────────────────────────────────
-  const borrow = await prisma.libraryBorrow.findFirst({
-    where: { id: borrowId, schoolId: user.schoolId! },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
-  if (!borrow)          return NextResponse.json({ error: "Borrow record not found." }, { status: 404 });
+  // ── Load borrow with all required relations ──────────────────────────────
+  const borrow = await loadBorrowWithRelations(borrowId, user.schoolId!);
+  if (!borrow)           return NextResponse.json({ error: "Borrow record not found." }, { status: 404 });
   if (borrow.returnedAt) return NextResponse.json({ error: "Book already returned." }, { status: 409 });
+  if (!borrow.copy)      return NextResponse.json({ error: "Copy data unavailable for this borrow." }, { status: 422 });
+  if (!borrow.card)      return NextResponse.json({ error: "Card data unavailable for this borrow." }, { status: 422 });
 
   if (returnType === "OVERRIDE" && !overrideReason?.trim())
     return NextResponse.json({ error: "Override reason is required." }, { status: 400 });
 
   // ── Policy engine ────────────────────────────────────────────────────────
-  const engine      = await PolicyEngine.load(user.schoolId!);
-  const policy      = engine.policyFor(patronType ?? "DEFAULT");
-  const finePaused  = engine.isFinePaused(borrow.card.studentId);
-  const now         = new Date();
+  const engine     = await PolicyEngine.load(user.schoolId!);
+  const policy     = engine.policyFor(patronType ?? "DEFAULT");
+  const finePaused = engine.isFinePaused(borrow.card.studentId);
+  const now        = new Date();
 
   // ── Compute overdue fine ─────────────────────────────────────────────────
-  const fineEndDate   = borrow.fineStoppedAt ?? now;
-  let overdueFine     = finePaused ? 0 : computeFine({ dueAt: borrow.dueAt, endDate: fineEndDate, policy });
+  const fineEndDate = borrow.fineStoppedAt ?? now;
+  let overdueFine   = finePaused ? 0 : computeFine({ dueAt: borrow.dueAt, endDate: fineEndDate, policy });
 
   // ── Compute special fines ────────────────────────────────────────────────
   let specialFine = 0;
-  const costPerCopy = (borrow.copy as { catalogue?: { costPerCopy?: number | null } } | null)?.catalogue?.costPerCopy ?? 0;
+  const costPerCopy = borrow.copy.catalogue?.costPerCopy ?? 0;
 
   if (returnType === "LOST") {
     specialFine = costPerCopy > 0
       ? costPerCopy * policy.lostBookMultiplier
       : policy.lostBookFixedFee;
-    overdueFine = 0; // No overdue fine on lost books
+    overdueFine = 0;
   } else if (returnType === "DAMAGED") {
     specialFine = finePaused ? 0 : costPerCopy * policy.damagedBookFineRate;
   } else if (returnType === "REPLACEMENT_RECEIVED") {
@@ -84,115 +86,163 @@ export async function POST(req: NextRequest) {
 
   const totalFine = overdueFine + specialFine;
 
-  // ── New copy status ──────────────────────────────────────────────────────
-  let newCopyStatus: "AVAILABLE" | "ARCHIVED" = "AVAILABLE";
-  let newCopyCondition = returnCondition ?? borrow.copy?.condition ?? "GOOD";
+  // ── Determine new copy status ─────────────────────────────────────────────
+  // NORMAL / REPLACEMENT_RECEIVED / OVERRIDE → AVAILABLE (may become RESERVED after auto-assign)
+  // DAMAGED → UNDER_REPAIR (never enters reservation queue)
+  // LOST    → ARCHIVED
+  type CopyStatus = "AVAILABLE" | "UNDER_REPAIR" | "ARCHIVED";
+  let newCopyStatus: CopyStatus = "AVAILABLE";
+  let newCopyCondition = returnCondition ?? (borrow.copy.condition as string) ?? "GOOD";
+
   if (returnType === "LOST") {
     newCopyStatus    = "ARCHIVED";
     newCopyCondition = "LOST";
   } else if (returnType === "DAMAGED") {
+    newCopyStatus    = "UNDER_REPAIR";
     newCopyCondition = "DAMAGED";
   }
 
-  // ── Transaction ──────────────────────────────────────────────────────────
+  // ── Capture for post-transaction SSE ─────────────────────────────────────
+  let activatedReservationId: string | null = null;
+  let activatedStudentId: string | null = null;
+  let activatedStudentName: string | null = null;
+
+  // ── Transaction ───────────────────────────────────────────────────────────
   const [updatedBorrow, updatedCard] = await prisma.$transaction(async (tx) => {
     const ub = await tx.libraryBorrow.update({
       where: { id: borrowId },
       data: {
-        returnedAt:     now,
-        fineAmount:     totalFine,
-        returnType:     returnType,
+        returnedAt:      now,
+        fineAmount:      totalFine,
+        returnType:      returnType,
         returnCondition: newCopyCondition,
-        notes:          notes ?? null,
-        isOverride:     returnType === "OVERRIDE",
-        overrideReason: overrideReason ?? null,
-        overrideById:   returnType === "OVERRIDE" ? user.id : null,
+        notes:           notes ?? null,
+        isOverride:      returnType === "OVERRIDE",
+        overrideReason:  overrideReason ?? null,
+        overrideById:    returnType === "OVERRIDE" ? user.id : null,
       },
     });
 
-    if (borrow.copyId) {
-      await tx.libraryCopy.update({
-        where: { id: borrow.copyId },
-        data: {
-          status:    newCopyStatus as never,
-          condition: newCopyCondition as never,
-          ...(newCopyStatus === "ARCHIVED" && {
-            archivedAt:    now,
-            archiveReason: returnType === "LOST" ? "LOST" : "DAMAGED_BEYOND_REPAIR",
-          }),
-        },
-      });
-    }
+    await tx.libraryCopy.update({
+      where: { id: borrow.copy!.id },
+      data: {
+        status:    newCopyStatus as never,
+        condition: newCopyCondition as never,
+        ...(newCopyStatus === "ARCHIVED" && {
+          archivedAt:    now,
+          archiveReason: returnType === "LOST" ? "LOST" : "DAMAGED_BEYOND_REPAIR",
+        }),
+      },
+    });
 
     const uc = await tx.libraryCard.update({
-      where: { id: borrow.cardId },
+      where: { id: borrow.card!.id },
       data: {
         currentBorrowCount: { decrement: 1 },
         fineBalance:        { increment: totalFine },
       },
     });
 
-    return [ub, uc];
+    // ── Auto-assign next reservation (only for AVAILABLE copies) ──────────
+    if (newCopyStatus === "AVAILABLE") {
+      const catalogueId = borrow.copy!.catalogueId;
+      const next = await tx.libraryReservation.findFirst({
+        where: {
+          catalogueId,
+          schoolId:        user.schoolId!,
+          status:          "PENDING",
+          reservationType: "INDIVIDUAL",
+        },
+        orderBy: [
+          { queuePosition: { sort: "asc", nulls: "last" } },
+          { createdAt: "asc" },
+        ],
+      });
+
+      if (next) {
+        await tx.libraryReservation.update({
+          where: { id: next.id },
+          data:  { status: "ACTIVE", allocatedCopyId: borrow.copy!.id },
+        });
+        await tx.libraryCopy.update({
+          where: { id: borrow.copy!.id },
+          data:  { status: "RESERVED" },
+        });
+        activatedReservationId = next.id;
+        activatedStudentId     = next.studentId;
+      }
+    }
+
+    return [ub, uc] as const;
   });
 
-  // ── Fine audit ───────────────────────────────────────────────────────────
+  // ── Fetch student name for SSE payload (outside transaction) ─────────────
+  if (activatedStudentId) {
+    const st = await prisma.student.findUnique({
+      where:  { id: activatedStudentId },
+      select: { fullName: true },
+    });
+    activatedStudentName = st?.fullName ?? null;
+  }
+
+  // ── Fine audit ────────────────────────────────────────────────────────────
   if (totalFine > 0) {
     await recordFineAudit({
-      schoolId: user.schoolId!,
-      cardId:        borrow.cardId,
-      borrowId:      borrowId,
+      schoolId:      user.schoolId!,
+      cardId:        borrow.card.id,
+      borrowId,
       eventType:     "CHARGE",
       amount:        totalFine,
       balanceAfter:  updatedCard.fineBalance,
-      reason:        returnType === "LOST" ? "Lost book replacement fee" : returnType === "DAMAGED" ? "Damaged book fine" : "Overdue fine",
+      reason:
+        returnType === "LOST"    ? "Lost book replacement fee" :
+        returnType === "DAMAGED" ? "Damaged book fine"         : "Overdue fine",
       performedById: user.id,
     });
   }
 
-  // ── Circulation event ────────────────────────────────────────────────────
+  // ── Circulation event ─────────────────────────────────────────────────────
   await recordCirculationEvent({
-    schoolId: user.schoolId!,
-    eventType:     returnType === "LOST" ? "LOST_REPORTED" : returnType === "REPLACEMENT_RECEIVED" ? "REPLACEMENT_RECEIVED" : "RETURNED",
-    copyId:        borrow.copyId,
-    catalogueId:   (borrow.copy as { catalogueId?: string } | null)?.catalogueId ?? null,
+    schoolId:      user.schoolId!,
+    eventType:
+      returnType === "LOST"                 ? "LOST_REPORTED"         :
+      returnType === "REPLACEMENT_RECEIVED" ? "REPLACEMENT_RECEIVED"  : "RETURNED",
+    copyId:        borrow.copy.id,
+    catalogueId:   borrow.copy.catalogueId ?? null,
     borrowId,
     studentId:     borrow.card.studentId,
     performedById: user.id,
     payload: { returnType, returnCondition: newCopyCondition, overdueFine, specialFine, totalFine, finePaused },
   });
 
-  // ── Check if a waiting reservation should be allocated ──────────────────
-  if (newCopyStatus === "AVAILABLE" && borrow.copyId) {
-    const catalogueId = (borrow.copy as { catalogueId?: string } | null)?.catalogueId;
-    if (catalogueId) {
-      const nextWaiting = await prisma.libraryReservation.findFirst({
-        where: { catalogueId, schoolId: user.schoolId!, status: "PENDING", reservationType: "INDIVIDUAL" },
-        orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],
-      });
-      if (nextWaiting) {
-        await prisma.libraryReservation.update({
-          where: { id: nextWaiting.id },
-          data:  { status: "ACTIVE", allocatedCopyId: borrow.copyId },
-        });
-        await prisma.libraryCopy.update({
-          where: { id: borrow.copyId! },
-          data:  { status: "RESERVED" },
-        });
-        emitSSE(user.schoolId!, "libraryBorrow.returned", { reservationActivated: true, reservationId: nextWaiting.id });
-      }
-    }
+  // ── Post-transaction SSE ──────────────────────────────────────────────────
+  if (activatedReservationId) {
+    emitSSE(user.schoolId!, "libraryReservation.activated", {
+      reservationId: activatedReservationId,
+      studentId:     activatedStudentId,
+      catalogueId:   borrow.copy.catalogueId,
+      copyId:        borrow.copy.id,
+      title:         borrow.copy.catalogue?.title ?? "",
+      studentName:   activatedStudentName,
+    });
   }
 
   emitSSE(user.schoolId!, "libraryBorrow.returned", updatedBorrow);
-  emitSSE(user.schoolId!, "libraryCard.updated",   updatedCard);
+  emitSSE(user.schoolId!, "libraryCard.updated",    updatedCard);
 
   return NextResponse.json({
-    borrow:      updatedBorrow,
-    card:        updatedCard,
-    overdueFine, specialFine, totalFine,
+    borrow:          updatedBorrow,
+    card:            updatedCard,
+    overdueFine,
+    specialFine,
+    totalFine,
     finePaused,
     returnType,
-    newCopyStatus,
+    newCopyStatus:   activatedReservationId ? "RESERVED" : newCopyStatus,
     newCopyCondition,
+    // Enriched response fields (Req 10.1, 10.2, 10.3)
+    catalogueTitle:  borrow.copy.catalogue?.title  ?? "",
+    accessionNumber: borrow.copy.accessionNumber,
+    studentName:     borrow.card.student?.fullName ?? "",
   });
 }

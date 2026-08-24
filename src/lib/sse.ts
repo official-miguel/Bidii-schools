@@ -64,7 +64,8 @@ export type SSEEventType =
   | "import.beds.completed"
   | "import.allocations.completed"
   | "import.parents.completed"
-  | "import.finance.completed";
+  | "import.finance.completed"
+  | "libraryReservation.activated";
 
 /**
  * Push a typed event to all SSE clients connected to the given school.

@@ -36,6 +36,11 @@ export async function GET(req: NextRequest) {
     studentsWithFines,
     // Recent activity — last 5 borrows
     recentBorrows,
+    // Reservation / copy-status counts (new)
+    reservationsPending,
+    reservationsActive,
+    reservedCopies,
+    copiesUnderRepair,
   ] = await Promise.all([
     prisma.libraryCatalogue.count({
       where: { schoolId, archivedAt: null },
@@ -86,6 +91,19 @@ export async function GET(req: NextRequest) {
         book: { select: { title: true, author: true } },
       },
     }),
+    // New reservation / copy-status counts
+    prisma.libraryReservation.count({
+      where: { schoolId, status: "PENDING" },
+    }),
+    prisma.libraryReservation.count({
+      where: { schoolId, status: "ACTIVE" },
+    }),
+    prisma.libraryCopy.count({
+      where: { schoolId, status: "RESERVED" },
+    }),
+    prisma.libraryCopy.count({
+      where: { schoolId, status: "UNDER_REPAIR" },
+    }),
   ]);
 
   const body = {
@@ -104,6 +122,11 @@ export async function GET(req: NextRequest) {
     totalFinesOutstanding: cardAgg._sum.fineBalance   ?? 0,
     totalFinesPaid:        cardAgg._sum.totalFinesPaid ?? 0,
     studentsWithFines,
+    // Reservations / copy-status (new)
+    reservationsPending,
+    readyForPickup:    reservationsActive,
+    reservedCopies,
+    copiesUnderRepair,
     // Recent activity
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recentBorrows: (recentBorrows as any[]).map((b) => ({

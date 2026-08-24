@@ -30,6 +30,7 @@ import {
   Badge, ErrorBanner,
   primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
+import { useReservationToast } from "@/hooks/useReservationToast";
 
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -200,6 +201,7 @@ function useHardwareScanner(onScan: (value: string) => void, enabled: boolean) {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function ScanModePage() {
+  useReservationToast();
   const [settings, setSettings]   = useState<Settings | null>(null);
   const [phase, setPhase]         = useState<ScanPhase>("student");
   const [studentInput, setStudentInput] = useState("");
