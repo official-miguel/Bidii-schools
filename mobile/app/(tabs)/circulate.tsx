@@ -1,16 +1,23 @@
 /**
- * Circulation Desk — book-first workflow
+ * Circulation Desk — student-first, device-adaptive book scan
  *
- * Phase 1: Find book — camera open by default, keyboard toggle for manual entry
- * Phase 2: Find student — only for borrow (skipped for returns/renewals)
+ * Phase 1: Find student (search/select — always the first step)
+ * Phase 2: Find book
+ *   • Camera opens automatically AFTER the student is selected.
+ *     Camera is NOT activated on page load (avoids permission prompts
+ *     and battery drain before it's actually needed).
+ *   • Toggle button always visible to switch between camera and
+ *     manual text entry mid-flow.
  * Phase 3: Policy evaluation → confirm action
  * Phase 4: Done
+ *
+ * For borrowed books (return/renew) the active borrow is looked up
+ * server-side so no additional student identification is needed.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  TextInput,
+  View, Text, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -35,8 +42,9 @@ import {
 } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Phase = 'book' | 'student' | 'eval' | 'done';
+type Phase  = 'student' | 'book' | 'eval' | 'done';
 type Action = 'borrow' | 'return' | 'renew';
+type BookInputMode = 'camera' | 'keyboard';
 
 const RETURN_TYPES      = ['NORMAL','DAMAGED','LOST','REPLACEMENT_RECEIVED'] as const;
 const RETURN_CONDITIONS = ['EXCELLENT','GOOD','FAIR','DAMAGED','LOST']       as const;
@@ -47,61 +55,51 @@ export default function CirculateScreen() {
   const router  = useRouter();
   const insets  = useSafeAreaInsets();
   const params  = useLocalSearchParams<{ preloadStudentId?: string }>();
-  const { toastProps, show: showToast } = useToast();
+  const { toastProps } = useToast();
 
-  const [phase,  setPhase]  = useState<Phase>('book');
+  // ── Phase ──────────────────────────────────────────────────────────────
+  const [phase,  setPhase]  = useState<Phase>('student');
   const [action, setAction] = useState<Action | null>(null);
 
-  // Book — camera or keyboard mode
-  const [bookInputMode, setBookInputMode] = useState<'camera' | 'keyboard'>('camera');
-  const [bookQuery,     setBookQuery]     = useState('');
-  const [searchingBook, setSearchingBook] = useState(false);
-  const [bookErr,       setBookErr]       = useState<string | null>(null);
-  const [permission,    requestPermission] = useCameraPermissions();
-  const lastScanRef = useRef<number>(0);
-
-  // Student (only needed after book phase for borrow/renew)
+  // ── Student search ──────────────────────────────────────────────────────
   const [studentQuery,     setStudentQuery]     = useState('');
   const [studentResults,   setStudentResults]   = useState<StudentHit[]>([]);
   const [searchingStudent, setSearchingStudent] = useState(false);
   const [studentErr,       setStudentErr]       = useState<string | null>(null);
   const [loadingCard,      setLoadingCard]       = useState(false);
+  const [cardDetail,       setCardDetail]        = useState<CardDetail | null>(null);
 
-  // Card + eval
-  const [cardDetail, setCardDetail] = useState<CardDetail | null>(null);
-  const [evalResult, setEvalResult] = useState<PolicyEvalResult | null>(null);
+  // ── Book lookup ──────────────────────────────────────────────────────────
+  // bookInputMode starts as 'camera' but camera is NOT mounted until phase==='book'
+  const [bookInputMode, setBookInputMode] = useState<BookInputMode>('camera');
+  const [bookQuery,     setBookQuery]     = useState('');
+  const [searchingBook, setSearchingBook] = useState(false);
+  const [bookErr,       setBookErr]       = useState<string | null>(null);
+  const [evalResult,    setEvalResult]    = useState<PolicyEvalResult | null>(null);
 
-  // Action options
+  // ── Camera (only requested after student is picked) ─────────────────────
+  const [permission, requestPermission] = useCameraPermissions();
+  const lastScanRef = useRef<number>(0);
+
+  // ── Action ──────────────────────────────────────────────────────────────
   const [returnType,      setReturnType]      = useState('NORMAL');
   const [returnCondition, setReturnCondition] = useState('GOOD');
   const [returnNotes,     setReturnNotes]     = useState('');
   const [overrideReason,  setOverrideReason]  = useState('');
-
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [acting,      setActing]      = useState(false);
-  const [actionErr,   setActionErr]   = useState<string | null>(null);
-  const [doneMsg,     setDoneMsg]     = useState('');
+  const [showConfirm,     setShowConfirm]     = useState(false);
+  const [acting,          setActing]          = useState(false);
+  const [actionErr,       setActionErr]       = useState<string | null>(null);
+  const [doneMsg,         setDoneMsg]         = useState('');
 
   const debStudentQuery = useDebounce(studentQuery, 250);
-  const debBookQuery    = useDebounce(bookQuery,    300);
+  const debBookQuery    = useDebounce(bookQuery, 300);
 
-  // Pre-load student when navigating from another screen (e.g. student card)
+  // Pre-load student from deeplink (e.g. student card "Issue" button)
   useEffect(() => {
     if (params.preloadStudentId) loadCard(params.preloadStudentId);
   }, []); // eslint-disable-line
 
-  // Request camera permission on mount
-  useEffect(() => {
-    if (!permission?.granted) requestPermission();
-  }, []); // eslint-disable-line
-
-  // ── Book live search ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (!debBookQuery.trim() || phase !== 'book') return;
-    lookupBook(debBookQuery);
-  }, [debBookQuery]); // eslint-disable-line
-
-  // ── Student live search ────────────────────────────────────────────────
+  // ── Student live search ─────────────────────────────────────────────────
   useEffect(() => {
     if (!debStudentQuery.trim() || phase !== 'student') { setStudentResults([]); return; }
     (async () => {
@@ -112,50 +110,50 @@ export default function CirculateScreen() {
     })();
   }, [debStudentQuery, phase]);
 
-  // ── Look up a book copy ────────────────────────────────────────────────
+  // ── Book live search (keyboard mode only) ──────────────────────────────
+  useEffect(() => {
+    if (!debBookQuery.trim() || phase !== 'book' || bookInputMode !== 'keyboard') return;
+    lookupBook(debBookQuery);
+  }, [debBookQuery]); // eslint-disable-line
+
+  // ── Load student card ──────────────────────────────────────────────────
+  const loadCard = useCallback(async (sid: string) => {
+    setLoadingCard(true); setStudentErr(null);
+    try {
+      const card = await api.getCard(sid);
+      setCardDetail(card);
+      setPhase('book');
+      // Request camera permission now — only after student is picked
+      if (!permission?.granted) requestPermission();
+    } catch (e: any) { setStudentErr(e.message); }
+    finally { setLoadingCard(false); }
+  }, [permission, requestPermission]);
+
+  // ── Book lookup ────────────────────────────────────────────────────────
   const lookupBook = useCallback(async (q: string) => {
-    if (!q.trim()) return;
-    setSearchingBook(true); setBookErr(null); setEvalResult(null);
-    setAction(null); setCardDetail(null);
+    if (!q.trim() || !cardDetail) return;
+    setSearchingBook(true); setBookErr(null); setEvalResult(null); setAction(null);
 
     const accession = q.startsWith('BIDII:BOOK:') ? q.slice(11)
                     : q.startsWith('BIDII:')       ? q.slice(6)
                     : q;
     try {
-      const copies = await api.searchCopies(accession);
-      const copy   = copies.find(c => c.accessionNumber.toUpperCase() === accession.toUpperCase().trim())
-                   ?? (copies.length === 1 ? copies[0] : null);
+      const searchRes = await api.searchCopies(accession);
+      const copy = searchRes.find((c: any) =>
+        c.accessionNumber.toUpperCase() === accession.toUpperCase().trim()
+      ) ?? (searchRes.length === 1 ? searchRes[0] : null);
 
       if (!copy) { setBookErr(`No copy found for "${accession}"`); return; }
 
-      if (copy.status === 'BORROWED' || copy.status === 'RESERVED') {
-        // Return / renew path: look up the active borrow to get the student
-        const borrowInfo = await api.get<{
-          borrowId: string; studentId: string; studentName: string;
-          dueAt: string; fineAmount?: number;
-        }>(`/api/library/copies/${copy.id}/active-borrow`);
-
-        // Load the student's full card
-        const card = await api.getCard(borrowInfo.studentId);
-        setCardDetail(card);
-
-        // Policy evaluate
-        const ev = await api.evaluatePolicy(card.student.id, copy.id);
-        setEvalResult({ ...ev, copy });
-        setPhase('eval');
-      } else if (copy.status === 'AVAILABLE') {
-        // Borrow path: need to identify the student first
-        setEvalResult({ copy } as PolicyEvalResult);
-        setPhase('student');
-      } else {
-        setBookErr(`Cannot process "${accession}" — copy status: ${copy.status}`);
-      }
+      const ev = await api.evaluatePolicy(cardDetail.student.id, copy.id);
+      setEvalResult({ ...ev, copy });
+      setPhase('eval');
     } catch (e: any) {
       setBookErr(getErrorMessage(e));
     } finally {
       setSearchingBook(false);
     }
-  }, []);
+  }, [cardDetail]);
 
   // ── Camera barcode handler ─────────────────────────────────────────────
   const onBarcodeScanned = useCallback((r: BarcodeScanningResult) => {
@@ -163,31 +161,14 @@ export default function CirculateScreen() {
     if (now - lastScanRef.current < SCAN_COOLDOWN_MS) return;
     lastScanRef.current = now;
     if (searchingBook) return;
-    // Strip known prefixes
     const raw = r.data;
     const accession = raw.startsWith('BIDII:BOOK:') ? raw.slice(11)
                     : raw.startsWith('BIDII:')       ? raw.slice(6)
                     : raw;
     setBookQuery(accession);
-    setBookInputMode('keyboard'); // switch to keyboard so user sees what was scanned
+    setBookInputMode('keyboard'); // show what was scanned
     lookupBook(accession);
   }, [searchingBook, lookupBook]);
-  const loadCard = useCallback(async (sid: string) => {
-    setLoadingCard(true); setStudentErr(null);
-    try {
-      const card = await api.getCard(sid);
-      setCardDetail(card);
-
-      // If we already have the copy from book phase, evaluate policy now
-      const copy = evalResult?.copy;
-      if (copy) {
-        const ev = await api.evaluatePolicy(card.student.id, copy.id);
-        setEvalResult({ ...ev, copy });
-      }
-      setPhase('eval');
-    } catch (e: any) { setStudentErr(e.message); }
-    finally { setLoadingCard(false); }
-  }, [evalResult]);
 
   // ── Execute action ─────────────────────────────────────────────────────
   const executeAction = async () => {
@@ -195,7 +176,9 @@ export default function CirculateScreen() {
     setActing(true); setActionErr(null);
     try {
       if (action === 'borrow') {
-        const body: Record<string, unknown> = { studentId: cardDetail.student.id, copyId: evalResult.copy.id };
+        const body: Record<string, unknown> = {
+          studentId: cardDetail.student.id, copyId: evalResult.copy.id,
+        };
         if (!evalResult.allowed && overrideReason) body.overrideReason = overrideReason;
         const res = await api.borrow(body);
         setDoneMsg(`"${evalResult.copy.catalogue?.title || evalResult.copy.accessionNumber}" issued — due ${formatDate(res.borrow?.dueAt)}.`);
@@ -234,12 +217,16 @@ export default function CirculateScreen() {
   };
 
   const reset = () => {
-    setPhase('book'); setBookQuery(''); setBookInputMode('camera');
-    setStudentQuery('');
-    setStudentResults([]); setCardDetail(null); setEvalResult(null);
-    setAction(null); setActionErr(null); setDoneMsg('');
+    setPhase('student'); setStudentQuery(''); setStudentResults([]);
+    setCardDetail(null); setBookQuery(''); setBookInputMode('camera');
+    setEvalResult(null); setAction(null); setActionErr(null); setDoneMsg('');
     setReturnType('NORMAL'); setReturnCondition('GOOD');
     setReturnNotes(''); setOverrideReason('');
+  };
+
+  const nextBook = () => {
+    setPhase('book'); setBookQuery(''); setBookInputMode('camera');
+    setEvalResult(null); setAction(null); setActionErr(null);
   };
 
   // ── Derived ────────────────────────────────────────────────────────────
@@ -254,13 +241,13 @@ export default function CirculateScreen() {
       <ScreenHeader
         title="Circulation Desk"
         subtitle={
-          phase === 'book'    ? 'Scan or type book code' :
-          phase === 'student' ? 'Find student to borrow' :
+          phase === 'student' ? 'Find student' :
+          phase === 'book'    ? `Scan book for ${cardDetail?.student.fullName ?? ''}` :
           phase === 'eval'    ? cardDetail?.student.fullName ?? 'Confirm action' :
-          phase === 'done'    ? 'Done' : ''
+          'Done'
         }
         right={
-          phase !== 'book' ? (
+          phase !== 'student' ? (
             <TouchableOpacity onPress={reset} style={{ padding: Spacing[2] }} hitSlop={{ top:8, right:8, bottom:8, left:8 }}>
               <X size={20} color={Colors.white} />
             </TouchableOpacity>
@@ -268,38 +255,77 @@ export default function CirculateScreen() {
         }
       />
 
-      {/* Phase bar */}
       <PhaseBar phase={phase} />
 
       <ScrollView contentContainerStyle={{ padding: Spacing[4], gap: Spacing[4], paddingBottom: insets.bottom + Spacing[10] }}>
 
-        {/* ── PHASE 1: Book scan ─────────────────────────────────────── */}
+        {/* ── PHASE 1: Student search ────────────────────────────────── */}
+        {phase === 'student' && (
+          <View style={{ gap: Spacing[3] }}>
+            <SearchBar
+              value={studentQuery}
+              onChangeText={setStudentQuery}
+              placeholder="Name or admission number…"
+              loading={searchingStudent || loadingCard}
+              autoFocus
+            />
+            {studentErr && <ErrorBanner message={studentErr} onDismiss={() => setStudentErr(null)} />}
+            {studentResults.map(s => (
+              <StudentListItem key={s.id} student={s} onPress={() => loadCard(s.id)} />
+            ))}
+            {!studentQuery && (
+              <View style={{ alignItems: 'center', paddingTop: Spacing[10] }}>
+                <User size={48} color={Colors.muted} />
+                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.sm, marginTop: Spacing[3], textAlign: 'center' }}>
+                  Start by finding the student
+                </Text>
+                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign: 'center', paddingHorizontal: Spacing[6] }}>
+                  Type their name or admission number above.{'\n'}
+                  The camera opens after you select them.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── Student card strip (book + eval + done) ───────────────── */}
+        {(phase === 'book' || phase === 'eval' || phase === 'done') && cardDetail && (
+          <StudentCardPanel detail={cardDetail} hasOverdue={hasOverdue} />
+        )}
+
+        {/* ── PHASE 2: Book scan ────────────────────────────────────── */}
         {phase === 'book' && (
           <View style={{ gap: Spacing[3] }}>
 
-            {/* Mode toggle */}
-            <View style={{ flexDirection: 'row', backgroundColor: Colors.card, borderRadius: Radius.button, padding: 3, borderWidth: 1, borderColor: Colors.line }}>
-              <TouchableOpacity
-                onPress={() => setBookInputMode('camera')}
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.button - 2, backgroundColor: bookInputMode === 'camera' ? Colors.teal : 'transparent' }}
-              >
-                <QrCode size={15} color={bookInputMode === 'camera' ? Colors.white : Colors.slateText} />
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === 'camera' ? Colors.white : Colors.slateText }}>
-                  Scan QR
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setBookInputMode('keyboard')}
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.button - 2, backgroundColor: bookInputMode === 'keyboard' ? Colors.teal : 'transparent' }}
-              >
-                <Keyboard size={15} color={bookInputMode === 'keyboard' ? Colors.white : Colors.slateText} />
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === 'keyboard' ? Colors.white : Colors.slateText }}>
-                  Type Code
-                </Text>
-              </TouchableOpacity>
+            {/* Camera / keyboard toggle */}
+            <View style={{
+              flexDirection: 'row', backgroundColor: Colors.card,
+              borderRadius: Radius.button, padding: 3,
+              borderWidth: 1, borderColor: Colors.line,
+            }}>
+              {(['camera', 'keyboard'] as BookInputMode[]).map(mode => (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => setBookInputMode(mode)}
+                  style={{
+                    flex: 1, flexDirection: 'row', alignItems: 'center',
+                    justifyContent: 'center', gap: Spacing[1.5],
+                    paddingVertical: Spacing[2], borderRadius: Radius.button - 2,
+                    backgroundColor: bookInputMode === mode ? Colors.teal : 'transparent',
+                  }}
+                >
+                  {mode === 'camera'
+                    ? <QrCode size={15} color={bookInputMode === mode ? Colors.white : Colors.slateText} />
+                    : <Keyboard size={15} color={bookInputMode === mode ? Colors.white : Colors.slateText} />
+                  }
+                  <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === mode ? Colors.white : Colors.slateText }}>
+                    {mode === 'camera' ? 'Scan QR' : 'Type Code'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {/* Camera mode */}
+            {/* Camera — only mounted here (phase=book), never on load */}
             {bookInputMode === 'camera' && (
               permission?.granted ? (
                 <View style={{ borderRadius: Radius.card, overflow: 'hidden', height: 260 }}>
@@ -309,7 +335,6 @@ export default function CirculateScreen() {
                     barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'ean13'] }}
                     onBarcodeScanned={searchingBook ? undefined : onBarcodeScanned}
                   >
-                    {/* Scan frame overlay */}
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                       <View style={{ width: 200, height: 200 }}>
                         {(['tl','tr','bl','br'] as const).map(c => (
@@ -345,7 +370,7 @@ export default function CirculateScreen() {
               )
             )}
 
-            {/* Keyboard mode */}
+            {/* Manual text input */}
             {bookInputMode === 'keyboard' && (
               <SearchBar
                 value={bookQuery}
@@ -357,102 +382,42 @@ export default function CirculateScreen() {
             )}
 
             {bookErr && <ErrorBanner message={bookErr} onDismiss={() => setBookErr(null)} />}
-
-            {bookInputMode === 'camera' && !searchingBook && (
-              <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, textAlign: 'center' }}>
-                Or tap "Type Code" above to enter manually
-              </Text>
-            )}
           </View>
         )}
 
-        {/* ── PHASE 2: Student search (borrow path only) ─────────────── */}
-        {phase === 'student' && (
-          <View style={{ gap: Spacing[3] }}>
-            {/* Show scanned book summary */}
-            {evalResult?.copy && (
-              <View style={{ backgroundColor: Colors.teal50, borderRadius: Radius.card, padding: Spacing[3], flexDirection:'row', alignItems:'center', gap: Spacing[2], borderWidth:1, borderColor: Colors.teal + '40' }}>
-                <BookOpen size={16} color={Colors.teal} />
-                <View style={{ flex:1 }}>
-                  <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.teal }} numberOfLines={1}>
-                    {evalResult.copy.catalogue?.title || evalResult.copy.accessionNumber}
-                  </Text>
-                  <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.teal + 'AA' }}>
-                    {evalResult.copy.accessionNumber} · {evalResult.copy.status}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            <SearchBar
-              value={studentQuery}
-              onChangeText={setStudentQuery}
-              placeholder="Name or admission number…"
-              loading={searchingStudent || loadingCard}
-              autoFocus
-            />
-            {studentErr && <ErrorBanner message={studentErr} onDismiss={() => setStudentErr(null)} />}
-            {studentResults.map(s => (
-              <StudentListItem key={s.id} student={s} onPress={() => loadCard(s.id)} />
-            ))}
-
-            {!studentQuery && (
-              <View style={{ alignItems:'center', paddingTop: Spacing[8] }}>
-                <User size={40} color={Colors.muted} />
-                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.sm, marginTop: Spacing[3], textAlign:'center' }}>
-                  Who is borrowing this book?
-                </Text>
-                <TouchableOpacity
-                  onPress={() => router.push('/scan-modal')}
-                  style={{ marginTop: Spacing[4], flexDirection:'row', alignItems:'center', gap: Spacing[2], paddingHorizontal: Spacing[4], paddingVertical: Spacing[2.5], borderRadius: Radius.button, backgroundColor: Colors.teal50, borderWidth:1, borderColor: Colors.teal }}
-                >
-                  <QrCode size={18} color={Colors.teal} />
-                  <Text style={{ color: Colors.teal, fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold }}>
-                    Scan Student QR Code
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* ── Student card panel (eval + done) ───────────────────────── */}
-        {(phase === 'eval' || phase === 'done') && cardDetail && (
-          <StudentCardPanel detail={cardDetail} hasOverdue={hasOverdue} />
-        )}
-
-        {/* ── PHASE 3: Eval ──────────────────────────────────────────── */}
+        {/* ── PHASE 3: Policy eval ──────────────────────────────────── */}
         {phase === 'eval' && evalResult && cardDetail && (
           <EvalPanel
-            eval={evalResult} cardDetail={cardDetail}
-            canBorrow={canBorrow} canReturn={canReturn} canRenew={canRenew}
-            action={action} onSelectAction={setAction}
-            returnType={returnType} onReturnType={setReturnType}
+            eval={evalResult}
+            cardDetail={cardDetail}
+            canBorrow={canBorrow}
+            canReturn={canReturn}
+            canRenew={canRenew}
+            action={action}
+            onSelectAction={setAction}
+            returnType={returnType}           onReturnType={setReturnType}
             returnCondition={returnCondition} onReturnCondition={setReturnCondition}
-            returnNotes={returnNotes} onReturnNotes={setReturnNotes}
-            overrideReason={overrideReason} onOverrideReason={setOverrideReason}
+            returnNotes={returnNotes}         onReturnNotes={setReturnNotes}
+            overrideReason={overrideReason}   onOverrideReason={setOverrideReason}
             onConfirm={() => setShowConfirm(true)}
             actionErr={actionErr}
           />
         )}
 
-        {/* ── PHASE 4: Done ──────────────────────────────────────────── */}
+        {/* ── PHASE 4: Done ─────────────────────────────────────────── */}
         {phase === 'done' && (
           <View style={{ gap: Spacing[4] }}>
-            <View style={{ backgroundColor: Colors.successBg, borderRadius: Radius.card, padding: Spacing[6], alignItems:'center', gap: Spacing[3] }}>
+            <View style={{ backgroundColor: Colors.successBg, borderRadius: Radius.card, padding: Spacing[6], alignItems: 'center', gap: Spacing[3] }}>
               <CheckCircle2 size={40} color={Colors.success} />
-              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink, textAlign:'center' }}>
+              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink, textAlign: 'center' }}>
                 {doneMsg}
               </Text>
             </View>
             <Button label="New Transaction" onPress={reset} fullWidth />
             <Button
-              label="Another Book for Same Student"
+              label="Another Book — Same Student"
               variant="secondary"
-              onPress={() => {
-                setPhase('book'); setBookQuery(''); setBookInputMode('camera');
-                setEvalResult(null); setAction(null); setActionErr(null);
-              }}
+              onPress={nextBook}
               fullWidth
             />
           </View>
@@ -482,37 +447,35 @@ export default function CirculateScreen() {
 
 // ── PhaseBar ──────────────────────────────────────────────────────────────────
 
-const PHASE_ORDER: Phase[] = ['book', 'student', 'eval', 'done'];
-const PHASE_LABELS: Record<Phase, string> = {
-  book:    'Book',
-  student: 'Student',
-  eval:    'Confirm',
-  done:    'Done',
-};
+const PHASES: { key: Phase; label: string }[] = [
+  { key: 'student', label: 'Student' },
+  { key: 'book',    label: 'Book'    },
+  { key: 'eval',    label: 'Confirm' },
+  { key: 'done',    label: 'Done'    },
+];
 
 function PhaseBar({ phase }: { phase: Phase }) {
-  const current = PHASE_ORDER.indexOf(phase);
+  const current = PHASES.findIndex(p => p.key === phase);
   return (
-    <View style={{ flexDirection:'row', backgroundColor: Colors.card, borderBottomWidth:1, borderBottomColor: Colors.line, paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] }}>
-      {PHASE_ORDER.map((p, i) => {
+    <View style={{ flexDirection: 'row', backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.line, paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] }}>
+      {PHASES.map(({ key, label }, i) => {
         const done   = i < current;
         const active = i === current;
-        // Student phase is skipped for returns — show it dimmed in that case
         return (
-          <React.Fragment key={p}>
-            <View style={{ alignItems:'center', opacity: done || active ? 1 : 0.35 }}>
-              <View style={{ width:24, height:24, borderRadius:12, backgroundColor: done ? Colors.success : active ? Colors.teal : Colors.line, alignItems:'center', justifyContent:'center' }}>
+          <React.Fragment key={key}>
+            <View style={{ alignItems: 'center', opacity: done || active ? 1 : 0.35 }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: done ? Colors.success : active ? Colors.teal : Colors.line, alignItems: 'center', justifyContent: 'center' }}>
                 {done
                   ? <CheckCircle2 size={14} color={Colors.white} />
-                  : <Text style={{ fontSize:11, fontWeight:'700', color: active ? Colors.white : Colors.slateText }}>{i+1}</Text>
+                  : <Text style={{ fontSize: 11, fontWeight: '700', color: active ? Colors.white : Colors.slateText }}>{i + 1}</Text>
                 }
               </View>
-              <Text style={{ fontSize: Typography.fontSize.xs, marginTop:2, color: active ? Colors.teal : Colors.slateText, fontWeight: active ? Typography.fontWeight.semibold : Typography.fontWeight.normal }}>
-                {PHASE_LABELS[p]}
+              <Text style={{ fontSize: Typography.fontSize.xs, marginTop: 2, color: active ? Colors.teal : Colors.slateText, fontWeight: active ? Typography.fontWeight.semibold : Typography.fontWeight.normal }}>
+                {label}
               </Text>
             </View>
-            {i < PHASE_ORDER.length - 1 && (
-              <View style={{ flex:1, height:2, backgroundColor: i < current ? Colors.success : Colors.line, alignSelf:'center', marginHorizontal: Spacing[1], marginBottom:14 }} />
+            {i < PHASES.length - 1 && (
+              <View style={{ flex: 1, height: 2, backgroundColor: i < current ? Colors.success : Colors.line, alignSelf: 'center', marginHorizontal: Spacing[1], marginBottom: 14 }} />
             )}
           </React.Fragment>
         );
@@ -526,26 +489,36 @@ function PhaseBar({ phase }: { phase: Phase }) {
 function StudentCardPanel({ detail, hasOverdue }: { detail: CardDetail; hasOverdue: boolean }) {
   const { student, card } = detail;
   return (
-    <View style={{ backgroundColor: Colors.teal, borderRadius: Radius.card, padding: Spacing[4], flexDirection:'row', gap: Spacing[3] }}>
+    <View style={{ backgroundColor: Colors.teal, borderRadius: Radius.card, padding: Spacing[4], flexDirection: 'row', gap: Spacing[3] }}>
       <Avatar name={student.fullName} photoFileId={student.files[0]?.id} size="lg" />
-      <View style={{ flex:1, gap: Spacing[1] }}>
-        <Text style={{ color: Colors.white, fontWeight: Typography.fontWeight.bold, fontSize: Typography.fontSize.base }} numberOfLines={1}>{student.fullName}</Text>
-        <Text style={{ color: Colors.white + 'CC', fontSize: Typography.fontSize.xs }}>{student.admissionNumber} · {student.schoolClass.name}</Text>
-        <View style={{ flexDirection:'row', gap: Spacing[2], marginTop: Spacing[1], flexWrap:'wrap' }}>
-          <View style={{ backgroundColor: Colors.white + '30', paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full }}>
-            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.white }}>{cardStatusLabel(card.status)}</Text>
+      <View style={{ flex: 1, gap: Spacing[1] }}>
+        <Text style={{ color: Colors.white, fontWeight: Typography.fontWeight.bold, fontSize: Typography.fontSize.base }} numberOfLines={1}>
+          {student.fullName}
+        </Text>
+        <Text style={{ color: Colors.white + 'CC', fontSize: Typography.fontSize.xs }}>
+          {student.admissionNumber} · {student.schoolClass.name}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: Spacing[2], marginTop: Spacing[1], flexWrap: 'wrap' }}>
+          <View style={{ backgroundColor: Colors.white + '30', paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
+            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.white }}>
+              {cardStatusLabel(card.status)}
+            </Text>
           </View>
           {card.fineBalance > 0 && (
-            <View style={{ backgroundColor: Colors.dangerBg, paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full }}>
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.danger }}>Fine: {formatCurrency(card.fineBalance)}</Text>
+            <View style={{ backgroundColor: Colors.dangerBg, paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.danger }}>
+                Fine: {formatCurrency(card.fineBalance)}
+              </Text>
             </View>
           )}
           {hasOverdue && (
-            <View style={{ backgroundColor: Colors.warnBg, paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full }}>
+            <View style={{ backgroundColor: Colors.warnBg, paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
               <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.warn }}>Overdue</Text>
             </View>
           )}
-          <Text style={{ color: Colors.white + '99', fontSize: Typography.fontSize.xs }}>{card.currentBorrowCount} out</Text>
+          <Text style={{ color: Colors.white + '99', fontSize: Typography.fontSize.xs }}>
+            {card.currentBorrowCount} out
+          </Text>
         </View>
       </View>
     </View>
@@ -558,11 +531,11 @@ interface EvalPanelProps {
   eval: PolicyEvalResult; cardDetail: CardDetail;
   canBorrow: boolean; canReturn: boolean; canRenew: boolean;
   action: Action | null; onSelectAction: (a: Action) => void;
-  returnType: string; onReturnType: (v: string) => void;
+  returnType: string;      onReturnType: (v: string) => void;
   returnCondition: string; onReturnCondition: (v: string) => void;
-  returnNotes: string; onReturnNotes: (v: string) => void;
-  overrideReason: string; onOverrideReason: (v: string) => void;
-  onConfirm: () => void; actionErr: string | null;
+  returnNotes: string;     onReturnNotes: (v: string) => void;
+  overrideReason: string;  onOverrideReason: (v: string) => void;
+  onConfirm: () => void;   actionErr: string | null;
 }
 
 function EvalPanel(p: EvalPanelProps) {
@@ -571,8 +544,9 @@ function EvalPanel(p: EvalPanelProps) {
 
   return (
     <View style={{ gap: Spacing[3] }}>
+      {/* Book summary */}
       <Card>
-        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform:'uppercase', letterSpacing:0.8, marginBottom: Spacing[2] }}>Book</Text>
+        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[2] }}>Book</Text>
         <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }} numberOfLines={1}>
           {copy?.catalogue?.title || copy?.accessionNumber}
         </Text>
@@ -586,44 +560,56 @@ function EvalPanel(p: EvalPanelProps) {
         )}
       </Card>
 
+      {/* Block reasons */}
       {ev.reasons?.map((r, i) => (
-        <View key={i} style={{ flexDirection:'row', alignItems:'center', gap: Spacing[2], backgroundColor: Colors.dangerBg, borderRadius: Radius.button, padding: Spacing[3] }}>
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: Colors.dangerBg, borderRadius: Radius.button, padding: Spacing[3] }}>
           <AlertCircle size={16} color={Colors.danger} />
-          <Text style={{ flex:1, fontSize: Typography.fontSize.sm, color: Colors.danger }}>{r}</Text>
-        </View>
-      ))}
-      {ev.warnings?.map((w, i) => (
-        <View key={i} style={{ flexDirection:'row', alignItems:'center', gap: Spacing[2], backgroundColor: Colors.warnBg, borderRadius: Radius.button, padding: Spacing[3] }}>
-          <AlertTriangle size={16} color={Colors.warn} />
-          <Text style={{ flex:1, fontSize: Typography.fontSize.sm, color: Colors.warn }}>{w}</Text>
+          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.danger }}>{r}</Text>
         </View>
       ))}
 
+      {/* Warnings */}
+      {ev.warnings?.map((w, i) => (
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: Colors.warnBg, borderRadius: Radius.button, padding: Spacing[3] }}>
+          <AlertTriangle size={16} color={Colors.warn} />
+          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.warn }}>{w}</Text>
+        </View>
+      ))}
+
+      {/* Action selector */}
       <View style={{ gap: Spacing[2] }}>
-        {canBorrow && <ActionButton label="Borrow" active={p.action==='borrow'} onPress={() => p.onSelectAction('borrow')} color={Colors.teal} />}
-        {canReturn  && <ActionButton label="Return" active={p.action==='return'} onPress={() => p.onSelectAction('return')} color={Colors.success} />}
-        {canRenew   && <ActionButton label="Renew"  active={p.action==='renew'}  onPress={() => p.onSelectAction('renew')}  color={Colors.info} />}
+        {canBorrow && <ActionBtn label="Borrow" active={p.action==='borrow'} onPress={() => p.onSelectAction('borrow')} color={Colors.teal} />}
+        {canReturn  && <ActionBtn label="Return" active={p.action==='return'} onPress={() => p.onSelectAction('return')} color={Colors.success} />}
+        {canRenew   && <ActionBtn label="Renew"  active={p.action==='renew'}  onPress={() => p.onSelectAction('renew')}  color={Colors.info} />}
       </View>
 
+      {/* Return options */}
       {p.action === 'return' && (
         <Card>
-          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, marginBottom: Spacing[3], textTransform:'uppercase', letterSpacing:0.8 }}>Return Details</Text>
-          <PillRow label="Return type"        options={RETURN_TYPES}      value={p.returnType}      onChange={p.onReturnType} />
+          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, marginBottom: Spacing[3], textTransform: 'uppercase', letterSpacing: 0.8 }}>Return Details</Text>
+          <PillRow label="Return type"         options={RETURN_TYPES}      value={p.returnType}      onChange={p.onReturnType} />
           <View style={{ marginTop: Spacing[3] }}>
             <PillRow label="Condition on return" options={RETURN_CONDITIONS} value={p.returnCondition} onChange={p.onReturnCondition} />
           </View>
         </Card>
       )}
 
+      {/* Override reason (borrow blocked) */}
       {p.action === 'borrow' && !ev.allowed && (
         <Card>
           <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.warn, marginBottom: Spacing[2] }}>Override Required</Text>
-          <TextInputField value={p.overrideReason} onChangeText={p.onOverrideReason} placeholder="Enter override reason" />
+          <TextInput
+            value={p.overrideReason} onChangeText={p.onOverrideReason}
+            placeholder="Enter override reason" placeholderTextColor={Colors.muted}
+            multiline numberOfLines={2}
+            style={{ borderWidth: 1, borderColor: Colors.line, borderRadius: Radius.sm, padding: Spacing[3], fontSize: Typography.fontSize.sm, color: Colors.ink, minHeight: 60 }}
+          />
         </Card>
       )}
 
       {p.actionErr && <ErrorBanner message={p.actionErr} />}
 
+      {/* Confirm button */}
       {p.action && (
         <Button
           label={p.action === 'borrow' ? 'Issue Book' : p.action === 'return' ? 'Return Book' : 'Renew Loan'}
@@ -636,11 +622,11 @@ function EvalPanel(p: EvalPanelProps) {
   );
 }
 
-function ActionButton({ label, active, onPress, color }: { label: string; active: boolean; onPress: () => void; color: string }) {
+function ActionBtn({ label, active, onPress, color }: { label: string; active: boolean; onPress: () => void; color: string }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ padding: Spacing[3], borderRadius: Radius.button, borderWidth:2, borderColor: active ? color : Colors.line, backgroundColor: active ? color + '15' : Colors.card, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}
+      style={{ padding: Spacing[3], borderRadius: Radius.button, borderWidth: 2, borderColor: active ? color : Colors.line, backgroundColor: active ? color + '15' : Colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
     >
       <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: active ? color : Colors.ink }}>{label}</Text>
       {active && <CheckCircle2 size={20} color={color} />}
@@ -652,25 +638,19 @@ function PillRow({ label, options, value, onChange }: { label: string; options: 
   return (
     <View>
       <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted, marginBottom: Spacing[2] }}>{label}</Text>
-      <View style={{ flexDirection:'row', flexWrap:'wrap', gap: Spacing[2] }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] }}>
         {options.map(o => (
-          <TouchableOpacity key={o} onPress={() => onChange(o)} style={{ paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5], borderRadius: Radius.full, borderWidth:1, borderColor: value===o ? Colors.teal : Colors.line, backgroundColor: value===o ? Colors.teal50 : Colors.card }}>
-            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: value===o ? Colors.teal : Colors.slateText }}>
-              {o.replace(/_/g,' ').charAt(0)+o.replace(/_/g,' ').slice(1).toLowerCase()}
+          <TouchableOpacity
+            key={o}
+            onPress={() => onChange(o)}
+            style={{ paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5], borderRadius: Radius.full, borderWidth: 1, borderColor: value === o ? Colors.teal : Colors.line, backgroundColor: value === o ? Colors.teal50 : Colors.card }}
+          >
+            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: value === o ? Colors.teal : Colors.slateText }}>
+              {o.replace(/_/g, ' ').charAt(0) + o.replace(/_/g, ' ').slice(1).toLowerCase()}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
-  );
-}
-
-function TextInputField({ value, onChangeText, placeholder }: { value: string; onChangeText: (v: string) => void; placeholder: string }) {
-  return (
-    <TextInput
-      value={value} onChangeText={onChangeText} placeholder={placeholder}
-      placeholderTextColor={Colors.muted} multiline numberOfLines={2}
-      style={{ borderWidth:1, borderColor: Colors.line, borderRadius: Radius.sm, padding: Spacing[3], fontSize: Typography.fontSize.sm, color: Colors.ink, minHeight: 60 }}
-    />
   );
 }

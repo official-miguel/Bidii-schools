@@ -239,8 +239,6 @@ interface LibrarySettingsData {
   maxBorrowDays:        number;
   finePerDay:           number;
   maxRenewals:          number;
-  identificationMethod: string;
-  barcodeEnabled:       boolean;
   eligibleFromForm:     number | null;
   cardValidityDays:     number | null;
   overdueAlertDays:     number;
@@ -255,8 +253,6 @@ function LibrarySettingsForm() {
     maxDays:         "14",
     finePerDay:      "5.00",
     maxRenewals:     "1",
-    identMethod:     "MANUAL",
-    barcodeEnabled:  false,
     eligibleFromForm: "",
     cardValidityDays: "",
     overdueAlertDays: "7",
@@ -266,8 +262,6 @@ function LibrarySettingsForm() {
   const [maxDays,       setMaxDays]       = useState(libDraft.maxDays);
   const [finePerDay,    setFinePerDay]    = useState(libDraft.finePerDay);
   const [maxRenewals,   setMaxRenewals]   = useState(libDraft.maxRenewals);
-  const [identMethod,   setIdentMethod]   = useState(libDraft.identMethod);
-  const [barcodeEnabled,setBarcodeEnabled]= useState(libDraft.barcodeEnabled);
   const [eligibleFromForm, setEligibleFromForm] = useState(libDraft.eligibleFromForm);
   const [cardValidityDays, setCardValidityDays] = useState(libDraft.cardValidityDays);
   const [overdueAlertDays, setOverdueAlertDays] = useState(libDraft.overdueAlertDays);
@@ -287,8 +281,6 @@ function LibrarySettingsForm() {
           setMaxDays(String(d.maxBorrowDays));
           setFinePerDay(d.finePerDay.toFixed(2));
           setMaxRenewals(String(d.maxRenewals ?? 1));
-          setIdentMethod(d.identificationMethod ?? "MANUAL");
-          setBarcodeEnabled(d.barcodeEnabled ?? false);
           setEligibleFromForm(d.eligibleFromForm ? String(d.eligibleFromForm) : "");
           setCardValidityDays(d.cardValidityDays ? String(d.cardValidityDays) : "");
           setOverdueAlertDays(String(d.overdueAlertDays ?? 7));
@@ -302,8 +294,8 @@ function LibrarySettingsForm() {
   // Persist on change
   useEffect(() => {
     if (!dirty) return;
-    setLibDraft({ maxBooks, maxDays, finePerDay, maxRenewals, identMethod, barcodeEnabled, eligibleFromForm, cardValidityDays, overdueAlertDays });
-  }, [maxBooks, maxDays, finePerDay, maxRenewals, identMethod, barcodeEnabled, eligibleFromForm, cardValidityDays, overdueAlertDays, dirty, setLibDraft]);
+    setLibDraft({ maxBooks, maxDays, finePerDay, maxRenewals, eligibleFromForm, cardValidityDays, overdueAlertDays });
+  }, [maxBooks, maxDays, finePerDay, maxRenewals, eligibleFromForm, cardValidityDays, overdueAlertDays, dirty, setLibDraft]);
 
   function md<T>(setter: (v: T) => void) { return (v: T) => { setDirty(true); setter(v); }; }
 
@@ -318,8 +310,6 @@ function LibrarySettingsForm() {
         maxBorrowDays:        parseInt(maxDays),
         finePerDay:           parseFloat(finePerDay),
         maxRenewals:          parseInt(maxRenewals),
-        identificationMethod: identMethod,
-        barcodeEnabled,
         eligibleFromForm:     eligibleFromForm ? parseInt(eligibleFromForm) : null,
         cardValidityDays:     cardValidityDays ? parseInt(cardValidityDays) : null,
         overdueAlertDays:     parseInt(overdueAlertDays),
@@ -393,38 +383,7 @@ function LibrarySettingsForm() {
         </div>
       </div>
 
-      {/* Identification method */}
-      <div>
-        <h3 className="text-sm font-semibold text-ink dark:text-dark-text mb-1">Identification Method</h3>
-        <p className="text-xs text-slate dark:text-dark-muted mb-4">How the librarian identifies students and books during circulation.</p>
-        <div className="space-y-2">
-          {[
-            { value: "MANUAL",      label: "Manual input",     desc: "Type admission number or accession number by hand." },
-            { value: "QR_CAMERA",   label: "Camera QR scan",   desc: "Use the device camera to scan QR codes on student cards and books." },
-            { value: "QR_HARDWARE", label: "Hardware scanner",  desc: "USB or Bluetooth barcode/QR scanner auto-feeds characters." },
-          ].map(opt => (
-            <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-              identMethod === opt.value
-                ? "border-teal bg-teal-50 dark:bg-teal/10 dark:border-teal/40"
-                : "border-line bg-white dark:bg-dark-surface dark:border-dark-border hover:border-teal/30"
-            }`}>
-              <input type="radio" name="identMethod" value={opt.value}
-                checked={identMethod === opt.value} onChange={() => md(setIdentMethod)(opt.value)}
-                className="mt-0.5 accent-teal shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-ink dark:text-dark-text">{opt.label}</p>
-                <p className="text-xs text-slate dark:text-dark-muted">{opt.desc}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-        <label className="flex items-center gap-2 mt-3 cursor-pointer">
-          <input type="checkbox" checked={barcodeEnabled}
-            onChange={e => md(setBarcodeEnabled)(e.target.checked)}
-            className="rounded border-line accent-teal" />
-          <span className="text-sm text-ink dark:text-dark-text">Enable barcode scanning in addition to QR codes</span>
-        </label>
-      </div>
+      {/* Identification method is now auto-detected per device — no setting needed */}
 
       <div className="flex items-center gap-4">
         <button type="submit" disabled={saving} className={royalButtonClass}>
@@ -1316,7 +1275,7 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
   },
   library: {
     heading: "Library Settings",
-    description: "Configure borrowing limits, due dates, identification method, and overdue fines for the school library.",
+    description: "Configure borrowing limits, due dates, and overdue fines for the school library.",
     Content: LibrarySettingsForm,
   },
   dormitory: {

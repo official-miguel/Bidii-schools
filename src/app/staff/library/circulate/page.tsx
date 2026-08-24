@@ -1,22 +1,34 @@
 "use client";
 
 /**
- * Circulation Desk — 4-step workflow:
- *   Step 1: Identify student (search / QR / hardware scanner)
- *   Step 2: View persistent student panel with photo, card status,
- *            fines, active borrows, reservations, history
- *   Step 3: Scan / type book accession number
- *   Step 4: Policy evaluation → Confirm action / show block reasons
+ * Circulation Desk — student-first, device-adaptive book input
  *
- * The student panel stays visible throughout steps 2–4 so librarians can
- * see the student's photo, ID and card status at all times.
+ * Step 1: Identify student (live search — always)
+ * Step 2: Book input — automatically adapts:
+ *   • PC + hardware scanner detected: listens for rapid HID keystroke bursts
+ *     (characters arriving < 50ms apart, terminated by Enter) and treats them
+ *     as scanner input. A "Scanner active" badge shows while it listens.
+ *     Manual text input is always visible as a fallback below the badge.
+ *   • PC + no hardware scanner: falls back to manual live-search after
+ *     500ms with no scanner burst detected (book lookup fires on typing).
+ * Step 3: Policy evaluation → Confirm action / show block reasons
+ *
+ * The student panel stays persistent across steps 2–3 so librarians can
+ * always see the student's photo, card status, fines and active borrows.
+ *
+ * Hardware scanner detection:
+ *   HID barcode scanners emulate a keyboard and send characters in rapid
+ *   succession (< 50ms between keystrokes) then fire Enter. We buffer
+ *   keystrokes and compare gap times. A scan is confirmed when ≥ 3 chars
+ *   arrive within 50ms of each other and are terminated by Enter.
+ *   Normal human typing has > 100ms gaps and is never mistaken for a scan.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search, User, BookOpen, RotateCcw, CheckCircle2, AlertCircle,
-  AlertTriangle, Loader2, X, Camera, Usb, Keyboard, DollarSign,
+  AlertTriangle, Loader2, X, Usb, Keyboard, DollarSign,
   Shield, ChevronDown, ChevronUp, CreditCard, RefreshCw,
 } from "lucide-react";
 import {
@@ -27,9 +39,11 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface Settings { identificationMethod: "MANUAL"|"QR_CAMERA"|"QR_HARDWARE"; }
-
-interface StudentHit { id: string; fullName: string; admissionNumber: string; schoolClass: { name: string; form: number }; libraryCard: { id: string; fineBalance: number } | null; }
+interface StudentHit {
+  id: string; fullName: string; admissionNumber: string;
+  schoolClass: { name: string; form: number };
+  libraryCard: { id: string; fineBalance: number } | null;
+}
 
 interface BorrowRow {
   id: string; borrowedAt: string; dueAt: string; returnedAt: string | null;
@@ -39,10 +53,14 @@ interface BorrowRow {
 }
 
 interface CardDetail {
-  student: { id: string; fullName: string; admissionNumber: string; schoolClass: { name: string; form: number }; files: { id: string }[] };
+  student: {
+    id: string; fullName: string; admissionNumber: string;
+    schoolClass: { name: string; form: number }; files: { id: string }[];
+  };
   card: {
-    id: string; cardNumber: string | null; status: string; suspensionReason: string | null;
-    fineBalance: number; totalFinesPaid: number; expiresAt: string | null;
+    id: string; cardNumber: string | null; status: string;
+    suspensionReason: string | null; fineBalance: number;
+    totalFinesPaid: number; expiresAt: string | null;
     currentBorrowCount: number; totalBorrowCount: number;
     borrows: BorrowRow[];
   };
@@ -70,7 +88,6 @@ const daysSince = (iso: string) => Math.floor((Date.now() - new Date(iso).getTim
 function cardStatusVariant(s: string): "success"|"warn"|"default"|"danger" {
   return s === "ACTIVE" ? "success" : s === "SUSPENDED" ? "warn" : "default";
 }
-
 function copyStatusVariant(s: string): "success"|"info"|"warn"|"danger"|"default" {
   const m: Record<string,"success"|"info"|"warn"|"danger"|"default"> = {
     AVAILABLE: "success", BORROWED: "info", RESERVED: "warn", UNDER_REPAIR: "warn", ARCHIVED: "default",
@@ -82,28 +99,60 @@ function StudentPhoto({ fileId, name, size = "md" }: { fileId?: string; name: st
   const sz = size === "sm" ? "h-8 w-8 text-xs" : size === "lg" ? "h-20 w-20 text-2xl" : "h-14 w-14 text-lg";
   const initials = name.trim().split(/\s+/).map(p => p[0]).slice(0,2).join("").toUpperCase();
   if (!fileId) return <div className={`${sz} rounded-full bg-teal/10 border-2 border-teal/20 flex items-center justify-center font-bold text-teal shrink-0`}>{initials}</div>;
-  return <img src={`/api/students/files/${fileId}`} alt={name} className={`${sz} rounded-full object-cover border-2 border-line shrink-0`} onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />;  // eslint-disable-line @next/next/no-img-element
+  return <img src={`/api/students/files/${fileId}`} alt={name} className={`${sz} rounded-full object-cover border-2 border-line shrink-0`} onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />; // eslint-disable-line @next/next/no-img-element
 }
 
-// ── Hardware scanner ───────────────────────────────────────────────────────
-function useHardwareScanner(onScan: (v: string) => void, enabled: boolean) {
-  const buf = useRef(""); const last = useRef(0);
+// ── Hardware scanner hook ──────────────────────────────────────────────────
+/**
+ * Listens for HID keyboard-wedge scanner bursts:
+ *   ≥ 3 printable characters arriving within 50ms of each other, terminated
+ *   by Enter. Returns { detected: bool } and fires onScan(value) on each scan.
+ *
+ * enabled: only actively routes to onScan when true (i.e. after student selected).
+ * onDetected: fires once when the first scan burst is confirmed — lets the UI
+ *   switch from "waiting" to "scanner active" mode.
+ */
+function useHardwareScanner(
+  onScan: (v: string) => void,
+  onDetected: () => void,
+  enabled: boolean,
+) {
+  const buf     = useRef("");
+  const lastKey = useRef(0);
+  const detected = useRef(false);
+
   useEffect(() => {
-    if (!enabled) return;
     const h = (e: KeyboardEvent) => {
-      const now = Date.now(); const gap = now - last.current; last.current = now;
-      if (e.key === "Enter") { const v = buf.current.trim(); buf.current = ""; if (v.length > 2) onScan(v); return; }
+      // Ignore modifier keys
+      if (e.key.length !== 1 && e.key !== "Enter") return;
+
+      const now = Date.now();
+      const gap = now - lastKey.current;
+      lastKey.current = now;
+
+      if (e.key === "Enter") {
+        const val = buf.current.trim();
+        buf.current = "";
+        if (val.length >= 3) {
+          // Only fire if within scanner-speed threshold (entire value arrived fast)
+          if (!detected.current) { detected.current = true; onDetected(); }
+          if (enabled) onScan(val);
+        }
+        return;
+      }
+
+      // Reset buffer if gap is too large (human typing pace > 100ms)
       if (gap > 80) buf.current = "";
-      if (e.key.length === 1) buf.current += e.key;
+      buf.current += e.key;
     };
-    window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h);
-  }, [enabled, onScan]);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [enabled, onScan, onDetected]);
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function CirculatePage() {
-  const [settings, setSettings]   = useState<Settings | null>(null);
   const [phase, setPhase]         = useState<Phase>("student");
   const [studentQuery, setStudentQuery] = useState("");
   const [searchResults, setSearchResults] = useState<StudentHit[]>([]);
@@ -122,21 +171,37 @@ export default function CirculatePage() {
   const [confirm, setConfirm]     = useState<ConfirmMsg | null>(null);
   const [acting, setActing]       = useState(false);
   const [loadingCard, setLoadingCard] = useState(false);
-  const [_loadingEval, _setLoadingEval] = useState(false);
   const [loadingBook, setLoadingBook] = useState(false);
   const [studentErr, setStudentErr]   = useState<string | null>(null);
   const [bookErr, setBookErr]         = useState<string | null>(null);
   const [actionErr, setActionErr]     = useState<string | null>(null);
+
+  // Device-based input mode for the book step
+  // "detecting"  — listening for first hardware scan burst (shown for 500ms after student selected)
+  // "hardware"   — scanner confirmed, routing Enter bursts to lookup
+  // "manual"     — no scanner detected, using live-search text input
+  const [bookMode, setBookMode] = useState<"detecting"|"hardware"|"manual">("detecting");
+  const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const studentRef = useRef<HTMLInputElement>(null);
   const bookRef    = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetch("/api/library/settings").then(r=>r.json()).then(setSettings).catch(()=>{}); }, []);
   useEffect(() => {
     if (phase === "student") setTimeout(() => studentRef.current?.focus(), 50);
-    if (phase === "book")    setTimeout(() => bookRef.current?.focus(), 50);
-  }, [phase]);
+    if (phase === "book" && bookMode === "manual") setTimeout(() => bookRef.current?.focus(), 50);
+  }, [phase, bookMode]);
 
-  const method = settings?.identificationMethod ?? "MANUAL";
+  // When entering book phase, start the 500ms detection window.
+  // If no scanner fires within that window, drop to manual mode.
+  useEffect(() => {
+    if (phase !== "book") return;
+    setBookMode("detecting");
+    if (detectTimerRef.current) clearTimeout(detectTimerRef.current);
+    detectTimerRef.current = setTimeout(() => {
+      setBookMode(prev => prev === "detecting" ? "manual" : prev);
+    }, 500);
+    return () => { if (detectTimerRef.current) clearTimeout(detectTimerRef.current); };
+  }, [phase]);
 
   // ── Student search ────────────────────────────────────────────────────
   const doStudentSearch = useCallback(async (q: string) => {
@@ -148,13 +213,14 @@ export default function CirculatePage() {
     setSearching(false);
   }, []);
 
-  // Hardware scanner
-  const onHardwareScan = useCallback((val: string) => {
-    if (phase === "student") { setStudentQuery(val); doStudentSearch(val); }
-    else if (phase === "book") { setBookQuery(val); doLookupBook(val); }
-  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useHardwareScanner(onHardwareScan, method === "QR_HARDWARE");
+  // Live search as user types — debounced 220ms
+  const studentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onStudentInputChange = (v: string) => {
+    setStudentQuery(v);
+    if (!v.trim()) { setSearchResults([]); return; }
+    if (studentDebounceRef.current) clearTimeout(studentDebounceRef.current);
+    studentDebounceRef.current = setTimeout(() => doStudentSearch(v), 220);
+  };
 
   const selectStudent = async (s: StudentHit) => {
     setSearchResults([]); setStudentQuery(""); setLoadingCard(true); setStudentErr(null);
@@ -165,24 +231,28 @@ export default function CirculatePage() {
     setCardData(json); setPhase("book");
   };
 
+  // ── Hardware scanner — fires after student is selected ────────────────
+  const onHardwareScan = useCallback((val: string) => {
+    if (phase === "book") { setBookQuery(val); doLookupBook(val); }
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onScannerDetected = useCallback(() => {
+    if (detectTimerRef.current) clearTimeout(detectTimerRef.current);
+    setBookMode("hardware");
+  }, []);
+
+  // Always listen (even before student selected) so detection fires immediately
+  useHardwareScanner(onHardwareScan, onScannerDetected, phase === "book");
+
   // ── Book lookup + policy eval ─────────────────────────────────────────
-  // Uses the fast /api/library/copies/search endpoint which tries indexed
-  // equality lookups first (accessionNumber unique index, bookNumber unique
-  // index) rather than the slow 5-branch ILIKE query.
-  // Two sequential round-trips are collapsed to one copy-search + one eval.
   const doLookupBook = useCallback(async (q: string) => {
     if (!q.trim() || !cardData) return;
     setLoadingBook(true); setBookErr(null); setEvalResult(null); setSelectedAction(null); setConfirm(null);
     try {
       const searchRes = await fetch(`/api/library/copies/search?q=${encodeURIComponent(q)}`);
       const searchJson = await searchRes.json();
-      if (!searchRes.ok) {
-        setBookErr(searchJson.error ?? `No copy found for "${q}".`);
-        setLoadingBook(false);
-        return;
-      }
+      if (!searchRes.ok) { setBookErr(searchJson.error ?? `No copy found for "${q}".`); setLoadingBook(false); return; }
       const match = searchJson.copy;
-      // Policy evaluation — parallel-start as soon as we have the copy id
       const evalRes = await fetch(`/api/library/policies/evaluate?studentId=${cardData.student.id}&copyId=${match.id}`);
       const evalJson = await evalRes.json();
       setEvalResult({ ...evalJson, copy: match });
@@ -191,17 +261,17 @@ export default function CirculatePage() {
     setLoadingBook(false);
   }, [cardData]);
 
-  // Live debounced lookup — fires 220 ms after the user stops typing so
-  // hardware scanners (which emit a full value instantly) get an immediate
-  // response and manual typers don't fire on every keystroke.
+  // Live debounced lookup for manual typing — 220ms
   const bookLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerLiveLookup = useCallback((q: string) => {
+  const onBookInputChange = (v: string) => {
+    setBookQuery(v);
+    setBookErr(null);
     if (bookLookupTimer.current) clearTimeout(bookLookupTimer.current);
-    if (!q.trim()) return;
-    bookLookupTimer.current = setTimeout(() => { doLookupBook(q); }, 220);
-  }, [doLookupBook]);
+    if (!v.trim() || !cardData) return;
+    bookLookupTimer.current = setTimeout(() => doLookupBook(v), 220);
+  };
 
-  // ── Determine available actions based on copy status ──────────────────
+  // ── Derived ───────────────────────────────────────────────────────────
   const copyStatus = evalResult?.copy?.status;
   const canBorrow  = copyStatus === "AVAILABLE" || copyStatus === "RESERVED";
   const canReturn  = copyStatus === "BORROWED";
@@ -222,16 +292,11 @@ export default function CirculatePage() {
           }),
         });
       } else if (action === "return") {
-        const activeBorrow = cardData.card.borrows.find(
-          b => !b.returnedAt && b.copy?.accessionNumber === evalResult.copy?.accessionNumber
-        );
+        const activeBorrow = cardData.card.borrows.find(b => !b.returnedAt && b.copy?.accessionNumber === evalResult.copy?.accessionNumber);
         if (!activeBorrow) { setActionErr("No active borrow found for this copy."); setActing(false); return; }
         res = await fetch("/api/library/circulate/return", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            borrowId: activeBorrow.id, returnType, returnCondition,
-            notes: returnNotes || undefined,
-          }),
+          body: JSON.stringify({ borrowId: activeBorrow.id, returnType, returnCondition, notes: returnNotes || undefined }),
         });
       } else {
         const activeBorrow = cardData.card.borrows.find(b => !b.returnedAt && b.copy?.accessionNumber === evalResult.copy?.accessionNumber);
@@ -250,7 +315,6 @@ export default function CirculatePage() {
       };
       setConfirm({ ok: true, text: msgs[action], extra: json.warnings?.[0] });
       setPhase("done");
-      // Reload card silently
       const cardRes = await fetch(`/api/library/cards/${cardData.student.id}`);
       if (cardRes.ok) setCardData(await cardRes.json());
     } catch { setActionErr("Network error. Please try again."); }
@@ -278,6 +342,7 @@ export default function CirculatePage() {
     setStudentQuery(""); setBookQuery(""); setConfirm(null); setStudentErr(null);
     setBookErr(null); setActionErr(null); setReturnType("NORMAL"); setReturnCondition("GOOD");
     setReturnNotes(""); setOverrideReason(""); setShowClearFine(false);
+    setBookMode("detecting");
   };
 
   const nextBook = () => {
@@ -290,28 +355,30 @@ export default function CirculatePage() {
   const activeBorrows = card?.borrows.filter(b => !b.returnedAt) ?? [];
   const history       = card?.borrows.filter(b => !!b.returnedAt) ?? [];
 
+  // ── Book mode badge ────────────────────────────────────────────────────
+  const bookModeBadge = bookMode === "hardware"
+    ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal bg-teal/10 border border-teal/20 rounded-lg px-2.5 py-1"><Usb className="h-3.5 w-3.5" />Hardware scanner active</span>
+    : bookMode === "detecting"
+    ? <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-2.5 py-1 bg-paper"><Loader2 className="h-3.5 w-3.5 animate-spin" />Detecting scanner…</span>
+    : <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-2.5 py-1 bg-paper"><Keyboard className="h-3.5 w-3.5" />Manual input</span>;
+
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-ink dark:text-dark-text">Circulation Desk</h1>
-          <p className="text-sm text-slate mt-0.5">4-step workflow — student → card → book → confirm.</p>
+          <p className="text-sm text-slate mt-0.5">Student → Book → Confirm</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-3 py-1.5 bg-paper">
-            {method === "QR_CAMERA" ? <Camera className="h-4 w-4" /> : method === "QR_HARDWARE" ? <Usb className="h-4 w-4" /> : <Keyboard className="h-4 w-4" />}
-            {method === "QR_CAMERA" ? "Camera QR" : method === "QR_HARDWARE" ? "Hardware Scanner" : "Manual"}
-          </span>
-          {cardData && <button onClick={resetAll} className={secondaryButtonClass}><X className="h-4 w-4" /> Clear</button>}
-        </div>
+        {cardData && <button onClick={resetAll} className={secondaryButtonClass}><X className="h-4 w-4" /> Clear</button>}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
-        {/* ── LEFT: Student panel (always visible once loaded) ── */}
+        {/* ── LEFT: Student panel ── */}
         <div className="xl:col-span-2 space-y-4">
 
-          {/* Step 1 — Student search */}
+          {/* Step 1 — Student search (always visible) */}
           <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border ${phase !== "student" && !cardData ? "opacity-50" : "border-line"}`}>
             <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">1</span>
@@ -320,22 +387,26 @@ export default function CirculatePage() {
             <form onSubmit={e => { e.preventDefault(); doStudentSearch(studentQuery); }}>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
-                <input ref={studentRef} className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
-                  placeholder="Name or admission number…" value={studentQuery}
-                  onChange={e => { setStudentQuery(e.target.value); if (!e.target.value) setSearchResults([]); }}
-                  autoComplete="off" />
+                <input
+                  ref={studentRef}
+                  className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                  placeholder="Name or admission number…"
+                  value={studentQuery}
+                  onChange={e => onStudentInputChange(e.target.value)}
+                  autoComplete="off"
+                />
               </div>
               {searching && <div className="mt-2 flex items-center gap-2 text-slate text-xs"><Loader2 className="h-3.5 w-3.5 animate-spin" />Searching…</div>}
             </form>
             {loadingCard && <div className="mt-2 flex items-center gap-2 text-slate text-sm"><Loader2 className="h-4 w-4 animate-spin" />Loading card…</div>}
             {studentErr && <div className="mt-2"><ErrorBanner message={studentErr} onDismiss={() => setStudentErr(null)} /></div>}
             {searchResults.length > 0 && (
-              <ul className="mt-2 rounded-xl border border-line bg-white shadow-sm divide-y divide-line overflow-hidden animate-scale-in">
+              <ul className="mt-2 rounded-xl border border-line bg-white shadow-sm divide-y divide-line overflow-hidden">
                 {searchResults.map(s => (
                   <li key={s.id}>
                     <button onClick={() => selectStudent(s)} className="w-full text-left px-4 py-3 hover:bg-teal-50/40 transition-colors flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-ink">{s.fullName}</p>
+                        <p className="text-sm font-semibold text-ink dark:text-dark-text">{s.fullName}</p>
                         <p className="text-xs text-slate">{s.admissionNumber} · {s.schoolClass.name}</p>
                       </div>
                       {s.libraryCard?.fineBalance ? <span className="text-xs text-danger font-semibold">KES {s.libraryCard.fineBalance.toFixed(2)}</span> : null}
@@ -346,15 +417,14 @@ export default function CirculatePage() {
             )}
           </div>
 
-          {/* Student card panel */}
+          {/* Student card panel — persistent once loaded */}
           {student && card && (
             <div className={`rounded-xl border p-5 space-y-4 ${card.status === "SUSPENDED" ? "border-warn/40 bg-warn-bg/20" : card.fineBalance > 0 ? "border-danger/30 bg-danger-bg/10" : "border-teal/30 bg-teal-50/20"}`}>
-              {/* Header */}
               <div className="flex items-start gap-4">
                 <StudentPhoto fileId={student.files?.[0]?.id} name={student.fullName} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-ink">{student.fullName}</p>
+                    <p className="font-bold text-ink dark:text-dark-text">{student.fullName}</p>
                     <Badge variant={cardStatusVariant(card.status)}>{card.status}</Badge>
                   </div>
                   <p className="text-sm text-slate font-mono">{student.admissionNumber}</p>
@@ -364,21 +434,19 @@ export default function CirculatePage() {
                 </div>
               </div>
 
-              {/* Stats row */}
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
                   { label: "Borrowed", value: card.currentBorrowCount, hi: false },
-                  { label: "Total", value: card.totalBorrowCount, hi: false },
+                  { label: "Total",    value: card.totalBorrowCount,   hi: false },
                   { label: "Fine (KES)", value: card.fineBalance.toFixed(2), hi: card.fineBalance > 0 },
                 ].map(s => (
-                  <div key={s.label} className={`rounded-lg px-2 py-2 border ${s.hi ? "border-danger/30 bg-danger-bg/40" : "border-line bg-white/70"}`}>
-                    <p className={`text-base font-bold ${s.hi ? "text-danger" : "text-ink"}`}>{s.value}</p>
+                  <div key={s.label} className={`rounded-lg px-2 py-2 border ${s.hi ? "border-danger/30 bg-danger-bg/40" : "border-line bg-white/70 dark:bg-dark-border/30"}`}>
+                    <p className={`text-base font-bold ${s.hi ? "text-danger" : "text-ink dark:text-dark-text"}`}>{s.value}</p>
                     <p className="text-[10px] text-slate">{s.label}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Clear fine */}
               {card.fineBalance > 0 && (
                 <div>
                   {!showClearFine ? (
@@ -386,7 +454,7 @@ export default function CirculatePage() {
                       <DollarSign className="h-3.5 w-3.5" /> Clear Fine (KES {card.fineBalance.toFixed(2)})
                     </button>
                   ) : (
-                    <div className="space-y-2 animate-slide-down">
+                    <div className="space-y-2">
                       <input className={inputClass} placeholder="Mandatory reason for clearing fine…" value={clearReason} onChange={e => setClearReason(e.target.value)} autoFocus />
                       <div className="flex gap-2">
                         <button onClick={handleClearFine} disabled={!clearReason.trim() || acting} className="inline-flex items-center gap-1.5 text-xs text-white bg-danger rounded-lg px-3 py-1.5 hover:bg-red-600 transition-colors disabled:opacity-50">
@@ -399,13 +467,12 @@ export default function CirculatePage() {
                 </div>
               )}
 
-              {/* Active borrows */}
               {activeBorrows.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">Active ({activeBorrows.length})</p>
                   <div className="space-y-1.5">
                     {activeBorrows.map(b => (
-                      <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30" : "border-line bg-white"}`}>
+                      <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30" : "border-line bg-white dark:bg-dark-surface"}`}>
                         <span className="truncate font-medium">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
                         <span className={`shrink-0 ml-2 ${isOverdue(b.dueAt, b.returnedAt) ? "text-danger font-bold" : "text-slate"}`}>
                           {isOverdue(b.dueAt, b.returnedAt) ? `${daysSince(b.dueAt)}d overdue` : `Due ${fmt(b.dueAt)}`}
@@ -416,7 +483,6 @@ export default function CirculatePage() {
                 </div>
               )}
 
-              {/* History toggle */}
               {history.length > 0 && (
                 <button onClick={() => setShowHistory(v => !v)} className="flex items-center gap-1 text-xs text-slate hover:text-ink transition-colors">
                   {showHistory ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -426,8 +492,8 @@ export default function CirculatePage() {
               {showHistory && (
                 <div className="space-y-1">
                   {history.slice(0, 10).map(b => (
-                    <div key={b.id} className="flex items-center justify-between text-xs border border-line rounded-lg px-3 py-2">
-                      <span className="truncate text-ink">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
+                    <div key={b.id} className="flex items-center justify-between text-xs border border-line rounded-lg px-3 py-2 dark:border-dark-border">
+                      <span className="truncate text-ink dark:text-dark-text">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
                       <span className="shrink-0 ml-2 text-slate">{fmt(b.returnedAt!)}</span>
                     </div>
                   ))}
@@ -437,28 +503,66 @@ export default function CirculatePage() {
           )}
         </div>
 
-        {/* ── RIGHT: Book scan + action panel ── */}
+        {/* ── RIGHT: Book input + action panel ── */}
         <div className="xl:col-span-3 space-y-4">
 
-          {/* Step 2 — Book scan */}
-          <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${phase === "student" && !cardData ? "opacity-40 pointer-events-none" : "border-line"}`}>
-            <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">2</span>
-              Scan Book
-            </p>
+          {/* Step 2 — Book input */}
+          <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${!cardData ? "opacity-40 pointer-events-none" : "border-line"}`}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-slate uppercase tracking-wide flex items-center gap-2">
+                <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                Scan Book
+              </p>
+              {/* Live mode indicator — only shown when a student is loaded */}
+              {cardData && (phase === "book" || phase === "eval" || phase === "done") && (
+                <div className="flex items-center gap-2">
+                  {bookModeBadge}
+                  {/* Manual toggle — always available as fallback */}
+                  {bookMode === "hardware" && (
+                    <button
+                      onClick={() => setBookMode("manual")}
+                      title="Switch to manual input"
+                      className="text-xs text-slate hover:text-ink underline underline-offset-2 transition-colors"
+                    >
+                      Type instead
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Hardware scanner active — show a large target area + manual fallback below */}
+            {bookMode === "hardware" && cardData && (phase === "book" || phase === "eval" || phase === "done") && (
+              <div className="mb-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-teal/30 bg-teal/5 py-8 gap-2">
+                <Usb className="h-8 w-8 text-teal/50" />
+                <p className="text-sm font-medium text-teal">Point scanner at book QR code</p>
+                <p className="text-xs text-slate">Scanner input detected — scanning in progress</p>
+              </div>
+            )}
+
+            {/* Detecting — brief spinner, then transitions to manual automatically */}
+            {bookMode === "detecting" && cardData && phase === "book" && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-slate">
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                Checking for connected scanner…
+              </div>
+            )}
+
+            {/* Manual text input — always shown (primary in manual mode, secondary fallback in hardware mode) */}
             <form onSubmit={e => { e.preventDefault(); doLookupBook(bookQuery); }}>
               <div className="relative">
                 <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
-                <input ref={bookRef} className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
-                  placeholder="Accession number or QR code…" value={bookQuery}
-                  onChange={e => {
-                    const v = e.target.value;
-                    setBookQuery(v);
-                    setBookErr(null);
-                    // Live lookup — fires 220 ms after typing stops
-                    if (phase === "book" && cardData) triggerLiveLookup(v);
-                  }}
-                  autoComplete="off" disabled={phase === "student" && !cardData} />
+                <input
+                  ref={bookRef}
+                  className={`w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text ${bookMode === "hardware" ? "opacity-60" : ""}`}
+                  placeholder={bookMode === "hardware" ? "Or type accession number manually…" : "Accession number, book number, or title…"}
+                  value={bookQuery}
+                  onChange={e => onBookInputChange(e.target.value)}
+                  onFocus={() => { if (bookMode === "hardware") setBookMode("manual"); }}
+                  autoComplete="off"
+                  disabled={!cardData}
+                />
+                {loadingBook && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />}
               </div>
               {bookQuery.trim() && (phase === "book" || phase === "done") && (
                 <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-2`}>
@@ -466,7 +570,8 @@ export default function CirculatePage() {
                 </button>
               )}
             </form>
-            {bookErr && <div className="mt-2"><ErrorBanner message={bookErr} onDismiss={() => setBookErr(null)} /></div>}
+
+            {bookErr && <div className="mt-3"><ErrorBanner message={bookErr} onDismiss={() => setBookErr(null)} /></div>}
           </div>
 
           {/* Step 3 — Policy evaluation + action */}
@@ -477,10 +582,9 @@ export default function CirculatePage() {
                 Book Identified
               </p>
 
-              {/* Copy details */}
-              <div className="flex items-start gap-3 p-3 rounded-xl border border-line bg-paper">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-line bg-paper dark:bg-dark-border/20">
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-ink">{evalResult.copy.catalogue?.title ?? "Unknown"}</p>
+                  <p className="font-bold text-ink dark:text-dark-text">{evalResult.copy.catalogue?.title ?? "Unknown"}</p>
                   <p className="text-xs font-mono text-slate mt-0.5">{evalResult.copy.accessionNumber}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -489,17 +593,13 @@ export default function CirculatePage() {
                 </div>
               </div>
 
-              {/* Block reasons */}
               {evalResult.reasons.length > 0 && (
                 <div className="rounded-xl bg-danger-bg border border-danger/20 p-4 space-y-2">
                   <p className="text-sm font-semibold text-danger flex items-center gap-2"><AlertCircle className="h-4 w-4" />Borrowing blocked</p>
-                  <ul className="space-y-1">
-                    {evalResult.reasons.map((r, i) => <li key={i} className="text-sm text-danger/90">• {r}</li>)}
-                  </ul>
+                  <ul className="space-y-1">{evalResult.reasons.map((r, i) => <li key={i} className="text-sm text-danger/90">• {r}</li>)}</ul>
                 </div>
               )}
 
-              {/* Warnings */}
               {evalResult.warnings.length > 0 && (
                 <div className="rounded-xl bg-warn-bg border border-warn/20 p-3 space-y-1">
                   {evalResult.warnings.map((w, i) => (
@@ -508,7 +608,6 @@ export default function CirculatePage() {
                 </div>
               )}
 
-              {/* Override */}
               {evalResult.reasons.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-slate">Override (with reason):</p>
@@ -516,7 +615,6 @@ export default function CirculatePage() {
                 </div>
               )}
 
-              {/* Confirm message */}
               {confirm && (
                 <div className={`flex items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium ${confirm.ok ? "bg-success-bg border border-success/20 text-success" : "bg-danger-bg border border-danger/20 text-danger"}`}>
                   {confirm.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />}
@@ -526,14 +624,13 @@ export default function CirculatePage() {
 
               {actionErr && <ErrorBanner message={actionErr} onDismiss={() => setActionErr(null)} />}
 
-              {/* Return options */}
               {selectedAction === "return" && (
-                <div className="space-y-3 animate-slide-down">
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate mb-1">Return type</label>
                       <select className={inputClass} value={returnType} onChange={e => setReturnType(e.target.value)}>
-                        {["NORMAL","DAMAGED","LOST","REPLACEMENT_RECEIVED","OVERRIDE"].map(t => <option key={t} value={t}>{t.replace("_"," ")}</option>)}
+                        {["NORMAL","DAMAGED","LOST","REPLACEMENT_RECEIVED","OVERRIDE"].map(t => <option key={t} value={t}>{t.replace(/_/g," ")}</option>)}
                       </select>
                     </div>
                     <div>
@@ -547,28 +644,30 @@ export default function CirculatePage() {
                 </div>
               )}
 
-              {/* Action buttons */}
               {phase !== "done" && (
                 <div className="flex flex-wrap gap-2">
                   {canBorrow && (
-                    <button onClick={() => { setSelectedAction("borrow"); handleAction("borrow"); }}
+                    <button
+                      onClick={() => { setSelectedAction("borrow"); handleAction("borrow"); }}
                       disabled={acting || (evalResult.reasons.length > 0 && !overrideReason.trim())}
-                      className={`${primaryButtonClass} ${evalResult.reasons.length > 0 ? "bg-warn hover:bg-amber-600" : ""}`}>
+                      className={`${primaryButtonClass} ${evalResult.reasons.length > 0 ? "bg-warn hover:bg-amber-600" : ""}`}
+                    >
                       {acting && selectedAction === "borrow" ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
                       {evalResult.reasons.length > 0 ? "Override Borrow" : "Borrow"}
                     </button>
                   )}
                   {canReturn && (
-                    <button onClick={() => selectedAction === "return" ? handleAction("return") : setSelectedAction("return")}
+                    <button
+                      onClick={() => selectedAction === "return" ? handleAction("return") : setSelectedAction("return")}
                       disabled={acting}
-                      className="inline-flex items-center gap-2 rounded-lg bg-success text-white text-sm font-medium px-4 py-2.5 hover:bg-green-600 disabled:opacity-50 transition-colors">
+                      className="inline-flex items-center gap-2 rounded-lg bg-success text-white text-sm font-medium px-4 py-2.5 hover:bg-green-600 disabled:opacity-50 transition-colors"
+                    >
                       {acting && selectedAction === "return" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                       {selectedAction === "return" ? "Confirm Return" : "Return"}
                     </button>
                   )}
                   {canRenew && (
-                    <button onClick={() => { setSelectedAction("renew"); handleAction("renew"); }} disabled={acting}
-                      className={secondaryButtonClass}>
+                    <button onClick={() => { setSelectedAction("renew"); handleAction("renew"); }} disabled={acting} className={secondaryButtonClass}>
                       {acting && selectedAction === "renew" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       Renew
                     </button>
@@ -588,24 +687,27 @@ export default function CirculatePage() {
             </div>
           )}
 
-          {/* Idle hint */}
+          {/* Idle hints */}
           {!cardData && phase === "student" && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="h-16 w-16 rounded-full bg-teal/10 flex items-center justify-center mb-4">
                 <CreditCard className="h-8 w-8 text-teal/50" />
               </div>
-              <p className="text-sm text-slate max-w-xs">Search for a student to open their library card, then scan the book to borrow, return or renew.</p>
+              <p className="text-sm text-slate max-w-xs">Search for a student by name or admission number, then scan or type the book to borrow, return or renew.</p>
               <Link href="/staff/library/reservations" className="text-xs text-teal hover:underline mt-3">View reservations →</Link>
             </div>
           )}
 
-          {/* Step 2 idle hint */}
           {cardData && phase === "book" && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="h-12 w-12 rounded-full bg-teal/10 flex items-center justify-center mb-3">
                 <BookOpen className="h-6 w-6 text-teal/50" />
               </div>
-              <p className="text-sm text-slate">Now scan the book&apos;s QR code or type its accession number.</p>
+              <p className="text-sm text-slate">
+                {bookMode === "hardware"
+                  ? "Scan the book's QR code with the connected scanner."
+                  : "Type the book's accession number, book number, or title above."}
+              </p>
             </div>
           )}
         </div>

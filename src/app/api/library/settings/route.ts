@@ -20,7 +20,6 @@ const DEFAULT_SETTINGS = {
   maxBorrowDays:       14,
   finePerDay:          5.0,
   maxRenewals:         1,
-  identificationMethod:"MANUAL",
   barcodeEnabled:      false,
   eligibleFromForm:    null,
   cardValidityDays:    null,
@@ -43,7 +42,6 @@ const updateSchema = z.object({
   maxBorrowDays:       z.coerce.number().int().min(1).max(365),
   finePerDay:          z.coerce.number().min(0).max(10_000),
   maxRenewals:         z.coerce.number().int().min(0).max(10).optional(),
-  identificationMethod:z.enum(["MANUAL", "QR_CAMERA", "QR_HARDWARE"]).optional(),
   barcodeEnabled:      z.boolean().optional(),
   eligibleFromForm:    z.coerce.number().int().min(1).max(8).optional().nullable(),
   cardValidityDays:    z.coerce.number().int().min(1).max(3650).optional().nullable(),
@@ -64,13 +62,12 @@ export async function PUT(req: NextRequest) {
   const d = parsed.data;
   const settings = await prisma.librarySettings.upsert({
     where:  { schoolId: user.schoolId! },
-    create: { schoolId: user.schoolId!, ...d, identificationMethod: (d.identificationMethod ?? "MANUAL") as never },
+    create: { schoolId: user.schoolId!, ...d },
     update: {
       maxBooksPerStudent:   d.maxBooksPerStudent,
       maxBorrowDays:        d.maxBorrowDays,
       finePerDay:           d.finePerDay,
       ...(d.maxRenewals         !== undefined && { maxRenewals:         d.maxRenewals }),
-      ...(d.identificationMethod !== undefined && { identificationMethod: d.identificationMethod as never }),
       ...(d.barcodeEnabled      !== undefined && { barcodeEnabled:      d.barcodeEnabled }),
       ...(d.eligibleFromForm    !== undefined && { eligibleFromForm:    d.eligibleFromForm }),
       ...(d.cardValidityDays    !== undefined && { cardValidityDays:    d.cardValidityDays }),
