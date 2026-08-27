@@ -203,17 +203,27 @@ export default function CirculatePage() {
     if (phase === "book" && bookMode === "manual") setTimeout(() => bookRef.current?.focus(), 50);
   }, [phase, bookMode]);
 
-  // When entering book phase, start the 500ms detection window.
-  // If no scanner fires within that window, drop to manual mode.
+  // When entering book phase:
+  // - On desktop (no touch): run 500ms hardware-scanner detection window
+  // - On mobile/tablet (touch device): skip detection, go straight to manual
+  //   (camera icon is available for QR scanning on mobile)
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
   useEffect(() => {
     if (phase !== "book") return;
+    if (isMobile) {
+      // Mobile: no hardware scanner — go straight to manual input
+      setBookMode("manual");
+      return;
+    }
+    // Desktop: listen for HID scanner burst for 500ms
     setBookMode("detecting");
     if (detectTimerRef.current) clearTimeout(detectTimerRef.current);
     detectTimerRef.current = setTimeout(() => {
       setBookMode(prev => prev === "detecting" ? "manual" : prev);
     }, 500);
     return () => { if (detectTimerRef.current) clearTimeout(detectTimerRef.current); };
-  }, [phase]);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Student search ────────────────────────────────────────────────────
   const doStudentSearch = useCallback(async (q: string) => {
@@ -406,7 +416,7 @@ export default function CirculatePage() {
     if (!BD) return; // fallback: user must type after scanning with camera
 
     let detector: any;
-    try { detector = new BD({ formats: ["qr_code", "code_128", "ean_13", "ean_8"] }); }
+    try { detector = new BD({ formats: ["qr_code"] }); }
     catch { return; }
 
     let running = true;
