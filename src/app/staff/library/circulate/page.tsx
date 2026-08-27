@@ -30,7 +30,7 @@ import Link from "next/link";
 import {
   Search, User, BookOpen, RotateCcw, CheckCircle2, AlertCircle,
   AlertTriangle, Loader2, X, Usb, Keyboard, DollarSign,
-  Shield, ChevronDown, ChevronUp, CreditCard, RefreshCw,
+  Shield, ChevronDown, ChevronUp, CreditCard, RefreshCw, QrCode, Camera,
 } from "lucide-react";
 import {
   Badge, ErrorBanner,
@@ -185,6 +185,15 @@ export default function CirculatePage() {
   // "manual"     — no scanner detected, using live-search text input
   const [bookMode, setBookMode] = useState<"detecting"|"hardware"|"manual">("detecting");
   const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Camera / QR scan mode (mobile web)
+  const [cameraActive, setCameraActive]   = useState(false);
+  const [cameraError, setCameraError]     = useState<string | null>(null);
+  const [cameraScanning, setCameraScanning] = useState(false);
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const streamRef   = useRef<MediaStream | null>(null);
+  const rafRef      = useRef<number | null>(null);
+  const canvasRef   = useRef<HTMLCanvasElement>(null);
 
   const studentRef = useRef<HTMLInputElement>(null);
   const bookRef    = useRef<HTMLInputElement>(null);
@@ -352,6 +361,84 @@ export default function CirculatePage() {
     setPhase("book"); setEvalResult(null); setSelectedAction(null); setBookQuery("");
     setConfirm(null); setBookErr(null); setActionErr(null);
   };
+
+  // ── Camera helpers ────────────────────────────────────────────────────
+  const stopCamera = useCallback(() => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    setCameraActive(false);
+    setCameraError(null);
+    setCameraScanning(false);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+      setCameraActive(true);
+      // give react time to mount the video element
+      setTimeout(() => {
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 80);
+    } catch (err: any) {
+      setCameraError(err?.message?.includes("Permission") || err?.name === "NotAllowedError"
+        ? "Camera permission denied. Please allow camera access in your browser."
+        : "Could not open camera. Try typing the accession number instead.");
+    }
+  }, []);
+
+  const toggleCamera = useCallback(() => {
+    if (cameraActive) { stopCamera(); }
+    else { startCamera(); }
+  }, [cameraActive, startCamera, stopCamera]);
+
+  // BarcodeDetector scanning loop
+  useEffect(() => {
+    if (!cameraActive) return;
+    if (typeof window === "undefined") return;
+    const BD = (window as any).BarcodeDetector;
+    if (!BD) return; // fallback: user must type after scanning with camera
+
+    let detector: any;
+    try { detector = new BD({ formats: ["qr_code", "code_128", "ean_13", "ean_8"] }); }
+    catch { return; }
+
+    let running = true;
+    const tick = async () => {
+      if (!running || !videoRef.current || videoRef.current.readyState < 2) {
+        if (running) rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      try {
+        const barcodes = await detector.detect(videoRef.current);
+        if (barcodes.length > 0) {
+          const raw = barcodes[0].rawValue as string;
+          const accession = raw.startsWith("BIDII:BOOK:") ? raw.slice(11)
+                          : raw.startsWith("BIDII:")       ? raw.slice(6)
+                          : raw;
+          setCameraScanning(true);
+          stopCamera();
+          setBookQuery(accession);
+          doLookupBook(accession);
+          return;
+        }
+      } catch { /* detector errors are non-fatal */ }
+      if (running) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { running = false; if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [cameraActive, stopCamera, doLookupBook]);
+
+  // Stop camera when leaving book phase
+  useEffect(() => {
+    if (phase !== "book") stopCamera();
+  }, [phase, stopCamera]);
 
   const card    = cardData?.card;
   const student = cardData?.student;
@@ -557,17 +644,87 @@ export default function CirculatePage() {
                 <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
                 <input
                   ref={bookRef}
-                  className={`w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text ${bookMode === "hardware" ? "opacity-60" : ""}`}
-                  placeholder={bookMode === "hardware" ? "Or type accession number manually…" : "Accession number, book number, or title…"}
+                  className={`w-full rounded-lg border border-line bg-white pl-10 pr-10 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text ${bookMode === "hardware" ? "opacity-60" : ""}`}
+                  placeholder={bookMode === "hardware" ? "Or type accession number manually…" : "Title, accession number or author…"}
                   value={bookQuery}
                   onChange={e => onBookInputChange(e.target.value)}
                   onFocus={() => { if (bookMode === "hardware") setBookMode("manual"); }}
                   autoComplete="off"
                   disabled={!cardData}
                 />
-                {loadingBook && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />}
+                {loadingBook
+                  ? <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />
+                  : cardData && (
+                    <button
+                      type="button"
+                      onClick={toggleCamera}
+                      title={cameraActive ? "Close camera" : "Scan with camera"}
+                      className={`absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 transition-colors ${cameraActive ? "bg-teal text-white" : "text-slate hover:text-teal hover:bg-teal/10"}`}
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </button>
+                  )
+                }
               </div>
-              {bookQuery.trim() && (phase === "book" || phase === "done") && (
+
+              {/* Camera viewfinder */}
+              {cameraActive && (
+                <div className="mt-3 relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "4/3", maxHeight: 320 }}>
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
+                  {/* Hidden canvas for BarcodeDetector */}
+                  <canvas ref={canvasRef} className="hidden" />
+                  {/* Corner brackets overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="relative w-48 h-48">
+                      {(["tl","tr","bl","br"] as const).map(c => (
+                        <div key={c} className="absolute w-8 h-8" style={{
+                          top:    c.includes("t") ? 0 : "auto",
+                          bottom: c.includes("b") ? 0 : "auto",
+                          left:   c.includes("l") ? 0 : "auto",
+                          right:  c.includes("r") ? 0 : "auto",
+                          borderColor: "#0d9488",
+                          borderTopWidth:    c.includes("t") ? 3 : 0,
+                          borderBottomWidth: c.includes("b") ? 3 : 0,
+                          borderLeftWidth:   c.includes("l") ? 3 : 0,
+                          borderRightWidth:  c.includes("r") ? 3 : 0,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Hint */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 rounded-full px-3 py-1">
+                    <p className="text-white text-xs whitespace-nowrap">Point at book QR code</p>
+                  </div>
+                  {/* Close button */}
+                  <button type="button" onClick={stopCamera} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Camera error */}
+              {cameraError && (
+                <p className="mt-2 text-xs text-danger flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />{cameraError}
+                </p>
+              )}
+
+              {/* Scan mode toggle pill (below input) */}
+              {cardData && !cameraActive && bookMode !== "hardware" && (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-slate">Scan Mode</span>
+                  <button
+                    type="button"
+                    onClick={toggleCamera}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${cameraActive ? "bg-teal" : "bg-slate/30"}`}
+                  >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${cameraActive ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+              )}
+
+              {bookQuery.trim() && !cameraActive && (phase === "book" || phase === "done") && (
                 <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-2`}>
                   {loadingBook ? <><Loader2 className="h-4 w-4 animate-spin" />Looking up…</> : <><BookOpen className="h-4 w-4" />Find Book</>}
                 </button>
@@ -709,7 +866,7 @@ export default function CirculatePage() {
               <p className="text-sm text-slate">
                 {bookMode === "hardware"
                   ? "Scan the book's QR code with the connected scanner."
-                  : "Type the book's accession number, book number, or title above."}
+                  : "Tap the camera icon to scan a QR code, or type the accession number above."}
               </p>
             </div>
           )}
