@@ -215,6 +215,7 @@ export default function ScanModePage() {
   const [bookErr, setBookErr]     = useState<string | null>(null);
   const [confirm, setConfirm]     = useState<ConfirmMsg | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [scanModeOn, setScanModeOn]     = useState(false);
   const [barcodeDetectorAvailable, setBarcodeDetectorAvailable] = useState<boolean | null>(null);
 
   // ── Live search state ──────────────────────────────────────────────────
@@ -445,6 +446,8 @@ export default function ScanModePage() {
         // Auto-reset to book scan after 2.5 s (keep student loaded)
         setTimeout(() => {
           setCopyInfo(null); setBookInput(""); setBookErr(null); setConfirm(null); setPhase("book");
+          // Re-open camera if scan mode is still on
+          if (scanModeOn) startCamera();
         }, 2500);
       }
     } catch { setConfirm({ ok: false, text: "Network error. Please try again." }); }
@@ -459,6 +462,7 @@ export default function ScanModePage() {
     setBookSuggestions([]);    setShowBookDrop(false);
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     stopCamera();
+    setScanModeOn(false);
   }
 
   // ── Camera ─────────────────────────────────────────────────────────────
@@ -525,6 +529,28 @@ export default function ScanModePage() {
     setCameraActive(false);
   }
 
+  // Toggle scan mode on/off — opening/closing the camera
+  function toggleScanMode() {
+    if (scanModeOn) {
+      stopCamera();
+      setScanModeOn(false);
+    } else {
+      setScanModeOn(true);
+      startCamera();
+    }
+  }
+
+  // Auto-open camera when arriving at book phase if scan mode is on
+  useEffect(() => {
+    if (phase === "book" && scanModeOn) {
+      startCamera();
+    }
+    if (phase !== "book") {
+      stopCamera();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   // QR decoding via BarcodeDetector API (Chrome 83+, Edge 83+, Safari iOS 17+).
   // Falls back gracefully — if unavailable the video stays live and the user
   // reads the code visually, then types it manually.
@@ -541,7 +567,7 @@ export default function ScanModePage() {
 
     let detector: { detect: (src: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> };
     try {
-      detector = new BD({ formats: ["qr_code", "code_128", "ean_13", "ean_8"] });
+      detector = new BD({ formats: ["qr_code"] });
     } catch {
       return;
     }
@@ -702,52 +728,115 @@ export default function ScanModePage() {
         {/* ── Right: Book scan + action ── */}
         <div className="space-y-4">
           <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${phase === "book" || phase === "confirm" ? "border-line opacity-100" : "border-line opacity-40 pointer-events-none"}`}>
-            <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">2</span>
-              Scan Book
-            </p>
+
+            {/* Header: label + Scan Mode toggle switch */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-slate uppercase tracking-wide flex items-center gap-2">
+                <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                Scan Book
+              </p>
+              {/* Scan Mode toggle — always visible once student selected */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium ${scanModeOn ? "text-teal" : "text-slate"}`}>
+                  Scan Mode
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleScanMode}
+                  disabled={phase === "student"}
+                  aria-pressed={scanModeOn}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none disabled:opacity-40 ${scanModeOn ? "bg-teal" : "bg-slate/30"}`}
+                >
+                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+            </div>
 
             <form onSubmit={e => { e.preventDefault(); selectBookByAccession(bookInput); }}>
-              <div className="relative">
-                <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
+              {/* Input row with camera icon always on right */}
+              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-line"}`}>
+                <BookOpen className="ml-3 h-4 w-4 shrink-0 text-slate/50" />
                 <input
                   ref={bookRef}
-                  className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-3 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
-                  placeholder="Title, accession number or author…"
+                  className="flex-1 bg-transparent px-2.5 py-3 text-sm text-ink placeholder:text-slate/50 focus:outline-none dark:text-dark-text"
+                  placeholder={scanModeOn ? "Scanning — point camera at QR code…" : "Title, accession number or author…"}
                   value={bookInput}
                   onChange={e => onBookInputChange(e.target.value)}
                   onFocus={() => bookSuggestions.length > 0 && setShowBookDrop(true)}
                   autoComplete="off"
                   disabled={phase === "student"}
+                  readOnly={scanModeOn}
                 />
-                {loadingBook && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />
-                )}
-                {/* Live dropdown */}
-                {showBookDrop && bookSuggestions.length > 0 && (
-                  <div ref={bookDropRef} className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-line bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border overflow-hidden">
-                    {bookSuggestions.map(copy => (
-                      <button
-                        key={copy.id}
-                        type="button"
-                        onMouseDown={e => { e.preventDefault(); selectBookFromDrop(copy); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-teal-50 dark:hover:bg-teal/10 transition-colors text-left"
-                      >
-                        <BookCover title={copy.catalogue.title} subject={copy.catalogue.subject} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{copy.catalogue.title}</p>
-                          <p className="text-xs text-slate dark:text-dark-muted">{copy.accessionNumber} · {copy.status}</p>
-                          {copy.catalogue.author && <p className="text-xs text-slate/70 dark:text-dark-muted/70 truncate">{copy.catalogue.author}</p>}
-                        </div>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${copy.status === "AVAILABLE" ? "bg-success-bg text-success" : "bg-warn-bg text-warn"}`}>
-                          {copy.status}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Camera icon button — always visible, tap = toggle scan mode */}
+                {loadingBook
+                  ? <Loader2 className="mr-3 h-4 w-4 shrink-0 text-teal animate-spin" />
+                  : (
+                    <button
+                      type="button"
+                      onClick={toggleScanMode}
+                      disabled={phase === "student"}
+                      title={scanModeOn ? "Close camera" : "Scan with camera"}
+                      className={`mr-2 rounded-full p-1.5 transition-colors disabled:opacity-40 ${scanModeOn ? "bg-teal text-white" : "text-slate hover:bg-teal/10 hover:text-teal"}`}
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </button>
+                  )
+                }
               </div>
-              {bookInput.trim() && phase === "book" && !showBookDrop && (
+
+              {/* Camera viewfinder */}
+              {cameraActive && (
+                <div className="mt-3 relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "4/3", maxHeight: 300 }}>
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
+                  {/* Corner brackets */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="relative w-48 h-48">
+                      {(["tl","tr","bl","br"] as const).map(c => (
+                        <div key={c} className="absolute w-8 h-8" style={{
+                          top: c.includes("t") ? 0 : "auto", bottom: c.includes("b") ? 0 : "auto",
+                          left: c.includes("l") ? 0 : "auto", right: c.includes("r") ? 0 : "auto",
+                          borderColor: "#0d9488",
+                          borderTopWidth: c.includes("t") ? 3 : 0, borderBottomWidth: c.includes("b") ? 3 : 0,
+                          borderLeftWidth: c.includes("l") ? 3 : 0, borderRightWidth: c.includes("r") ? 3 : 0,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 rounded-full px-3 py-1">
+                    <p className="text-white text-xs whitespace-nowrap">Point at book QR code</p>
+                  </div>
+                  <button type="button" onClick={() => { stopCamera(); setScanModeOn(false); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Dropdown suggestions */}
+              {showBookDrop && bookSuggestions.length > 0 && (
+                <div ref={bookDropRef} className="relative mt-1 z-50 rounded-xl border border-line bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border overflow-hidden">
+                  {bookSuggestions.map(copy => (
+                    <button
+                      key={copy.id}
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); selectBookFromDrop(copy); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-teal-50 dark:hover:bg-teal/10 transition-colors text-left"
+                    >
+                      <BookCover title={copy.catalogue.title} subject={copy.catalogue.subject} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{copy.catalogue.title}</p>
+                        <p className="text-xs text-slate dark:text-dark-muted">{copy.accessionNumber} · {copy.status}</p>
+                        {copy.catalogue.author && <p className="text-xs text-slate/70 dark:text-dark-muted/70 truncate">{copy.catalogue.author}</p>}
+                      </div>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${copy.status === "AVAILABLE" ? "bg-success-bg text-success" : "bg-warn-bg text-warn"}`}>
+                        {copy.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {bookInput.trim() && phase === "book" && !showBookDrop && !scanModeOn && (
                 <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-2 w-full justify-center`}>
                   {loadingBook ? <><Loader2 className="h-4 w-4 animate-spin" />Looking up…</> : <><QrCode className="h-4 w-4" />Find Book</>}
                 </button>
