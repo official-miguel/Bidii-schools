@@ -187,6 +187,9 @@ export default function CirculatePage() {
   const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Camera / QR scan mode (mobile web)
+  // scanModeOn = user's toggle preference (persists across book lookups)
+  // cameraActive = camera stream is actually running right now
+  const [scanModeOn, setScanModeOn]       = useState(false);
   const [cameraActive, setCameraActive]   = useState(false);
   const [cameraError, setCameraError]     = useState<string | null>(null);
   const [cameraScanning, setCameraScanning] = useState(false);
@@ -364,12 +367,14 @@ export default function CirculatePage() {
     setStudentQuery(""); setBookQuery(""); setConfirm(null); setStudentErr(null);
     setBookErr(null); setActionErr(null); setReturnType("NORMAL"); setReturnCondition("GOOD");
     setReturnNotes(""); setOverrideReason(""); setShowClearFine(false);
-    setBookMode("detecting");
+    setBookMode("detecting"); setScanModeOn(false); stopCamera();
   };
 
   const nextBook = () => {
     setPhase("book"); setEvalResult(null); setSelectedAction(null); setBookQuery("");
     setConfirm(null); setBookErr(null); setActionErr(null);
+    // If scan mode is on, re-open camera for next book
+    if (scanModeOn) startCamera();
   };
 
   // ── Camera helpers ────────────────────────────────────────────────────
@@ -400,13 +405,22 @@ export default function CirculatePage() {
       setCameraError(err?.message?.includes("Permission") || err?.name === "NotAllowedError"
         ? "Camera permission denied. Please allow camera access in your browser."
         : "Could not open camera. Try typing the accession number instead.");
+      setScanModeOn(false);
     }
   }, []);
 
-  const toggleCamera = useCallback(() => {
-    if (cameraActive) { stopCamera(); }
-    else { startCamera(); }
-  }, [cameraActive, startCamera, stopCamera]);
+  // Toggle the scan mode switch — turning ON opens camera, turning OFF closes it
+  const toggleScanMode = useCallback(() => {
+    setScanModeOn(prev => {
+      const next = !prev;
+      if (next) { startCamera(); }
+      else { stopCamera(); }
+      return next;
+    });
+  }, [startCamera, stopCamera]);
+
+  // Keep toggleCamera as alias for backward compat in JSX
+  const toggleCamera = toggleScanMode;
 
   // BarcodeDetector scanning loop
   useEffect(() => {
@@ -448,7 +462,9 @@ export default function CirculatePage() {
   // Stop camera when leaving book phase
   useEffect(() => {
     if (phase !== "book") stopCamera();
-  }, [phase, stopCamera]);
+    // If scan mode toggle is ON when we arrive at book phase, open camera automatically
+    if (phase === "book" && scanModeOn) startCamera();
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const card    = cardData?.card;
   const student = cardData?.student;
@@ -626,16 +642,16 @@ export default function CirculatePage() {
               {/* Scan Mode toggle switch — shown on non-hardware mode */}
               {bookMode !== "hardware" && (
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${cameraActive ? "text-teal" : "text-slate"}`}>
+                  <span className={`text-xs font-medium ${scanModeOn ? "text-teal" : "text-slate"}`}>
                     Scan Mode
                   </span>
                   <button
                     type="button"
-                    onClick={toggleCamera}
-                    aria-pressed={cameraActive}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal ${cameraActive ? "bg-teal" : "bg-slate/30"}`}
+                    onClick={toggleScanMode}
+                    aria-pressed={scanModeOn}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal ${scanModeOn ? "bg-teal" : "bg-slate/30"}`}
                   >
-                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${cameraActive ? "translate-x-5" : "translate-x-0.5"}`} />
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </div>
               )}
@@ -660,13 +676,13 @@ export default function CirculatePage() {
 
             <form onSubmit={e => { e.preventDefault(); doLookupBook(bookQuery); }}>
               {/* Input with camera icon button always on the right */}
-              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${cameraActive ? "border-teal ring-2 ring-teal/15" : "border-line"} ${bookMode === "hardware" ? "opacity-60" : ""}`}>
+              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-line"} ${bookMode === "hardware" ? "opacity-60" : ""}`}>
                 <BookOpen className="ml-3 h-4 w-4 shrink-0 text-slate/50" />
                 <input
                   ref={bookRef}
                   className="flex-1 bg-transparent px-2.5 py-2.5 text-sm text-ink placeholder:text-slate/50 focus:outline-none dark:text-dark-text"
                   placeholder={
-                    cameraActive ? "Scanning — point camera at QR code…" :
+                    scanModeOn ? "Scanning — point camera at QR code…" :
                     bookMode === "hardware" ? "Or type accession number…" :
                     "Title, accession number or author…"
                   }
@@ -675,18 +691,18 @@ export default function CirculatePage() {
                   onFocus={() => { if (bookMode === "hardware") setBookMode("manual"); }}
                   autoComplete="off"
                   disabled={!cardData}
-                  readOnly={cameraActive}
+                  readOnly={scanModeOn}
                 />
-                {/* Camera icon — always visible, acts as toggle */}
+                {/* Camera icon — always visible, taps toggle scan mode */}
                 {loadingBook
                   ? <Loader2 className="mr-3 h-4 w-4 shrink-0 text-teal animate-spin" />
                   : (
                     <button
                       type="button"
-                      onClick={toggleCamera}
-                      title={cameraActive ? "Close camera" : "Scan QR code with camera"}
+                      onClick={toggleScanMode}
+                      title={scanModeOn ? "Close camera" : "Scan QR code with camera"}
                       disabled={!cardData}
-                      className={`mr-2 rounded-full p-1.5 transition-colors disabled:opacity-40 ${cameraActive ? "bg-teal text-white" : "text-slate hover:bg-teal/10 hover:text-teal"}`}
+                      className={`mr-2 rounded-full p-1.5 transition-colors disabled:opacity-40 ${scanModeOn ? "bg-teal text-white" : "text-slate hover:bg-teal/10 hover:text-teal"}`}
                     >
                       <QrCode className="h-4 w-4" />
                     </button>
@@ -735,8 +751,8 @@ export default function CirculatePage() {
                 </p>
               )}
 
-              {/* Find Book button — shown when typed query exists and camera is off */}
-              {bookQuery.trim() && !cameraActive && (phase === "book" || phase === "done") && (
+              {/* Find Book button — shown when typed query exists and scan mode is off */}
+              {bookQuery.trim() && !scanModeOn && (phase === "book" || phase === "done") && (
                 <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-3 w-full`}>
                   {loadingBook ? <><Loader2 className="h-4 w-4 animate-spin" />Looking up…</> : <><BookOpen className="h-4 w-4" />Find Book</>}
                 </button>
