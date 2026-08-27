@@ -23,7 +23,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import {
   BookOpen, User, CheckCircle2,
-  AlertCircle, AlertTriangle, X, QrCode, Keyboard,
+  AlertCircle, AlertTriangle, X, QrCode,
 } from 'lucide-react-native';
 import {
   ScreenHeader, SearchBar, Card, Avatar, Button,
@@ -166,7 +166,7 @@ export default function CirculateScreen() {
                     : raw.startsWith('BIDII:')       ? raw.slice(6)
                     : raw;
     setBookQuery(accession);
-    setBookInputMode('keyboard'); // show what was scanned
+    // keep camera open visually but switch to keyboard to show scanned value
     lookupBook(accession);
   }, [searchingBook, lookupBook]);
 
@@ -281,7 +281,7 @@ export default function CirculateScreen() {
                 </Text>
                 <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign: 'center', paddingHorizontal: Spacing[6] }}>
                   Type their name or admission number above.{'\n'}
-                  The camera opens for the book scan after you select them.
+                  After selecting them, tap the camera icon or toggle Scan Mode to scan a book QR code, or type the accession number directly.
                 </Text>
               </View>
             )}
@@ -297,32 +297,80 @@ export default function CirculateScreen() {
         {phase === 'book' && (
           <View style={{ gap: Spacing[3] }}>
 
-            {/* Camera / keyboard toggle */}
-            <View style={{
-              flexDirection: 'row', backgroundColor: Colors.card,
-              borderRadius: Radius.button, padding: 3,
-              borderWidth: 1, borderColor: Colors.line,
-            }}>
-              {(['camera', 'keyboard'] as BookInputMode[]).map(mode => (
+            {/* Book input row — text field with camera icon tap, plus scan mode toggle switch */}
+            <View style={{ gap: Spacing[2] }}>
+
+              {/* Label row with scan-mode toggle switch */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  Search Book
+                </Text>
+                {/* Scan mode switch */}
                 <TouchableOpacity
-                  key={mode}
-                  onPress={() => setBookInputMode(mode)}
+                  onPress={() => setBookInputMode(bookInputMode === 'camera' ? 'keyboard' : 'camera')}
+                  activeOpacity={0.75}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[1.5] }}
+                >
+                  <Text style={{ fontSize: Typography.fontSize.xs, color: bookInputMode === 'camera' ? Colors.teal : Colors.slateText, fontWeight: Typography.fontWeight.semibold }}>
+                    Scan Mode
+                  </Text>
+                  {/* pill toggle */}
+                  <View style={{
+                    width: 44, height: 24, borderRadius: 12,
+                    backgroundColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                    justifyContent: 'center',
+                    paddingHorizontal: 2,
+                  }}>
+                    <View style={{
+                      width: 20, height: 20, borderRadius: 10,
+                      backgroundColor: Colors.white,
+                      alignSelf: bookInputMode === 'camera' ? 'flex-end' : 'flex-start',
+                      shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2,
+                      elevation: 2,
+                    }} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Input field with camera icon */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: Colors.card,
+                borderRadius: Radius.button,
+                borderWidth: 1, borderColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                paddingHorizontal: Spacing[3],
+                height: 48,
+              }}>
+                <BookOpen size={18} color={Colors.slateText} style={{ marginRight: Spacing[2] }} />
+                <TextInput
+                  style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.ink }}
+                  value={bookQuery}
+                  onChangeText={setBookQuery}
+                  placeholder="Title, accession number or author…"
+                  placeholderTextColor={Colors.muted}
+                  editable={bookInputMode === 'keyboard'}
+                  autoFocus={bookInputMode === 'keyboard'}
+                />
+                {/* Camera icon — tapping switches to scan mode */}
+                <TouchableOpacity
+                  onPress={() => setBookInputMode(bookInputMode === 'camera' ? 'keyboard' : 'camera')}
+                  hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                   style={{
-                    flex: 1, flexDirection: 'row', alignItems: 'center',
-                    justifyContent: 'center', gap: Spacing[1.5],
-                    paddingVertical: Spacing[2], borderRadius: Radius.button - 2,
-                    backgroundColor: bookInputMode === mode ? Colors.teal : 'transparent',
+                    marginLeft: Spacing[2],
+                    backgroundColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                    borderRadius: Radius.full,
+                    padding: Spacing[1.5],
                   }}
                 >
-                  {mode === 'camera'
-                    ? <QrCode size={15} color={bookInputMode === mode ? Colors.white : Colors.slateText} />
-                    : <Keyboard size={15} color={bookInputMode === mode ? Colors.white : Colors.slateText} />
-                  }
-                  <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: bookInputMode === mode ? Colors.white : Colors.slateText }}>
-                    {mode === 'camera' ? 'Scan QR' : 'Type Code'}
-                  </Text>
+                  <QrCode size={18} color={bookInputMode === 'camera' ? Colors.white : Colors.slateText} />
                 </TouchableOpacity>
-              ))}
+              </View>
+
+              {bookInputMode === 'camera' && (
+                <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.teal, textAlign: 'center' }}>
+                  Scan mode active — point camera at book QR code
+                </Text>
+              )}
             </View>
 
             {/* Camera — only mounted here (phase=book), never on load */}
@@ -368,17 +416,6 @@ export default function CirculateScreen() {
                   <Button label="Enable Camera" onPress={requestPermission} size="sm" />
                 </View>
               )
-            )}
-
-            {/* Manual text input */}
-            {bookInputMode === 'keyboard' && (
-              <SearchBar
-                value={bookQuery}
-                onChangeText={setBookQuery}
-                placeholder="Accession number (e.g. ACC-00145)…"
-                loading={searchingBook}
-                autoFocus
-              />
             )}
 
             {bookErr && <ErrorBanner message={bookErr} onDismiss={() => setBookErr(null)} />}
