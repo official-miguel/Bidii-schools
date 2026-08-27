@@ -456,11 +456,6 @@ export default function CirculatePage() {
   const history       = card?.borrows.filter(b => !!b.returnedAt) ?? [];
 
   // ── Book mode badge ────────────────────────────────────────────────────
-  const bookModeBadge = bookMode === "hardware"
-    ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal bg-teal/10 border border-teal/20 rounded-lg px-2.5 py-1"><Usb className="h-3.5 w-3.5" />Hardware scanner active</span>
-    : bookMode === "detecting"
-    ? <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-2.5 py-1 bg-paper"><Loader2 className="h-3.5 w-3.5 animate-spin" />Detecting scanner…</span>
-    : <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-2.5 py-1 bg-paper"><Keyboard className="h-3.5 w-3.5" />Manual input</span>;
 
   return (
     <div>
@@ -608,68 +603,90 @@ export default function CirculatePage() {
 
           {/* Step 2 — Book input */}
           <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${!cardData ? "opacity-40 pointer-events-none" : "border-line"}`}>
+
+            {/* Header row: label + scan mode switch (always visible) */}
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-slate uppercase tracking-wide flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">2</span>
-                Scan Book
+                {bookMode === "hardware" ? "Scan Book" : "Find Book"}
               </p>
-              {/* Live mode indicator — only shown when a student is loaded */}
-              {cardData && (phase === "book" || phase === "eval" || phase === "done") && (
+
+              {/* Hardware scanner badge (desktop only) */}
+              {bookMode === "hardware" && (
                 <div className="flex items-center gap-2">
-                  {bookModeBadge}
-                  {/* Manual toggle — always available as fallback */}
-                  {bookMode === "hardware" && (
-                    <button
-                      onClick={() => setBookMode("manual")}
-                      title="Switch to manual input"
-                      className="text-xs text-slate hover:text-ink underline underline-offset-2 transition-colors"
-                    >
-                      Type instead
-                    </button>
-                  )}
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal bg-teal/10 border border-teal/20 rounded-lg px-2.5 py-1">
+                    <Usb className="h-3.5 w-3.5" />Hardware scanner active
+                  </span>
+                  <button onClick={() => setBookMode("manual")} className="text-xs text-slate hover:text-ink underline underline-offset-2 transition-colors">
+                    Type instead
+                  </button>
+                </div>
+              )}
+
+              {/* Scan Mode toggle switch — shown on non-hardware mode */}
+              {bookMode !== "hardware" && (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${cameraActive ? "text-teal" : "text-slate"}`}>
+                    Scan Mode
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleCamera}
+                    aria-pressed={cameraActive}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal ${cameraActive ? "bg-teal" : "bg-slate/30"}`}
+                  >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${cameraActive ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Hardware scanner active — show a large target area + manual fallback below */}
-            {bookMode === "hardware" && cardData && (phase === "book" || phase === "eval" || phase === "done") && (
-              <div className="mb-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-teal/30 bg-teal/5 py-8 gap-2">
-                <Usb className="h-8 w-8 text-teal/50" />
-                <p className="text-sm font-medium text-teal">Point scanner at book QR code</p>
-                <p className="text-xs text-slate">Scanner input detected — scanning in progress</p>
-              </div>
-            )}
-
-            {/* Detecting — brief spinner, then transitions to manual automatically */}
+            {/* Detecting spinner (desktop only, brief) */}
             {bookMode === "detecting" && cardData && phase === "book" && (
-              <div className="mb-4 flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-slate">
+              <div className="mb-3 flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-slate">
                 <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                 Checking for connected scanner…
               </div>
             )}
 
-            {/* Manual text input — always shown (primary in manual mode, secondary fallback in hardware mode) */}
+            {/* Hardware scanner target area */}
+            {bookMode === "hardware" && cardData && (phase === "book" || phase === "eval" || phase === "done") && (
+              <div className="mb-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-teal/30 bg-teal/5 py-8 gap-2">
+                <Usb className="h-8 w-8 text-teal/50" />
+                <p className="text-sm font-medium text-teal">Point scanner at book QR code</p>
+                <p className="text-xs text-slate">Scanner detected — ready to scan</p>
+              </div>
+            )}
+
             <form onSubmit={e => { e.preventDefault(); doLookupBook(bookQuery); }}>
-              <div className="relative">
-                <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
+              {/* Input with camera icon button always on the right */}
+              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${cameraActive ? "border-teal ring-2 ring-teal/15" : "border-line"} ${bookMode === "hardware" ? "opacity-60" : ""}`}>
+                <BookOpen className="ml-3 h-4 w-4 shrink-0 text-slate/50" />
                 <input
                   ref={bookRef}
-                  className={`w-full rounded-lg border border-line bg-white pl-10 pr-10 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text ${bookMode === "hardware" ? "opacity-60" : ""}`}
-                  placeholder={bookMode === "hardware" ? "Or type accession number manually…" : "Title, accession number or author…"}
+                  className="flex-1 bg-transparent px-2.5 py-2.5 text-sm text-ink placeholder:text-slate/50 focus:outline-none dark:text-dark-text"
+                  placeholder={
+                    cameraActive ? "Scanning — point camera at QR code…" :
+                    bookMode === "hardware" ? "Or type accession number…" :
+                    "Title, accession number or author…"
+                  }
                   value={bookQuery}
                   onChange={e => onBookInputChange(e.target.value)}
                   onFocus={() => { if (bookMode === "hardware") setBookMode("manual"); }}
                   autoComplete="off"
                   disabled={!cardData}
+                  readOnly={cameraActive}
                 />
+                {/* Camera icon — always visible, acts as toggle */}
                 {loadingBook
-                  ? <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />
-                  : cardData && (
+                  ? <Loader2 className="mr-3 h-4 w-4 shrink-0 text-teal animate-spin" />
+                  : (
                     <button
                       type="button"
                       onClick={toggleCamera}
-                      title={cameraActive ? "Close camera" : "Scan with camera"}
-                      className={`absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 transition-colors ${cameraActive ? "bg-teal text-white" : "text-slate hover:text-teal hover:bg-teal/10"}`}
+                      title={cameraActive ? "Close camera" : "Scan QR code with camera"}
+                      disabled={!cardData}
+                      className={`mr-2 rounded-full p-1.5 transition-colors disabled:opacity-40 ${cameraActive ? "bg-teal text-white" : "text-slate hover:bg-teal/10 hover:text-teal"}`}
                     >
                       <QrCode className="h-4 w-4" />
                     </button>
@@ -677,14 +694,13 @@ export default function CirculatePage() {
                 }
               </div>
 
-              {/* Camera viewfinder */}
+              {/* Camera viewfinder — visible when scan mode is ON */}
               {cameraActive && (
                 <div className="mt-3 relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "4/3", maxHeight: 320 }}>
                   {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                   <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
-                  {/* Hidden canvas for BarcodeDetector */}
                   <canvas ref={canvasRef} className="hidden" />
-                  {/* Corner brackets overlay */}
+                  {/* Corner bracket overlay */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="relative w-48 h-48">
                       {(["tl","tr","bl","br"] as const).map(c => (
@@ -702,11 +718,10 @@ export default function CirculatePage() {
                       ))}
                     </div>
                   </div>
-                  {/* Hint */}
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 rounded-full px-3 py-1">
                     <p className="text-white text-xs whitespace-nowrap">Point at book QR code</p>
                   </div>
-                  {/* Close button */}
+                  {/* X closes camera = turns off scan mode */}
                   <button type="button" onClick={stopCamera} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors">
                     <X className="h-4 w-4" />
                   </button>
@@ -720,22 +735,9 @@ export default function CirculatePage() {
                 </p>
               )}
 
-              {/* Scan mode toggle pill (below input) */}
-              {cardData && !cameraActive && bookMode !== "hardware" && (
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-slate">Scan Mode</span>
-                  <button
-                    type="button"
-                    onClick={toggleCamera}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${cameraActive ? "bg-teal" : "bg-slate/30"}`}
-                  >
-                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${cameraActive ? "translate-x-5" : "translate-x-0.5"}`} />
-                  </button>
-                </div>
-              )}
-
+              {/* Find Book button — shown when typed query exists and camera is off */}
               {bookQuery.trim() && !cameraActive && (phase === "book" || phase === "done") && (
-                <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-2`}>
+                <button type="submit" disabled={loadingBook} className={`${primaryButtonClass} mt-3 w-full`}>
                   {loadingBook ? <><Loader2 className="h-4 w-4 animate-spin" />Looking up…</> : <><BookOpen className="h-4 w-4" />Find Book</>}
                 </button>
               )}
