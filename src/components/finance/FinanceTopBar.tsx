@@ -3,32 +3,38 @@
 /**
  * FinanceTopBar
  *
- * Fixed top bar for the finance module. Sits at left-64 (aligning with
- * the right edge of FinanceSidebarNav) and matches the TopAppBar aesthetic:
- * white/95 background, border-b border-line, h-16.
- *
- * Contains:
- *  - Live student search pill (navigates to individual ledger on select)
- *  - Spacer
- *  - Role / user label chip (display only, no profile dropdown)
+ * Fixed top bar for the finance and library modules.
+ * On desktop it sits at left-64 (aligning with the sidebar).
+ * On mobile (< md) it spans full width and shows an optional
+ * hamburger button slot on the left so each sidebar can inject
+ * its own menu trigger.
  */
 
 import FinanceStudentSearch from "@/components/finance/FinanceStudentSearch";
 
 interface Props {
-  roleLabel:    string;
-  userInitials: string;
+  roleLabel:        string;
+  userInitials:     string;
+  /** Mobile hamburger button injected by the sidebar component */
+  mobileMenuButton?: React.ReactNode;
 }
 
-export default function FinanceTopBar({ roleLabel, userInitials }: Props) {
+export default function FinanceTopBar({ roleLabel, userInitials, mobileMenuButton }: Props) {
   return (
     <header
       className="fixed top-0 right-0 z-30 h-16 flex items-center gap-3 px-4
                  bg-white/95 backdrop-blur-sm border-b border-line
                  dark:bg-dark-sidebar/95 dark:border-dark-border
                  left-0 md:left-64"
-      aria-label="Finance top bar"
+      aria-label="Top bar"
     >
+      {/* Hamburger slot — only rendered on mobile (sidebar hides on md+) */}
+      {mobileMenuButton && (
+        <div className="md:hidden shrink-0">
+          {mobileMenuButton}
+        </div>
+      )}
+
       {/* Student search */}
       <FinanceStudentSearch />
 
