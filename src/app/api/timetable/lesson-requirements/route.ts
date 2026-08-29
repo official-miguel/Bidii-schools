@@ -189,14 +189,11 @@ export async function POST(req: NextRequest) {
     // Only class–subject pairs that already have a teacher attached are
     // considered.  For each class the available weekly lesson slots are
     // distributed evenly across those teacher-assigned subjects so their
-    // combined lessonsPerWeek exactly fills the timetable.
+    // combined lessonsPerWeek EXACTLY equals the timetable slot count.
     //
-    // Subjects without a teacher are NOT touched — they will not appear in
-    // the requirements table and will not consume any slots.
-    //
-    // Existing requirement rows whose lessonsPerWeek was already set manually
-    // are left untouched (skipDuplicates: true).  To force a recalculation
-    // delete the existing rows first, then run auto-populate again.
+    // Existing rows are UPSERTED — their lessonsPerWeek is always recalculated
+    // so the total stays in sync with the template whenever teachers or the
+    // template change.  Subjects without a teacher are never touched.
     if (action === "auto-populate") {
       // Fetch the school's timetable template to know how many lesson slots
       // are actually available each week (lesson columns × operating days).
@@ -241,7 +238,9 @@ export async function POST(req: NextRequest) {
       });
       const subjectMetaMap = new Map(subjectMeta.map((s) => [s.id, s]));
 
-      const requirements = [];
+      // Build upsert payloads — one per teacher-assigned (class, subject) pair.
+      type ReqRow = { schoolId: string; classId: string; subjectId: string; lessonsPerWeek: number };
+      const requirements: ReqRow[] = [];
 
       for (const [classId, subjectIds] of assignmentsByClass) {
         if (subjectIds.length === 0) continue;
@@ -262,7 +261,8 @@ export async function POST(req: NextRequest) {
         // Slots per single-lesson unit (floor, so we don't overshoot capacity)
         const slotsPerUnit = totalUnits > 0 ? Math.floor(totalWeeklySlots / totalUnits) : 0;
 
-        // Distribute any remainder to avoid leaving slots unused
+        // Distribute any integer remainder one slot at a time so the per-class
+        // total exactly equals totalWeeklySlots.
         let remainder = totalWeeklySlots - slotsPerUnit * totalUnits;
 
         for (const subject of assignedSubjects) {
@@ -284,17 +284,25 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Create requirements (skip existing — never overwrite manual values)
-      const created = await prisma.subjectLessonRequirement.createMany({
-        data: requirements,
-        skipDuplicates: true,
-      });
+      // Upsert every row so the lessonsPerWeek always reflects the current
+      // template slot count — even for pairs that already existed.
+      let upsertedCount = 0;
+      await prisma.$transaction(
+        requirements.map((r) => {
+          upsertedCount++;
+          return prisma.subjectLessonRequirement.upsert({
+            where: { subjectId_classId: { subjectId: r.subjectId, classId: r.classId } },
+            update: { lessonsPerWeek: r.lessonsPerWeek },
+            create: r,
+          });
+        })
+      );
 
       return NextResponse.json({
         success: true,
-        created: created.count,
+        created: upsertedCount,
         totalWeeklySlots,
-        message: `Auto-populated ${created.count} lesson requirements for teacher-assigned subjects (${totalWeeklySlots} slots/week across ${lessonPeriodsPerDay} periods × ${activeDays} days)`,
+        message: `Auto-populated ${upsertedCount} lesson requirements for teacher-assigned subjects (${totalWeeklySlots} slots/week across ${lessonPeriodsPerDay} periods × ${activeDays} days)`,
       });
     }
 
