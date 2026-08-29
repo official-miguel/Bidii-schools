@@ -140,13 +140,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   );
 
   // ── All subjects applicable to this form ─────────────────────────────────
-  // A subject is shown when the class's frameworkType is present in the
-  // subject's frameworkTypes array — one subject can belong to many frameworks.
+  // Visibility rules:
+  //  1. The class's frameworkType must be in the subject's frameworkTypes array.
+  //  2. The subject's applicableForms must contain this class's form number,
+  //     OR applicableForms is empty — meaning the subject applies to ALL forms
+  //     in the matching framework(s).
   const allSubjectsRaw = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
-      applicableForms: { has: cls.form },
       frameworkTypes: { has: cls.frameworkType },
+      OR: [
+        { applicableForms: { has: cls.form } }, // explicit form match
+        { applicableForms: { isEmpty: true } },  // no restriction = all forms
+      ],
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
     select: { id: true, name: true, code: true, type: true },

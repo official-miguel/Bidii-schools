@@ -85,7 +85,7 @@ const createSchema = z.object({
     .transform((s) => s.toUpperCase()),
   type: z.enum(["CORE", "ELECTIVE"]),
   departmentId: z.string().min(1, "Choose a department."),
-  applicableForms: z.array(z.number().int().min(1)).min(1, "Select at least one form."),
+  applicableForms: z.array(z.number().int().min(1)).default([]),
   // A subject can belong to one or more curriculum frameworks.
   frameworkTypes: z
     .array(frameworkEnum)

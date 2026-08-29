@@ -122,11 +122,6 @@ export default function SubjectsPage() {
       frameworkTypes,
     };
 
-    if (selectedForms.length === 0) {
-      setError("Select at least one form this subject applies to.");
-      return;
-    }
-
     const res = await fetch(editing ? `/api/subjects/${editing.id}` : "/api/subjects", {
       method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -330,9 +325,13 @@ export default function SubjectsPage() {
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell">
                       <div className="flex flex-wrap gap-0.5">
-                        {(s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
-                          <Chip key={f} variant="default" size="xs">F{f}</Chip>
-                        ))}
+                        {(s.applicableForms ?? []).length === 0 ? (
+                          <Chip variant="default" size="xs">All forms</Chip>
+                        ) : (
+                          (s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
+                            <Chip key={f} variant="default" size="xs">F{f}</Chip>
+                          ))
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3.5 hidden lg:table-cell">
@@ -479,22 +478,27 @@ export default function SubjectsPage() {
                   to select which forms this subject applies to.
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => (
-                    <button
-                      type="button"
-                      key={f}
-                      onClick={() => toggleForm(f)}
-                      className={`text-sm rounded-md border px-3 py-1.5 min-h-[44px] sm:min-h-0 transition-colors ${
-                        selectedForms.includes(f)
-                          ? "bg-teal text-white border-teal"
-                          : "border-line text-ink hover:bg-paper"
-                      }`}
-                    >
-                      Form {f}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => (
+                      <button
+                        type="button"
+                        key={f}
+                        onClick={() => toggleForm(f)}
+                        className={`text-sm rounded-md border px-3 py-1.5 min-h-[44px] sm:min-h-0 transition-colors ${
+                          selectedForms.includes(f)
+                            ? "bg-teal text-white border-teal"
+                            : "border-line text-ink hover:bg-paper"
+                        }`}
+                      >
+                        Form {f}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate mt-1.5">
+                    Select the specific forms this subject applies to. Leave all unselected to make it appear in <span className="font-medium text-ink">all classes</span> of the chosen framework(s).
+                  </p>
+                </>
               )}
             </div>
 
