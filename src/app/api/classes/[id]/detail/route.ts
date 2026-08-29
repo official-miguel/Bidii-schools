@@ -3,9 +3,11 @@
  *
  * Returns full class workspace data for the ClassWorkspaceDrawer:
  *  - class info, class teacher, enrolled students (capped at 30)
- *  - allSubjects: every subject applicable to this class's form whose
- *    frameworkType matches the class OR is CBC (CBC subjects are cross-
- *    curriculum and appear in both CBC and 8-4-4 classes).
+ *  - allSubjects: subjects applicable to this class's form filtered by
+ *    curriculum visibility:
+ *      • 8-4-4 class → 8-4-4 subjects + CBC subjects
+ *      • CBC class   → CBC subjects + 8-4-4 subjects
+ *      • CBE class   → CBE subjects only
  *  - teachersBySubject: qualified teachers per subject (for pickers)
  *  - electiveGroups: elective groups that apply to this class (scoped by
  *    form and stream), each with their subjects, form-wide teacher pairings
@@ -140,21 +142,22 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   );
 
   // ── All subjects applicable to this form ─────────────────────────────────
-  // Inclusion rule:
-  //  - A subject whose frameworkType matches the class is always shown.
-  //  - CBC subjects are shown in ALL class types (they represent the
-  //    competency-based strands that are relevant across curricula).
-  //  - 8-4-4 subjects only appear in 8-4-4 classes; CBE subjects only in CBE.
+  // Inclusion rules:
+  //  • CBE class    → CBE subjects only
+  //  • 8-4-4 class  → 8-4-4 subjects + CBC subjects
+  //  • CBC class    → CBC subjects + 8-4-4 subjects
+  // In short: 8-4-4 and CBC share their subjects with each other;
+  // CBE is fully isolated.
+  const visibleFrameworks =
+    cls.frameworkType === "CBE"
+      ? ["CBE"]
+      : ["EIGHT_FOUR_FOUR", "CBC"]; // both 8-4-4 and CBC classes see both pools
+
   const allSubjectsRaw = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
-      OR: [
-        // Always include subjects that match the class's own framework
-        { frameworkType: cls.frameworkType },
-        // CBC subjects are visible in every class type
-        { frameworkType: "CBC" },
-      ],
+      frameworkType: { in: visibleFrameworks as ("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[] },
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
     select: { id: true, name: true, code: true, type: true },
