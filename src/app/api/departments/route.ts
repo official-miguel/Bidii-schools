@@ -37,12 +37,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // A brand-new department has no subjects yet, so no teacher can be eligible HOD at creation time.
+  if (parsed.data.headTeacherId) {
+    return NextResponse.json(
+      { error: "A HOD cannot be assigned when creating a new department because it has no subjects yet. Save the department first, assign subjects to staff, then set the HOD." },
+      { status: 422 }
+    );
+  }
+
   try {
     const department = await prisma.department.create({
       data: {
         schoolId: user.schoolId!,
         name: parsed.data.name,
-        headTeacherId: parsed.data.headTeacherId || null,
+        headTeacherId: null,
       },
     });
     return NextResponse.json(department, { status: 201 });

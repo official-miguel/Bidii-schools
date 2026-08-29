@@ -25,6 +25,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   });
   if (!existing) return NextResponse.json({ error: "Department not found." }, { status: 404 });
 
+  // If a new HOD is being assigned, verify they teach at least one subject in this department
+  if (parsed.data.headTeacherId) {
+    const teachesInDept = await prisma.teacherSubject.findFirst({
+      where: {
+        teacherId: parsed.data.headTeacherId,
+        subject: { departmentId: params.id },
+      },
+    });
+    if (!teachesInDept) {
+      return NextResponse.json(
+        { error: "This teacher does not teach any subject in this department and cannot be set as HOD." },
+        { status: 422 }
+      );
+    }
+  }
+
   try {
     const department = await prisma.department.update({
       where: { id: params.id },

@@ -22,7 +22,14 @@ import SubjectWorkspaceDrawer from "@/components/entity-drawers/SubjectWorkspace
 import ClassWorkspaceDrawer  from "@/components/entity-drawers/ClassWorkspaceDrawer";
 import { ExternalLink } from "lucide-react";
 
-type Teacher = { id: string; fullName: string };
+type TeacherSubjectEntry = {
+  subject: { id: string; name: string; departmentId: string };
+};
+type Teacher = {
+  id: string;
+  fullName: string;
+  teacherSubjects?: TeacherSubjectEntry[];
+};
 type Department = {
   id: string;
   name: string;
@@ -58,7 +65,11 @@ export default function DepartmentsPage() {
       const freshDepts  = deptRes.ok   ? await deptRes.json()   : [];
       const teacherData = teacherRes.ok ? await teacherRes.json() : [];
       setDepartments(freshDepts);
-      setTeachers(teacherData.map((t: { id: string; fullName: string }) => ({ id: t.id, fullName: t.fullName })));
+      setTeachers(teacherData.map((t: { id: string; fullName: string; teacherSubjects?: TeacherSubjectEntry[] }) => ({
+        id: t.id,
+        fullName: t.fullName,
+        teacherSubjects: t.teacherSubjects ?? [],
+      })));
     } catch {
       setDepartments([]);
     }
@@ -217,22 +228,56 @@ export default function DepartmentsPage() {
             </div>
             <div>
               <label className={labelClass}>Head of department</label>
-              <select
-                name="headTeacherId"
-                defaultValue={editing?.headTeacher?.id || ""}
-                className={inputClass}
-              >
-                <option value="">— not assigned —</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.fullName}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-slate mt-1">
-                Only registered staff can be set as head. Register the teacher first if they&apos;re
-                not in this list.
-              </p>
+              {(() => {
+                const eligible = editing
+                  ? teachers.filter((t) =>
+                      t.teacherSubjects?.some((ts) => ts.subject.departmentId === editing.id)
+                    )
+                  : [];
+                return (
+                  <>
+                    <select
+                      name="headTeacherId"
+                      defaultValue={editing?.headTeacher?.id || ""}
+                      className={inputClass}
+                    >
+                      <option value="">— not assigned —</option>
+                      {editing
+                        ? eligible.map((t) => {
+                            const subjectNames = t.teacherSubjects!
+                              .filter((ts) => ts.subject.departmentId === editing.id)
+                              .map((ts) => ts.subject.name)
+                              .join(", ");
+                            return (
+                              <option key={t.id} value={t.id}>
+                                {t.fullName}{subjectNames ? ` (${subjectNames})` : ""}
+                              </option>
+                            );
+                          })
+                        : teachers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.fullName}
+                            </option>
+                          ))}
+                    </select>
+                    {editing && eligible.length === 0 && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        No teachers are currently assigned subjects in this department. Assign subjects to staff first.
+                      </p>
+                    )}
+                    {!editing && (
+                      <p className="text-xs text-slate mt-1">
+                        Save the department first, then assign subjects to staff before setting a HOD.
+                      </p>
+                    )}
+                    {editing && eligible.length > 0 && (
+                      <p className="text-xs text-slate mt-1">
+                        Only teachers who teach a subject in this department are shown.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className={secondaryButtonClass} onClick={() => setModalOpen(false)}>

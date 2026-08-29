@@ -34,6 +34,7 @@ interface StaffOption {
   id: string;
   fullName: string;
   staffId: string;
+  teacherSubjects?: { subject: { id: string; name: string; departmentId: string } }[];
 }
 
 interface Props {
@@ -150,7 +151,11 @@ export default function DepartmentWorkspaceDrawer({
     }
   }
 
-  const filteredStaff = staffOptions.filter((s) =>
+  const eligibleStaff = staffOptions.filter((s) =>
+    s.teacherSubjects?.some((ts) => ts.subject.departmentId === dept?.id)
+  );
+
+  const filteredStaff = eligibleStaff.filter((s) =>
     s.fullName.toLowerCase().includes(hodSearch.toLowerCase()) ||
     s.staffId.toLowerCase().includes(hodSearch.toLowerCase())
   );
@@ -275,25 +280,40 @@ export default function DepartmentWorkspaceDrawer({
                       </div>
                       <ul className="max-h-48 overflow-y-auto">
                         {filteredStaff.length === 0 ? (
-                          <li className="px-3 py-2 text-sm text-slate italic">No staff found.</li>
+                          <li className="px-3 py-2 text-sm text-slate italic">
+                            {eligibleStaff.length === 0
+                              ? "No teachers are assigned subjects in this department."
+                              : "No matching staff found."}
+                          </li>
                         ) : (
-                          filteredStaff.map((s) => (
-                            <li key={s.id}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setHodSearch(s.fullName);
-                                  setHodPickerOpen(false);
-                                  saveHOD(s.id);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors"
-                              >
-                                <Avatar name={s.fullName} size="sm" />
-                                <span className="flex-1 font-medium text-ink truncate">{s.fullName}</span>
-                                <span className="text-xs text-slate font-mono shrink-0">{s.staffId}</span>
-                              </button>
-                            </li>
-                          ))
+                          filteredStaff.map((s) => {
+                            const deptSubjects = s.teacherSubjects
+                              ?.filter((ts) => ts.subject.departmentId === dept?.id)
+                              .map((ts) => ts.subject.name)
+                              .join(", ");
+                            return (
+                              <li key={s.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setHodSearch(s.fullName);
+                                    setHodPickerOpen(false);
+                                    saveHOD(s.id);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors"
+                                >
+                                  <Avatar name={s.fullName} size="sm" />
+                                  <div className="flex-1 min-w-0">
+                                    <span className="block font-medium text-ink truncate">{s.fullName}</span>
+                                    {deptSubjects && (
+                                      <span className="block text-xs text-slate truncate">{deptSubjects}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-slate font-mono shrink-0">{s.staffId}</span>
+                                </button>
+                              </li>
+                            );
+                          })
                         )}
                       </ul>
                       {dept.headTeacher && (
