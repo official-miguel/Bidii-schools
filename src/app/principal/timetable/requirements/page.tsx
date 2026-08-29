@@ -465,7 +465,7 @@ export default function RequirementsPage() {
           </p>
           <button type="button" onClick={handleAutoPopulate} disabled={autoPopulating}
             className={secondaryButtonClass}
-            title="Distribute the available weekly lesson slots evenly across all subjects per class, so each class's total lessons exactly fill its timetable slots.">
+            title="Set the number of lessons per week for every subject that already has a teacher assigned to a class, distributing the available weekly slots evenly across those subjects.">
             {autoPopulating
               ? <><RefreshCw className="h-4 w-4 animate-spin" />Auto-populating…</>
               : <><Wand2 className="h-4 w-4" />Auto-populate from subjects</>}
@@ -475,9 +475,11 @@ export default function RequirementsPage() {
         <div className="rounded-lg border border-line bg-paper px-4 py-2.5 flex gap-2 text-xs text-slate">
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate/60" />
           <span>
-            <strong className="text-ink">Auto-populate</strong> reads your timetable template (lesson slots × operating days)
-            and distributes those slots evenly across each class&apos;s subjects — so every lesson slot is accounted for.
-            Double-lesson subjects receive twice the allocation. Existing requirements are not overwritten.
+            <strong className="text-ink">Auto-populate</strong> sets the lesson frequency for subjects that already have a
+            teacher assigned to each class. It distributes the available weekly slots (lesson columns × operating days)
+            evenly across those teacher-assigned subjects so the totals fill the timetable.
+            Double-lesson subjects receive twice the allocation. Subjects without a teacher are not touched.
+            Existing requirements are never overwritten.
           </span>
         </div>
 
@@ -620,7 +622,7 @@ export default function RequirementsPage() {
                           <BookOpen className="h-8 w-8 text-slate/30 mx-auto mb-3" />
                           <p className="text-sm text-slate">No requirements yet.</p>
                           <p className="text-xs text-slate/60 mt-1 mb-4">
-                            Click &quot;Auto-populate from subjects&quot; to generate defaults.
+                            Assign teachers to subjects for this class, then click &quot;Auto-populate from subjects&quot; to set lesson frequencies.
                           </p>
                         </div>
                       ) : (

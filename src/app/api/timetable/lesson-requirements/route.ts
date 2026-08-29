@@ -184,7 +184,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    // Auto-populate requirements based on subject applicableForms
+    // Auto-populate requirements based on existing ClassSubjectTeacher assignments.
+    //
+    // Only class–subject pairs that already have a teacher attached are
+    // considered.  For each class the available weekly lesson slots are
+    // distributed evenly across those teacher-assigned subjects so their
+    // combined lessonsPerWeek exactly fills the timetable.
+    //
+    // Subjects without a teacher are NOT touched — they will not appear in
+    // the requirements table and will not consume any slots.
+    //
+    // Existing requirement rows whose lessonsPerWeek was already set manually
+    // are left untouched (skipDuplicates: true).  To force a recalculation
+    // delete the existing rows first, then run auto-populate again.
     if (action === "auto-populate") {
       // Fetch the school's timetable template to know how many lesson slots
       // are actually available each week (lesson columns × operating days).
@@ -206,45 +218,54 @@ export async function POST(req: NextRequest) {
       const activeDays = timetableConfig?.operatingDays.length ?? 5;
       const totalWeeklySlots = lessonPeriodsPerDay * activeDays;
 
-      const classes = await prisma.schoolClass.findMany({
-        where: { schoolId },
-        select: { id: true, form: true },
+      // Fetch every ClassSubjectTeacher row for this school so we know which
+      // (class, subject) pairs actually have a teacher assigned.
+      const teacherAssignments = await prisma.classSubjectTeacher.findMany({
+        where: { schoolClass: { schoolId } },
+        select: { classId: true, subjectId: true },
       });
 
-      const subjects = await prisma.subject.findMany({
+      // Group assignments by class so we can iterate per-class.
+      const assignmentsByClass = new Map<string, string[]>(); // classId → subjectIds
+      for (const a of teacherAssignments) {
+        if (!assignmentsByClass.has(a.classId)) {
+          assignmentsByClass.set(a.classId, []);
+        }
+        assignmentsByClass.get(a.classId)!.push(a.subjectId);
+      }
+
+      // Fetch subject metadata (doubleLesson flag) for all subjects in scope.
+      const subjectMeta = await prisma.subject.findMany({
         where: { schoolId },
-        select: {
-          id: true,
-          applicableForms: true,
-          doubleLesson: true,
-        },
+        select: { id: true, doubleLesson: true },
       });
+      const subjectMetaMap = new Map(subjectMeta.map((s) => [s.id, s]));
 
       const requirements = [];
 
-      for (const cls of classes) {
-        // Find subjects applicable to this form
-        const applicableSubjects = subjects.filter((s) =>
-          s.applicableForms.includes(cls.form)
-        );
+      for (const [classId, subjectIds] of assignmentsByClass) {
+        if (subjectIds.length === 0) continue;
 
-        if (applicableSubjects.length === 0) continue;
+        // Build the list of subjects that have a teacher for this class.
+        const assignedSubjects = subjectIds
+          .map((id) => subjectMetaMap.get(id))
+          .filter((s): s is NonNullable<typeof s> => s != null);
 
-        // Distribute the available weekly slots evenly across subjects.
-        // Double-lesson subjects count as 2 "units" so they receive twice as
-        // many slots as single-lesson subjects in the same proportional split.
-        const totalUnits = applicableSubjects.reduce(
+        // Distribute the available weekly slots evenly across teacher-assigned
+        // subjects. Double-lesson subjects count as 2 "units" so they receive
+        // twice as many slots as single-lesson subjects.
+        const totalUnits = assignedSubjects.reduce(
           (sum, s) => sum + (s.doubleLesson ? 2 : 1),
           0
         );
 
         // Slots per single-lesson unit (floor, so we don't overshoot capacity)
-        const slotsPerUnit = Math.floor(totalWeeklySlots / totalUnits);
+        const slotsPerUnit = totalUnits > 0 ? Math.floor(totalWeeklySlots / totalUnits) : 0;
 
         // Distribute any remainder to avoid leaving slots unused
         let remainder = totalWeeklySlots - slotsPerUnit * totalUnits;
 
-        for (const subject of applicableSubjects) {
+        for (const subject of assignedSubjects) {
           const units = subject.doubleLesson ? 2 : 1;
           let lessons = slotsPerUnit * units;
 
@@ -256,14 +277,14 @@ export async function POST(req: NextRequest) {
 
           requirements.push({
             schoolId,
-            classId: cls.id,
+            classId,
             subjectId: subject.id,
             lessonsPerWeek: Math.max(1, lessons),
           });
         }
       }
 
-      // Create requirements (skip existing)
+      // Create requirements (skip existing — never overwrite manual values)
       const created = await prisma.subjectLessonRequirement.createMany({
         data: requirements,
         skipDuplicates: true,
@@ -273,18 +294,18 @@ export async function POST(req: NextRequest) {
         success: true,
         created: created.count,
         totalWeeklySlots,
-        message: `Auto-populated ${created.count} lesson requirements (${totalWeeklySlots} slots/week across ${lessonPeriodsPerDay} periods × ${activeDays} days)`,
+        message: `Auto-populated ${created.count} lesson requirements for teacher-assigned subjects (${totalWeeklySlots} slots/week across ${lessonPeriodsPerDay} periods × ${activeDays} days)`,
       });
     }
 
     // ── sync-framework ──────────────────────────────────────────────────────
-    // Ensures every class receives ALL subjects that are applicable to its
-    // form (framework).  Only NEW (classId, subjectId) pairs are inserted;
-    // existing requirements are never modified or deleted.
+    // Ensures every class receives requirement rows for all subjects that
+    // already have a teacher assigned (ClassSubjectTeacher).  Only NEW
+    // (classId, subjectId) pairs are inserted; existing requirements are never
+    // modified or deleted.
     //
-    // When a subject has a teacher, it will appear in the timetable.
-    // When a subject has NO teacher it is still stored here but the generate
-    // and pre-check routes silently skip it before handing work to the solver.
+    // Subjects without a teacher are NOT added — they cannot be scheduled
+    // until a teacher is assigned, so pre-seeding them just creates noise.
     if (action === "sync-framework") {
       const timetableConfig = await prisma.timetableConfig.findUnique({
         where: { schoolId },
@@ -301,20 +322,32 @@ export async function POST(req: NextRequest) {
       const activeDays = timetableConfig?.operatingDays.length ?? 5;
       const totalWeeklySlots = lessonPeriodsPerDay * activeDays;
 
-      const classes = await prisma.schoolClass.findMany({
-        where: { schoolId },
-        select: { id: true, form: true },
+      // Only consider (class, subject) pairs that have a teacher assigned.
+      const teacherAssignments = await prisma.classSubjectTeacher.findMany({
+        where: { schoolClass: { schoolId } },
+        select: { classId: true, subjectId: true },
       });
 
-      const subjects = await prisma.subject.findMany({
-        where: { schoolId },
-        select: { id: true, applicableForms: true, doubleLesson: true },
-      });
+      // Group by class so we can distribute slots per class.
+      const assignmentsByClass = new Map<string, string[]>();
+      for (const a of teacherAssignments) {
+        if (!assignmentsByClass.has(a.classId)) {
+          assignmentsByClass.set(a.classId, []);
+        }
+        assignmentsByClass.get(a.classId)!.push(a.subjectId);
+      }
 
-      // Load existing requirements so we can skip pairs that already exist.
+      // Fetch subject metadata (doubleLesson flag).
+      const subjectMeta = await prisma.subject.findMany({
+        where: { schoolId },
+        select: { id: true, doubleLesson: true },
+      });
+      const subjectMetaMap = new Map(subjectMeta.map((s) => [s.id, s]));
+
+      // Load existing requirements so we only insert missing pairs.
       const existingReqs = await prisma.subjectLessonRequirement.findMany({
         where: { schoolId },
-        select: { classId: true, subjectId: true, lessonsPerWeek: true },
+        select: { classId: true, subjectId: true },
       });
       const existingKeys = new Set(
         existingReqs.map((r) => `${r.classId}:${r.subjectId}`)
@@ -327,21 +360,22 @@ export async function POST(req: NextRequest) {
         lessonsPerWeek: number;
       }[] = [];
 
-      for (const cls of classes) {
-        const applicable = subjects.filter((s) =>
-          s.applicableForms.includes(cls.form)
-        );
-        if (applicable.length === 0) continue;
+      for (const [classId, subjectIds] of assignmentsByClass) {
+        if (subjectIds.length === 0) continue;
 
-        const totalUnits = applicable.reduce(
+        const assignedSubjects = subjectIds
+          .map((id) => subjectMetaMap.get(id))
+          .filter((s): s is NonNullable<typeof s> => s != null);
+
+        const totalUnits = assignedSubjects.reduce(
           (sum, s) => sum + (s.doubleLesson ? 2 : 1),
           0
         );
-        const slotsPerUnit = Math.floor(totalWeeklySlots / totalUnits);
+        const slotsPerUnit = totalUnits > 0 ? Math.floor(totalWeeklySlots / totalUnits) : 0;
         let remainder = totalWeeklySlots - slotsPerUnit * totalUnits;
 
-        for (const subject of applicable) {
-          const key = `${cls.id}:${subject.id}`;
+        for (const subject of assignedSubjects) {
+          const key = `${classId}:${subject.id}`;
           if (existingKeys.has(key)) continue; // already configured — leave it
 
           const units = subject.doubleLesson ? 2 : 1;
@@ -353,7 +387,7 @@ export async function POST(req: NextRequest) {
 
           toInsert.push({
             schoolId,
-            classId: cls.id,
+            classId,
             subjectId: subject.id,
             lessonsPerWeek: Math.max(1, lessons),
           });
@@ -370,7 +404,7 @@ export async function POST(req: NextRequest) {
         created: created.count,
         totalWeeklySlots,
         message:
-          `Synced framework subjects: added ${created.count} missing requirement${created.count !== 1 ? "s" : ""} ` +
+          `Synced teacher-assigned subjects: added ${created.count} missing requirement${created.count !== 1 ? "s" : ""} ` +
           `(existing requirements were not modified)`,
       });
     }
