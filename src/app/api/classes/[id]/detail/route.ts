@@ -3,11 +3,8 @@
  *
  * Returns full class workspace data for the ClassWorkspaceDrawer:
  *  - class info, class teacher, enrolled students (capped at 30)
- *  - allSubjects: subjects applicable to this class's form filtered by
- *    curriculum visibility:
- *      • 8-4-4 class → 8-4-4 subjects + CBC subjects
- *      • CBC class   → CBC subjects + 8-4-4 subjects
- *      • CBE class   → CBE subjects only
+ *  - allSubjects: subjects for this class's form filtered strictly by the
+ *    class's own frameworkType — each framework sees only its own subjects.
  *  - teachersBySubject: qualified teachers per subject (for pickers)
  *  - electiveGroups: elective groups that apply to this class (scoped by
  *    form and stream), each with their subjects, form-wide teacher pairings
@@ -142,22 +139,15 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   );
 
   // ── All subjects applicable to this form ─────────────────────────────────
-  // Inclusion rules:
-  //  • CBE class    → CBE subjects only
-  //  • 8-4-4 class  → 8-4-4 subjects + CBC subjects
-  //  • CBC class    → CBC subjects + 8-4-4 subjects
-  // In short: 8-4-4 and CBC share their subjects with each other;
-  // CBE is fully isolated.
-  const visibleFrameworks =
-    cls.frameworkType === "CBE"
-      ? ["CBE"]
-      : ["EIGHT_FOUR_FOUR", "CBC"]; // both 8-4-4 and CBC classes see both pools
-
+  // Each class only sees subjects that belong to its own framework.
+  // 8-4-4 classes → 8-4-4 subjects only
+  // CBC classes   → CBC subjects only
+  // CBE classes   → CBE subjects only
   const allSubjectsRaw = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
-      frameworkType: { in: visibleFrameworks as ("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[] },
+      frameworkType: cls.frameworkType,
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
     select: { id: true, name: true, code: true, type: true },
