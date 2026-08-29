@@ -29,6 +29,7 @@ type TeacherSubjectEntry = {
 type Teacher = {
   id: string;
   fullName: string;
+  primaryDepartmentId?: string | null;
   teacherSubjects?: TeacherSubjectEntry[];
 };
 type Department = {
@@ -86,9 +87,10 @@ export default function DepartmentsPage() {
       const freshDepts  = deptRes.ok   ? await deptRes.json()   : [];
       const teacherData = teacherRes.ok ? await teacherRes.json() : [];
       setDepartments(freshDepts);
-      setTeachers(teacherData.map((t: { id: string; fullName: string; teacherSubjects?: TeacherSubjectEntry[] }) => ({
+      setTeachers(teacherData.map((t: { id: string; fullName: string; primaryDepartmentId?: string | null; teacherSubjects?: TeacherSubjectEntry[] }) => ({
         id: t.id,
         fullName: t.fullName,
+        primaryDepartmentId: t.primaryDepartmentId ?? null,
         teacherSubjects: t.teacherSubjects ?? [],
       })));
     } catch {
@@ -324,6 +326,7 @@ export default function DepartmentsPage() {
               {(() => {
                 const eligible = editing
                   ? teachers.filter((t) =>
+                      t.primaryDepartmentId === editing.id ||
                       t.teacherSubjects?.some((ts) => ts.subject.departmentId === editing.id)
                     )
                   : [];
@@ -355,7 +358,7 @@ export default function DepartmentsPage() {
                     </select>
                     {editing && eligible.length === 0 && (
                       <p className="text-xs text-amber-600 mt-1">
-                        No teachers are currently assigned subjects in this department. Assign subjects to staff first.
+                        No teachers are currently members of this department. Assign subjects to staff or set their primary department first.
                       </p>
                     )}
                     {!editing && (

@@ -45,6 +45,7 @@ interface StaffOption {
   id: string;
   fullName: string;
   staffId: string;
+  primaryDepartmentId?: string | null;
   teacherSubjects?: { subject: { id: string; name: string; departmentId: string } }[];
 }
 
@@ -291,7 +292,10 @@ export default function DepartmentWorkspaceDrawer({
   }
 
   // ── Derived filtered lists ────────────────────────────────────────────────
+  // A teacher is eligible HOD if they are a member of the department
+  // (primaryDepartmentId) OR teach at least one subject in the department.
   const eligibleStaff = staffOptions.filter((s) =>
+    s.primaryDepartmentId === dept?.id ||
     s.teacherSubjects?.some((ts) => ts.subject.departmentId === dept?.id)
   );
   const filteredStaff = eligibleStaff.filter(

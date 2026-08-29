@@ -25,17 +25,26 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   });
   if (!existing) return NextResponse.json({ error: "Department not found." }, { status: 404 });
 
-  // If a new HOD is being assigned, verify they teach at least one subject in this department
+  // If a new HOD is being assigned, verify they are a member of this department.
+  // A teacher is eligible if their primaryDepartmentId matches this department,
+  // OR they teach at least one subject that belongs to this department.
   if (parsed.data.headTeacherId) {
-    const teachesInDept = await prisma.teacherSubject.findFirst({
-      where: {
-        teacherId: parsed.data.headTeacherId,
-        subject: { departmentId: params.id },
+    const teacher = await prisma.teacher.findFirst({
+      where: { id: parsed.data.headTeacherId, schoolId: user.schoolId! },
+      select: {
+        primaryDepartmentId: true,
+        teacherSubjects: {
+          where: { subject: { departmentId: params.id } },
+          take: 1,
+        },
       },
     });
-    if (!teachesInDept) {
+    const isMember =
+      teacher?.primaryDepartmentId === params.id ||
+      (teacher?.teacherSubjects?.length ?? 0) > 0;
+    if (!isMember) {
       return NextResponse.json(
-        { error: "This teacher does not teach any subject in this department and cannot be set as HOD." },
+        { error: "This teacher is not a member of this department and cannot be set as HOD." },
         { status: 422 }
       );
     }
