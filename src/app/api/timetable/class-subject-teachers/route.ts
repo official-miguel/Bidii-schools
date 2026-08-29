@@ -130,3 +130,44 @@ export async function PUT(req: NextRequest) {
   });
   return NextResponse.json(assignment);
 }
+
+const deleteSchema = z.object({
+  classId: z.string().min(1),
+  subjectId: z.string().min(1),
+});
+
+export async function DELETE(req: NextRequest) {
+  const user = (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("TIMETABLE", "manage"));
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const parsed = deleteSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message || "Invalid input." },
+      { status: 400 }
+    );
+  }
+  const { classId, subjectId } = parsed.data;
+
+  // Confirm the class belongs to this school
+  const schoolClass = await prisma.schoolClass.findFirst({
+    where: { id: classId, schoolId: user.schoolId! },
+  });
+  if (!schoolClass) {
+    return NextResponse.json({ error: "Class not found." }, { status: 404 });
+  }
+
+  const existing = await prisma.classSubjectTeacher.findUnique({
+    where: { classId_subjectId: { classId, subjectId } },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "No teacher assigned to that subject for this class." }, { status: 404 });
+  }
+
+  await prisma.classSubjectTeacher.delete({
+    where: { classId_subjectId: { classId, subjectId } },
+  });
+
+  return NextResponse.json({ ok: true });
+}

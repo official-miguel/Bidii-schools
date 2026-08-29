@@ -21,10 +21,10 @@ export async function GET(_req: NextRequest) {
 
   // Get subject IDs that are members of elective groups for marking
   const groupMemberSubjectIds = await prisma.electiveGroupMember.findMany({
-    where: { 
+    where: {
       group: { schoolId: user.schoolId! }
     },
-    select: { 
+    select: {
       subjectId: true,
       group: { select: { id: true, name: true } }
     }
@@ -63,7 +63,7 @@ export async function GET(_req: NextRequest) {
   // Transform groups into pseudo-subject format (they're treated as subjects in timetable)
   const groupAsSubjects = electiveGroups.map((group) => ({
     id: `GROUP_${group.id}`, // Prefix to distinguish from regular subjects
-    name: `ðŸ“¦ ${group.name}`, // Visual indicator this is a group
+    name: `\u{1F4E6} ${group.name}`, // Visual indicator this is a group
     code: group.members.map((m) => m.subject.code).join("+"), // e.g., "FREN+SPAN"
     type: "ELECTIVE" as const,
     groupId: group.id,
@@ -94,7 +94,9 @@ const createSchema = z.object({
   type: z.enum(["CORE", "ELECTIVE"]),
   departmentId: z.string().min(1, "Choose a department."),
   applicableForms: z.array(z.number().int().min(1)).min(1, "Select at least one form."),
-  // Timetable fields are optional â€” managed in the Timetable module.
+  // Which curriculum framework this subject belongs to.
+  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
+  // Timetable fields are optional - managed in the Timetable module.
   doubleLesson: z.boolean().optional().default(false),
   requiresSpecialRoom: z.string().trim().optional().or(z.literal("")),
 });
@@ -136,6 +138,7 @@ export async function POST(req: NextRequest) {
         type: parsed.data.type,
         departmentId: parsed.data.departmentId,
         applicableForms: parsed.data.applicableForms,
+        frameworkType: parsed.data.frameworkType,
         doubleLesson: parsed.data.doubleLesson,
         requiresSpecialRoom: parsed.data.requiresSpecialRoom || null,
         internalCode,
@@ -154,4 +157,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create subject." }, { status: 500 });
   }
 }
-

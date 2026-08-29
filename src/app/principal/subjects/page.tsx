@@ -28,6 +28,7 @@ type Subject = {
   name: string;
   code: string;
   type: "CORE" | "ELECTIVE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
   applicableForms: number[];
   department: Department | null;
   _count: { teacherSubjects: number };
@@ -46,11 +47,13 @@ export default function SubjectsPage() {
   const [editing, setEditing] = useState<Subject | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedForms, setSelectedForms] = useState<number[]>([]);
+  const [frameworkType, setFrameworkType] = useState<"EIGHT_FOUR_FOUR" | "CBC" | "CBE">("EIGHT_FOUR_FOUR");
 
   // Workspace toolbar filters
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterFramework, setFilterFramework] = useState("");
 
   // ── Entity drawer state ───────────────────────────────────────────────────
   const [drawerSubjId,  setDrawerSubjId]  = useState<string | null>(null);
@@ -89,6 +92,7 @@ export default function SubjectsPage() {
   function openCreate() {
     setEditing(null);
     setSelectedForms([]);
+    setFrameworkType("EIGHT_FOUR_FOUR");
     setError(null);
     setModalOpen(true);
   }
@@ -96,6 +100,7 @@ export default function SubjectsPage() {
   function openEdit(s: Subject) {
     setEditing(s);
     setSelectedForms(s.applicableForms);
+    setFrameworkType(s.frameworkType ?? "EIGHT_FOUR_FOUR");
     setError(null);
     setModalOpen(true);
   }
@@ -114,6 +119,7 @@ export default function SubjectsPage() {
       type: form.get("type") as string,
       departmentId: form.get("departmentId") as string,
       applicableForms: selectedForms,
+      frameworkType,
     };
 
     if (selectedForms.length === 0) {
@@ -198,11 +204,23 @@ export default function SubjectsPage() {
           onChange={setFilterType}
         />
 
-        {(search || filterDept || filterType) && (
+        <WorkspaceToolbar.Filter
+          label="Framework"
+          value={filterFramework}
+          options={[
+            { value: "", label: "All frameworks" },
+            { value: "EIGHT_FOUR_FOUR", label: "8-4-4" },
+            { value: "CBC", label: "CBC" },
+            { value: "CBE", label: "CBE" },
+          ]}
+          onChange={setFilterFramework}
+        />
+
+        {(search || filterDept || filterType || filterFramework) && (
           <button
             type="button"
             className="text-sm text-teal hover:underline"
-            onClick={() => { setSearch(""); setFilterDept(""); setFilterType(""); }}
+            onClick={() => { setSearch(""); setFilterDept(""); setFilterType(""); setFilterFramework(""); }}
           >
             Clear filters
           </button>
@@ -222,6 +240,7 @@ export default function SubjectsPage() {
                   <th className="px-4 py-3.5">Subject</th>
                   <th className="px-4 py-3.5 w-[80px] hidden sm:table-cell">Code</th>
                   <th className="px-4 py-3.5 w-[100px]">Type</th>
+                  <th className="px-4 py-3.5 w-[100px] hidden sm:table-cell">Framework</th>
                   <th className="px-4 py-3.5 hidden md:table-cell">Department</th>
                   <th className="px-4 py-3.5 w-[110px] hidden sm:table-cell">Forms</th>
                   <th className="px-4 py-3.5 w-[80px] hidden lg:table-cell">Teachers</th>
@@ -239,6 +258,7 @@ export default function SubjectsPage() {
                     if (q && !s.name.toLowerCase().includes(q) && !s.code.toLowerCase().includes(q)) return false;
                     if (filterDept && (!s.department || s.department.id !== filterDept)) return false;
                     if (filterType && s.type !== filterType) return false;
+                    if (filterFramework && !("isGroup" in s && s.isGroup) && (s as Subject).frameworkType !== filterFramework) return false;
                     return true;
                   })
                   .map((s) => (
@@ -278,6 +298,19 @@ export default function SubjectsPage() {
                       <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
                         {s.type === "CORE" ? "Core" : "Elective"}
                       </Chip>
+                    </td>
+                    <td className="px-4 py-3.5 hidden sm:table-cell">
+                      {!("isGroup" in s && s.isGroup) && (
+                        <Chip
+                          variant={
+                            s.frameworkType === "CBC" ? "teal" :
+                            s.frameworkType === "CBE" ? "purple" : "default"
+                          }
+                          size="xs"
+                        >
+                          {s.frameworkType === "EIGHT_FOUR_FOUR" ? "8-4-4" : s.frameworkType}
+                        </Chip>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                       {s.department ? (
@@ -394,6 +427,34 @@ export default function SubjectsPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Curriculum framework</label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {(["EIGHT_FOUR_FOUR", "CBC", "CBE"] as const).map((fw) => (
+                  <button
+                    type="button"
+                    key={fw}
+                    onClick={() => setFrameworkType(fw)}
+                    className={`text-sm rounded-lg border px-3 py-2 transition-colors text-left ${
+                      frameworkType === fw
+                        ? "bg-teal text-white border-teal"
+                        : "border-line text-ink hover:bg-paper"
+                    }`}
+                  >
+                    <span className="font-medium block">
+                      {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
+                    </span>
+                    <span className={`text-[11px] block mt-0.5 ${frameworkType === fw ? "text-white/80" : "text-slate"}`}>
+                      {fw === "EIGHT_FOUR_FOUR" ? "KCSE" : fw === "CBC" ? "Competency-based" : "TVET / CBE"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate mt-1.5">
+                Only classes on the same framework will show this subject.
+              </p>
             </div>
 
             <div>

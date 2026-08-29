@@ -144,6 +144,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     where: {
       schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
+      // Only show subjects that match the class's curriculum framework.
+      frameworkType: cls.frameworkType,
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
     select: { id: true, name: true, code: true, type: true },

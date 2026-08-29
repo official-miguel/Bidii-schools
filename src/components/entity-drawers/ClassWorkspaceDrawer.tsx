@@ -280,6 +280,36 @@ export default function ClassWorkspaceDrawer({
     s.staffId.toLowerCase().includes(teacherSearch.toLowerCase())
   );
 
+  /** Remove the teacher assignment for a subject in this class */
+  async function removeSubjectTeacher(subjectId: string) {
+    if (!classId) return;
+    setSubjectTeacherSaving(true);
+    setSubjectTeacherError(null);
+    try {
+      const res = await fetch(`/api/timetable/class-subject-teachers`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classId, subjectId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't remove teacher assignment.");
+      // Optimistically clear the assigned teacher in local state
+      setCls((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          allSubjects: prev.allSubjects.map((s) =>
+            s.id === subjectId ? { ...s, assignedTeacher: null } : s
+          ),
+        };
+      });
+    } catch (e) {
+      setSubjectTeacherError((e as Error).message);
+    } finally {
+      setSubjectTeacherSaving(false);
+    }
+  }
+
   /** Assign or reassign the teacher for a subject in this class */
   async function saveSubjectTeacher(subjectId: string, teacherId: string) {
     if (!classId) return;
@@ -608,11 +638,19 @@ export default function ClassWorkspaceDrawer({
                             <span className="text-xs text-slate">{s.assignedTeacher.fullName}</span>
                           )}
                           {!readOnly && (
-                            <button type="button" title="Change teacher"
-                              onClick={() => { setAssigningSubjectId(isOpen ? null : s.id); setSubjectTeacherSearch(""); setSubjectTeacherError(null); }}
-                              className="p-1 rounded hover:bg-paper text-slate/40 hover:text-teal transition-colors">
-                              <Pencil className="h-3 w-3" />
-                            </button>
+                            <>
+                              <button type="button" title="Change teacher"
+                                onClick={() => { setAssigningSubjectId(isOpen ? null : s.id); setSubjectTeacherSearch(""); setSubjectTeacherError(null); }}
+                                className="p-1 rounded hover:bg-paper text-slate/40 hover:text-teal transition-colors">
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button type="button" title="Remove teacher"
+                                disabled={subjectTeacherSaving}
+                                onClick={() => removeSubjectTeacher(s.id)}
+                                className="p-1 rounded text-slate/30 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-40">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </>
                           )}
                         </>
                       ) : (
