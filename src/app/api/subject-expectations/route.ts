@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 const setSchema = z.object({
-  form: z.number().int().min(1).max(6),
+  form: z.number().int().min(1),
   expectedCount: z.number().int().min(0).max(20),
 });
 

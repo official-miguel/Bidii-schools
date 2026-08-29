@@ -27,7 +27,6 @@ function CommunicationPage() {
   const [schoolId, setSchoolId] = useState("");
   const [groups,   setGroups]   = useState<Group[]>([]);
   const [classes,  setClasses]  = useState<SchoolClass[]>([]);
-  const [maxForms, setMaxForms] = useState(4);
 
   useEffect(() => {
     // schoolId is returned by the messaging settings endpoint
@@ -43,10 +42,7 @@ function CommunicationPage() {
 
     fetch("/api/classes")
       .then((r) => r.ok ? r.json() : [])
-      .then((d: SchoolClass[]) => {
-        setClasses(d);
-        if (d.length > 0) setMaxForms(Math.max(...d.map((c) => c.form)));
-      })
+      .then((d: SchoolClass[]) => setClasses(d))
       .catch(() => {});
   }, []);
 
@@ -97,7 +93,6 @@ function CommunicationPage() {
           onSent={handleSent}
           groups={groups}
           classes={classes}
-          maxForms={maxForms}
         />
       )}
     </>

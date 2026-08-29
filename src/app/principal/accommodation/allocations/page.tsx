@@ -378,7 +378,8 @@ function BulkAllocateModal({
   const [preview, setPreview]   = useState<{ studentId: string; studentName: string; className: string }[] | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
-  const FORMS = [1, 2, 3, 4, 5, 6];
+  // Derive distinct sorted form numbers from the classes the school has registered
+  const schoolForms = [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b);
 
   async function handlePreview() {
     if (!dormId) { setError("Select a dormitory first."); return; }
@@ -438,7 +439,7 @@ function BulkAllocateModal({
         {mode === "form" && (
           <FormField label="Select forms">
             <div className="flex flex-wrap gap-2 mt-1">
-              {FORMS.map((f) => (
+              {schoolForms.map((f) => (
                 <button key={f} type="button" onClick={() => setForms((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f])}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${forms.includes(f) ? "bg-teal text-white border-teal" : "border-line text-slate hover:border-teal/40 dark:border-dark-border"}`}>
                   Form {f}
@@ -834,7 +835,7 @@ export default function AllocationsPage() {
           <select className="text-xs border border-line rounded-lg px-2 py-1.5 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
             value={formFilter} onChange={(e) => setFormFilter(e.target.value)}>
             <option value="">All forms</option>
-            {[1,2,3,4,5,6].map((f) => <option key={f} value={String(f)}>Form {f}</option>)}
+            {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => <option key={f} value={String(f)}>Form {f}</option>)}
           </select>
           <WorkspaceToolbar.ViewSwitcher value={viewMode} onChange={(m) => setViewMode(m as "table" | "list")} modes={["table","list"]} />
           <WorkspaceToolbar.RefreshButton onClick={() => { loadStudents(search); loadDorms(); }} />

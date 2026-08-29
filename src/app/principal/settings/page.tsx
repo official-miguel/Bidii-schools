@@ -364,7 +364,7 @@ function LibrarySettingsForm() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className={labelClass}>Eligible from form</label>
-            <input type="number" min="1" max="8" className={inputClass} value={eligibleFromForm}
+            <input type="number" min="1" className={inputClass} value={eligibleFromForm}
               onChange={e => md(setEligibleFromForm)(e.target.value)} placeholder="All forms (blank)" />
             <p className="text-xs text-slate dark:text-dark-muted mt-1">Leave blank to include all forms.</p>
           </div>

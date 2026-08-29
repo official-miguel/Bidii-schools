@@ -19,7 +19,6 @@ interface Props {
   onSent:    () => void;
   groups?:   Group[];
   classes?:  SchoolClass[];
-  maxForms?: number;
 }
 
 const SMS_LIMIT = 160;
@@ -125,7 +124,6 @@ export default function Composer({
   onSent,
   groups = [],
   classes = [],
-  maxForms = 4,
 }: Props) {
   // ── Draft persistence ────────────────────────────────────────────────────
   const [draft, setDraft, clearDraft] = useFormDraft("bidii_draft_composer", {
@@ -317,7 +315,6 @@ export default function Composer({
                   onChange={setDescriptors}
                   groups={groups}
                   classes={classes}
-                  maxForms={maxForms}
                 />
               </div>
             </div>

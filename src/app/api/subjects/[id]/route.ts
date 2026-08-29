@@ -17,7 +17,7 @@ const updateSchema = z.object({
     .optional(),
   type: z.enum(["CORE", "ELECTIVE"]).optional(),
   departmentId: z.string().min(1).optional(),
-  applicableForms: z.array(z.number().int().min(1).max(6)).optional(),
+  applicableForms: z.array(z.number().int().min(1)).optional(),
   // A subject can belong to one or more curriculum frameworks.
   frameworkTypes: z.array(frameworkEnum).min(1).optional(),
   lessonsPerWeek: z.number().int().min(1).max(20).optional(),

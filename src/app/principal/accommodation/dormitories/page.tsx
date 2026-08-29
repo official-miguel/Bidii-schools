@@ -34,6 +34,7 @@ interface DormRow {
 
 interface StaffOption { id: string; fullName: string; staffId: string; }
 interface StudentOption { id: string; fullName: string; admissionNumber: string; className: string; }
+interface SchoolClass { id: string; form: number; }
 
 // ── Wizard step types ─────────────────────────────────────────────────────────
 
@@ -82,8 +83,6 @@ const STATUS_META: Record<string, { label: string; icon: typeof CheckCircle2; co
   UNDER_MAINTENANCE: { label: "Maintenance", icon: Wrench,       color: "text-warn" },
   CLOSED:            { label: "Closed",      icon: Lock,         color: "text-slate" },
 };
-const FORMS = [1, 2, 3, 4, 5, 6];
-
 // ── Wizard Step 1: Basics ─────────────────────────────────────────────────────
 
 function Step1Basics({
@@ -248,7 +247,7 @@ function Step2Structure({ data, onChange }: { data: WizardData; onChange: (p: Pa
 
 // ── Wizard Step 3: Allocation policy ─────────────────────────────────────────
 
-function Step3Policy({ data, onChange }: { data: WizardData; onChange: (p: Partial<WizardData>) => void }) {
+function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChange: (p: Partial<WizardData>) => void; schoolForms: number[] }) {
   const toggleForm = (f: number) => {
     const current = data.permittedForms;
     onChange({ permittedForms: current.includes(f) ? current.filter((x) => x !== f) : [...current, f] });
@@ -291,7 +290,7 @@ function Step3Policy({ data, onChange }: { data: WizardData; onChange: (p: Parti
         <div>
           <label className={labelClass}>Permitted forms</label>
           <div className="flex flex-wrap gap-2 mt-1">
-            {FORMS.map((f) => {
+            {schoolForms.map((f) => {
               const on = data.permittedForms.includes(f);
               return (
                 <button key={f} type="button" onClick={() => toggleForm(f)}
@@ -337,7 +336,7 @@ function Step3Policy({ data, onChange }: { data: WizardData; onChange: (p: Parti
 const STEP_LABELS = ["Basics", "Structure", "Allocation Policy"];
 
 function DormWizard({
-  onClose, onSaved, editDorm, staffList, studentList, schoolPolicy,
+  onClose, onSaved, editDorm, staffList, studentList, schoolPolicy, schoolForms,
 }: {
   onClose: () => void;
   onSaved: (dorm: DormRow) => void;
@@ -345,6 +344,7 @@ function DormWizard({
   staffList: StaffOption[];
   studentList: StudentOption[];
   schoolPolicy: SchoolPolicy;
+  schoolForms: number[];
 }) {
   const dormWizardDraftKey = `bidii_draft_dorm_wizard_${editDorm?.id ?? "new"}`;
 
@@ -459,7 +459,7 @@ function DormWizard({
       <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }}>
         {step === 0 && <Step1Basics data={data} onChange={patch} staffList={staffList} studentList={studentList} schoolPolicy={schoolPolicy} />}
         {step === 1 && <Step2Structure data={data} onChange={patch} />}
-        {step === 2 && <Step3Policy data={data} onChange={patch} />}
+        {step === 2 && <Step3Policy data={data} onChange={patch} schoolForms={schoolForms} />}
 
         <div className="flex items-center justify-between gap-3 mt-6">
           <button type="button" onClick={() => { if (!editDorm) clearWizDraft(); onClose(); }} className={secondaryButtonClass}>Cancel</button>
@@ -496,6 +496,7 @@ export default function DormitoriesPage() {
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [studentList, setStudentList] = useState<StudentOption[]>([]);
   const [schoolPolicy, setSchoolPolicy] = useState<SchoolPolicy>({ genderPolicy: "MIXED" });
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showWizard, setShowWizard] = useState(false);
@@ -507,16 +508,18 @@ export default function DormitoriesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [dr, sr, studr, schoolr] = await Promise.all([
+      const [dr, sr, studr, schoolr, classesR] = await Promise.all([
         fetch("/api/accommodation/dormitories").then((r) => r.json()),
         fetch("/api/staff?limit=200").then((r) => r.ok ? r.json() : []),
         fetch("/api/accommodation/students?limit=200").then((r) => r.ok ? r.json() : []),
         fetch("/api/school/settings").then((r) => r.ok ? r.json() : null),
+        fetch("/api/classes").then((r) => r.ok ? r.json() : []),
       ]);
       setDorms(Array.isArray(dr) ? dr : []);
       setStaffList(Array.isArray(sr) ? sr : []);
       setStudentList(Array.isArray(studr) ? studr : []);
       if (schoolr) setSchoolPolicy({ genderPolicy: schoolr.genderPolicy ?? "MIXED" });
+      setClasses(Array.isArray(classesR) ? classesR : []);
     } finally { setLoading(false); }
   }, []);
 
@@ -691,6 +694,7 @@ export default function DormitoriesPage() {
           staffList={staffList}
           studentList={studentList}
           schoolPolicy={schoolPolicy}
+          schoolForms={[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b)}
         />
       )}
 

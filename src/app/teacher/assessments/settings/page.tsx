@@ -117,6 +117,15 @@ export default async function HODAssessmentSettingsPage() {
     // Table doesn't exist yet — page still renders, formulas just start empty
   }
 
+  // ── Distinct form numbers registered at this school ─────────────────────
+  const schoolClassForms = await prisma.schoolClass.findMany({
+    where: { schoolId: user.schoolId! },
+    select: { form: true },
+    distinct: ["form"],
+    orderBy: { form: "asc" },
+  });
+  const schoolForms = schoolClassForms.map((c) => c.form);
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -134,6 +143,7 @@ export default async function HODAssessmentSettingsPage() {
         subjects={subjects}
         frameworks={frameworks}
         initialFormulas={existingFormulas}
+        schoolForms={schoolForms}
       />
     </div>
   );

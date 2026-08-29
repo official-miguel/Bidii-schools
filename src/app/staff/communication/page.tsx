@@ -33,8 +33,6 @@ export default function StaffCommunicationPage() {
       .catch(() => {});
   }, []);
 
-  const maxForms = classes.length > 0 ? Math.max(...classes.map((c) => c.form)) : 4;
-
   return (
     <CommunicationShell
       base={BASE}
@@ -72,7 +70,6 @@ export default function StaffCommunicationPage() {
           schoolId=""
           groups={groups}
           classes={classes}
-          maxForms={maxForms}
           onClose={() => setShowComposer(false)}
           onSent={() => setRefreshKey((k) => k + 1)}
         />

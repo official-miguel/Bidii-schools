@@ -13,14 +13,13 @@ interface Props {
   onChange:  (v: RecipientDescriptor[]) => void;
   groups?:   Group[];
   classes?:  SchoolClass[];
-  maxForms?: number;
 }
 
 interface SearchResult {
   id: string; displayName: string; type: "student" | "teacher"; subtitle: string;
 }
 
-export default function RecipientPicker({ schoolId, value, onChange, groups = [], classes = [], maxForms = 4 }: Props) {
+export default function RecipientPicker({ schoolId, value, onChange, groups = [], classes = [] }: Props) {
   const [query, setQuery]         = useState("");
   const [results, setResults]     = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -105,19 +104,14 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
     { key: "allStaff",    label: "All Staff",      descriptor: { type: "allStaff" } },
   ];
 
-  // Per-form chips (whole form = all streams)
-  const forms = Array.from(new Set(classes.map((c) => c.form))).sort();
-  const formChips = forms.length > 0
-    ? forms.map((f) => ({
-        key: `form:${f}`,
-        label: `Form ${f} (all)`,
-        descriptor: { type: "form" as const, form: f },
-      }))
-    : Array.from({ length: maxForms }, (_, i) => ({
-        key: `form:${i + 1}`,
-        label: `Form ${i + 1}`,
-        descriptor: { type: "form" as const, form: i + 1 },
-      }));
+  // Per-form chips — derived entirely from the school's registered classes.
+  // If no classes are loaded yet, no form chips are shown (avoids fake fallbacks).
+  const forms = Array.from(new Set(classes.map((c) => c.form))).sort((a, b) => a - b);
+  const formChips = forms.map((f) => ({
+    key: `form:${f}`,
+    label: `Form ${f} (all)`,
+    descriptor: { type: "form" as const, form: f },
+  }));
 
   // Per-class/stream chips — only shown when a school actually has streams
   const streamClasses = classes.filter((c) => c.stream);

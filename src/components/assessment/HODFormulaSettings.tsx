@@ -64,6 +64,9 @@ interface HODFormulaSettingsProps {
   subjects: Subject[];
   frameworks: Framework[];
   initialFormulas: FormulaConfig[];
+  /** Distinct form numbers registered at this school — used as the fallback
+   *  when a subject has an empty applicableForms array. */
+  schoolForms: number[];
 }
 
 type Tab = "frameworks" | "formulas";
@@ -275,19 +278,21 @@ function SubjectFormulaCard({
   departmentId,
   formulas,
   onFormulaChange,
+  schoolForms,
 }: {
   subject: Subject;
   frameworks: Framework[];
   departmentId: string;
   formulas: FormulaConfig[];
   onFormulaChange: (config: FormulaConfig) => void;
+  schoolForms: number[];
 }) {
   const [open, setOpen] = useState(false);
 
-  // The forms this subject applies to — fallback to forms 1-4 if not specified
+  // Use the subject's explicit form list; fall back to the school's registered forms
   const forms = subject.applicableForms.length > 0
     ? [...subject.applicableForms].sort((a, b) => a - b)
-    : [1, 2, 3, 4];
+    : schoolForms;
 
   // Only show 8-4-4 frameworks — formula calculation is specific to this type
   const kcseFrameworks = frameworks.filter((fw) => fw.type === "EIGHT_FOUR_FOUR");
@@ -595,6 +600,7 @@ export default function HODFormulaSettings({
   subjects,
   frameworks,
   initialFormulas,
+  schoolForms,
 }: HODFormulaSettingsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("formulas");
   const [formulas, setFormulas] = useState<FormulaConfig[]>(initialFormulas);
@@ -670,6 +676,7 @@ export default function HODFormulaSettings({
                   departmentId={department.id}
                   formulas={formulas}
                   onFormulaChange={handleFormulaChange}
+                  schoolForms={schoolForms}
                 />
               ))}
             </div>
