@@ -8,6 +8,7 @@ import {
   EmptyState,
   Chip,
   ActionIconButton,
+  Spinner,
   inputClass,
   labelClass,
   primaryButtonClass,
@@ -20,7 +21,7 @@ import DepartmentWorkspaceDrawer from "@/components/entity-drawers/DepartmentWor
 import StaffProfileDrawer    from "@/components/entity-drawers/StaffProfileDrawer";
 import SubjectWorkspaceDrawer from "@/components/entity-drawers/SubjectWorkspaceDrawer";
 import ClassWorkspaceDrawer  from "@/components/entity-drawers/ClassWorkspaceDrawer";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Plus, X } from "lucide-react";
 
 type TeacherSubjectEntry = {
   subject: { id: string; name: string; departmentId: string };
@@ -36,6 +37,19 @@ type Department = {
   headTeacher: Teacher | null;
   _count: { subjects: number; teachers: number };
 };
+type SubjectOption = {
+  id: string;
+  name: string;
+  code: string;
+  type: "CORE" | "ELECTIVE";
+  department: { id: string; name: string };
+};
+type DeptSubject = {
+  id: string;
+  name: string;
+  code: string;
+  type: "CORE" | "ELECTIVE";
+};
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[] | null>(null);
@@ -44,6 +58,13 @@ export default function DepartmentsPage() {
   const [editing, setEditing] = useState<Department | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  // ── Subject management inside modal ──────────────────────────────────────
+  const [deptSubjects, setDeptSubjects]         = useState<DeptSubject[]>([]);
+  const [availableSubjects, setAvailableSubjects] = useState<SubjectOption[]>([]);
+  const [subjectSearch, setSubjectSearch]       = useState("");
+  const [subjectPickerOpen, setSubjectPickerOpen] = useState(false);
+  const [subjectSaving, setSubjectSaving]       = useState<string | null>(null);
 
   // ── Entity drawer state ───────────────────────────────────────────────────
   const [drawerDeptId,  setDrawerDeptId]  = useState<string | null>(null);
@@ -83,13 +104,85 @@ export default function DepartmentsPage() {
   function openCreate() {
     setEditing(null);
     setError(null);
+    setDeptSubjects([]);
+    setAvailableSubjects([]);
+    setSubjectSearch("");
+    setSubjectPickerOpen(false);
     setModalOpen(true);
   }
 
   function openEdit(d: Department) {
     setEditing(d);
     setError(null);
+    setDeptSubjects([]);
+    setAvailableSubjects([]);
+    setSubjectSearch("");
+    setSubjectPickerOpen(false);
     setModalOpen(true);
+    // Load current subjects for this department
+    fetch(`/api/departments/${d.id}/detail`)
+      .then((r) => r.json())
+      .then((data) => { if (!data.error) setDeptSubjects(data.subjects ?? []); });
+    // Load available (not yet in this department) subjects
+    fetch(`/api/departments/${d.id}/available-subjects`)
+      .then((r) => r.json())
+      .then((data: SubjectOption[]) => { if (!Array.isArray(data)) return; setAvailableSubjects(data); });
+  }
+
+  async function addSubjectToDept(subject: SubjectOption) {
+    if (!editing) return;
+    setSubjectSaving(subject.id);
+    try {
+      const res = await fetch(`/api/subjects/${subject.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ departmentId: editing.id }),
+      });
+      if (res.ok) {
+        const newSubject: DeptSubject = { id: subject.id, name: subject.name, code: subject.code, type: subject.type };
+        setDeptSubjects((prev) => [...prev, newSubject].sort((a, b) => a.name.localeCompare(b.name)));
+        setAvailableSubjects((prev) => prev.filter((s) => s.id !== subject.id));
+        setSubjectPickerOpen(false);
+        setSubjectSearch("");
+        load(); // refresh table counts
+      }
+    } finally {
+      setSubjectSaving(null);
+    }
+  }
+
+  async function moveSubjectOut(subject: DeptSubject) {
+    // Moving a subject out requires choosing a target department — we open
+    // the full workspace drawer for that. For the modal we just prevent
+    // accidental removal: redirect user to the workspace drawer.
+    // Instead, offer a simple "move to another dept" by prompting which dept.
+    const otherDepts = (departments ?? []).filter((d) => d.id !== editing?.id);
+    if (otherDepts.length === 0) {
+      alert("No other departments to move this subject to.");
+      return;
+    }
+    const names = otherDepts.map((d, i) => `${i + 1}. ${d.name}`).join("\n");
+    const choice = prompt(`Move "${subject.name}" to which department?\n\n${names}\n\nType the number:`);
+    if (!choice) return;
+    const idx = parseInt(choice, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= otherDepts.length) { alert("Invalid choice."); return; }
+    const target = otherDepts[idx];
+    setSubjectSaving(subject.id);
+    try {
+      const res = await fetch(`/api/subjects/${subject.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ departmentId: target.id }),
+      });
+      if (res.ok) {
+        setDeptSubjects((prev) => prev.filter((s) => s.id !== subject.id));
+        const moved: SubjectOption = { id: subject.id, name: subject.name, code: subject.code, type: subject.type, department: { id: target.id, name: target.name } };
+        setAvailableSubjects((prev) => [...prev, moved].sort((a, b) => a.name.localeCompare(b.name)));
+        load();
+      }
+    } finally {
+      setSubjectSaving(null);
+    }
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -279,6 +372,118 @@ export default function DepartmentsPage() {
                 );
               })()}
             </div>
+            {/* ── Subjects in this department ── (edit mode only) */}
+            {editing && (
+              <div>
+                <label className={labelClass}>Subjects in this department</label>
+                <div className="rounded-lg border border-line bg-paper overflow-hidden">
+                  {/* Current subjects list */}
+                  {deptSubjects.length === 0 ? (
+                    <p className="px-3 py-2.5 text-sm text-slate italic">No subjects assigned yet.</p>
+                  ) : (
+                    <ul className="divide-y divide-line max-h-44 overflow-y-auto">
+                      {deptSubjects.map((s) => (
+                        <li key={s.id} className="flex items-center gap-2 px-3 py-2">
+                          <span className="font-mono text-xs bg-white border border-line rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
+                            {s.code}
+                          </span>
+                          <span className="flex-1 text-sm text-ink truncate">{s.name}</span>
+                          <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
+                            {s.type === "CORE" ? "Core" : "Elective"}
+                          </Chip>
+                          <button
+                            type="button"
+                            title="Move to another department"
+                            disabled={subjectSaving === s.id}
+                            onClick={() => moveSubjectOut(s)}
+                            className="p-1 rounded hover:bg-white text-slate hover:text-danger transition-colors disabled:opacity-40"
+                          >
+                            {subjectSaving === s.id ? <Spinner size="sm" /> : <X className="h-3.5 w-3.5" />}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Add subject picker */}
+                  <div className="border-t border-line">
+                    {subjectPickerOpen ? (
+                      <div className="p-2 space-y-1.5">
+                        <input
+                          autoFocus
+                          value={subjectSearch}
+                          onChange={(e) => setSubjectSearch(e.target.value)}
+                          placeholder="Search by name, code or current dept…"
+                          className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-line bg-white outline-none focus:border-teal"
+                        />
+                        <ul className="max-h-44 overflow-y-auto divide-y divide-line rounded-lg border border-line bg-white">
+                          {availableSubjects
+                            .filter((s) =>
+                              s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                              s.code.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                              s.department.name.toLowerCase().includes(subjectSearch.toLowerCase())
+                            )
+                            .map((s) => (
+                              <li key={s.id}>
+                                <button
+                                  type="button"
+                                  disabled={subjectSaving === s.id}
+                                  onClick={() => addSubjectToDept(s)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-paper transition-colors disabled:opacity-50"
+                                >
+                                  <span className="font-mono text-xs bg-paper border border-line rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
+                                    {s.code}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="block font-medium text-ink truncate">{s.name}</span>
+                                    <span className="block text-xs text-slate truncate">Currently: {s.department.name}</span>
+                                  </div>
+                                  <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
+                                    {s.type === "CORE" ? "Core" : "Elective"}
+                                  </Chip>
+                                  {subjectSaving === s.id && <Spinner size="sm" />}
+                                </button>
+                              </li>
+                            ))}
+                          {availableSubjects.filter((s) =>
+                            s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                            s.code.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+                            s.department.name.toLowerCase().includes(subjectSearch.toLowerCase())
+                          ).length === 0 && (
+                            <li className="px-3 py-2 text-sm text-slate italic">
+                              {availableSubjects.length === 0
+                                ? "All school subjects are already in this department."
+                                : "No subjects match your search."}
+                            </li>
+                          )}
+                        </ul>
+                        <button
+                          type="button"
+                          onClick={() => { setSubjectPickerOpen(false); setSubjectSearch(""); }}
+                          className="text-xs text-slate hover:text-ink"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSubjectPickerOpen(true)}
+                        className="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-teal hover:bg-white transition-colors"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add subject to this department
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-slate mt-1">
+                  Subjects here are from the school&apos;s registered subject list. To create new subjects go to the{" "}
+                  <a href="/principal/subjects" className="text-teal hover:underline">Subjects</a> page.
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className={secondaryButtonClass} onClick={() => setModalOpen(false)}>
                 Cancel
