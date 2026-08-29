@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
+const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]);
+
 const updateSchema = z.object({
   name: z.string().trim().min(2).optional(),
   code: z
@@ -16,8 +18,8 @@ const updateSchema = z.object({
   type: z.enum(["CORE", "ELECTIVE"]).optional(),
   departmentId: z.string().min(1).optional(),
   applicableForms: z.array(z.number().int().min(1).max(6)).min(1).optional(),
-  // Which curriculum framework this subject belongs to.
-  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional(),
+  // A subject can belong to one or more curriculum frameworks.
+  frameworkTypes: z.array(frameworkEnum).min(1).optional(),
   lessonsPerWeek: z.number().int().min(1).max(20).optional(),
   doubleLesson: z.boolean().optional(),
   requiresSpecialRoom: z.string().trim().optional().or(z.literal("")),

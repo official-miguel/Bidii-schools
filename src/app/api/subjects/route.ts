@@ -9,7 +9,6 @@ export async function GET(_req: NextRequest) {
     (await requireSchoolPermission("SUBJECTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Fetch regular subjects
   const subjects = await prisma.subject.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: { name: "asc" },
@@ -19,34 +18,26 @@ export async function GET(_req: NextRequest) {
     },
   });
 
-  // Get subject IDs that are members of elective groups for marking
   const groupMemberSubjectIds = await prisma.electiveGroupMember.findMany({
-    where: {
-      group: { schoolId: user.schoolId! }
-    },
+    where: { group: { schoolId: user.schoolId! } },
     select: {
       subjectId: true,
-      group: { select: { id: true, name: true } }
-    }
+      group: { select: { id: true, name: true } },
+    },
   });
 
   const groupMemberMap = new Map();
   for (const member of groupMemberSubjectIds) {
-    if (!groupMemberMap.has(member.subjectId)) {
-      groupMemberMap.set(member.subjectId, []);
-    }
+    if (!groupMemberMap.has(member.subjectId)) groupMemberMap.set(member.subjectId, []);
     groupMemberMap.get(member.subjectId).push(member.group);
   }
 
-  // Add group membership info to subjects
-  const enrichedSubjects = subjects.map(subject => ({
+  const enrichedSubjects = subjects.map((subject) => ({
     ...subject,
     isGroupMember: groupMemberMap.has(subject.id),
-    memberOfGroups: groupMemberMap.get(subject.id) || []
+    memberOfGroups: groupMemberMap.get(subject.id) || [],
   }));
 
-  // Fetch elective groups and represent them as pseudo-subjects for timetable
-  // A group acts like a subject with multiple component subjects
   const electiveGroups = await prisma.electiveGroup.findMany({
     where: { schoolId: user.schoolId! },
     include: {
@@ -60,28 +51,29 @@ export async function GET(_req: NextRequest) {
     orderBy: { name: "asc" },
   });
 
-  // Transform groups into pseudo-subject format (they're treated as subjects in timetable)
   const groupAsSubjects = electiveGroups.map((group) => ({
-    id: `GROUP_${group.id}`, // Prefix to distinguish from regular subjects
-    name: `\u{1F4E6} ${group.name}`, // Visual indicator this is a group
-    code: group.members.map((m) => m.subject.code).join("+"), // e.g., "FREN+SPAN"
+    id: `GROUP_${group.id}`,
+    name: `\u{1F4E6} ${group.name}`,
+    code: group.members.map((m) => m.subject.code).join("+"),
     type: "ELECTIVE" as const,
     groupId: group.id,
     isGroup: true,
-    applicableForms: group.scopeForm !== null ? [group.scopeForm] : [], // Forms this group applies to
-    scopeStreams: group.scopeStreams, // Streams this group applies to (if any)
+    applicableForms: group.scopeForm !== null ? [group.scopeForm] : [],
+    scopeStreams: group.scopeStreams,
     memberSubjects: group.members.map((m) => ({
       id: m.subjectId,
       name: m.subject.name,
       code: m.subject.code,
     })),
     lessonsPerWeek: group.lessonsPerWeek,
-    _count: { teacherSubjects: 0 }, // Groups don't have direct teacher assignments
+    _count: { teacherSubjects: 0 },
     department: null,
   }));
 
   return NextResponse.json([...enrichedSubjects, ...groupAsSubjects]);
 }
+
+const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]);
 
 const createSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters."),
@@ -94,9 +86,11 @@ const createSchema = z.object({
   type: z.enum(["CORE", "ELECTIVE"]),
   departmentId: z.string().min(1, "Choose a department."),
   applicableForms: z.array(z.number().int().min(1)).min(1, "Select at least one form."),
-  // Which curriculum framework this subject belongs to.
-  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
-  // Timetable fields are optional - managed in the Timetable module.
+  // A subject can belong to one or more curriculum frameworks.
+  frameworkTypes: z
+    .array(frameworkEnum)
+    .min(1, "Select at least one curriculum framework.")
+    .default(["EIGHT_FOUR_FOUR"]),
   doubleLesson: z.boolean().optional().default(false),
   requiresSpecialRoom: z.string().trim().optional().or(z.literal("")),
 });
@@ -113,8 +107,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // The department must belong to this school too, or a principal could
-  // hang a subject off another school's department by guessing its id.
   const department = await prisma.department.findFirst({
     where: { id: parsed.data.departmentId, schoolId: user.schoolId! },
   });
@@ -123,7 +115,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Assign the next sequential internalCode for this school (never reused).
     const last = await prisma.subject.findFirst({
       where: { schoolId: user.schoolId! },
       orderBy: { internalCode: "desc" },
@@ -138,7 +129,7 @@ export async function POST(req: NextRequest) {
         type: parsed.data.type,
         departmentId: parsed.data.departmentId,
         applicableForms: parsed.data.applicableForms,
-        frameworkType: parsed.data.frameworkType,
+        frameworkTypes: parsed.data.frameworkTypes,
         doubleLesson: parsed.data.doubleLesson,
         requiresSpecialRoom: parsed.data.requiresSpecialRoom || null,
         internalCode,

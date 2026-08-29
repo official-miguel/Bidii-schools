@@ -28,7 +28,7 @@ type Subject = {
   name: string;
   code: string;
   type: "CORE" | "ELECTIVE";
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkTypes: ("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[];
   applicableForms: number[];
   department: Department | null;
   _count: { teacherSubjects: number };
@@ -47,7 +47,7 @@ export default function SubjectsPage() {
   const [editing, setEditing] = useState<Subject | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedForms, setSelectedForms] = useState<number[]>([]);
-  const [frameworkType, setFrameworkType] = useState<"EIGHT_FOUR_FOUR" | "CBC" | "CBE">("EIGHT_FOUR_FOUR");
+  const [frameworkTypes, setFrameworkTypes] = useState<("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[]>(["EIGHT_FOUR_FOUR"]);
 
   // Workspace toolbar filters
   const [search, setSearch] = useState("");
@@ -92,7 +92,7 @@ export default function SubjectsPage() {
   function openCreate() {
     setEditing(null);
     setSelectedForms([]);
-    setFrameworkType("EIGHT_FOUR_FOUR");
+    setFrameworkTypes(["EIGHT_FOUR_FOUR"]);
     setError(null);
     setModalOpen(true);
   }
@@ -100,7 +100,7 @@ export default function SubjectsPage() {
   function openEdit(s: Subject) {
     setEditing(s);
     setSelectedForms(s.applicableForms);
-    setFrameworkType(s.frameworkType ?? "EIGHT_FOUR_FOUR");
+    setFrameworkTypes(s.frameworkTypes?.length ? s.frameworkTypes : ["EIGHT_FOUR_FOUR"]);
     setError(null);
     setModalOpen(true);
   }
@@ -119,7 +119,7 @@ export default function SubjectsPage() {
       type: form.get("type") as string,
       departmentId: form.get("departmentId") as string,
       applicableForms: selectedForms,
-      frameworkType,
+      frameworkTypes,
     };
 
     if (selectedForms.length === 0) {
@@ -258,7 +258,7 @@ export default function SubjectsPage() {
                     if (q && !s.name.toLowerCase().includes(q) && !s.code.toLowerCase().includes(q)) return false;
                     if (filterDept && (!s.department || s.department.id !== filterDept)) return false;
                     if (filterType && s.type !== filterType) return false;
-                    if (filterFramework && !("isGroup" in s && s.isGroup) && (s as Subject).frameworkType !== filterFramework) return false;
+                    if (filterFramework && !("isGroup" in s && s.isGroup) && !(s as Subject).frameworkTypes?.includes(filterFramework as "EIGHT_FOUR_FOUR" | "CBC" | "CBE")) return false;
                     return true;
                   })
                   .map((s) => (
@@ -301,15 +301,17 @@ export default function SubjectsPage() {
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell">
                       {!("isGroup" in s && s.isGroup) && (
-                        <Chip
-                          variant={
-                            s.frameworkType === "CBC" ? "teal" :
-                            s.frameworkType === "CBE" ? "purple" : "default"
-                          }
-                          size="xs"
-                        >
-                          {s.frameworkType === "EIGHT_FOUR_FOUR" ? "8-4-4" : s.frameworkType}
-                        </Chip>
+                        <div className="flex flex-wrap gap-1">
+                          {((s as Subject).frameworkTypes ?? ["EIGHT_FOUR_FOUR"]).map((fw) => (
+                            <Chip
+                              key={fw}
+                              variant={fw === "CBC" ? "teal" : fw === "CBE" ? "purple" : "default"}
+                              size="xs"
+                            >
+                              {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
+                            </Chip>
+                          ))}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
@@ -430,30 +432,39 @@ export default function SubjectsPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Curriculum framework</label>
+              <label className={labelClass}>Curriculum frameworks</label>
               <div className="grid grid-cols-3 gap-2 mt-1">
-                {(["EIGHT_FOUR_FOUR", "CBC", "CBE"] as const).map((fw) => (
-                  <button
-                    type="button"
-                    key={fw}
-                    onClick={() => setFrameworkType(fw)}
-                    className={`text-sm rounded-lg border px-3 py-2 transition-colors text-left ${
-                      frameworkType === fw
-                        ? "bg-teal text-white border-teal"
-                        : "border-line text-ink hover:bg-paper"
-                    }`}
-                  >
-                    <span className="font-medium block">
-                      {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
-                    </span>
-                    <span className={`text-[11px] block mt-0.5 ${frameworkType === fw ? "text-white/80" : "text-slate"}`}>
-                      {fw === "EIGHT_FOUR_FOUR" ? "KCSE" : fw === "CBC" ? "Competency-based" : "TVET / CBE"}
-                    </span>
-                  </button>
-                ))}
+                {(["EIGHT_FOUR_FOUR", "CBC", "CBE"] as const).map((fw) => {
+                  const active = frameworkTypes.includes(fw);
+                  return (
+                    <button
+                      type="button"
+                      key={fw}
+                      onClick={() =>
+                        setFrameworkTypes((prev) =>
+                          active
+                            ? prev.length > 1 ? prev.filter((f) => f !== fw) : prev // keep at least one
+                            : [...prev, fw]
+                        )
+                      }
+                      className={`text-sm rounded-lg border px-3 py-2 transition-colors text-left ${
+                        active
+                          ? "bg-teal text-white border-teal"
+                          : "border-line text-ink hover:bg-paper"
+                      }`}
+                    >
+                      <span className="font-medium block">
+                        {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
+                      </span>
+                      <span className={`text-[11px] block mt-0.5 ${active ? "text-white/80" : "text-slate"}`}>
+                        {fw === "EIGHT_FOUR_FOUR" ? "KCSE" : fw === "CBC" ? "Competency-based" : "TVET / CBE"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-xs text-slate mt-1.5">
-                Only classes on the same framework will show this subject.
+                Select all frameworks this subject applies to. A class will show this subject if it matches any selected framework.
               </p>
             </div>
 

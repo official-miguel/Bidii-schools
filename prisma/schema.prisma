@@ -269,10 +269,11 @@ model Subject {
   departmentId        String
   /// Forms/year groups this subject applies to, e.g. [3, 4] for Form 3 & 4 only.
   applicableForms     Int[]
-  /// Which curriculum framework this subject belongs to.
-  /// Only classes whose frameworkType matches this value will show the subject.
-  /// Defaults to EIGHT_FOUR_FOUR so existing subjects stay visible in 8-4-4 classes.
-  frameworkType       FrameworkType              @default(EIGHT_FOUR_FOUR)
+  /// Which curriculum frameworks this subject belongs to.
+  /// A subject can appear in multiple frameworks (e.g. both 8-4-4 and CBC).
+  /// A class will show this subject if its own frameworkType is in this array.
+  /// Defaults to [EIGHT_FOUR_FOUR] so existing subjects stay visible in 8-4-4 classes.
+  frameworkTypes      FrameworkType[]            @default([EIGHT_FOUR_FOUR])
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt
   schoolId            String

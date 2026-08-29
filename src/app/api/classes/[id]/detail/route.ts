@@ -3,8 +3,9 @@
  *
  * Returns full class workspace data for the ClassWorkspaceDrawer:
  *  - class info, class teacher, enrolled students (capped at 30)
- *  - allSubjects: subjects for this class's form filtered strictly by the
- *    class's own frameworkType — each framework sees only its own subjects.
+ *  - allSubjects: subjects for this class's form where the class's
+ *    frameworkType is contained in the subject's frameworkTypes array.
+ *    A subject tagged [EIGHT_FOUR_FOUR, CBC] appears in both class types.
  *  - teachersBySubject: qualified teachers per subject (for pickers)
  *  - electiveGroups: elective groups that apply to this class (scoped by
  *    form and stream), each with their subjects, form-wide teacher pairings
@@ -139,15 +140,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   );
 
   // ── All subjects applicable to this form ─────────────────────────────────
-  // Each class only sees subjects that belong to its own framework.
-  // 8-4-4 classes → 8-4-4 subjects only
-  // CBC classes   → CBC subjects only
-  // CBE classes   → CBE subjects only
+  // A subject is shown when the class's frameworkType is present in the
+  // subject's frameworkTypes array — one subject can belong to many frameworks.
   const allSubjectsRaw = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
       applicableForms: { has: cls.form },
-      frameworkType: cls.frameworkType,
+      frameworkTypes: { has: cls.frameworkType },
     },
     orderBy: [{ type: "asc" }, { name: "asc" }],
     select: { id: true, name: true, code: true, type: true },
