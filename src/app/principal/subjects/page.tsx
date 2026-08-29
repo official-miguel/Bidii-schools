@@ -36,7 +36,7 @@ type Subject = {
   memberOfGroups?: { id: string; name: string }[];
 };
 
-type SchoolClass = { id: string; name: string; form: number };
+type SchoolClass = { id: string; name: string; form: number; stream: string | null };
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
@@ -146,6 +146,18 @@ export default function SubjectsPage() {
       return;
     }
     load();
+  }
+
+  // Build a map of form number → display label from the school's registered
+  // classes, stripping the stream suffix so "Grade 10 A" → "Grade 10".
+  const formLabels = new Map<number, string>();
+  for (const c of classes) {
+    if (!formLabels.has(c.form)) {
+      const label = c.stream
+        ? c.name.replace(new RegExp(`\\s*${c.stream}\\s*$`, "i"), "").trim()
+        : c.name.trim();
+      formLabels.set(c.form, label || c.name);
+    }
   }
 
   return (
@@ -282,7 +294,7 @@ export default function SubjectsPage() {
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5 sm:hidden">
                         <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1 py-0.5">{s.code}</span>
                         {(s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
-                          <Chip key={f} variant="default" size="xs">F{f}</Chip>
+                          <Chip key={f} variant="default" size="xs">{formLabels.get(f) ?? `Form ${f}`}</Chip>
                         ))}
                       </div>
                     </td>
@@ -329,7 +341,7 @@ export default function SubjectsPage() {
                           <Chip variant="default" size="xs">All forms</Chip>
                         ) : (
                           (s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
-                            <Chip key={f} variant="default" size="xs">F{f}</Chip>
+                            <Chip key={f} variant="default" size="xs">{formLabels.get(f) ?? `Form ${f}`}</Chip>
                           ))
                         )}
                       </div>
@@ -480,20 +492,22 @@ export default function SubjectsPage() {
               ) : (
                 <>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => (
-                      <button
-                        type="button"
-                        key={f}
-                        onClick={() => toggleForm(f)}
-                        className={`text-sm rounded-md border px-3 py-1.5 min-h-[44px] sm:min-h-0 transition-colors ${
-                          selectedForms.includes(f)
-                            ? "bg-teal text-white border-teal"
-                            : "border-line text-ink hover:bg-paper"
-                        }`}
-                      >
-                        Form {f}
-                      </button>
-                    ))}
+                    {[...formLabels.entries()]
+                      .sort(([a], [b]) => a - b)
+                      .map(([f, label]) => (
+                        <button
+                          type="button"
+                          key={f}
+                          onClick={() => toggleForm(f)}
+                          className={`text-sm rounded-md border px-3 py-1.5 min-h-[44px] sm:min-h-0 transition-colors ${
+                            selectedForms.includes(f)
+                              ? "bg-teal text-white border-teal"
+                              : "border-line text-ink hover:bg-paper"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
                   </div>
                   <p className="text-xs text-slate mt-1.5">
                     Select the specific forms this subject applies to. Leave all unselected to make it appear in <span className="font-medium text-ink">all classes</span> of the chosen framework(s).
