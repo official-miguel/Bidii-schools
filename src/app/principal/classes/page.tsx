@@ -74,15 +74,12 @@ export default function ClassesPage() {
     e.preventDefault(); setError(null);
     const fd   = new FormData(e.currentTarget);
     const name = fd.get("name") as string;
-    // Auto-derive a numeric level from the class name so the DB field is
-    // still populated for ordering/grouping — the user never types it.
-    // Matches the first standalone number: "Form 3" → 3, "Grade 7" → 7,
-    // "S2" → 2, "Year 10" → 10.  Falls back to 1 if nothing found.
-    const match       = name.match(/\d+/);
-    const derivedForm = match ? parseInt(match[0], 10) : 1;
+    // Form number is now entered explicitly by the principal — no regex guessing.
+    const formValue = parseInt(fd.get("form") as string, 10);
+    if (!formValue || formValue < 1) { setError("Enter a valid form / year level number."); return; }
     const payload = {
       name,
-      form: derivedForm,
+      form: formValue,
       stream: (fd.get("stream") as string) || "",
       classTeacherId: (fd.get("classTeacherId") as string) || null,
       frameworkType: editing ? editing.frameworkType : frameworkType,
@@ -275,6 +272,24 @@ export default function ClassesPage() {
                   />
                   <p className="text-xs text-slate mt-1.5">
                     This is the full class name students will see in their timetable and records.
+                  </p>
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Form / Year level <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    name="form"
+                    type="number"
+                    required
+                    min="1"
+                    defaultValue={editing?.form ?? ""}
+                    className={inputClass}
+                    placeholder="e.g. 3"
+                  />
+                  <p className="text-xs text-slate mt-1.5">
+                    The numeric year group this class belongs to. Used to match subjects and filter reports.
                   </p>
                 </div>
 
