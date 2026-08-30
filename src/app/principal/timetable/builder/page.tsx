@@ -16,6 +16,12 @@
  *  • Re-optimize button → calls /reoptimize (preview), shows
  *    ReoptimizePreviewModal with full diff, then applies on confirm
  *  • Change history panel (collapsible, loads /history)
+ *
+ * New additions:
+ *  • Publish button — publishes a draft; warns if clashes exist
+ *  • Edit & Revise — clones a published version to a new draft for editing + republish
+ *  • New Timetable — creates a blank draft manually (no AI generator)
+ *  • Clash gate — blocks publish if errors detected, shows summary
  */
 
 import {
@@ -26,6 +32,7 @@ import {
   BookOpen, User, RefreshCw, AlertCircle, AlertTriangle, History,
   CheckCircle2, Info, GitCompare, Keyboard, Zap,
   Undo2, Redo2, Lock, LockOpen, LayoutGrid, Search, X, ChevronDown, ChevronUp,
+  Send, Edit3, Plus, Copy,
 } from "lucide-react";
 import ContextNavigation from "@/components/ContextNavigation";
 import {
@@ -211,6 +218,27 @@ export default function BuilderPage() {
 
   // ── Help ──────────────────────────────────────────────────────────────────
   const [showHelp, setShowHelp] = useState(false);
+
+  // ── Publish ───────────────────────────────────────────────────────────────
+  const [publishing,        setPublishing]        = useState(false);
+  const [publishConfirm,    setPublishConfirm]    = useState(false); // clash-gate dialog
+  const [publishSuccess,    setPublishSuccess]    = useState(false);
+
+  // ── Edit Published (clone → draft) ───────────────────────────────────────
+  const [cloning,           setCloning]           = useState(false);
+  const [cloneModal,        setCloneModal]        = useState(false);
+  const [cloneName,         setCloneName]         = useState("");
+  const [cloneAcademicYear, setCloneAcademicYear] = useState("");
+  const [cloneTerm,         setCloneTerm]         = useState<number | "">(""); 
+  const [cloneError,        setCloneError]        = useState<string | null>(null);
+
+  // ── New Timetable (blank draft) ───────────────────────────────────────────
+  const [newTimetableModal,   setNewTimetableModal]   = useState(false);
+  const [newName,             setNewName]             = useState("");
+  const [newAcademicYear,     setNewAcademicYear]     = useState("");
+  const [newTerm,             setNewTerm]             = useState<number | "">("");
+  const [newCreating,         setNewCreating]         = useState(false);
+  const [newCreateError,      setNewCreateError]      = useState<string | null>(null);
 
   // ── Cell refs for scroll-to ───────────────────────────────────────────────
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -804,6 +832,102 @@ export default function BuilderPage() {
     });
   }
 
+  // ── Publish draft ─────────────────────────────────────────────────────────
+  async function handlePublish(force = false) {
+    if (!versionId || !isDraftVersion) return;
+    // If there are clashes and we haven't confirmed yet, show the gate dialog
+    if (!force && conflictSummary.totalErrors > 0) {
+      setPublishConfirm(true);
+      return;
+    }
+    setPublishConfirm(false);
+    setPublishing(true);
+    setError(null);
+    try {
+      const res  = await fetch(`/api/timetable/v2/versions/${versionId}/publish`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Publish failed."); return; }
+      // Update local versions list: this version becomes PUBLISHED, old one archived
+      setVersions((prev) =>
+        prev.map((v) => {
+          if (v.id === versionId) return { ...v, status: "PUBLISHED" };
+          if (v.status === "PUBLISHED") return { ...v, status: "ARCHIVED" };
+          return v;
+        })
+      );
+      setPublishSuccess(true);
+      setTimeout(() => setPublishSuccess(false), 4000);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  // ── Clone published → editable draft ─────────────────────────────────────
+  async function handleCloneToEdit() {
+    if (!versionId) return;
+    if (!cloneName.trim()) { setCloneError("Please enter a name for the new draft."); return; }
+    setCloning(true);
+    setCloneError(null);
+    try {
+      const res  = await fetch(`/api/timetable/v2/versions/${versionId}/clone`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:         cloneName.trim(),
+          academicYear: cloneAcademicYear.trim() || undefined,
+          term:         cloneTerm !== "" ? Number(cloneTerm) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCloneError(data.error ?? "Clone failed."); return; }
+      // Add the new draft to the versions list and switch to it
+      const newDraft: Version = { id: data.id, name: data.name, status: "DRAFT", slotCount: data.slotCount };
+      setVersions((prev) => [newDraft, ...prev]);
+      setVersionId(data.id);
+      setCloneModal(false);
+      setCloneName("");
+      setCloneAcademicYear("");
+      setCloneTerm("");
+    } catch (e) {
+      setCloneError((e as Error).message);
+    } finally {
+      setCloning(false);
+    }
+  }
+
+  // ── Create blank draft manually ───────────────────────────────────────────
+  async function handleCreateBlankTimetable() {
+    if (!newName.trim()) { setNewCreateError("Please enter a name for the timetable."); return; }
+    setNewCreating(true);
+    setNewCreateError(null);
+    try {
+      const res  = await fetch("/api/timetable/v2/versions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:         newName.trim(),
+          academicYear: newAcademicYear.trim() || undefined,
+          term:         newTerm !== "" ? Number(newTerm) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNewCreateError(data.error ?? "Failed to create timetable."); return; }
+      const newDraft: Version = { id: data.id, name: data.name ?? newName.trim(), status: "DRAFT", slotCount: 0 };
+      setVersions((prev) => [newDraft, ...prev]);
+      setVersionId(data.id);
+      setNewTimetableModal(false);
+      setNewName("");
+      setNewAcademicYear("");
+      setNewTerm("");
+    } catch (e) {
+      setNewCreateError((e as Error).message);
+    } finally {
+      setNewCreating(false);
+    }
+  }
+
   // ── Teacher options for modal ─────────────────────────────────────────────
   const teacherOptions = useMemo<TeacherOption[]>(() => {
     if (!editModal) return [];
@@ -879,6 +1003,61 @@ export default function BuilderPage() {
           <p className="text-slate text-sm mt-1">Drag-and-drop, click to edit, keyboard navigation.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+
+          {/* ── New Timetable (blank draft) ─────────────────────────── */}
+          <button
+            onClick={() => { setNewTimetableModal(true); setNewName(""); setNewAcademicYear(""); setNewTerm(""); setNewCreateError(null); }}
+            title="Create a new blank timetable"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-teal/40 bg-teal-50 text-teal text-xs font-semibold hover:bg-teal/10 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            New Timetable
+          </button>
+
+          {/* ── Publish (draft only) ────────────────────────────────── */}
+          {isDraft && (
+            <button
+              onClick={() => handlePublish(false)}
+              disabled={publishing}
+              title={conflictSummary.totalErrors > 0 ? `Publish (${conflictSummary.totalErrors} clash${conflictSummary.totalErrors !== 1 ? "es" : ""} — will warn)` : "Publish this draft as the live timetable"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50
+                ${publishSuccess
+                  ? "bg-success-bg border border-success/30 text-success"
+                  : conflictSummary.totalErrors > 0
+                    ? "bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100"
+                    : "bg-teal text-white border border-teal hover:bg-teal-dark"
+                }`}
+            >
+              {publishing
+                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                : publishSuccess
+                  ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                  : <Send className="h-3.5 w-3.5" aria-hidden />
+              }
+              {publishing ? "Publishing…" : publishSuccess ? "Published!" : conflictSummary.totalErrors > 0 ? `Publish (${conflictSummary.totalErrors} clash${conflictSummary.totalErrors !== 1 ? "es" : ""})` : "Publish"}
+            </button>
+          )}
+
+          {/* ── Edit & Revise (published version) ───────────────────── */}
+          {isPublished && (
+            <button
+              onClick={() => {
+                const ver = versions.find((v) => v.id === versionId);
+                setCloneName(`${ver?.name ?? "Timetable"} (Revised)`);
+                setCloneAcademicYear("");
+                setCloneTerm("");
+                setCloneError(null);
+                setCloneModal(true);
+              }}
+              disabled={cloning}
+              title="Create an editable copy of this published timetable"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors disabled:opacity-50"
+            >
+              <Edit3 className="h-3.5 w-3.5" aria-hidden />
+              Edit &amp; Revise
+            </button>
+          )}
+
           {/* Conflict badge */}
           <button
             onClick={() => setShowConflictPanel((o) => !o)}
@@ -1091,7 +1270,14 @@ export default function BuilderPage() {
             className="font-semibold text-teal underline underline-offset-2 ml-1">
             Generate
           </a>
-          &nbsp;to create one, then return here to edit it.
+          &nbsp;to create one, or
+          <button
+            onClick={() => { setNewTimetableModal(true); setNewName(""); setNewAcademicYear(""); setNewTerm(""); setNewCreateError(null); }}
+            className="font-semibold text-teal underline underline-offset-2 ml-1 inline-flex items-center gap-1"
+          >
+            <Plus className="h-3 w-3" aria-hidden />create a blank one manually
+          </button>
+          &nbsp;then return here to edit it.
         </div>
       )}
       <div className="flex gap-4 items-start">
@@ -1479,6 +1665,211 @@ export default function BuilderPage() {
           onApply={handleApplyReoptimize}
           onDiscard={() => setReoptPreview(null)}
         />
+      )}
+
+      {/* ── Publish clash-gate confirmation ───────────────────────────────── */}
+      {publishConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle className="h-6 w-6 text-danger shrink-0 mt-0.5" aria-hidden />
+              <div>
+                <h2 className="text-base font-semibold text-ink">Publish with clashes?</h2>
+                <p className="text-sm text-slate mt-1">
+                  This draft has <strong className="text-danger">{conflictSummary.totalErrors} clash{conflictSummary.totalErrors !== 1 ? "es" : ""}</strong> that
+                  will be visible to teachers and students. It&apos;s recommended to resolve them first.
+                </p>
+              </div>
+            </div>
+            {/* List top clashes */}
+            {conflictSummary.conflictList.filter((c) => c.conflict.severity === "error").slice(0, 5).map((c, i) => (
+              <div key={i} className="flex items-start gap-2 px-3 py-2 mb-1 rounded-lg bg-danger/5 border border-danger/15">
+                <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" aria-hidden />
+                <p className="text-xs text-danger">{c.conflict.message}</p>
+              </div>
+            ))}
+            {conflictSummary.conflictList.filter((c) => c.conflict.severity === "error").length > 5 && (
+              <p className="text-xs text-slate px-3 mt-1">
+                …and {conflictSummary.conflictList.filter((c) => c.conflict.severity === "error").length - 5} more.
+              </p>
+            )}
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => { setPublishConfirm(false); setShowConflictPanel(true); }}
+                className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors"
+              >
+                Fix clashes first
+              </button>
+              <button
+                onClick={() => handlePublish(true)}
+                disabled={publishing}
+                className="px-4 py-2 rounded-lg bg-danger text-white text-sm font-semibold hover:bg-danger/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {publishing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Publish anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit & Revise modal (clone published → draft) ─────────────────── */}
+      {cloneModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <Copy className="h-5 w-5 text-indigo-500" aria-hidden />
+                <h2 className="text-base font-semibold text-ink">Edit &amp; Revise Published Timetable</h2>
+              </div>
+              <button onClick={() => setCloneModal(false)} className="text-slate hover:text-ink p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate mb-4">
+              This will create an editable draft copy of the published timetable. The published version stays live until you publish the new draft.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate mb-1">Draft name <span className="text-danger">*</span></label>
+                <input
+                  type="text"
+                  value={cloneName}
+                  onChange={(e) => setCloneName(e.target.value)}
+                  placeholder="e.g. Term 2 Revision"
+                  className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate mb-1">Academic year</label>
+                  <input
+                    type="text"
+                    value={cloneAcademicYear}
+                    onChange={(e) => setCloneAcademicYear(e.target.value)}
+                    placeholder="e.g. 2025/2026"
+                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-xs font-semibold text-slate mb-1">Term</label>
+                  <select
+                    value={cloneTerm}
+                    onChange={(e) => setCloneTerm(e.target.value !== "" ? Number(e.target.value) : "")}
+                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30"
+                  >
+                    <option value="">—</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {cloneError && (
+              <p className="mt-3 text-xs text-danger flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />{cloneError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 mt-5">
+              <button onClick={() => setCloneModal(false)} className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleCloneToEdit}
+                disabled={cloning || !cloneName.trim()}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {cloning ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                {cloning ? "Creating…" : "Create Draft"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── New blank timetable modal ─────────────────────────────────────── */}
+      {newTimetableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <Plus className="h-5 w-5 text-teal" aria-hidden />
+                <h2 className="text-base font-semibold text-ink">New Timetable</h2>
+              </div>
+              <button onClick={() => setNewTimetableModal(false)} className="text-slate hover:text-ink p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate mb-4">
+              Creates a blank draft timetable. You&apos;ll fill it in manually using the grid editor — no AI generator needed. Clashes are detected in real time as you build.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate mb-1">Timetable name <span className="text-danger">*</span></label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Term 1 Timetable 2026"
+                  className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateBlankTimetable(); }}
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate mb-1">Academic year</label>
+                  <input
+                    type="text"
+                    value={newAcademicYear}
+                    onChange={(e) => setNewAcademicYear(e.target.value)}
+                    placeholder="e.g. 2025/2026"
+                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-xs font-semibold text-slate mb-1">Term</label>
+                  <select
+                    value={newTerm}
+                    onChange={(e) => setNewTerm(e.target.value !== "" ? Number(e.target.value) : "")}
+                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30"
+                  >
+                    <option value="">—</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {newCreateError && (
+              <p className="mt-3 text-xs text-danger flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />{newCreateError}
+              </p>
+            )}
+            <div className="mt-3 px-3 py-2.5 rounded-lg bg-teal-50 border border-teal-100 text-xs text-teal-700 flex items-start gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" aria-hidden />
+              <span>Clashes (teacher double-bookings, class conflicts) are detected instantly as you add lessons.</span>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button onClick={() => setNewTimetableModal(false)} className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateBlankTimetable}
+                disabled={newCreating || !newName.trim()}
+                className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-semibold hover:bg-teal-dark transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {newCreating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {newCreating ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
