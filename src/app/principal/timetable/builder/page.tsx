@@ -1245,21 +1245,7 @@ export default function BuilderPage() {
         )}
       </div>
 
-      {/* "Read-only" notice when viewing published with drafts present */}
-      {isPublished && drafts.length > 0 && (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 mb-3 rounded-xl
-                        bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-          <span className="font-semibold shrink-0">Viewing published (read-only).</span>
-          <span>You have {drafts.length} unpublished draft{drafts.length !== 1 ? "s" : ""}.</span>
-          <button
-            onClick={() => setVersionId(drafts[0].id)}
-            className="ml-auto shrink-0 font-semibold underline underline-offset-2
-                       hover:text-amber-900 transition-colors"
-          >
-            Switch to &quot;{drafts[0].name}&quot; →
-          </button>
-        </div>
-      )}
+
 
       {/* "No draft to edit" notice when no versions exist */}
       {!versionId && !versions.length && (
