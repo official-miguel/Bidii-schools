@@ -2124,8 +2124,8 @@ function SchoolTimetableView({
   const totalClasses   = classes.length;
   const filledClasses  = new Set(slots.map((s) => s.classId)).size;
   const totalSlots     = activeDays.length * periods.length * totalClasses;
-  const filledSlots    = slots.length;
-  const coveragePct    = totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0;
+  const filledSlots    = new Set(slots.map((s) => `${s.classId}|${s.dayOfWeek}|${s.period}`)).size;
+  const coveragePct    = totalSlots > 0 ? Math.min(100, Math.round((filledSlots / totalSlots) * 100)) : 0;
 
   return (
     <div className="space-y-4">
