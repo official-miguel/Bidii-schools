@@ -163,9 +163,20 @@ const ACTIONS_REGISTRY: QuickActionEntry[] = [
   { id: "qa_send_message",   label: "Send Message",         detail: "Quick Action", href: "/{role}/communication?action=compose", icon: "Send",          roles: ["principal","staff"],   keywords: ["compose","email","sms","announce"] },
   { id: "qa_create_exam",    label: "Create Exam Period",   detail: "Quick Action", href: "/{role}/exam-periods?action=add",      icon: "BookOpenCheck", roles: ["principal"],           keywords: ["new exam","schedule exam"] },
   { id: "qa_view_reports",   label: "Generate Report",      detail: "Quick Action", href: "/{role}/reports",                      icon: "FileBarChart",  roles: ["principal"],           keywords: ["analytics","summary","export"] },
-  { id: "qa_add_class",      label: "Add Class",            detail: "Quick Action", href: "/{role}/classes?action=add",           icon: "School",        roles: ["principal"],           keywords: ["new class","new form","stream"] },
-  { id: "qa_record_result",  label: "Enter Results",        detail: "Quick Action", href: "/{role}/results",                      icon: "ClipboardEdit", roles: ["principal","teacher"], keywords: ["marks","grades","scores"] },
-  { id: "qa_allocate_dorm",  label: "Allocate Boarding",    detail: "Quick Action", href: "/{role}/accommodation/allocations",    icon: "BedDouble",     roles: ["principal"],           keywords: ["dorm","boarding","allocate","hostel"] },
+  { id: "qa_add_class",      label: "Add Class",            detail: "Quick Action", href: "/{role}/classes?action=add",           icon: "School",        roles: ["principal"],                  keywords: ["new class","new form","stream"] },
+  { id: "qa_record_result",  label: "Enter Results",        detail: "Quick Action", href: "/{role}/results",                      icon: "ClipboardEdit", roles: ["principal","teacher"],        keywords: ["marks","grades","scores"] },
+  { id: "qa_allocate_dorm",  label: "Allocate Boarding",    detail: "Quick Action", href: "/{role}/accommodation/allocations",    icon: "BedDouble",     roles: ["principal"],                  keywords: ["dorm","boarding","allocate","hostel"] },
+  // ── Fees / Finance ────────────────────────────────────────────────────────
+  { id: "qa_post_payment",   label: "Post Payment",         detail: "Quick Action", href: "/{role}/finance/payments",             icon: "Banknote",      roles: ["principal","staff"],          keywords: ["payment","collect fee","cash","bank transfer"] },
+  { id: "qa_view_debtors",   label: "View Debtors",         detail: "Quick Action", href: "/{role}/finance/debtors",              icon: "TrendingDown",  roles: ["principal","staff"],          keywords: ["outstanding","arrears","unpaid","owing"] },
+  { id: "qa_invoice_term",   label: "Invoice Term Fees",    detail: "Quick Action", href: "/{role}/finance/fee-structures",       icon: "ReceiptText",   roles: ["principal"],                  keywords: ["invoice","charge","term fees","billing"] },
+  { id: "qa_fee_reports",    label: "Fee Reports",          detail: "Quick Action", href: "/{role}/finance/reports",              icon: "PieChart",      roles: ["principal","staff"],          keywords: ["finance report","collection rate","analytics"] },
+  { id: "qa_reconcile",      label: "Reconcile Payments",   detail: "Quick Action", href: "/{role}/finance/reconciliation",       icon: "RefreshCw",     roles: ["principal","staff"],          keywords: ["mpesa","unmatched","reconcile","match payment"] },
+  // ── Library ───────────────────────────────────────────────────────────────
+  { id: "qa_return_book",    label: "Return Book",          detail: "Quick Action", href: "/{role}/library/circulate",            icon: "BookCheck",     roles: ["principal","staff"],          keywords: ["return","hand in","borrow back"] },
+  { id: "qa_add_book",       label: "Add Book to Catalogue",detail: "Quick Action", href: "/{role}/library/inventory?action=add", icon: "BookPlus",      roles: ["principal","staff"],          keywords: ["new book","catalogue","add title","acquisition"] },
+  { id: "qa_library_fines",  label: "Manage Library Fines", detail: "Quick Action", href: "/{role}/library/cards?hasFine=true",   icon: "BadgeDollarSign",roles: ["principal","staff"],         keywords: ["library fine","waive fine","collect fine","overdue fine"] },
+  { id: "qa_overdue_books",  label: "View Overdue Books",   detail: "Quick Action", href: "/{role}/library/cards",                icon: "BookX",         roles: ["principal","staff"],          keywords: ["overdue","late return","past due","unreturned"] },
 ];
 
 // ---------------------------------------------------------------------------

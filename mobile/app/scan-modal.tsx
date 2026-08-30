@@ -66,11 +66,6 @@ export default function ScanModal() {
         router.back();
         router.setParams({ scannedValue: parsed.id, scannedType: 'BOOK' });
 
-      } else if (parsed.type === 'STUDENT') {
-        setFeedback(`Student: ${parsed.id}`);
-        router.back();
-        router.setParams({ scannedValue: parsed.id, scannedType: 'STUDENT' });
-
       } else if (parsed.type === 'LOAN') {
         // LOAN token — validate against active borrow on server
         // This is the key security check: we never do a raw string match.
@@ -208,7 +203,7 @@ export default function ScanModal() {
           <TextInput
             value={manualVal}
             onChangeText={setManualVal}
-            placeholder="Book accession number or admission no."
+            placeholder="Book accession number (e.g. ACC-00145)"
             placeholderTextColor={Colors.muted}
             autoFocus
             returnKeyType="go"

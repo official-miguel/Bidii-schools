@@ -468,13 +468,27 @@ export default function BuilderPage() {
 
   const slotMap = useMemo(() => {
     const m = new Map<string, LiveSlot>();
-    slots.forEach((s) => m.set(`${s.dayOfWeek}-${s.period}`, s));
+    slots.forEach((s) => {
+      const key = `${s.dayOfWeek}-${s.period}`;
+      const existing = m.get(key);
+      // When multiple slots share the same period (elective group fan-out), the
+      // group anchor carries isGroupAnchor=true and should be the representative
+      // displayed in the cell.  Only overwrite if the incoming slot is the anchor
+      // or if there is nothing there yet.
+      if (!existing || s.isGroupAnchor) {
+        m.set(key, s);
+      }
+    });
     return m;
   }, [slots]);
 
   const diffMap = useMemo(() => {
     const m = new Map<string, LiveSlot>();
-    diffSlots.forEach((s) => m.set(`${s.dayOfWeek}-${s.period}`, s));
+    diffSlots.forEach((s) => {
+      const key = `${s.dayOfWeek}-${s.period}`;
+      const existing = m.get(key);
+      if (!existing || s.isGroupAnchor) m.set(key, s);
+    });
     return m;
   }, [diffSlots]);
 
@@ -1631,24 +1645,52 @@ function SchoolTimetableView({
   // Build conflict set: "classId|day-period" for error cells
   const errorCells = useMemo(() => {
     const set = new Set<string>();
-    const teacherSlotMap = new Map<string, string[]>(); // "teacherId|day-period" → classIds
+    // "teacherId|day-period" → array of { cellKey, groupId }
+    const teacherSlotMap = new Map<string, Array<{ cellKey: string; groupId: string | null | undefined }>>();
     for (const s of slots) {
       const tk = `${s.teacherId}|${s.dayOfWeek}-${s.period}`;
       if (!teacherSlotMap.has(tk)) teacherSlotMap.set(tk, []);
-      teacherSlotMap.get(tk)!.push(`${s.classId}|${s.dayOfWeek}-${s.period}`);
+      teacherSlotMap.get(tk)!.push({
+        cellKey: `${s.classId}|${s.dayOfWeek}-${s.period}`,
+        groupId: s.groupId,
+      });
     }
-    for (const [, cellKeys] of teacherSlotMap) {
-      if (cellKeys.length > 1) {
-        cellKeys.forEach((k) => set.add(k));
+    for (const [, entries] of teacherSlotMap) {
+      if (entries.length <= 1) continue;
+      // Check every pair — flag the whole bucket only if at least one pair
+      // is a genuine clash (different groupIds, or either groupId is null).
+      let hasRealClash = false;
+      outer: for (let i = 0; i < entries.length; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+          const a = entries[i];
+          const b = entries[j];
+          // Same non-null groupId → intentional co-teaching, not a clash
+          if (a.groupId != null && b.groupId != null && a.groupId === b.groupId) continue;
+          hasRealClash = true;
+          break outer;
+        }
+      }
+      if (hasRealClash) {
+        entries.forEach(({ cellKey }) => set.add(cellKey));
       }
     }
     return set;
   }, [slots]);
 
   // Build slot lookup: "classId|day-period" → slot
+  // After server-side collapseGroupSlotsForDisplay, a group of N subjects
+  // at the same (classId, day, period) is represented by a single anchor slot.
+  // We use set-if-absent (not overwrite) so the first slot wins — that is
+  // always the group representative emitted by the collapse function.
+  // This also protects against any edge-case where collapse is bypassed and
+  // raw fan-out slots arrive: the first subject in the group still wins rather
+  // than a random last one overwriting it and leaving the rest as empty cells.
   const slotMap = useMemo(() => {
     const m = new Map<string, LiveSlot>();
-    for (const s of slots) m.set(`${s.classId}|${s.dayOfWeek}-${s.period}`, s);
+    for (const s of slots) {
+      const key = `${s.classId}|${s.dayOfWeek}-${s.period}`;
+      if (!m.has(key)) m.set(key, s);
+    }
     return m;
   }, [slots]);
 
@@ -1847,14 +1889,16 @@ function SchoolTimetableView({
                                     <button
                                       type="button"
                                       onClick={() => onSelectClass(cls.id)}
-                                      title={`${slot.subjectCode} — ${slot.teacherName}\nClick to edit ${cls.name}`}
+                                      title={`${slot.isGroupAnchor && slot.groupName ? slot.groupName : slot.subjectCode} — ${slot.teacherName}\nClick to edit ${cls.name}`}
                                       className={`w-full rounded px-1 py-0.5 text-left transition-all
                                         hover:brightness-95 active:scale-[0.97]
-                                        ${schoolColorFor(slot.subjectCode)}
+                                        ${schoolColorFor(slot.isGroupAnchor && slot.groupName ? slot.groupName : slot.subjectCode)}
                                         ${clash ? "ring-1 ring-danger" : ""}
                                       `}
                                     >
-                                      <p className="font-bold text-[9px] leading-tight truncate">{slot.subjectCode}</p>
+                                      <p className="font-bold text-[9px] leading-tight truncate">
+                                        {slot.isGroupAnchor && slot.groupName ? slot.groupName : slot.subjectCode}
+                                      </p>
                                       <p className="text-[8px] leading-tight opacity-70 truncate">
                                         {initials(slot.teacherName)}
                                       </p>

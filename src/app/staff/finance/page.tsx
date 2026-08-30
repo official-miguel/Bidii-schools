@@ -419,37 +419,75 @@ export default function FinanceDashboard() {
       </div>
 
       {/* Quick-action links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8">
-        {[
-          { href: "/staff/finance/students",       icon: <Users className="h-5 w-5" />,     label: "Students",       desc: "Ledger & balance lookup" },
-          { href: "/staff/finance/reconciliation", icon: <RefreshCw className="h-5 w-5" />, label: "Reconciliation", desc: "Unmatched M-Pesa payments" },
-          { href: "/staff/finance/reports",        icon: <PieChart className="h-5 w-5" />,  label: "Reports",        desc: "Analytics & aging" },
-        ].map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border"
-          >
-            <div
-              className="h-9 w-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0"
-              aria-hidden="true"
+      <div className="mt-8">
+        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+          Quick actions
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            {
+              href:  "/staff/finance/payments",
+              icon:  <Banknote className="h-5 w-5" />,
+              label: "Post Payment",
+              desc:  "Record a fee payment for a student",
+            },
+            {
+              href:  "/staff/finance/debtors",
+              icon:  <TrendingDown className="h-5 w-5" />,
+              label: "View Debtors",
+              desc:  "Outstanding balances & aging report",
+            },
+            {
+              href:  "/staff/finance/students",
+              icon:  <Users className="h-5 w-5" />,
+              label: "Student Ledger",
+              desc:  "Per-student balance & transaction history",
+            },
+            {
+              href:  "/staff/finance/reconciliation",
+              icon:  <RefreshCw className="h-5 w-5" />,
+              label: "Reconcile M-Pesa",
+              desc:  "Match unallocated M-Pesa payments",
+            },
+            {
+              href:  "/staff/finance/fee-structures",
+              icon:  <ReceiptText className="h-5 w-5" />,
+              label: "Fee Structures",
+              desc:  "Set up term charges & billing rules",
+            },
+            {
+              href:  "/staff/finance/reports",
+              icon:  <PieChart className="h-5 w-5" />,
+              label: "Reports",
+              desc:  "Collection rates, analytics & exports",
+            },
+          ].map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border"
             >
-              {a.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
-                {a.label}
-              </p>
-              <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">
-                {a.desc}
-              </p>
-            </div>
-            <ArrowRight
-              className="h-4 w-4 text-slate/40 shrink-0 ml-auto mt-1"
-              aria-hidden="true"
-            />
-          </Link>
-        ))}
+              <div
+                className="h-9 w-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0"
+                aria-hidden="true"
+              >
+                {a.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                  {a.label}
+                </p>
+                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">
+                  {a.desc}
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 text-slate/40 shrink-0 ml-auto mt-1"
+                aria-hidden="true"
+              />
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

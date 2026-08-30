@@ -246,7 +246,7 @@ export default function RequirementsPage() {
       setReqCache((prev) => {
         const n = { ...prev }; formClasses.forEach((c) => delete n[c.id]); return n;
       });
-      setSuccess(`Requirements applied to all ${formClasses.length} classes in Form ${form}.`);
+      setSuccess(`Requirements applied to all ${formClasses.length} classes in ${formGroupLabel(form)}.`);
       setTimeout(() => setSuccess(null), 4000);
     } catch (e) { setError((e as Error).message); }
     finally { setSaving(false); }
@@ -373,8 +373,27 @@ export default function RequirementsPage() {
 
   const selectionForm  = selection?.startsWith("form-") ? Number(selection.replace("form-", "")) : null;
   const selectionClass = selection && !selection.startsWith("form-") ? classes.find((c) => c.id === selection) : null;
+
+  // Derive a human-readable label for a form group from the actual class names
+  // e.g. classes named "Grade 11 A", "Grade 11 B" → "Grade 11"
+  function formGroupLabel(form: number): string {
+    const formClasses = classesByForm.get(form) ?? [];
+    if (formClasses.length === 0) return `Form ${form}`;
+    // Find the common prefix across all class names in this form
+    const names = formClasses.map((c) => c.name);
+    // Split each name into tokens; common tokens (excluding any that equal the stream) form the label
+    const streams = new Set(formClasses.map((c) => c.stream).filter(Boolean));
+    const tokens = names[0].split(/\s+/);
+    const commonTokens = tokens.filter((t) => !streams.has(t) && names.every((n) => n.includes(t)));
+    if (commonTokens.length > 0) return commonTokens.join(" ");
+    // Fallback: strip the last word (stream) from the first class name
+    const parts = names[0].trim().split(/\s+/);
+    if (parts.length > 1) return parts.slice(0, -1).join(" ");
+    return names[0];
+  }
+
   const selectionTitle = selectionForm != null
-    ? `Form ${selectionForm} — All Streams (bulk)`
+    ? `${formGroupLabel(selectionForm)} — All Streams (bulk)`
     : selectionClass?.name ?? "";
 
   // Distinct stream names for the currently-selected form, used by GroupEditCard
@@ -508,7 +527,7 @@ export default function RequirementsPage() {
                           ${formActive ? "bg-teal/10 border-l-2 border-teal" : "bg-paper hover:bg-teal/5 border-l-2 border-transparent"}`}>
                         <Users className={`h-3.5 w-3.5 shrink-0 ${formActive ? "text-teal" : "text-slate group-hover:text-teal"}`} />
                         <span className={`text-xs font-semibold uppercase tracking-wide flex-1 ${formActive ? "text-teal" : "text-slate group-hover:text-teal"}`}>
-                          Form {form}
+                          {formGroupLabel(form)}
                         </span>
                         <span className="text-[10px] text-slate/60 bg-line px-1.5 py-0.5 rounded-full">
                           {formClasses.length} class{formClasses.length !== 1 ? "es" : ""}
@@ -557,7 +576,7 @@ export default function RequirementsPage() {
                         <h2 className="text-sm font-semibold text-ink truncate">{selectionTitle}</h2>
                         <p className="text-xs text-slate mt-0.5">
                           {selectionForm != null
-                            ? `Sets requirements for all ${classesByForm.get(selectionForm)?.length ?? 0} streams in Form ${selectionForm}`
+                            ? `Sets requirements for all ${classesByForm.get(selectionForm)?.length ?? 0} streams in ${formGroupLabel(selectionForm)}`
                             : (() => {
                                 // Count: individual non-absorbed subjects + groups (as 1 each)
                                 const absorbedIds = new Set(groups.flatMap((g) => g.members.map((m) => m.subjectId)));
@@ -583,7 +602,7 @@ export default function RequirementsPage() {
                     <div className="mx-5 mt-4 rounded-lg border border-teal/20 bg-teal/5 px-4 py-3 flex gap-2 text-xs text-teal/90">
                       <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                       <span>
-                        Changes here will overwrite requirements for <strong>all streams</strong> in Form {selectionForm}.
+                        Changes here will overwrite requirements for <strong>all streams</strong> in {formGroupLabel(selectionForm)}.
                         To tweak a single stream, click it in the sidebar instead.
                       </span>
                     </div>
@@ -657,7 +676,7 @@ export default function RequirementsPage() {
                                 ? <><RefreshCw className="h-4 w-4 animate-spin" />Saving…</>
                                 : <><Save className="h-4 w-4" />
                                     {selectionForm != null
-                                      ? `Apply to all Form ${selectionForm} streams`
+                                      ? `Apply to all ${formGroupLabel(selectionForm)} streams`
                                       : "Save requirements"}
                                   </>}
                             </button>

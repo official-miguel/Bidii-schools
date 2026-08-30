@@ -221,7 +221,12 @@ export async function GET(req: NextRequest) {
   // Summary stats
   const totalSlots = templateColumns.filter((c) => c.slotType === TimetableSlotType.LESSON).length
     * operatingDays.length;
-  const filledSlots = displaySlots.length;
+  // Count unique (day, period) combinations that are filled.  displaySlots has
+  // already been collapsed by collapseGroupSlotsForDisplay so a group of N
+  // subjects at the same period is represented by one anchor slot — but we
+  // still guard against any edge-case duplicates with a Set.
+  const filledKeys = new Set(displaySlots.map((s) => `${s.dayOfWeek}-${s.period}`));
+  const filledSlots = filledKeys.size;
   const emptySlots = totalSlots - filledSlots;
 
   // Subject distribution

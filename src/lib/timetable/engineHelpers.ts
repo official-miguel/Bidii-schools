@@ -903,7 +903,31 @@ export function fanOutGroupSlots(
     for (const compositeKey of compositeKeys) {
       const entries = fanOutMap.get(compositeKey) ?? [];
       for (const entry of entries) {
-        if (!entry.teacherId) continue; // skip subjects with no teacher assigned
+        if (!entry.teacherId) {
+          // A group subject has no teacher assigned.  Log a warning so the
+          // admin can diagnose the data gap via server logs, but still emit
+          // the slot using the anchor's teacherId as a stand-in.  This keeps
+          // the full group intact in the DB so collapseGroupSlotsForDisplay
+          // can find all members and show the group label correctly in the
+          // timetable grid.  The slot will display the subject code but
+          // the teacher initials will show as the anchor teacher's — the
+          // admin can reassign it manually in the builder.
+          console.warn(
+            `[fanOutGroupSlots] Group subject "${entry.subjectId}" for class "${slot.classId}" ` +
+            `at day ${slot.dayOfWeek} period ${slot.period} has no teacher assigned. ` +
+            `Falling back to anchor teacher "${slot.teacherId}". ` +
+            `Assign a teacher via the class profile or Requirements page to fix this.`
+          );
+          result.push({
+            classId:   slot.classId,
+            dayOfWeek: slot.dayOfWeek,
+            period:    slot.period,
+            subjectId: entry.subjectId,
+            teacherId: slot.teacherId, // anchor teacher as fallback
+            room:      slot.room,
+          });
+          continue;
+        }
         result.push({
           classId:   slot.classId,
           dayOfWeek: slot.dayOfWeek,
@@ -1080,10 +1104,15 @@ export function collapseGroupSlotsForDisplay<
       });
     }
 
-    // Any slots in the cluster NOT consumed by a group → emit as plain
+    // Any slots in the cluster NOT consumed by a group → emit as plain.
+    // This includes partial-group slots: if a group's full member set is not
+    // present in the cluster (e.g. one member has no teacher and was skipped
+    // during fan-out), those individual slots would be silently dropped by the
+    // !allGroupSubjectIds.has() guard.  Instead we fall back to rendering them
+    // as plain cells so the lesson is at least visible to the admin.
     for (const slot of clusterSlots) {
       const k = `${slot.classId}|${slot.subjectId}|${slot.dayOfWeek}|${slot.period}`;
-      if (!consumedSlotKeys.has(k) && !allGroupSubjectIds.has(slot.subjectId)) {
+      if (!consumedSlotKeys.has(k)) {
         result.push(slot as DisplaySlot);
       }
     }

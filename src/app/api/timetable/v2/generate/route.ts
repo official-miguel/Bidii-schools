@@ -203,6 +203,19 @@ async function _handlePost(req: NextRequest) {
       lessonsPerWeek: r.lessonsPerWeek,
     }));
 
+  // ── Synthesise requirements for group anchor subjects ──────────────────
+  // Elective group subjects are often NOT listed in SubjectLessonRequirement
+  // (they are pure group subjects managed only via ElectiveGroup + its teacher
+  // tables).  Without a requirement row the solver never schedules them.
+  // We synthesise one requirement per (classId, anchorSubjectId) pair using
+  // the group's lessonsPerWeek so the solver knows to place those slots.
+  // Non-anchor group subjects are intentionally omitted here — buildGroupAwarePayload
+  // drops them anyway and they are restored by fanOutGroupSlots post-solve.
+  //
+  // This must happen BEFORE mergeGroupTeachers / groupDescriptors so the
+  // synthesised rows are visible to the teacher-assignment filter below.
+  const existingReqPairs = new Set(engineRequirements.map((r) => `${r.classId}:${r.subjectId}`));
+
   // ── Merge form-wide and per-class group teacher assignments ─────────────
   // Teachers assigned via Timetable → Requirements land in ElectiveGroupTeacher
   // (form-wide).  Teachers assigned via the class profile page land in
@@ -263,6 +276,24 @@ async function _handlePost(req: NextRequest) {
   // rotate one group's member list so each gets a unique anchor before the
   // solver payload is built.
   const resolvedGroupDescriptors = resolveGroupAnchors(groupDescriptors);
+
+  // Inject synthesised requirements for group anchor subjects that have no
+  // SubjectLessonRequirement row.  We do this after resolvedGroupDescriptors
+  // is built so we use the final (possibly rotated) anchor subjects.
+  for (const gd of resolvedGroupDescriptors) {
+    const anchorSubjectId = gd.subjectIds[0];
+    for (const classId of gd.classIds) {
+      const key = `${classId}:${anchorSubjectId}`;
+      if (!existingReqPairs.has(key)) {
+        engineRequirements.push({
+          subjectId: anchorSubjectId,
+          classId,
+          lessonsPerWeek: gd.lessonsPerWeek,
+        });
+        existingReqPairs.add(key);
+      }
+    }
+  }
 
   // ── Drop requirements that have no teacher assigned ──────────────────────
   // Subjects stored in SubjectLessonRequirement without a matching
@@ -538,26 +569,22 @@ async function _handlePost(req: NextRequest) {
   const { Prisma } = await import("@prisma/client");
 
   // ── Deduplicate slots before inserting ────────────────────────────────────
-  // The DB unique constraint is (versionId, teacherId, dayOfWeek, period) —
-  // one slot per teacher per time position.  The (classId, dayOfWeek, period)
-  // combination is intentionally NOT unique so multiple elective group subjects
-  // can share the same class period.
-  //
-  // After fanOutGroupSlots expands anchor slots, a teacher who covers the same
-  // group subject for multiple classes (e.g. GEO taught to Form 2 AND Form 4
-  // at the same period in a school-wide group) will appear at the same
-  // (teacherId, dayOfWeek, period) across different classIds.  Each occurrence
-  // is a legitimate, distinct row (different classId) and must be kept.
-  //
-  // We therefore key the dedup on (classId, subjectId, dayOfWeek, period) —
-  // one subject per class per slot.  This prevents true duplicates (the same
-  // slot emitted twice) while preserving cross-class group slots.
-  const slotSeen = new Set<string>(); // "classId|subjectId|day|period"
+  // Deduplicate on TWO keys:
+  //   1. classId|subjectId|day|period  — one subject per class per slot (original)
+  //   2. classId|teacherId|day|period  — mirrors the DB unique constraint
+  //      (versionId, classId, teacherId, dayOfWeek, period) so the ON CONFLICT
+  //      DO NOTHING clause never silently drops a legitimate second subject for
+  //      the same teacher at the same period in a multi-subject group.
+  // Both keys are checked; the first match wins.
+  const slotSeenBySubject = new Set<string>(); // "classId|subjectId|day|period"
+  const slotSeenByTeacher = new Set<string>(); // "classId|teacherId|day|period"
 
   const deduplicatedSlots = result.finalResult!.slots.filter((s) => {
-    const key = `${s.classId}|${s.subjectId}|${s.dayOfWeek}|${s.period}`;
-    if (slotSeen.has(key)) return false;
-    slotSeen.add(key);
+    const subjectKey = `${s.classId}|${s.subjectId}|${s.dayOfWeek}|${s.period}`;
+    const teacherKey = `${s.classId}|${s.teacherId}|${s.dayOfWeek}|${s.period}`;
+    if (slotSeenBySubject.has(subjectKey) || slotSeenByTeacher.has(teacherKey)) return false;
+    slotSeenBySubject.add(subjectKey);
+    slotSeenByTeacher.add(teacherKey);
     return true;
   });
 

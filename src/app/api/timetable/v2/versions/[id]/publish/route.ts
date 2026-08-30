@@ -70,7 +70,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
       "teacherId", room, ${user.schoolId!}, ${now}, ${now}
     FROM "TimetableVersionSlot"
     WHERE "versionId" = ${params.id}
-    ON CONFLICT ("classId", "teacherId", "dayOfWeek", period) DO NOTHING
+    ON CONFLICT DO NOTHING
   `;
 
   // Audit log

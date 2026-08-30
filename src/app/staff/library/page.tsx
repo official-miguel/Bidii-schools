@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   BookOpen, Users, AlertTriangle, TrendingUp,
   ArrowRight, Clock, QrCode, Package, Loader2,
+  BookCheck, BookPlus, BadgeDollarSign, BookX,
 } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState,
@@ -234,24 +235,62 @@ export default function LibraryDashboard() {
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-        {[
-          { href: "/staff/library/circulate",    icon: <QrCode className="h-5 w-5" />,   label: "Circulation Desk", desc: "Borrow, return & renew with policy checks" },
-          { href: "/staff/library/inventory",    icon: <BookOpen className="h-5 w-5" />, label: "Book Inventory",   desc: "Manage catalogue and copies" },
-          { href: "/staff/library/analytics",    icon: <Users className="h-5 w-5" />,    label: "Analytics",        desc: "KPIs, trends, reports & exports" },
-        ].map(a => (
-          <Link key={a.href} href={a.href}
-            className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">
-            <div className="h-10 w-10 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
-              {a.icon}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">{a.label}</p>
-              <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{a.desc}</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-slate/40 ml-auto mt-1 shrink-0" />
-          </Link>
-        ))}
+      <div className="mb-8">
+        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+          Quick actions
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            {
+              href:  "/staff/library/circulate",
+              icon:  <QrCode className="h-5 w-5" />,
+              label: "Circulation Desk",
+              desc:  "Borrow, return & renew with policy checks",
+            },
+            {
+              href:  "/staff/library/circulate",
+              icon:  <BookCheck className="h-5 w-5" />,
+              label: "Return Book",
+              desc:  "Process a book return or renewal",
+            },
+            {
+              href:  "/staff/library/inventory?action=add",
+              icon:  <BookPlus className="h-5 w-5" />,
+              label: "Add Book",
+              desc:  "Add a new title or copies to the catalogue",
+            },
+            {
+              href:  "/staff/library/cards?hasFine=true",
+              icon:  <BadgeDollarSign className="h-5 w-5" />,
+              label: "Manage Fines",
+              desc:  "Collect or waive outstanding library fines",
+            },
+            {
+              href:  "/staff/library/cards",
+              icon:  <BookX className="h-5 w-5" />,
+              label: "Overdue Books",
+              desc:  "Students with books past their due date",
+            },
+            {
+              href:  "/staff/library/analytics",
+              icon:  <Users className="h-5 w-5" />,
+              label: "Analytics",
+              desc:  "KPIs, trends, reports & exports",
+            },
+          ].map(a => (
+            <Link key={a.href} href={a.href}
+              className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">
+              <div className="h-10 w-10 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
+                {a.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink dark:text-dark-text">{a.label}</p>
+                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">{a.desc}</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate/40 ml-auto mt-1 shrink-0" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Recent activity */}

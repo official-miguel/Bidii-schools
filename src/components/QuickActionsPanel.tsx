@@ -37,14 +37,24 @@ const PANEL_MAX_ACTIONS = 8;
 const ROLE_PRIORITY: Record<string, string[]> = {
   principal: [
     "qa_add_student",
-    "qa_add_staff",
+    "qa_post_payment",
     "qa_take_attendance",
+    "qa_view_debtors",
+    "qa_issue_book",
+    "qa_library_fines",
+    "qa_fee_reports",
+    "qa_add_staff",
+    // extras (beyond PANEL_MAX_ACTIONS=8, still searchable)
     "qa_create_exam",
     "qa_view_reports",
     "qa_send_message",
-    "qa_issue_book",
     "qa_allocate_dorm",
     "qa_record_result",
+    "qa_invoice_term",
+    "qa_reconcile",
+    "qa_return_book",
+    "qa_add_book",
+    "qa_overdue_books",
   ],
   teacher: [
     "qa_take_attendance",
@@ -53,17 +63,26 @@ const ROLE_PRIORITY: Record<string, string[]> = {
   ],
   staff: [
     "qa_add_student",
+    "qa_post_payment",
     "qa_issue_book",
+    "qa_return_book",
+    "qa_view_debtors",
+    "qa_library_fines",
     "qa_send_message",
+    "qa_overdue_books",
+    // extras
     "qa_take_attendance",
+    "qa_reconcile",
+    "qa_add_book",
+    "qa_fee_reports",
   ],
 };
 
 // Nav shortcuts shown below the actions grid
 const NAV_SHORTCUTS_PER_ROLE: Record<string, string[]> = {
-  principal: ["nav_students", "nav_classes", "nav_reports", "nav_accommodation", "nav_calendar", "nav_settings"],
+  principal: ["nav_students", "nav_classes", "nav_finance", "nav_library", "nav_reports", "nav_accommodation", "nav_calendar", "nav_settings"],
   teacher:   ["nav_attendance", "nav_assessments", "nav_results", "nav_calendar"],
-  staff:     ["nav_students", "nav_communication", "nav_library", "nav_calendar"],
+  staff:     ["nav_students", "nav_finance", "nav_library", "nav_communication", "nav_calendar"],
 };
 
 // ---------------------------------------------------------------------------

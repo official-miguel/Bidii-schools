@@ -623,14 +623,15 @@ model StudentElective {
 }
 
 /// Section 2C — the weekly timetable grid. dayOfWeek: 0=Mon..4=Fri, period:
-/// 1-based lesson slot in the day. Two unique constraints do the heavy lifting:
-/// a class can't have two subjects in the same slot (class_slot), and a teacher
-/// can't be double-booked for the same class at the same time (teacher_class_slot).
-/// The teacher constraint now includes classId so that a teacher legitimately
-/// running a pooled/merged group session for two different classes at the same
-/// period can have two rows (one per class) without triggering a violation.
-/// classId and teacherId are already school-scoped, so schoolId is not needed in
-/// the constraints — but is kept for cheap school-wide queries without a join.
+/// 1-based lesson slot in the day. A teacher cannot be double-booked for the
+/// same class at the same time (teacher_class_slot). classId is intentionally
+/// included so a teacher can legitimately cover two different classes in the
+/// same period (pooled/merged elective group session) — each class gets its
+/// own row. The old class_slot unique constraint (classId, dayOfWeek, period)
+/// was dropped to allow elective groups to place multiple subjects in the same
+/// class period, matching the behaviour of TimetableVersionSlot.
+/// classId and teacherId are already school-scoped, so schoolId is not needed
+/// in the constraint — but is kept for cheap school-wide queries without a join.
 model TimetableSlot {
   id          String      @id @default(cuid())
   classId     String
@@ -647,11 +648,11 @@ model TimetableSlot {
   subject     Subject     @relation(fields: [subjectId], references: [id])
   teacher     Teacher     @relation(fields: [teacherId], references: [id])
 
-  @@unique([classId, dayOfWeek, period], name: "class_slot")
-  /// Prevents the same teacher being booked for the same class twice at the same
-  /// time. classId is intentionally included so a teacher can cover two different
-  /// classes in the same period (pooled/merged elective group session).
+  /// Prevents the same teacher being double-booked for the same class at the
+  /// same time. classId is intentionally included so a teacher can cover two
+  /// different classes in the same period (pooled/merged elective group session).
   @@unique([classId, teacherId, dayOfWeek, period], name: "teacher_class_slot")
+  @@index([classId, dayOfWeek, period])
   @@index([schoolId])
 }
 
