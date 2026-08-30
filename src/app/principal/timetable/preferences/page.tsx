@@ -4,16 +4,13 @@
  * /principal/timetable/preferences — Session Preferences
  *
  * Admins define which subjects prefer which session (morning/afternoon/evening).
- * Natural language instructions can be typed and translated automatically.
- *
  * The engine reads these as soft or hard constraints when placing lessons.
- * AI's only role here is parsing the natural language into a structured rule.
  */
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Save, Trash2, Plus, Sparkles, Sun, Sunset, Moon,
-  CheckCircle2, AlertTriangle, RefreshCw, Info,
+  Save, Trash2, Plus, Sun, Sunset, Moon,
+  CheckCircle2, RefreshCw, Info,
 } from "lucide-react";
 import ContextNavigation from "@/components/ContextNavigation";
 import {
@@ -21,8 +18,6 @@ import {
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
 import { TIMETABLE_NAV } from "@/lib/timetable/navItems";
-
-
 
 
 const SESSION_META = {
@@ -36,7 +31,6 @@ type Preference = {
   subjectCode: string;
   preferredSession: "MORNING" | "AFTERNOON" | "EVENING";
   isHard: boolean;
-  instruction?: string;
 };
 
 type Subject = { id: string; code: string; name: string };
@@ -56,18 +50,12 @@ export default function PreferencesPage() {
   const [preferences,  setPreferences]  = useState<Preference[]>([]);
   const [subjects,     setSubjects]     = useState<Subject[]>([]);
   const [distribution, setDistribution] = useState<Distribution | null>(null);
-  const [aiAvailable,  setAiAvailable]  = useState(false);
-
-  // NL instruction input
-  const [instruction,  setInstruction]  = useState("");
-  const [translating,  setTranslating]  = useState(false);
-  const [translateResult, setTranslateResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [prefRes, trRes] = await Promise.all([
+      const [prefRes, subRes] = await Promise.all([
         fetch("/api/timetable/session-preferences"),
         fetch("/api/timetable/translate-preference"),
       ]);
@@ -81,16 +69,14 @@ export default function PreferencesPage() {
             subjectCode: p.subjectCode ?? "",
             preferredSession: p.preferredSession ?? "MORNING",
             isHard: p.isHard ?? false,
-            instruction: p.instruction,
           }))
         );
         setDistribution(d.distribution ?? null);
       }
 
-      if (trRes.ok) {
-        const d = await trRes.json();
+      if (subRes.ok) {
+        const d = await subRes.json();
         setSubjects(d.subjects ?? []);
-        setAiAvailable(d.aiAvailable ?? false);
       }
     } catch (e) {
       setError((e as Error).message);
@@ -120,46 +106,6 @@ export default function PreferencesPage() {
     setPreferences((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function handleTranslate() {
-    if (!instruction.trim()) return;
-    setTranslating(true);
-    setTranslateResult(null);
-    try {
-      const res = await fetch("/api/timetable/translate-preference", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preferences: [{ instruction }],
-          useAI: aiAvailable,
-        }),
-      });
-      const data = await res.json();
-      const result = data.results?.[0];
-      if (result?.success && result.preference) {
-        const { subjectCode, preferredSession, isHard, explanation } = result.preference;
-        // Add the translated preference to the list
-        setPreferences((prev) => [
-          ...prev,
-          {
-            subjectCode: subjectCode ?? "",
-            preferredSession: preferredSession ?? "MORNING",
-            isHard: isHard ?? false,
-            instruction,
-          },
-        ]);
-        setTranslateResult(`Added: ${explanation}`);
-        setInstruction("");
-      } else {
-        const clarify = result?.needsClarification?.[0] ?? "Could not understand the instruction";
-        setTranslateResult(`Could not parse: ${clarify}`);
-      }
-    } catch (e) {
-      setTranslateResult(`Error: ${(e as Error).message}`);
-    } finally {
-      setTranslating(false);
-    }
-  }
-
   async function handleSave() {
     setSaving(true);
     setError(null);
@@ -173,7 +119,6 @@ export default function PreferencesPage() {
             subjectCode: p.subjectCode.toUpperCase(),
             preferredSession: p.preferredSession,
             isHard: p.isHard,
-            instruction: p.instruction,
           })),
         }),
       });
@@ -246,54 +191,6 @@ export default function PreferencesPage() {
           </div>
         )}
 
-        {/* ── Natural language input ────────────────────────────── */}
-        <div className="bg-white border border-line rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-teal" />
-            <h2 className="text-sm font-semibold text-ink">Add preference by instruction</h2>
-            {!aiAvailable && (
-              <span className="text-xs text-slate bg-line px-2 py-0.5 rounded-full">Pattern matching only</span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <input
-              className={`${inputClass} flex-1`}
-              placeholder='e.g. "Mathematics must be in the morning" or "PE should be in the afternoon"'
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleTranslate()}
-            />
-            <button
-              type="button"
-              onClick={handleTranslate}
-              disabled={translating || !instruction.trim()}
-              className={primaryButtonClass}
-            >
-              {translating
-                ? <RefreshCw className="h-4 w-4 animate-spin" />
-                : <Sparkles className="h-4 w-4" />
-              }
-              Parse
-            </button>
-          </div>
-          {translateResult && (
-            <p className={`text-xs mt-2 flex items-center gap-1.5 ${
-              translateResult.startsWith("Added")
-                ? "text-success"
-                : "text-warn"
-            }`}>
-              {translateResult.startsWith("Added")
-                ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                : <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-              }
-              {translateResult}
-            </p>
-          )}
-          <p className="text-xs text-slate mt-2">
-            Use &quot;must&quot; or &quot;always&quot; for hard constraints (engine enforced); &quot;prefer&quot; or &quot;should&quot; for soft preferences.
-          </p>
-        </div>
-
         {/* ── Preferences table ─────────────────────────────────── */}
         <div className="bg-white border border-line rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
@@ -321,11 +218,10 @@ export default function PreferencesPage() {
             </div>
           ) : (
             <>
-              <div className="hidden sm:grid grid-cols-[1fr_140px_140px_100px_40px] gap-3 px-5 py-2 bg-paper border-b border-line">
+              <div className="hidden sm:grid grid-cols-[1fr_140px_140px_40px] gap-3 px-5 py-2 bg-paper border-b border-line">
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Subject code</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Session</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Constraint type</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">From instruction</span>
                 <span />
               </div>
 
@@ -336,7 +232,7 @@ export default function PreferencesPage() {
                   return (
                     <div
                       key={idx}
-                      className="grid grid-cols-[1fr_140px_140px_100px_40px] gap-3 px-5 py-3 items-center"
+                      className="grid grid-cols-[1fr_140px_140px_40px] gap-3 px-5 py-3 items-center"
                     >
                       {/* Subject code */}
                       {subjects.length > 0 ? (
@@ -391,20 +287,6 @@ export default function PreferencesPage() {
                         >
                           {pref.isHard ? "Hard (enforced)" : "Soft (preferred)"}
                         </button>
-                      </div>
-
-                      {/* Instruction badge */}
-                      <div className="flex items-center">
-                        {pref.instruction ? (
-                          <span
-                            title={pref.instruction}
-                            className="px-2 py-0.5 rounded bg-teal/10 text-teal text-[10px] font-medium max-w-[80px] truncate"
-                          >
-                            AI
-                          </span>
-                        ) : (
-                          <span className="text-slate/40 text-xs">—</span>
-                        )}
                       </div>
 
                       {/* Remove */}

@@ -236,6 +236,16 @@ export default function RequirementsPage() {
 
   // ── Panel open helpers ────────────────────────────────────────────────────
 
+  async function openAllClasses() {
+    setError(null);
+    setDraft(buildDraft(allSubjects, []));
+    setSelection("all");
+    setExpanded(true);
+    setEditingGroup(null);
+    setPickerGroupId(null);
+    setGroups([]);
+  }
+
   async function openStream(classId: string) {
     setError(null);
     const cls  = classes.find((c) => c.id === classId);
@@ -278,6 +288,30 @@ export default function RequirementsPage() {
       setReqCache((prev) => { const n = { ...prev }; delete n[classId]; return n; });
       setSuccess("Requirements saved.");
       setTimeout(() => setSuccess(null), 3000);
+    } catch (e) { setError((e as Error).message); }
+    finally { setSaving(false); }
+  }
+
+  async function saveAllClasses() {
+    setSaving(true); setError(null); setSuccess(null);
+    try {
+      const body = Object.entries(draft)
+        .filter(([, v]) => v.lessonsPerWeek > 0)
+        .map(([subjectId, v]) => ({ subjectId, lessonsPerWeek: v.lessonsPerWeek }));
+      for (const cls of classes) {
+        const res = await fetch("/api/timetable/lesson-requirements", {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId: cls.id, requirements: body }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(`Failed on ${cls.name}: ${data.error ?? "Unknown error"}`);
+          return;
+        }
+      }
+      setReqCache({});
+      setSuccess(`Requirements applied to all ${classes.length} classes in the school.`);
+      setTimeout(() => setSuccess(null), 4000);
     } catch (e) { setError((e as Error).message); }
     finally { setSaving(false); }
   }
@@ -437,8 +471,9 @@ export default function RequirementsPage() {
     return individualTotal + groupTotal;
   }, [draft, groups]);
 
+  const selectionAll   = selection === "all";
   const selectionForm  = selection?.startsWith("form-") ? Number(selection.replace("form-", "")) : null;
-  const selectionClass = selection && !selection.startsWith("form-") ? classes.find((c) => c.id === selection) : null;
+  const selectionClass = selection && !selection.startsWith("form-") && selection !== "all" ? classes.find((c) => c.id === selection) : null;
 
   function formGroupLabel(form: number): string {
     const formClasses = classesByForm.get(form) ?? [];
@@ -453,9 +488,11 @@ export default function RequirementsPage() {
     return names[0];
   }
 
-  const selectionTitle = selectionForm != null
-    ? `${formGroupLabel(selectionForm)} — All Streams (bulk)`
-    : selectionClass?.name ?? "";
+  const selectionTitle = selectionAll
+    ? `All Classes (bulk)`
+    : selectionForm != null
+      ? `${formGroupLabel(selectionForm)} — All Streams (bulk)`
+      : selectionClass?.name ?? "";
 
   const availableStreams = useMemo(() => {
     const form = selectionForm ?? selectionClass?.form;
@@ -590,8 +627,22 @@ export default function RequirementsPage() {
                 {/* Sidebar */}
                 <div className="bg-white border border-line rounded-xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-line">
-                    <p className="text-xs font-semibold text-slate uppercase tracking-wide">Classes</p>
-                    <p className="text-[10px] text-slate mt-0.5">Click a class group to bulk-edit all its streams</p>
+                    <button
+                      type="button"
+                      onClick={openAllClasses}
+                      className={`w-full text-left group flex items-center justify-between gap-2 transition-colors`}>
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-wide transition-colors ${selectionAll ? "text-teal" : "text-slate group-hover:text-teal"}`}>
+                          All Classes
+                        </p>
+                        <p className="text-[10px] text-slate mt-0.5">Click to set requirements for every class</p>
+                      </div>
+                      {selectionAll && (
+                        <span className="text-[10px] font-semibold bg-teal/10 text-teal px-2 py-0.5 rounded-full border border-teal/20 shrink-0">
+                          Bulk edit
+                        </span>
+                      )}
+                    </button>
                   </div>
                   <div className="divide-y divide-line">
                     {Array.from(classesByForm.entries()).map(([form, formClasses]) => {
@@ -646,13 +697,15 @@ export default function RequirementsPage() {
                         onClick={() => setExpanded((e) => !e)}>
                         <div className="flex items-start gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5
-                            ${selectionForm != null ? "bg-teal/10 text-teal" : "bg-blue-50 text-blue-600"}`}>
-                            {selectionForm != null ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                            ${selectionAll ? "bg-violet-100 text-violet-600" : selectionForm != null ? "bg-teal/10 text-teal" : "bg-blue-50 text-blue-600"}`}>
+                            {selectionAll ? <BookOpen className="h-4 w-4" /> : selectionForm != null ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
                           </div>
                           <div className="min-w-0">
                             <h2 className="text-sm font-semibold text-ink truncate">{selectionTitle}</h2>
                             <p className="text-xs text-slate mt-0.5">
-                              {selectionForm != null
+                              {selectionAll
+                                ? `Applies to all ${classes.length} classes in the school`
+                                : selectionForm != null
                                 ? `Sets requirements for all ${classesByForm.get(selectionForm)?.length ?? 0} streams in ${formGroupLabel(selectionForm)}`
                                 : (() => {
                                     const absorbedIds   = new Set(groups.flatMap((g) => g.members.map((m) => m.subjectId)));
@@ -665,7 +718,7 @@ export default function RequirementsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {selectionForm != null && (
+                          {(selectionForm != null || selectionAll) && (
                             <span className="text-[10px] font-semibold bg-teal/10 text-teal px-2 py-1 rounded-full border border-teal/20">
                               Bulk edit
                             </span>
@@ -674,19 +727,22 @@ export default function RequirementsPage() {
                         </div>
                       </div>
 
-                      {selectionForm != null && expanded && (
+                      {(selectionForm != null || selectionAll) && expanded && (
                         <div className="mx-5 mt-4 rounded-lg border border-teal/20 bg-teal/5 px-4 py-3 flex gap-2 text-xs text-teal/90">
                           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                           <span>
-                            Changes here will overwrite requirements for <strong>all streams</strong> in {formGroupLabel(selectionForm)}.
-                            To tweak a single stream, click it in the sidebar instead.
+                            {selectionAll
+                              ? <>Changes here will overwrite requirements for <strong>all {classes.length} classes</strong> in the school.</>
+                              : <>Changes here will overwrite requirements for <strong>all streams</strong> in {formGroupLabel(selectionForm!)}. To tweak a single stream, click it in the sidebar instead.</>
+                            }
                           </span>
                         </div>
                       )}
 
                       {expanded && (
                         <>
-                          <ElectiveGroupsSection
+                          {!selectionAll && (
+                            <ElectiveGroupsSection
                             groups={groups}
                             groupsLoading={groupsLoading}
                             editingGroup={editingGroup}
@@ -706,6 +762,7 @@ export default function RequirementsPage() {
                             onRemoveSubject={removeSubjectFromGroup}
                             onTogglePicker={(gid) => setPickerGroupId((prev) => prev === gid ? null : gid)}
                           />
+                          )}
 
                           <RequirementsTable
                             rows={subjectRows}
@@ -731,14 +788,16 @@ export default function RequirementsPage() {
                                   <ArrowLeft className="h-3.5 w-3.5" /> Back
                                 </button>
                                 <button type="button" disabled={saving}
-                                  onClick={() => selectionForm != null ? saveForm(selectionForm) : saveStream(selection!)}
+                                  onClick={() => selectionAll ? saveAllClasses() : selectionForm != null ? saveForm(selectionForm) : saveStream(selection!)}
                                   className={primaryButtonClass}>
                                   {saving
                                     ? <><RefreshCw className="h-4 w-4 animate-spin" />Saving…</>
                                     : <><Save className="h-4 w-4" />
-                                        {selectionForm != null
-                                          ? `Apply to all ${formGroupLabel(selectionForm)} streams`
-                                          : "Save requirements"}
+                                        {selectionAll
+                                          ? `Apply to all ${classes.length} classes`
+                                          : selectionForm != null
+                                            ? `Apply to all ${formGroupLabel(selectionForm)} streams`
+                                            : "Save requirements"}
                                       </>}
                                 </button>
                               </div>
