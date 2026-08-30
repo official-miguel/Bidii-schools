@@ -927,10 +927,6 @@ model TeacherLoadRequirement {
   id                  String   @id @default(cuid())
   schoolId            String
   teacherId           String   @unique
-  /// Minimum lessons per week (optional lower bound).
-  minLessonsPerWeek   Int?
-  /// Maximum lessons per week (optional upper bound).
-  maxLessonsPerWeek   Int?
   /// Minimum lessons per day (optional lower bound).
   minLessonsPerDay    Int?
   /// Maximum lessons per day (optional upper bound; overrides school-wide cap for this teacher).

@@ -4,7 +4,7 @@
  * GET  — returns all active (non-archived) teachers for this school, each
  *         with their current TeacherLoadRequirement row (if one exists).
  * PUT  — upserts a TeacherLoadRequirement for a single teacher.
- *         Passing all-null values for the four limit fields is allowed and
+ *         Passing all-null values for both limit fields is allowed and
  *         means "no constraint" (equivalent to deleting the row, but we keep
  *         the row so we know the user explicitly cleared it).
  */
@@ -18,122 +18,109 @@ import { requireSchoolPermission } from "@/lib/permissions";
 // ── GET ─────────────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const user =
-    (await requireSchoolRole("PRINCIPAL")) ??
-    (await requireSchoolPermission("TIMETABLE", "view"));
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user =
+      (await requireSchoolRole("PRINCIPAL")) ??
+      (await requireSchoolPermission("TIMETABLE", "view"));
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { schoolId } = user;
+    const { schoolId } = user;
 
-  const teachers = await prisma.teacher.findMany({
-    where: { schoolId, archivedAt: null },
-    orderBy: { fullName: "asc" },
-    select: {
-      id: true,
-      fullName: true,
-      staffId: true,
-      designation: true,
-      loadRequirement: {
-        select: {
-          id: true,
-          minLessonsPerWeek: true,
-          maxLessonsPerWeek: true,
-          minLessonsPerDay: true,
-          maxLessonsPerDay: true,
+    const teachers = await prisma.teacher.findMany({
+      where: { schoolId, archivedAt: null },
+      orderBy: { fullName: "asc" },
+      select: {
+        id: true,
+        fullName: true,
+        staffId: true,
+        designation: true,
+        loadRequirement: {
+          select: {
+            id: true,
+            minLessonsPerDay: true,
+            maxLessonsPerDay: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  // Also surface the school-wide default so the UI can display it as a hint
-  const config = await prisma.timetableConfig.findUnique({
-    where: { schoolId },
-    select: { maxLessonsPerTeacherPerDay: true },
-  });
+    // Also surface the school-wide default so the UI can display it as a hint
+    const config = await prisma.timetableConfig.findUnique({
+      where: { schoolId },
+      select: { maxLessonsPerTeacherPerDay: true },
+    });
 
-  return NextResponse.json({
-    teachers,
-    schoolDefaultMaxPerDay: config?.maxLessonsPerTeacherPerDay ?? null,
-  });
+    return NextResponse.json({
+      teachers,
+      schoolDefaultMaxPerDay: config?.maxLessonsPerTeacherPerDay ?? null,
+    });
+  } catch (error) {
+    console.error("Error fetching teacher requirements:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch teacher requirements" },
+      { status: 500 }
+    );
+  }
 }
 
 // ── PUT ─────────────────────────────────────────────────────────────────────
 
 const putSchema = z.object({
-  teacherId: z.string().min(1),
-  minLessonsPerWeek: z.number().int().min(0).max(40).nullable(),
-  maxLessonsPerWeek: z.number().int().min(0).max(40).nullable(),
-  minLessonsPerDay:  z.number().int().min(0).max(10).nullable(),
-  maxLessonsPerDay:  z.number().int().min(0).max(10).nullable(),
+  teacherId:        z.string().min(1),
+  minLessonsPerDay: z.number().int().min(0).max(10).nullable(),
+  maxLessonsPerDay: z.number().int().min(0).max(10).nullable(),
 });
 
 export async function PUT(req: NextRequest) {
-  const user =
-    (await requireSchoolRole("PRINCIPAL")) ??
-    (await requireSchoolPermission("TIMETABLE", "manage"));
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user =
+      (await requireSchoolRole("PRINCIPAL")) ??
+      (await requireSchoolPermission("TIMETABLE", "manage"));
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { schoolId } = user;
+    const { schoolId } = user;
 
-  const body = await req.json().catch(() => null);
-  const parsed = putSchema.safeParse(body);
-  if (!parsed.success) {
+    const body = await req.json().catch(() => null);
+    const parsed = putSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message ?? "Invalid input." },
+        { status: 400 }
+      );
+    }
+
+    const { teacherId, minLessonsPerDay, maxLessonsPerDay } = parsed.data;
+
+    if (
+      minLessonsPerDay != null &&
+      maxLessonsPerDay != null &&
+      minLessonsPerDay > maxLessonsPerDay
+    ) {
+      return NextResponse.json(
+        { error: "Minimum lessons/day cannot exceed maximum." },
+        { status: 400 }
+      );
+    }
+
+    const teacher = await prisma.teacher.findFirst({
+      where: { id: teacherId, schoolId, archivedAt: null },
+    });
+    if (!teacher) {
+      return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
+    }
+
+    const loadReq = await prisma.teacherLoadRequirement.upsert({
+      where: { teacherId },
+      create: { schoolId, teacherId, minLessonsPerDay, maxLessonsPerDay },
+      update: { minLessonsPerDay, maxLessonsPerDay },
+    });
+
+    return NextResponse.json({ loadRequirement: loadReq });
+  } catch (error) {
+    console.error("Error saving teacher requirements:", error);
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid input." },
-      { status: 400 }
+      { error: "Failed to save teacher requirements" },
+      { status: 500 }
     );
   }
-
-  const { teacherId, minLessonsPerWeek, maxLessonsPerWeek, minLessonsPerDay, maxLessonsPerDay } =
-    parsed.data;
-
-  // Validate cross-field: min must not exceed max when both are set
-  if (
-    minLessonsPerWeek != null &&
-    maxLessonsPerWeek != null &&
-    minLessonsPerWeek > maxLessonsPerWeek
-  ) {
-    return NextResponse.json(
-      { error: "Minimum lessons/week cannot exceed maximum." },
-      { status: 400 }
-    );
-  }
-  if (
-    minLessonsPerDay != null &&
-    maxLessonsPerDay != null &&
-    minLessonsPerDay > maxLessonsPerDay
-  ) {
-    return NextResponse.json(
-      { error: "Minimum lessons/day cannot exceed maximum." },
-      { status: 400 }
-    );
-  }
-
-  // Confirm teacher belongs to this school
-  const teacher = await prisma.teacher.findFirst({
-    where: { id: teacherId, schoolId, archivedAt: null },
-  });
-  if (!teacher) {
-    return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
-  }
-
-  const loadReq = await prisma.teacherLoadRequirement.upsert({
-    where: { teacherId },
-    create: {
-      schoolId,
-      teacherId,
-      minLessonsPerWeek,
-      maxLessonsPerWeek,
-      minLessonsPerDay,
-      maxLessonsPerDay,
-    },
-    update: {
-      minLessonsPerWeek,
-      maxLessonsPerWeek,
-      minLessonsPerDay,
-      maxLessonsPerDay,
-    },
-  });
-
-  return NextResponse.json({ loadRequirement: loadReq });
 }

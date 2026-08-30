@@ -57,10 +57,8 @@ type ElectiveGroup = {
 
 type TeacherLoadReq = {
   id: string;
-  minLessonsPerWeek: number | null;
-  maxLessonsPerWeek: number | null;
-  minLessonsPerDay:  number | null;
-  maxLessonsPerDay:  number | null;
+  minLessonsPerDay: number | null;
+  maxLessonsPerDay: number | null;
 };
 
 type TeacherRow = {
@@ -137,6 +135,8 @@ export default function RequirementsPage() {
         fetch("/api/classes"),
         fetch("/api/subjects"),
       ]);
+      if (!classRes.ok) throw new Error(`Failed to load classes (${classRes.status})`);
+      if (!subjectRes.ok) throw new Error(`Failed to load subjects (${subjectRes.status})`);
       const classData   = await classRes.json();
       const subjectData = await subjectRes.json();
       const cls: SchoolClass[] = classData?.classes ?? classData ?? [];
@@ -154,6 +154,8 @@ export default function RequirementsPage() {
           .filter((s) => s.type === "ELECTIVE")
           .sort((a, b) => a.name.localeCompare(b.name))
       );
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -163,6 +165,7 @@ export default function RequirementsPage() {
     setTeachersLoading(true);
     try {
       const res  = await fetch("/api/timetable/teacher-requirements");
+      if (!res.ok) throw new Error(`Failed to load teacher requirements (${res.status})`);
       const data = await res.json();
       const rows: TeacherRow[] = data.teachers ?? [];
       setTeachers(rows);
@@ -171,10 +174,8 @@ export default function RequirementsPage() {
       const drafts: Record<string, Omit<TeacherLoadReq, "id">> = {};
       for (const t of rows) {
         drafts[t.id] = {
-          minLessonsPerWeek: t.loadRequirement?.minLessonsPerWeek ?? null,
-          maxLessonsPerWeek: t.loadRequirement?.maxLessonsPerWeek ?? null,
-          minLessonsPerDay:  t.loadRequirement?.minLessonsPerDay  ?? null,
-          maxLessonsPerDay:  t.loadRequirement?.maxLessonsPerDay  ?? null,
+          minLessonsPerDay: t.loadRequirement?.minLessonsPerDay ?? null,
+          maxLessonsPerDay: t.loadRequirement?.maxLessonsPerDay ?? null,
         };
       }
       setTeacherDrafts(drafts);
@@ -186,6 +187,7 @@ export default function RequirementsPage() {
   const loadRequirements = useCallback(async (classId: string): Promise<Requirement[]> => {
     if (reqCache[classId]) return reqCache[classId];
     const res  = await fetch(`/api/timetable/lesson-requirements?classId=${encodeURIComponent(classId)}`);
+    if (!res.ok) return [];
     const data = await res.json();
     const reqs: Requirement[] = data.requirements ?? [];
     setReqCache((prev) => ({ ...prev, [classId]: reqs }));
@@ -349,7 +351,7 @@ export default function RequirementsPage() {
   function patchTeacherDraft(teacherId: string, patch: Partial<Omit<TeacherLoadReq, "id">>) {
     setTeacherDrafts((prev) => ({
       ...prev,
-      [teacherId]: { ...(prev[teacherId] ?? { minLessonsPerWeek: null, maxLessonsPerWeek: null, minLessonsPerDay: null, maxLessonsPerDay: null }), ...patch },
+      [teacherId]: { ...(prev[teacherId] ?? { minLessonsPerDay: null, maxLessonsPerDay: null }), ...patch },
     }));
   }
 
@@ -830,7 +832,7 @@ function TeacherRequirementsTab({
       <div className="rounded-lg border border-line bg-paper px-4 py-2.5 flex gap-2 text-xs text-slate">
         <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate/60" />
         <span>
-          Set a minimum and/or maximum number of lessons per teacher per day and per week.
+          Set a minimum and/or maximum number of lessons per teacher per day.
           The timetable engine respects these as hard constraints when generating.
           Leave a field blank to use the school-wide default
           {schoolDefaultMaxPerDay != null ? ` (currently ${schoolDefaultMaxPerDay} lessons/day max)` : ""}.
@@ -857,12 +859,10 @@ function TeacherRequirementsTab({
       {/* Table */}
       <div className="bg-white border border-line rounded-xl overflow-hidden">
         {/* Column header */}
-        <div className="grid grid-cols-[1fr_repeat(4,_120px)_80px] gap-2 px-5 py-2.5 bg-paper border-b border-line">
+        <div className="grid grid-cols-[1fr_repeat(2,_120px)_80px] gap-2 px-5 py-2.5 bg-paper border-b border-line">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Teacher</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Min / day</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Max / day</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Min / week</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Max / week</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Save</span>
         </div>
 
@@ -871,17 +871,15 @@ function TeacherRequirementsTab({
         ) : (
           <div className="divide-y divide-line">
             {filtered.map((teacher) => {
-              const d         = drafts[teacher.id] ?? { minLessonsPerWeek: null, maxLessonsPerWeek: null, minLessonsPerDay: null, maxLessonsPerDay: null };
+              const d         = drafts[teacher.id] ?? { minLessonsPerDay: null, maxLessonsPerDay: null };
               const isSaving  = savingTeacher === teacher.id;
               const hasChanges =
-                d.minLessonsPerWeek !== (teacher.loadRequirement?.minLessonsPerWeek ?? null) ||
-                d.maxLessonsPerWeek !== (teacher.loadRequirement?.maxLessonsPerWeek ?? null) ||
                 d.minLessonsPerDay  !== (teacher.loadRequirement?.minLessonsPerDay  ?? null) ||
                 d.maxLessonsPerDay  !== (teacher.loadRequirement?.maxLessonsPerDay  ?? null);
 
               return (
                 <div key={teacher.id}
-                  className="grid grid-cols-[1fr_repeat(4,_120px)_80px] gap-2 px-5 py-3 items-center">
+                  className="grid grid-cols-[1fr_repeat(2,_120px)_80px] gap-2 px-5 py-3 items-center">
                   {/* Teacher info */}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink truncate">{teacher.fullName}</p>
@@ -904,22 +902,6 @@ function TeacherRequirementsTab({
                     max={10}
                     placeholder={schoolDefaultMaxPerDay != null ? String(schoolDefaultMaxPerDay) : "—"}
                     onChange={(v) => onPatch(teacher.id, { maxLessonsPerDay: v })}
-                  />
-
-                  {/* Min / week */}
-                  <LoadInput
-                    value={d.minLessonsPerWeek}
-                    max={40}
-                    placeholder="—"
-                    onChange={(v) => onPatch(teacher.id, { minLessonsPerWeek: v })}
-                  />
-
-                  {/* Max / week */}
-                  <LoadInput
-                    value={d.maxLessonsPerWeek}
-                    max={40}
-                    placeholder="—"
-                    onChange={(v) => onPatch(teacher.id, { maxLessonsPerWeek: v })}
                   />
 
                   {/* Save button */}
