@@ -59,41 +59,63 @@ export async function POST(req: NextRequest) {
     (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = createSchema.safeParse(await req.json().catch(() => null));
+  let body: unknown;
+  try { body = await req.json(); } catch { body = null; }
+
+  const parsed = createSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
 
   const id  = randomUUID();
   const now = new Date();
 
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableVersion"
-      (id, "schoolId", name, description, status, "academicYear", term,
-       "createdById", "createdAt", "updatedAt")
-    VALUES (
-      ${id}, ${user.schoolId!}, ${parsed.data.name},
-      ${parsed.data.description ?? null},
-      'DRAFT',
-      ${parsed.data.academicYear ?? null},
-      ${parsed.data.term ?? null},
-      ${user.id}, ${now}, ${now}
-    )
-  `;
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableVersion"
+        (id, "schoolId", name, description, status, "academicYear", term,
+         "createdById", "createdAt", "updatedAt")
+      VALUES (
+        ${id}, ${user.schoolId!}, ${parsed.data.name},
+        ${parsed.data.description ?? null},
+        'DRAFT',
+        ${parsed.data.academicYear ?? null},
+        ${parsed.data.term ?? null},
+        ${user.id}, ${now}, ${now}
+      )
+    `;
+  } catch (err) {
+    console.error("[POST /api/timetable/v2/versions] INSERT failed:", err);
+    return NextResponse.json({ error: "Failed to create timetable version." }, { status: 500 });
+  }
 
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableChangeLog"
-      (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
-    VALUES (
-      ${randomUUID()}, ${user.schoolId!}, ${id},
-      'CREATED'::"TimetableChangeAction",
-      ${JSON.stringify({ name: parsed.data.name })}::jsonb,
-      ${user.id}, ${now}
-    )
-  `;
+  // Best-effort changelog — don't fail the whole request if this errors
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableChangeLog"
+        (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
+      VALUES (
+        ${randomUUID()}, ${user.schoolId!}, ${id},
+        'CREATED'::"TimetableChangeAction",
+        ${JSON.stringify({ name: parsed.data.name })}::jsonb,
+        ${user.id}, ${now}
+      )
+    `;
+  } catch {
+    // changelog failure is non-fatal
+  }
 
-  const version = await prisma.$queryRaw<Array<Record<string, unknown>>>`
+  const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
     SELECT * FROM "TimetableVersion" WHERE id = ${id}
   `;
 
-  return NextResponse.json(version[0], { status: 201 });
+  if (!rows[0]) {
+    // Fallback: return a minimal object so the client can proceed
+    return NextResponse.json(
+      { id, name: parsed.data.name, status: "DRAFT", slotCount: 0,
+        academicYear: parsed.data.academicYear ?? null, term: parsed.data.term ?? null },
+      { status: 201 }
+    );
+  }
+
+  return NextResponse.json(rows[0], { status: 201 });
 }
