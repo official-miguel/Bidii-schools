@@ -66,7 +66,18 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
         {error && <ErrorBanner message={error} />}
 
         {/* ── Published status banner ───────────────────────────────── */}
-        {!loading && (
+        {loading ? (
+          <div className="rounded-xl border border-line bg-paper p-5 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="h-5 w-5 rounded-full bg-line shrink-0 mt-0.5" />
+              <div className="min-w-0 space-y-2">
+                <div className="h-3.5 w-40 rounded bg-line" />
+                <div className="h-3 w-56 rounded bg-line" />
+              </div>
+            </div>
+            <div className="h-8 w-20 rounded-lg bg-line shrink-0" />
+          </div>
+        ) : (
           <div className={`rounded-xl border p-5 flex flex-col sm:flex-row sm:items-center gap-4
             ${published ? "bg-success-bg border-success/20" : "bg-warn-bg border-warn/20"}`}>
             <div className="flex items-start gap-3 flex-1 min-w-0">

@@ -115,6 +115,7 @@ model School {
   /// Elective groups
   electiveGroups           ElectiveGroup[]
   electiveGroupTeachers    ElectiveGroupTeacher[]
+  teacherLoadRequirements  TeacherLoadRequirement[]
   /// HOD formula configs
   departmentFormulaConfigs DepartmentFormulaConfig[]
   /// Supabase Storage metadata
@@ -349,6 +350,7 @@ model Teacher {
   archivedBy             User?                   @relation("TeacherArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
   teacherSubjects        TeacherSubject[]
   unavailability         TeacherUnavailability[]
+  loadRequirement        TeacherLoadRequirement?
   timetableSlots         TimetableSlot[]
   groupMemberships       GroupMember[]
   electiveGroupTeachers  ElectiveGroupTeacher[]
@@ -914,6 +916,31 @@ model ClassSubjectTeacher {
 
   @@id([classId, subjectId])
   @@index([teacherId])
+}
+
+/// Per-teacher load constraints for timetable generation.
+/// Sets a floor and/or ceiling on how many lessons a teacher can be
+/// assigned per day and per week. Null values mean no constraint
+/// (the engine will use the school-wide fallback from TimetableConfig).
+/// One row per teacher — upserted on save.
+model TeacherLoadRequirement {
+  id                  String   @id @default(cuid())
+  schoolId            String
+  teacherId           String   @unique
+  /// Minimum lessons per week (optional lower bound).
+  minLessonsPerWeek   Int?
+  /// Maximum lessons per week (optional upper bound).
+  maxLessonsPerWeek   Int?
+  /// Minimum lessons per day (optional lower bound).
+  minLessonsPerDay    Int?
+  /// Maximum lessons per day (optional upper bound; overrides school-wide cap for this teacher).
+  maxLessonsPerDay    Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  school              School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher             Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
 }
 
 /// Teacher availability constraints — slots where a teacher can't be scheduled.
