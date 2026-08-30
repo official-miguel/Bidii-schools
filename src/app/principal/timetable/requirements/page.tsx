@@ -113,6 +113,8 @@ export default function RequirementsPage() {
   const [groupsLoading,  setGroupsLoading]  = useState(false);
   const [editingGroup,   setEditingGroup]   = useState<string | null>(null);
   const [groupDraft,     setGroupDraft]     = useState<{ name: string; lessonsPerWeek: number; doublesPerWeek: number; scopeStreams: string[] }>({ name: "", lessonsPerWeek: 3, doublesPerWeek: 0, scopeStreams: [] });
+  // When creating a group from the "All Classes" view the user must pick a form for that group
+  const [allClassesCreateForm, setAllClassesCreateForm] = useState<number | null>(null);
   const [pickerGroupId,  setPickerGroupId]  = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const [allSubjects,      setAllSubjects]      = useState<Array<{ id: string; name: string; code: string; internalCode: number; doubleLesson: boolean }>>([]);
@@ -142,15 +144,18 @@ export default function RequirementsPage() {
       const cls: SchoolClass[] = classData?.classes ?? classData ?? [];
       cls.sort((a, b) => a.form - b.form || a.name.localeCompare(b.name));
       setClasses(cls);
-      const allSubjectsRaw: Array<{ id: string; name: string; code: string; type: string; internalCode: number; doubleLesson: boolean; applicableForms: number[] }> =
+      const allSubjectsRaw: Array<{ id: string; name: string; code: string; type: string; internalCode: number; doubleLesson: boolean; applicableForms: number[]; isGroup?: boolean }> =
         Array.isArray(subjectData) ? subjectData : [];
+      // Exclude the virtual GROUP_* entries — those are represented by the purple
+      // ElectiveGroupsSection and must not appear as duplicate rows in the table.
+      const realSubjects = allSubjectsRaw.filter((s) => !s.isGroup && !s.id?.startsWith("GROUP_"));
       setAllSubjects(
-        allSubjectsRaw
+        realSubjects
           .map((s) => ({ id: s.id, name: s.name, code: s.code, internalCode: s.internalCode ?? 0, doubleLesson: s.doubleLesson ?? false }))
           .sort((a, b) => a.name.localeCompare(b.name))
       );
       setElectiveSubjects(
-        allSubjectsRaw
+        realSubjects
           .filter((s) => s.type === "ELECTIVE")
           .sort((a, b) => a.name.localeCompare(b.name))
       );
@@ -205,6 +210,19 @@ export default function RequirementsPage() {
     }
   }, []);
 
+  // Loads every group in the school (used by the "All Classes" view so all group
+  // subjects appear as purple "via group" rows across the full subject list).
+  const loadAllGroups = useCallback(async () => {
+    setGroupsLoading(true);
+    try {
+      const res  = await fetch("/api/timetable/elective-groups");
+      const data = await res.json();
+      setGroups(data.groups ?? []);
+    } finally {
+      setGroupsLoading(false);
+    }
+  }, []);
+
   useEffect(() => { loadClasses(); }, [loadClasses]);
 
   // Lazy-load teachers when the tab is first opened
@@ -243,7 +261,8 @@ export default function RequirementsPage() {
     setExpanded(true);
     setEditingGroup(null);
     setPickerGroupId(null);
-    setGroups([]);
+    setAllClassesCreateForm(null);
+    await loadAllGroups();
   }
 
   async function openStream(classId: string) {
@@ -393,7 +412,13 @@ export default function RequirementsPage() {
 
   async function createGroup() {
     if (!groupDraft.name.trim()) return;
-    const scopeForm = selectionForm ?? 0;
+    // When in "All Classes" view the user picks a specific form via allClassesCreateForm.
+    // Falls back to selectionForm (form-level view) or 0 (school-wide) otherwise.
+    const scopeForm = selectionAll ? (allClassesCreateForm ?? 0) : (selectionForm ?? 0);
+    if (selectionAll && allClassesCreateForm === null) {
+      setError("Please choose which form this group belongs to.");
+      return;
+    }
     setError(null);
     const res  = await fetch("/api/timetable/elective-groups", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -404,6 +429,7 @@ export default function RequirementsPage() {
     setGroups((prev) => [...prev, data.group]);
     setEditingGroup(null);
     setGroupDraft({ name: "", lessonsPerWeek: 3, doublesPerWeek: 0, scopeStreams: [] });
+    setAllClassesCreateForm(null);
   }
 
   async function saveGroupEdits(group: ElectiveGroup) {
@@ -495,11 +521,12 @@ export default function RequirementsPage() {
       : selectionClass?.name ?? "";
 
   const availableStreams = useMemo(() => {
-    const form = selectionForm ?? selectionClass?.form;
+    // In "All Classes" view, use whichever form the user picked in the group create form.
+    const form = selectionAll ? allClassesCreateForm : (selectionForm ?? selectionClass?.form);
     if (!form) return [];
     const streams = (classesByForm.get(form) ?? []).map((c) => c.stream).filter((s): s is string => !!s);
     return [...new Set(streams)].sort();
-  }, [selectionForm, selectionClass, classesByForm]);
+  }, [selectionAll, allClassesCreateForm, selectionForm, selectionClass, classesByForm]);
 
   const absorbedSubjectIds = useMemo(
     () => new Set(groups.flatMap((g) => g.members.map((m) => m.subjectId))),
@@ -741,8 +768,7 @@ export default function RequirementsPage() {
 
                       {expanded && (
                         <>
-                          {!selectionAll && (
-                            <ElectiveGroupsSection
+                          <ElectiveGroupsSection
                             groups={groups}
                             groupsLoading={groupsLoading}
                             editingGroup={editingGroup}
@@ -751,8 +777,12 @@ export default function RequirementsPage() {
                             pickerRef={pickerRef}
                             availableForGroup={availableForGroup}
                             availableStreams={availableStreams}
-                            onStartCreate={() => { setEditingGroup("new"); setGroupDraft({ name: "", lessonsPerWeek: 3, doublesPerWeek: 0, scopeStreams: [] }); }}
-                            onCancelEdit={() => { setEditingGroup(null); setPickerGroupId(null); }}
+                            isAllClassesView={selectionAll}
+                            availableForms={selectionAll ? [...classesByForm.keys()].sort((a, b) => a - b) : []}
+                            allClassesCreateForm={allClassesCreateForm}
+                            onAllClassesCreateFormChange={(f) => { setAllClassesCreateForm(f); }}
+                            onStartCreate={() => { setEditingGroup("new"); setGroupDraft({ name: "", lessonsPerWeek: 3, doublesPerWeek: 0, scopeStreams: [] }); setAllClassesCreateForm(null); }}
+                            onCancelEdit={() => { setEditingGroup(null); setPickerGroupId(null); setAllClassesCreateForm(null); }}
                             onGroupDraftChange={setGroupDraft}
                             onCreateGroup={createGroup}
                             onStartEdit={(g) => { setEditingGroup(g.id); setGroupDraft({ name: g.name, lessonsPerWeek: g.lessonsPerWeek, doublesPerWeek: g.doublesPerWeek ?? 0, scopeStreams: g.scopeStreams ?? [] }); }}
@@ -762,7 +792,6 @@ export default function RequirementsPage() {
                             onRemoveSubject={removeSubjectFromGroup}
                             onTogglePicker={(gid) => setPickerGroupId((prev) => prev === gid ? null : gid)}
                           />
-                          )}
 
                           <RequirementsTable
                             rows={subjectRows}
@@ -1036,6 +1065,13 @@ type ElectiveGroupsSectionProps = {
   pickerRef: React.RefObject<HTMLDivElement>;
   availableForGroup: (groupId: string) => Array<{ id: string; name: string; code: string }>;
   availableStreams: string[];
+  /** True when rendered in the "All Classes" bulk view — shows a form picker when creating */
+  isAllClassesView?: boolean;
+  /** Sorted list of form numbers available in the school (used by the form picker) */
+  availableForms?: number[];
+  /** The form the user has selected in the form picker (null = nothing picked yet) */
+  allClassesCreateForm?: number | null;
+  onAllClassesCreateFormChange?: (form: number | null) => void;
   onStartCreate: () => void;
   onCancelEdit: () => void;
   onGroupDraftChange: (d: { name: string; lessonsPerWeek: number; doublesPerWeek: number; scopeStreams: string[] }) => void;
@@ -1050,7 +1086,10 @@ type ElectiveGroupsSectionProps = {
 
 function ElectiveGroupsSection({
   groups, groupsLoading, editingGroup, groupDraft, pickerGroupId, pickerRef,
-  availableForGroup, availableStreams, onStartCreate, onCancelEdit, onGroupDraftChange,
+  availableForGroup, availableStreams,
+  isAllClassesView = false, availableForms = [], allClassesCreateForm = null,
+  onAllClassesCreateFormChange,
+  onStartCreate, onCancelEdit, onGroupDraftChange,
   onCreateGroup, onStartEdit, onSaveEdits, onDeleteGroup,
   onAddSubject, onRemoveSubject, onTogglePicker,
 }: ElectiveGroupsSectionProps) {
@@ -1067,6 +1106,9 @@ function ElectiveGroupsSection({
               {groups.length}
             </span>
           )}
+          {isAllClassesView && (
+            <span className="text-[10px] text-slate/60 font-normal">— all forms</span>
+          )}
         </div>
         {editingGroup !== "new" && (
           <button type="button" onClick={onStartCreate}
@@ -1080,14 +1122,36 @@ function ElectiveGroupsSection({
         {groupsLoading && <div className="h-10 rounded-lg bg-line animate-pulse" />}
 
         {editingGroup === "new" && (
-          <GroupEditCard
-            draft={groupDraft}
-            isNew
-            availableStreams={availableStreams}
-            onChange={onGroupDraftChange}
-            onSave={onCreateGroup}
-            onCancel={onCancelEdit}
-          />
+          <div className="space-y-2">
+            {isAllClassesView && (
+              <div>
+                <label className="text-[10px] font-medium text-slate uppercase tracking-wide block mb-1.5">
+                  Form this group belongs to <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableForms.map((f) => (
+                    <button key={f} type="button"
+                      onClick={() => onAllClassesCreateFormChange?.(allClassesCreateForm === f ? null : f)}
+                      className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
+                        allClassesCreateForm === f
+                          ? "bg-violet-600 text-white border-violet-600"
+                          : "bg-white text-slate border-line hover:border-violet-400 hover:text-violet-700"
+                      }`}>
+                      Form {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <GroupEditCard
+              draft={groupDraft}
+              isNew
+              availableStreams={availableStreams}
+              onChange={onGroupDraftChange}
+              onSave={onCreateGroup}
+              onCancel={onCancelEdit}
+            />
+          </div>
         )}
 
         {groups.map((group) => {
