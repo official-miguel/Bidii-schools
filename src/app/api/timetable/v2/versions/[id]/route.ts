@@ -81,19 +81,27 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   if (version.status === "PUBLISHED")
     return NextResponse.json({ error: "Unpublish this version before deleting it." }, { status: 409 });
 
-  // Slots cascade-delete via FK
-  await prisma.$executeRaw`DELETE FROM "TimetableVersion" WHERE id = ${params.id}`;
+  try {
+    // Slots cascade-delete via FK
+    await prisma.$executeRaw`DELETE FROM "TimetableVersion" WHERE id = ${params.id}`;
+  } catch (err) {
+    console.error("[DELETE version] failed:", err);
+    return NextResponse.json({ error: "Failed to delete timetable version." }, { status: 500 });
+  }
 
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableChangeLog"
-      (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
-    VALUES (
-      ${randomUUID()}, ${user.schoolId!}, ${params.id},
-      'ARCHIVED'::"TimetableChangeAction",
-      ${JSON.stringify({ deleted: true, name: version.name })}::jsonb,
-      ${user.id}, ${new Date()}
-    )
-  `;
+  // Best-effort audit log
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableChangeLog"
+        (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
+      VALUES (
+        ${randomUUID()}, ${user.schoolId!}, ${params.id},
+        'ARCHIVED'::"TimetableChangeAction",
+        ${JSON.stringify({ deleted: true, name: version.name })}::jsonb,
+        ${user.id}, ${new Date()}
+      )
+    `;
+  } catch { /* non-fatal */ }
 
   return NextResponse.json({ ok: true });
 }

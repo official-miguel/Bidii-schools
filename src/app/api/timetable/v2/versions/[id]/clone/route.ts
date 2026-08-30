@@ -23,7 +23,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     (await requireSchoolPermission("TIMETABLE", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = schema.safeParse(await req.json().catch(() => null));
+  let body: unknown;
+  try { body = await req.json(); } catch { body = null; }
+
+  const parsed = schema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
 
@@ -37,49 +40,56 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const newId = randomUUID();
   const now   = new Date();
 
-  // Insert the new version header
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableVersion"
-      (id, "schoolId", name, description, status, "academicYear", term,
-       "clonedFromId", "createdById", "createdAt", "updatedAt")
-    VALUES (
-      ${newId}, ${user.schoolId!}, ${parsed.data.name},
-      ${parsed.data.description ?? null},
-      'DRAFT',
-      ${parsed.data.academicYear ?? null},
-      ${parsed.data.term ?? null},
-      ${params.id},
-      ${user.id}, ${now}, ${now}
-    )
-  `;
+  try {
+    // Insert the new version header
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableVersion"
+        (id, "schoolId", name, description, status, "academicYear", term,
+         "clonedFromId", "createdById", "createdAt", "updatedAt")
+      VALUES (
+        ${newId}, ${user.schoolId!}, ${parsed.data.name},
+        ${parsed.data.description ?? null},
+        'DRAFT',
+        ${parsed.data.academicYear ?? null},
+        ${parsed.data.term ?? null},
+        ${params.id},
+        ${user.id}, ${now}, ${now}
+      )
+    `;
 
-  // Copy all slots from source into the new version
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableVersionSlot"
-      (id, "versionId", "schoolId", "classId", "dayOfWeek", period,
-       "subjectId", "teacherId", room, "isManual", notes, "createdAt", "updatedAt")
-    SELECT
-      gen_random_uuid()::text, ${newId}, "schoolId", "classId", "dayOfWeek", period,
-      "subjectId", "teacherId", room, "isManual", notes, ${now}, ${now}
-    FROM "TimetableVersionSlot"
-    WHERE "versionId" = ${params.id}
-  `;
+    // Copy all slots from source into the new version
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableVersionSlot"
+        (id, "versionId", "schoolId", "classId", "dayOfWeek", period,
+         "subjectId", "teacherId", room, "isManual", notes, "createdAt", "updatedAt")
+      SELECT
+        gen_random_uuid()::text, ${newId}, "schoolId", "classId", "dayOfWeek", period,
+        "subjectId", "teacherId", room, "isManual", notes, ${now}, ${now}
+      FROM "TimetableVersionSlot"
+      WHERE "versionId" = ${params.id}
+    `;
+  } catch (err) {
+    console.error("[POST clone] failed:", err);
+    return NextResponse.json({ error: "Failed to clone timetable version." }, { status: 500 });
+  }
 
   const countRows = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) FROM "TimetableVersionSlot" WHERE "versionId" = ${newId}
   `;
 
-  // Audit
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableChangeLog"
-      (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
-    VALUES (
-      ${randomUUID()}, ${user.schoolId!}, ${newId},
-      'CLONED'::"TimetableChangeAction",
-      ${JSON.stringify({ sourceVersionId: params.id, name: parsed.data.name })}::jsonb,
-      ${user.id}, ${now}
-    )
-  `;
+  // Best-effort audit log
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableChangeLog"
+        (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
+      VALUES (
+        ${randomUUID()}, ${user.schoolId!}, ${newId},
+        'CLONED'::"TimetableChangeAction",
+        ${JSON.stringify({ sourceVersionId: params.id, name: parsed.data.name })}::jsonb,
+        ${user.id}, ${now}
+      )
+    `;
+  } catch { /* non-fatal */ }
 
   return NextResponse.json({
     id: newId,

@@ -37,53 +37,54 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
 
   const now = new Date();
 
-  // Archive whatever is currently published (there can only be one due to partial unique index)
-  await prisma.$executeRaw`
-    UPDATE "TimetableVersion"
-    SET status = 'ARCHIVED', "updatedAt" = ${now}
-    WHERE "schoolId" = ${user.schoolId!} AND status = 'PUBLISHED'
-  `;
+  try {
+    // Archive whatever is currently published (there can only be one due to partial unique index)
+    await prisma.$executeRaw`
+      UPDATE "TimetableVersion"
+      SET status = 'ARCHIVED', "updatedAt" = ${now}
+      WHERE "schoolId" = ${user.schoolId!} AND status = 'PUBLISHED'
+    `;
 
-  // Publish the target version
-  await prisma.$executeRaw`
-    UPDATE "TimetableVersion"
-    SET status = 'PUBLISHED', "publishedAt" = ${now},
-        "publishedById" = ${user.id}, "updatedAt" = ${now}
-    WHERE id = ${params.id}
-  `;
+    // Publish the target version
+    await prisma.$executeRaw`
+      UPDATE "TimetableVersion"
+      SET status = 'PUBLISHED', "publishedAt" = ${now},
+          "publishedById" = ${user.id}, "updatedAt" = ${now}
+      WHERE id = ${params.id}
+    `;
 
-  // ── Sync into legacy TimetableSlot table ────────────────────────────────
-  // Full replace: delete all existing slots for this school then re-insert
-  // from the version being published.  The DELETE means no existing row can
-  // conflict, so ON CONFLICT DO NOTHING is a safe no-op guard.
-  // The constraint is now (classId, teacherId, dayOfWeek, period) so a teacher
-  // running a pooled session for two different classes at the same period
-  // produces two distinct rows — one per class — without violating uniqueness.
-  await prisma.$executeRaw`DELETE FROM "TimetableSlot" WHERE "schoolId" = ${user.schoolId!}`;
+    // ── Sync into legacy TimetableSlot table ──────────────────────────────
+    await prisma.$executeRaw`DELETE FROM "TimetableSlot" WHERE "schoolId" = ${user.schoolId!}`;
 
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableSlot"
-      (id, "classId", "dayOfWeek", period, "subjectId", "teacherId", room,
-       "schoolId", "createdAt", "updatedAt")
-    SELECT
-      gen_random_uuid()::text, "classId", "dayOfWeek", period, "subjectId",
-      "teacherId", room, ${user.schoolId!}, ${now}, ${now}
-    FROM "TimetableVersionSlot"
-    WHERE "versionId" = ${params.id}
-    ON CONFLICT DO NOTHING
-  `;
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableSlot"
+        (id, "classId", "dayOfWeek", period, "subjectId", "teacherId", room,
+         "schoolId", "createdAt", "updatedAt")
+      SELECT
+        gen_random_uuid()::text, "classId", "dayOfWeek", period, "subjectId",
+        "teacherId", room, ${user.schoolId!}, ${now}, ${now}
+      FROM "TimetableVersionSlot"
+      WHERE "versionId" = ${params.id}
+      ON CONFLICT DO NOTHING
+    `;
+  } catch (err) {
+    console.error("[POST publish] failed:", err);
+    return NextResponse.json({ error: "Failed to publish timetable." }, { status: 500 });
+  }
 
-  // Audit log
-  await prisma.$executeRaw`
-    INSERT INTO "TimetableChangeLog"
-      (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
-    VALUES (
-      ${randomUUID()}, ${user.schoolId!}, ${params.id},
-      'PUBLISHED'::"TimetableChangeAction",
-      ${JSON.stringify({ slotCount })}::jsonb,
-      ${user.id}, ${now}
-    )
-  `;
+  // Best-effort audit log
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "TimetableChangeLog"
+        (id, "schoolId", "versionId", action, detail, "performedById", "performedAt")
+      VALUES (
+        ${randomUUID()}, ${user.schoolId!}, ${params.id},
+        'PUBLISHED'::"TimetableChangeAction",
+        ${JSON.stringify({ slotCount })}::jsonb,
+        ${user.id}, ${now}
+      )
+    `;
+  } catch { /* non-fatal */ }
 
   return NextResponse.json({ ok: true, slotCount });
 }
@@ -103,11 +104,16 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "This version is not currently published." }, { status: 409 });
 
   const now = new Date();
-  await prisma.$executeRaw`
-    UPDATE "TimetableVersion"
-    SET status = 'DRAFT', "publishedAt" = NULL, "updatedAt" = ${now}
-    WHERE id = ${params.id}
-  `;
+  try {
+    await prisma.$executeRaw`
+      UPDATE "TimetableVersion"
+      SET status = 'DRAFT', "publishedAt" = NULL, "updatedAt" = ${now}
+      WHERE id = ${params.id}
+    `;
+  } catch (err) {
+    console.error("[DELETE publish] failed:", err);
+    return NextResponse.json({ error: "Failed to unpublish timetable." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
