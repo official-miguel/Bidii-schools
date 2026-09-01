@@ -77,8 +77,6 @@ export default async function DeputyDashboard({ user }: Props) {
     alerts.push({ id: "ct", type: "danger", href: "/staff/classes", message: `${classesNoTeacher.length} class${classesNoTeacher.length > 1 ? "es" : ""} without a class teacher: ${classesNoTeacher.slice(0,3).map(c=>c.name).join(", ")}${classesNoTeacher.length > 3 ? " …" : ""}.` });
   if (classesNoTimetable.length > 0)
     alerts.push({ id: "tt", type: "danger", href: "/staff/timetable", message: `${classesNoTimetable.length} class${classesNoTimetable.length > 1 ? "es" : ""} have no timetable slots.` });
-  if (timetableConflicts.length > 0)
-    alerts.push({ id: "conf", type: "warn", href: "/staff/timetable", message: `${timetableConflicts.length} timetable conflict${timetableConflicts.length > 1 ? "s" : ""} detected. Review the timetable.` });
   if (todayAbsences > 10)
     alerts.push({ id: "abs", type: "warn", href: "/staff/attendance", message: `${todayAbsences} student absences recorded today — higher than usual.` });
 

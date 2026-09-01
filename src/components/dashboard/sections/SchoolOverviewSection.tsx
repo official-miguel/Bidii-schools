@@ -34,9 +34,6 @@ export default function SchoolOverviewSection({
   if (classesNoTimetable > 0)
     alerts.push({ id: "tt",  type: "danger", href: `${base}/timetable`,
       message: `${classesNoTimetable} class${classesNoTimetable !== 1 ? "es have" : " has"} no timetable slots.` });
-  if (timetableConflicts > 0)
-    alerts.push({ id: "cf",  type: "warn",   href: `${base}/timetable`,
-      message: `${timetableConflicts} timetable conflict${timetableConflicts !== 1 ? "s" : ""} detected.` });
   if (todayAbsences > 10)
     alerts.push({ id: "abs", type: "warn",   href: `${base}/attendance/absent-today`,
       message: `${todayAbsences} student absences recorded today — higher than usual.` });
