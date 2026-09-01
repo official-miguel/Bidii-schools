@@ -98,6 +98,20 @@ type SolverTemplateColumn = {
   label: string | null;
 };
 
+type SolverLockedSlot = {
+  classId: string;
+  subjectId: string;
+  dayOfWeek: number;
+  period: number;
+};
+
+type SolverPreviousSlot = {
+  classId: string;
+  subjectId: string;
+  dayOfWeek: number;
+  period: number;
+};
+
 type SolverRequest = {
   subjects: SolverSubject[];
   classes: SolverClass[];
@@ -115,6 +129,23 @@ type SolverRequest = {
    * subject in subjectIds scheduled at the same (dayOfWeek, period).
    */
   linkedClassGroups: SolverLinkedClassGroup[];
+  /**
+   * Hard constraint: a class may never have more than 2 lessons in a row on
+   * the same day (i.e. at most one consecutive double-block).  Three or more
+   * back-to-back periods are forbidden regardless of subject type.
+   * Default true — set to false only to reproduce legacy behaviour.
+   */
+  maxConsecutiveLessons: number;
+  /**
+   * Hard constraint: a subject whose doubleLesson flag is false must never be
+   * placed in two consecutive periods for the same class on the same day.
+   * Default true — set to false only to reproduce legacy behaviour.
+   */
+  preventUnintendedDoubles: boolean;
+  /** Slots hard-fixed in the CP-SAT model via model.add(x == 1). */
+  lockedSlots: SolverLockedSlot[];
+  /** Slots from a previous solve used as a soft stability bias (Phase 2). */
+  previousSlots: SolverPreviousSlot[];
 };
 
 type SolverSlot = {
@@ -157,6 +188,18 @@ export type LinkedClassGroup = {
   classIds: string[];
 };
 
+/**
+ * A single slot that must appear unchanged in the solver output.
+ * The solver hard-fixes these positions before optimising the remainder.
+ */
+export type LockedSlotPin = {
+  classId: string;
+  subjectId: string;
+  dayOfWeek: number;
+  /** 1-based among LESSON columns */
+  period: number;
+};
+
 export type CpSatInput = {
   subjects: EngineSubject[];
   classes: EngineClass[];
@@ -191,6 +234,31 @@ export type CpSatInput = {
    * (dayOfWeek, period).  Omit or pass [] if there are no elective groups.
    */
   linkedClassGroups?: LinkedClassGroup[];
+  /**
+   * Maximum number of consecutive lessons a class may have in a row on the
+   * same day.  Defaults to 2 (one double-block maximum).  Pass a higher value
+   * only if the school explicitly allows longer runs — this should almost
+   * never be changed.
+   */
+  maxConsecutiveLessons?: number;
+  /**
+   * When true (default) the solver will not place two consecutive periods of
+   * the same single-lesson subject for a class on the same day.  Set to false
+   * only to reproduce legacy behaviour where accidental doubles were possible.
+   */
+  preventUnintendedDoubles?: boolean;
+  /**
+   * Slots that must appear unchanged in the output.
+   * The solver hard-fixes these positions via model.add(x == 1) before
+   * optimising the remainder.
+   */
+  lockedSlots?: LockedSlotPin[];
+  /**
+   * Slots from a previous timetable version used as a soft stability bias.
+   * The solver rewards keeping these positions, without ever dropping a
+   * required lesson to do so.  Serialised to the solver in Phase 2.
+   */
+  previousSlots?: LockedSlotPin[];
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -289,6 +357,22 @@ export async function generateTimetableViaCpSat(
     linkedClassGroups: (input.linkedClassGroups ?? []).map((g) => ({
       subjectIds: g.subjectIds,
       classIds: g.classIds,
+    })),
+    // New hard constraints — both default to the safest value so existing
+    // callers that don't pass them get the correct behaviour automatically.
+    maxConsecutiveLessons: input.maxConsecutiveLessons ?? 2,
+    preventUnintendedDoubles: input.preventUnintendedDoubles ?? true,
+    lockedSlots: (input.lockedSlots ?? []).map((s) => ({
+      classId: s.classId,
+      subjectId: s.subjectId,
+      dayOfWeek: s.dayOfWeek,
+      period: s.period,
+    })),
+    previousSlots: (input.previousSlots ?? []).map((s) => ({
+      classId: s.classId,
+      subjectId: s.subjectId,
+      dayOfWeek: s.dayOfWeek,
+      period: s.period,
     })),
   };
 

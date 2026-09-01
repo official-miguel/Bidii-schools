@@ -3,7 +3,10 @@
  *
  * Applies multiple manual slot operations in a single transaction.
  * Operations: MOVE, DELETE, ADD.
- * AUTO_FIX: re-generates slots for specified classes using the deterministic engine.
+ * AUTO_FIX: re-generates slots for specified classes using the CP-SAT engine.
+ *
+ * Phase 1: AUTO_FIX migrated from deterministicEngine.generateTimetable to
+ * generateWithValidation (CP-SAT path).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +15,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
-import { generateTimetable } from "@/lib/timetable/deterministicEngine";
+import { generateWithValidation } from "@/lib/timetable/regenerationController";
+import type { CpSatInput } from "@/lib/timetable/cpSatEngine";
 import { getLessonColumns } from "@/lib/timetable/engineHelpers";
 import type { TemplateColumn, EngineClass, EngineSubject } from "@/lib/timetable/deterministicEngine";
 import { TimetableSession } from "@prisma/client";
@@ -292,14 +296,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
           select: { id: true, fullName: true },
         });
 
-        const engineResult = generateTimetable({
+        // Build CpSatInput
+        const cpSatInput: CpSatInput = {
           subjects: Array.from(subjectMap.values()),
           classes: engineClasses,
           teachers: teachersRaw.map((t) => ({ id: t.id, name: t.fullName })),
           requirements: engineRequirements,
           teacherAssignments,
           teacherUnavailability: extraUnavailability,
-          studentSelections: [],
           sessionPreferences: engineSessionPrefs,
           config: {
             academicYear:
@@ -309,7 +313,35 @@ export async function POST(req: NextRequest, { params }: Ctx) {
             maxLessonsPerTeacherPerDay: timetableConfig.maxLessonsPerTeacherPerDay,
             templateColumns,
           },
-        });
+          lockedSlots: [],
+          linkedClassGroups: [],
+        };
+
+        // Build validatorInput
+        const validatorInput = {
+          classes: classesRaw.map((c) => ({ id: c.id, name: c.name, form: c.form })),
+          subjects: Array.from(subjectMap.values()),
+          teachers: teachersRaw.map((t) => ({ id: t.id, name: t.fullName })),
+          requirements: engineRequirements,
+          teacherAssignments,
+          teacherUnavailability: unavailRows,
+          studentSelections: [],
+          sessionPreferences: engineSessionPrefs,
+          templateColumns,
+          operatingDays: timetableConfig.operatingDays,
+          linkedClassGroups: [],
+        };
+
+        const regen = await generateWithValidation(cpSatInput, validatorInput);
+
+        if (regen.aborted) {
+          errors.push(
+            `AUTO_FIX: solver unreachable — start with: cd timetable-solver && python solver.py`
+          );
+          continue;
+        }
+
+        const engineResult = regen.finalResult!;
 
         // Delete and replace
         for (const cid of op.classIds) {

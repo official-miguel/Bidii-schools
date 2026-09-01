@@ -1,0 +1,501 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Pin pytest and httpx in requirements.txt": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564317
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244580724
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245001859
+      }
+    ],
+    "1.2 Create `timetable-solver/tests/conftest.py` with shared fixtures": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564418
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244581203
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245002512
+      }
+    ],
+    "1.3 Write `timetable-solver/tests/test_no_double_booking.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564525
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245009377
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246593355
+      }
+    ],
+    "1.4 Write `timetable-solver/tests/test_group_sync.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564651
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245010072
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246594894
+      }
+    ],
+    "1.5 Write `timetable-solver/tests/test_double_lesson_adjacency.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564838
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245010801
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246595101
+      }
+    ],
+    "1.6 Write `timetable-solver/tests/test_consecutive_limits.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244564970
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245011482
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246595561
+      }
+    ],
+    "1.7 Write `timetable-solver/tests/test_adaptive_cap.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565075
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245012271
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246596077
+      }
+    ],
+    "1.8 Write `timetable-solver/tests/test_shortfall_reporting.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565184
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245017947
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246597013
+      }
+    ],
+    "1.9 Write `timetable-solver/tests/test_session_preference_guard.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565280
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245018736
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246597547
+      }
+    ],
+    "2.1 Write `src/__tests__/timetable/cpSatEngine.test.ts`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565377
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245019441
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246598326
+      }
+    ],
+    "2.2 Write `src/__tests__/timetable/regenerationController.test.ts`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565459
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788245020219
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246599032
+      }
+    ],
+    "3. Checkpoint — run existing and new tests": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565553
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246605068
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246717591
+      }
+    ],
+    "4.1 Add `LockedSlot` Pydantic model and `lockedSlots` field to `SolverRequest` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565746
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246723117
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246781508
+      }
+    ],
+    "4.2 Implement §4b locked-slot hard-fixing in `_solve()` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565851
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246788231
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246812629
+      }
+    ],
+    "4.3 Add `LockedSlotPin` type and fields to `CpSatInput` in `cpSatEngine.ts`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244565991
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246817633
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247174719
+      }
+    ],
+    "5.1 Migrate `reoptimize/route.ts` to use `generateWithValidation` + `CpSatInput`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566112
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247181576
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247365313
+      }
+    ],
+    "5.2 Migrate `batch/route.ts` AUTO_FIX handler to use `generateWithValidation` + `CpSatInput`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566213
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247182705
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247366801
+      }
+    ],
+    "6. Checkpoint — verify route migration builds and existing tests pass": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566313
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247374942
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247401491
+      }
+    ],
+    "7.1 Build `var_to_key` mapping in `_solve()` alongside §4 variable loop in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566429
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247407383
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247729676
+      }
+    ],
+    "7.2 Add `PreviousSlot` Pydantic model and `previousSlots` field to `SolverRequest` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566534
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247408160
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247730899
+      }
+    ],
+    "7.3 Add §9b greedy warm-start in `_solve()` before §10 in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566646
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247739745
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247747643
+      }
+    ],
+    "7.4 Add stability objective terms in §9 in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566784
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247740285
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247748342
+      }
+    ],
+    "7.5 Serialise `previousSlots` from `CpSatInput` into the solver payload in `cpSatEngine.ts`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244566947
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247741062
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247749141
+      }
+    ],
+    "8.1 Build idle-period BoolVars (§10a) in `_solve()` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244567060
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247757732
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247771709
+      }
+    ],
+    "8.2 Implement two-phase sequential solve in `_solve()` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244567174
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247777700
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247784118
+      }
+    ],
+    "8.3 Add per-tier stats to `SolverResponse` in `solver.py`": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244567296
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247789583
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247804792
+      }
+    ],
+    "9. Final checkpoint — full suite passes": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788244567389
+      },
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247810359
+      }
+    ],
+    "1. Add test infrastructure and Python test suite (Phase 0 — Python)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246597683
+      }
+    ],
+    "2. Add TypeScript unit tests (Phase 0 — TypeScript)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788246599114
+      }
+    ],
+    "4. Add `LockedSlot` pinning to solver and engine client (Phase 1)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247174812
+      }
+    ],
+    "5. Migrate route layer to CP-SAT (Phase 1 — Route migration)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247367059
+      }
+    ],
+    "7. Add greedy warm-start and stability objective (Phase 2)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247749257
+      }
+    ],
+    "8. Add two-phase optimisation and per-tier telemetry (Phase 3)": [
+      {
+        "executionId": "78b11a82-4312-4172-b629-83291c9a679b",
+        "chatSessionId": "sess_e18ab652-e7c6-440d-8c37-a78f3d03f00e",
+        "timestamp": 1788247804912
+      }
+    ]
+  }
+}

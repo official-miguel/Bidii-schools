@@ -124,12 +124,16 @@ export async function generateWithValidation(
     };
   }
 
-  // Partial or full success — promote all validation errors to warnings so
-  // they are visible in the UI without blocking the save.
+  // Partial or full success — promote validation errors (except
+  // COMPLETE_LESSON_COUNT) to warnings so they are visible in the UI without
+  // blocking the save.  COMPLETE_LESSON_COUNT issues are already covered by
+  // the engine's own shortfall strings in the Warnings section (e.g.
+  // "Could not place lesson for X in Y"), so we exclude them here to avoid
+  // showing the same missed-lesson information twice.
   const promotedWarnings = [
     ...solverResult.warnings,
     ...validation.issues
-      .filter((i) => i.severity === "ERROR")
+      .filter((i) => i.severity === "ERROR" && i.rule !== "COMPLETE_LESSON_COUNT")
       .map((i) => `Validation: ${i.message}`),
   ];
 

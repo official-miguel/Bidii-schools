@@ -1,6 +1,8 @@
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { scoreToGrade, meanGrade, pointsToGrade, subjectScore, type KcseGrade, ALL_GRADES } from "@/lib/assessment/grading844";

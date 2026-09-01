@@ -527,3 +527,122 @@ export function analyseStaffShortages(
     return diff !== 0 ? diff : b.deficit - a.deficit;
   });
 }
+
+// ── Actual-placement shortage analysis ────────────────────────────────────
+
+/**
+ * Config for analyseActualShortages — uses the real placed-vs-required counts
+ * from the solver output instead of theoretical capacity maths.
+ */
+export type ActualShortageConfig = {
+  /**
+   * Map of "classId-subjectId" → lessonsPerWeek (what was required)
+   */
+  requiredLessons: Map<string, number>;
+  /**
+   * Map of "classId-subjectId" → lessons actually placed by the solver.
+   * Any key missing from this map means 0 lessons were placed.
+   */
+  placedLessons: Map<string, number>;
+  /** Map of subjectId → { code, name } */
+  subjectMeta: Map<string, { code: string; name: string }>;
+  /** Map of classId → className */
+  classMeta: Map<string, string>;
+  /** Map of subjectId → array of teacherIds assigned to that subject school-wide */
+  subjectTeacherMap: Map<string, string[]>;
+  /** Max lessons a teacher can teach per week (operatingDays × maxPerDay) */
+  maxLessonsPerTeacherPerWeek: number;
+};
+
+/**
+ * Derives teacher-shortage suggestions from the actual solver output.
+ *
+ * Unlike analyseStaffShortages (which only flags subjects where total teacher
+ * capacity < total demand), this function flags EVERY subject where fewer
+ * lessons were placed than required — regardless of whether the cause is
+ * insufficient teacher capacity, teacher unavailability, daily-cap exhaustion,
+ * or linked-group sync constraints.
+ *
+ * Returns the same StaffShortageSuggestion[] shape so the two lists can be
+ * merged in the API route.
+ */
+export function analyseActualShortages(
+  config: ActualShortageConfig
+): StaffShortageSuggestion[] {
+  // Aggregate per-subject: total required, total placed, affected classes
+  const subjectStats = new Map<
+    string,
+    { required: number; placed: number; classes: string[] }
+  >();
+
+  for (const [reqKey, required] of config.requiredLessons) {
+    const dashIdx = reqKey.indexOf("-");
+    if (dashIdx === -1) continue;
+    const classId   = reqKey.slice(0, dashIdx);
+    const subjectId = reqKey.slice(dashIdx + 1);
+
+    const placed = config.placedLessons.get(reqKey) ?? 0;
+    const entry  = subjectStats.get(subjectId) ?? { required: 0, placed: 0, classes: [] };
+    entry.required += required;
+    entry.placed   += placed;
+
+    const className = config.classMeta.get(classId) ?? classId;
+    if (!entry.classes.includes(className)) entry.classes.push(className);
+    subjectStats.set(subjectId, entry);
+  }
+
+  const suggestions: StaffShortageSuggestion[] = [];
+
+  for (const [subjectId, { required, placed, classes }] of subjectStats) {
+    const shortfall = required - placed;
+    if (shortfall <= 0) continue; // fully scheduled — no shortage
+
+    const meta = config.subjectMeta.get(subjectId);
+    if (!meta) continue;
+
+    const teachers  = config.subjectTeacherMap.get(subjectId) ?? [];
+    const capacity  = teachers.length * config.maxLessonsPerTeacherPerWeek;
+    const extraNeeded = Math.ceil(shortfall / config.maxLessonsPerTeacherPerWeek);
+
+    // Severity: base on how much of the required load is unscheduled
+    const percentMissed = required > 0 ? shortfall / required : 1;
+    const level: StaffShortageLevel =
+      percentMissed >= 0.5 || teachers.length === 0 ? "critical"
+      : percentMissed >= 0.25 ? "high"
+      : "moderate";
+
+    const classesLabel = classes.length <= 3
+      ? classes.join(", ")
+      : `${classes.slice(0, 3).join(", ")} +${classes.length - 3} more`;
+
+    const teacherWord = extraNeeded === 1 ? "teacher" : "teachers";
+
+    const message = teachers.length === 0
+      ? `${meta.code} has no teacher assigned — ${shortfall} of ${required} lesson${required !== 1 ? "s" : ""}/week unscheduled for ${classesLabel}.`
+      : `${meta.code}: ${placed}/${required} lessons scheduled — ${shortfall} lesson${shortfall !== 1 ? "s" : ""} unplaced for ${classesLabel}. Teacher${teachers.length !== 1 ? "s" : ""} may have unavailability or daily-cap limits.`;
+
+    suggestions.push({
+      subjectId,
+      subjectCode:    meta.code,
+      subjectName:    meta.name,
+      totalLessonsRequired:  required,
+      totalLessonsCapacity:  capacity,
+      deficit:               shortfall,
+      assignedTeachers:      teachers.length,
+      estimatedExtraTeachersNeeded: extraNeeded,
+      affectedClasses: classes,
+      level,
+      message,
+      suggestion: teachers.length === 0
+        ? `Assign a teacher to ${meta.code} and regenerate.`
+        : `Add ${extraNeeded} more ${teacherWord} for ${meta.code}, or reduce teacher unavailability blocks to cover the ${shortfall}-lesson shortfall.`,
+    });
+  }
+
+  // Sort: critical first, then by shortfall size
+  return suggestions.sort((a, b) => {
+    const lvl = { critical: 0, high: 1, moderate: 2 };
+    const diff = lvl[a.level] - lvl[b.level];
+    return diff !== 0 ? diff : b.deficit - a.deficit;
+  });
+}

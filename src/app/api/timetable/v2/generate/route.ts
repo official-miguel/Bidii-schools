@@ -20,7 +20,7 @@ import { generateWithValidation } from "@/lib/timetable/regenerationController";
 import { runPreGenerationChecks } from "@/lib/timetable/preGenerationChecks";
 import { getLessonColumns, buildLinkedClassGroups, buildGroupAwarePayload, fanOutGroupSlots, mergeGroupTeachers, resolveGroupAnchors } from "@/lib/timetable/engineHelpers";
 import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
-import { analyseStaffShortages, type StaffShortageConfig } from "@/lib/timetable/liveConflictDetector";
+import { analyseStaffShortages, analyseActualShortages, type StaffShortageConfig, type ActualShortageConfig } from "@/lib/timetable/liveConflictDetector";
 import type { TemplateColumn, EngineSubject, EngineClass } from "@/lib/timetable/deterministicEngine";
 import { TimetableSession } from "@prisma/client";
 
@@ -538,16 +538,65 @@ async function _handlePost(req: NextRequest) {
     reqMap.set(`${r.classId}-${r.subjectId}`, r.lessonsPerWeek);
   }
 
+  // Build placed-lessons map from actual solver output.
+  // Double-lesson subjects emit 2 physical slots per occurrence; divide back.
+  const placedMap = new Map<string, number>();
+  for (const slot of expandedSlots) {
+    const key = `${slot.classId}-${slot.subjectId}`;
+    placedMap.set(key, (placedMap.get(key) ?? 0) + 1);
+  }
+  const doubleSubjectIds = new Set(
+    engineSubjectsWithGroups.filter((s) => s.doubleLesson).map((s) => s.id)
+  );
+  // reqMap keys are "classId-subjectId" with UUID values; build a reverse lookup
+  // so we can extract subjectId safely from placedMap keys (UUIDs contain hyphens).
+  const keyToSubjectId = new Map<string, string>();
+  for (const r of groupPayload.requirements) {
+    keyToSubjectId.set(`${r.classId}-${r.subjectId}`, r.subjectId);
+  }
+  for (const [key, count] of placedMap) {
+    const subjectId = keyToSubjectId.get(key) ?? "";
+    if (subjectId && doubleSubjectIds.has(subjectId)) {
+      placedMap.set(key, Math.floor(count / 2));
+    }
+  }
+
+  const maxLessonsPerTeacherPerWeek =
+    timetableConfig.operatingDays.length * timetableConfig.maxLessonsPerTeacherPerDay;
+
   const shortageConfig: StaffShortageConfig = {
     subjectTeacherMap,
     subjectMeta: subjectMetaMap,
     classMeta: classMetaMap,
-    maxLessonsPerTeacherPerWeek:
-      timetableConfig.operatingDays.length * timetableConfig.maxLessonsPerTeacherPerDay,
+    maxLessonsPerTeacherPerWeek,
     requiredLessons: reqMap,
   };
 
-  const staffShortages = analyseStaffShortages(shortageConfig);
+  // Capacity-based shortages (teacher count × max/week < demand)
+  const capacityShortages = analyseStaffShortages(shortageConfig);
+
+  // Actual-placement shortages (solver placed fewer than required)
+  const actualShortageConfig: ActualShortageConfig = {
+    requiredLessons: reqMap,
+    placedLessons: placedMap,
+    subjectMeta: subjectMetaMap,
+    classMeta: classMetaMap,
+    subjectTeacherMap,
+    maxLessonsPerTeacherPerWeek,
+  };
+  const actualShortages = analyseActualShortages(actualShortageConfig);
+
+  // Merge: start from actual shortages (covers every subject with a gap),
+  // then overlay capacity entries where they exist (richer capacity maths).
+  const mergedShortageMap = new Map(actualShortages.map((s) => [s.subjectId, s]));
+  for (const entry of capacityShortages) {
+    mergedShortageMap.set(entry.subjectId, entry);
+  }
+  const staffShortages = [...mergedShortageMap.values()].sort((a, b) => {
+    const lvl: Record<string, number> = { critical: 0, high: 1, moderate: 2 };
+    const diff = (lvl[a.level] ?? 3) - (lvl[b.level] ?? 3);
+    return diff !== 0 ? diff : b.deficit - a.deficit;
+  });
 
   const vulnerabilitySnapshot = {
     capturedAt: now.toISOString(),
@@ -659,6 +708,14 @@ async function _handlePost(req: NextRequest) {
       valid: result.finalValidation!.valid,
       passedRules: result.finalValidation!.passedRules,
       failedRules: result.finalValidation!.failedRules,
+      issues: result.finalValidation!.issues.map((i) => ({
+        rule: i.rule,
+        severity: i.severity,
+        message: i.message,
+        affectedClasses: i.affectedClasses,
+        affectedTeachers: i.affectedTeachers,
+        affectedSubjects: i.affectedSubjects,
+      })),
       summary: result.finalValidation!.summary,
     },
     slots: result.finalResult.slots.map((s) => ({

@@ -2,8 +2,12 @@
  * API Route: POST /api/timetable/v2/versions/[id]/reoptimize
  *
  * Re-generates unlocked slots for specified classes in an existing DRAFT version.
- * Locked slots are preserved as positional pins — the engine works around them.
+ * Locked slots are preserved as positional pins — the CP-SAT engine hard-fixes them.
  * Returns a diff preview; add ?apply=true to persist.
+ *
+ * Phase 1: migrated from deterministicEngine.generateTimetable to
+ * generateWithValidation (CP-SAT path). Locked slots are passed as lockedSlots
+ * in CpSatInput so the solver hard-fixes them via model.add(x == 1).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +16,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { randomUUID } from "crypto";
-import { generateTimetable } from "@/lib/timetable/deterministicEngine";
+import { generateWithValidation } from "@/lib/timetable/regenerationController";
+import type { CpSatInput, LockedSlotPin } from "@/lib/timetable/cpSatEngine";
 import type { TemplateColumn, EngineClass, EngineSubject } from "@/lib/timetable/deterministicEngine";
 import { TimetableSession } from "@prisma/client";
 
@@ -167,30 +172,29 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     return { id: cls.id, name: cls.name, form: cls.form, stream: cls.stream, streamIndex: count };
   });
 
-  // Build unavailability: teacher rows + locked slots + other classes' slots
   const regenSet = new Set(candidateClasses);
-  const unavailability = new Map<string, Set<string>>();
 
-  for (const row of unavailRows) {
-    if (!unavailability.has(row.teacherId)) unavailability.set(row.teacherId, new Set());
-    unavailability.get(row.teacherId)!.add(`${row.dayOfWeek}-${row.period}`);
-  }
+  // Build teacher unavailability:
+  //   1. Explicit teacher unavailability rows
+  //   2. Slots from other (non-regen) classes — treat as occupied
+  const otherClassUnavailability = currentSlots
+    .filter((s) => !regenSet.has(s.classId))
+    .map((s) => ({ teacherId: s.teacherId, dayOfWeek: s.dayOfWeek, period: s.period }));
 
-  // Treat locked slots as occupied
-  for (const s of lockedSlots) {
-    if (!unavailability.has(s.teacherId)) unavailability.set(s.teacherId, new Set());
-    unavailability.get(s.teacherId)!.add(`${s.dayOfWeek}-${s.period}`);
-  }
+  const combinedUnavailability = [...unavailRows, ...otherClassUnavailability];
 
-  // Treat other classes' slots as occupied by their teachers
-  for (const s of currentSlots) {
-    if (!regenSet.has(s.classId)) {
-      if (!unavailability.has(s.teacherId)) unavailability.set(s.teacherId, new Set());
-      unavailability.get(s.teacherId)!.add(`${s.dayOfWeek}-${s.period}`);
-    }
-  }
+  // Build locked slots for CP-SAT (only locked slots belonging to regen classes)
+  const solverLockedSlots: LockedSlotPin[] = lockedSlots
+    .filter((s) => regenSet.has(s.classId))
+    .map((s) => ({
+      classId: s.classId,
+      subjectId: s.subjectId,
+      dayOfWeek: s.dayOfWeek,
+      period: s.period,
+    }));
 
   // Subtract already-locked lessons from requirements
+  // so the solver doesn't double-count them
   const lockedCountMap = new Map<string, number>();
   for (const s of lockedSlots.filter((s) => regenSet.has(s.classId))) {
     const key = `${s.classId}-${s.subjectId}`;
@@ -223,24 +227,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     select: { id: true, fullName: true },
   });
 
-  // Run engine for unlocked classes only
-  const engineResult = generateTimetable({
+  // Build CpSatInput
+  const cpSatInput: CpSatInput = {
     subjects: Array.from(subjectMap.values()),
     classes: engineClasses,
     teachers: teachersRaw.map((t) => ({ id: t.id, name: t.fullName })),
     requirements: engineRequirements,
     teacherAssignments,
-    teacherUnavailability: [
-      ...unavailRows,
-      // Convert unavailability map entries to the expected format
-      ...Array.from(unavailability.entries()).flatMap(([teacherId, slots]) =>
-        Array.from(slots).map((key) => {
-          const [day, period] = key.split("-").map(Number);
-          return { teacherId, dayOfWeek: day, period };
-        })
-      ),
-    ],
-    studentSelections: [],
+    teacherUnavailability: combinedUnavailability,
     sessionPreferences: engineSessionPrefs,
     config: {
       academicYear: timetableConfig.academicYear ?? new Date().getFullYear().toString(),
@@ -249,7 +243,39 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       maxLessonsPerTeacherPerDay: timetableConfig.maxLessonsPerTeacherPerDay,
       templateColumns,
     },
-  });
+    lockedSlots: solverLockedSlots,
+    linkedClassGroups: [],
+  };
+
+  // Build validatorInput (excluding slots — those come from the result)
+  const validatorInput = {
+    classes: classesRaw.map((c) => ({ id: c.id, name: c.name, form: c.form })),
+    subjects: Array.from(subjectMap.values()),
+    teachers: teachersRaw.map((t) => ({ id: t.id, name: t.fullName })),
+    requirements: engineRequirements,
+    teacherAssignments,
+    teacherUnavailability: unavailRows,
+    studentSelections: [],
+    sessionPreferences: engineSessionPrefs,
+    templateColumns,
+    operatingDays: timetableConfig.operatingDays,
+    linkedClassGroups: [],
+  };
+
+  // Call CP-SAT via generateWithValidation
+  const regen = await generateWithValidation(cpSatInput, validatorInput);
+
+  if (regen.aborted) {
+    return NextResponse.json(
+      {
+        error: `Cannot generate timetable: solver unreachable`,
+        hint: "Start the solver with: cd timetable-solver && python solver.py",
+      },
+      { status: 422 }
+    );
+  }
+
+  const engineResult = regen.finalResult!;
 
   // Build diff
   const subjectCodeMap = new Map(Array.from(subjectMap.values()).map((s) => [s.id, s.code]));

@@ -20,7 +20,9 @@ export type ValidationRule =
   | "SESSION_CONSTRAINTS"
   | "TEACHER_AVAILABILITY"
   | "FORMAT_COMPLIANCE"
-  | "DOUBLE_LESSON_CONSECUTIVE";
+  | "DOUBLE_LESSON_CONSECUTIVE"
+  | "NO_TRIPLE_CONSECUTIVE_LESSONS"
+  | "NO_UNINTENDED_DOUBLE_LESSONS";
 
 export type ValidationSeverity = "ERROR" | "WARNING" | "INFO";
 
@@ -95,6 +97,8 @@ export function validateTimetable(input: ValidatorInput): ValidationReport {
   checkTeacherAvailability(input, issues, passedRules, failedRules);
   checkFormatCompliance(input, issues, passedRules, failedRules);
   checkDoubleLessonConsecutive(input, issues, passedRules, failedRules);
+  checkNoTripleConsecutiveLessons(input, issues, passedRules, failedRules);
+  checkNoUnintendedDoubleLessons(input, issues, passedRules, failedRules);
 
   const errors = issues.filter((i) => i.severity === "ERROR").length;
   const warnings = issues.filter((i) => i.severity === "WARNING").length;
@@ -665,6 +669,148 @@ function checkDoubleLessonConsecutive(
 
   // Rule produces warnings only — never a hard failure
   passed.add(rule);
+}
+
+/**
+ * Check: No class has 3 or more consecutive lessons of any subject on the same day.
+ *
+ * The maximum allowed run of consecutive occupied periods for a class is 2
+ * (i.e. a single double-block).  Three or more back-to-back periods is a hard
+ * error because it violates the "max double consecutive" rule regardless of
+ * whether the subjects involved are double-lesson subjects.
+ *
+ * Periods are compared using their 1-based lesson-column index, so breaks and
+ * lunch slots that separate lessons are NOT counted as consecutive (the engine
+ * already uses the same lesson-only index space).
+ */
+function checkNoTripleConsecutiveLessons(
+  input: ValidatorInput,
+  issues: ValidationIssue[],
+  passed: Set<ValidationRule>,
+  failed: Set<ValidationRule>
+): void {
+  const rule: ValidationRule = "NO_TRIPLE_CONSECUTIVE_LESSONS";
+  let hasError = false;
+
+  // Group occupied periods per (classId, dayOfWeek), sorted
+  const classDayPeriods = new Map<string, number[]>();
+
+  for (const slot of input.slots) {
+    const key = `${slot.classId}|${slot.dayOfWeek}`;
+    if (!classDayPeriods.has(key)) classDayPeriods.set(key, []);
+    classDayPeriods.get(key)!.push(slot.period);
+  }
+
+  for (const [key, periods] of classDayPeriods) {
+    // Deduplicate (elective fan-out can produce the same period from multiple subjects)
+    const unique = [...new Set(periods)].sort((a, b) => a - b);
+
+    // Scan for runs of 3+
+    let runLength = 1;
+    for (let i = 1; i < unique.length; i++) {
+      if (unique[i] === unique[i - 1] + 1) {
+        runLength++;
+        if (runLength >= 3) {
+          // Found a run of at least 3 — record the violation at the third period
+          const [classId, dayStr] = key.split("|");
+          const cls = input.classes.find((c) => c.id === classId);
+          const day = parseInt(dayStr);
+
+          issues.push({
+            rule,
+            severity: "ERROR",
+            message: `${cls?.name ?? classId} has ${runLength} consecutive lessons on day ${day} (periods ${unique[i - runLength + 1]}–${unique[i]}) — maximum allowed is 2 (one double-block)`,
+            affectedClasses: [classId],
+            dayOfWeek: day,
+            period: unique[i - 2], // first period of the violating triple
+            details: { runLength, startPeriod: unique[i - runLength + 1], endPeriod: unique[i] },
+          });
+          hasError = true;
+          // Continue scanning — reset to avoid duplicate reports for the same run
+          runLength = 1;
+        }
+      } else {
+        runLength = 1;
+      }
+    }
+  }
+
+  if (hasError) {
+    failed.add(rule);
+  } else {
+    passed.add(rule);
+  }
+}
+
+/**
+ * Check: A class only has consecutive lessons (doubles) for subjects whose
+ * doubleLesson flag is true.
+ *
+ * If two periods of the SAME subject appear back-to-back for a class on the
+ * same day and that subject does NOT have doubleLesson=true, it means the
+ * scheduler accidentally placed two singles consecutively — which is
+ * indistinguishable from a double to students and teachers and should be
+ * avoided.
+ *
+ * Severity is ERROR so the regeneration controller retries until resolved.
+ */
+function checkNoUnintendedDoubleLessons(
+  input: ValidatorInput,
+  issues: ValidationIssue[],
+  passed: Set<ValidationRule>,
+  failed: Set<ValidationRule>
+): void {
+  const rule: ValidationRule = "NO_UNINTENDED_DOUBLE_LESSONS";
+
+  // Quick lookup: subjectId → doubleLesson flag
+  const doubleSubjectIds = new Set(
+    input.subjects.filter((s) => s.doubleLesson).map((s) => s.id)
+  );
+
+  // Group slots by (classId, subjectId, dayOfWeek), sorted by period
+  const grouped = new Map<string, number[]>();
+  for (const slot of input.slots) {
+    const k = `${slot.classId}|${slot.subjectId}|${slot.dayOfWeek}`;
+    if (!grouped.has(k)) grouped.set(k, []);
+    grouped.get(k)!.push(slot.period);
+  }
+
+  let hasError = false;
+
+  for (const [key, periods] of grouped) {
+    const [classId, subjectId, dayStr] = key.split("|");
+
+    // Only flag non-double subjects
+    if (doubleSubjectIds.has(subjectId)) continue;
+
+    const sorted = [...new Set(periods)].sort((a, b) => a - b);
+
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === sorted[i - 1] + 1) {
+        const cls = input.classes.find((c) => c.id === classId);
+        const subject = input.subjects.find((s) => s.id === subjectId);
+        const day = parseInt(dayStr);
+
+        issues.push({
+          rule,
+          severity: "ERROR",
+          message: `${cls?.name ?? classId}: ${subject?.code ?? subjectId} has two consecutive lessons on day ${day} (periods ${sorted[i - 1]} and ${sorted[i]}) but is not configured as a double-lesson subject`,
+          affectedClasses: [classId],
+          affectedSubjects: [subjectId],
+          dayOfWeek: day,
+          period: sorted[i - 1],
+          details: { periods: sorted },
+        });
+        hasError = true;
+      }
+    }
+  }
+
+  if (hasError) {
+    failed.add(rule);
+  } else {
+    passed.add(rule);
+  }
 }
 
 /**

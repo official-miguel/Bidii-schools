@@ -15,6 +15,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
+
 // ── GET ─────────────────────────────────────────────────────────────────────
 
 export async function GET() {

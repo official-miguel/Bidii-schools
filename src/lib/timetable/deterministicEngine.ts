@@ -20,6 +20,8 @@
  * - Double lessons are consecutive when required
  * - Subject selections and compulsory/optional groupings respected
  * - Teachers only scheduled when available (respect unavailability)
+ * - No more than 2 consecutive lessons for a class on the same day (max one double-block)
+ * - Single-lesson subjects are never placed consecutively (no accidental doubles)
  * 
  * SOFT PREFERENCES (optimize when possible):
  * - Avoid scheduling all streams into same subject at same time
@@ -235,6 +237,19 @@ class ClassState {
   getDaysUsed(subjectId: string): number {
     return this.subjectDays.get(subjectId)?.size ?? 0;
   }
+
+  /**
+   * Returns the set of occupied periods (1-based) on a given day.
+   * Used by the consecutive-lesson constraint check during placement.
+   */
+  getOccupiedPeriods(day: number): Set<number> {
+    const result = new Set<number>();
+    for (const [key] of this.occupied) {
+      const [d, p] = key.split("-").map(Number);
+      if (d === day) result.add(p);
+    }
+    return result;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -291,6 +306,70 @@ function scoreSlot(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Consecutive-lesson constraint helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Returns true if placing a lesson at (day, period) would create a run of
+ * 3 or more consecutively occupied periods for the class.
+ *
+ * We look at the two neighbours on each side of the proposed placement:
+ *   p-2, p-1  [before]  p  [after]  p+1, p+2
+ *
+ * If both p-1 AND p+1 are already occupied the new slot bridges a gap → run ≥ 3.
+ * If p-1 AND p-2 are both occupied → run ≥ 3 even without p+1.
+ * If p+1 AND p+2 are both occupied → run ≥ 3 even without p-1.
+ *
+ * For double-lesson placement we also check the second slot (period+1).
+ */
+function wouldCreateTripleRun(
+  day: number,
+  startPeriod: number,
+  /** 1 for single lessons, 2 for double blocks */
+  blockSize: number,
+  occupied: Set<number>
+): boolean {
+  const endPeriod = startPeriod + blockSize - 1;
+
+  // Periods immediately outside the proposed block
+  const beforeStart = startPeriod - 1;
+  const afterEnd   = endPeriod   + 1;
+
+  // Check: period before the block is occupied AND either:
+  //   - the period before THAT is occupied (run of 3 starts 2 before), OR
+  //   - the period after the block is occupied (run of 3 spans both neighbours)
+  if (occupied.has(beforeStart)) {
+    if (occupied.has(beforeStart - 1)) return true; // ...X X [block]
+    if (occupied.has(afterEnd))        return true; // X [block] X
+  }
+
+  // Check: period after the block is occupied AND the period after THAT too
+  if (occupied.has(afterEnd) && occupied.has(afterEnd + 1)) return true; // [block] X X
+
+  return false;
+}
+
+/**
+ * Returns true if placing a SINGLE lesson of `subjectId` at (day, period)
+ * would create two consecutive periods of the same subject on that day
+ * (i.e. an accidental double for a non-double subject).
+ */
+function wouldCreateUnintendedDouble(
+  day: number,
+  period: number,
+  subjectId: string,
+  classState: ClassState
+): boolean {
+  // Check the slot immediately before and after
+  const keyBefore = `${day}-${period - 1}`;
+  const keyAfter  = `${day}-${period + 1}`;
+  return (
+    classState.occupied.get(keyBefore) === subjectId ||
+    classState.occupied.get(keyAfter)  === subjectId
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Placement Logic
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -317,13 +396,31 @@ function placeLesson(
     // A subject may only have ONE double block per day
     if (isDoubleLesson && doubleBlockDaysUsed?.has(day)) continue;
 
+    // Pre-compute the set of occupied periods for this class on this day
+    // so the consecutive-run check is O(1) per candidate.
+    const occupiedOnDay = classState.getOccupiedPeriods(day);
+
     for (let p = 1; p <= lessonColumns.length; p++) {
-      // For double lessons, need consecutive periods
+      // For double lessons, need consecutive periods and can't start on the last slot
       if (isDoubleLesson && p === lessonColumns.length) continue;
 
       // Check if slot(s) are free
       if (!classState.isFree(day, p)) continue;
       if (isDoubleLesson && !classState.isFree(day, p + 1)) continue;
+
+      // ── Hard constraint: no triple (or longer) consecutive run ───────────
+      // For double lessons, check that placing both p and p+1 won't push a
+      // run of occupied periods to 3+.
+      if (wouldCreateTripleRun(day, p, isDoubleLesson ? 2 : 1, occupiedOnDay)) {
+        continue;
+      }
+
+      // ── Hard constraint: no accidental consecutive single for this subject ─
+      // Only applies to single-lesson placements; double-lesson subjects are
+      // intentionally consecutive.
+      if (!isDoubleLesson && wouldCreateUnintendedDouble(day, p, subject.id, classState)) {
+        continue;
+      }
 
       // Check teacher availability
       if (!teacherState.isFree(day, p, unavailability, config.maxLessonsPerTeacherPerDay)) {
@@ -364,6 +461,13 @@ function placeLesson(
 // Main Engine
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * @deprecated Use {@link generateTimetableViaCpSat} from cpSatEngine.ts instead.
+ * This greedy engine has no concept of linkedClassGroups, pooled sessions,
+ * maxConsecutiveLessons, or preventUnintendedDoubles.  It remains in the
+ * codebase for backward compatibility only and will be removed in a future
+ * cleanup once all routes use the CP-SAT path.
+ */
 export function generateTimetable(input: {
   subjects: EngineSubject[];
   classes: EngineClass[];

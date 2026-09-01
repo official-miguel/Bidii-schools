@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import {
   Zap, CheckCircle2, AlertTriangle, AlertCircle, RefreshCw,
   Upload, Trash2, ChevronDown, ChevronUp, Info, Shield,
-  ClipboardList, ArrowRight, ExternalLink,
+  ClipboardList, ArrowRight, ExternalLink, Users, XCircle,
 } from "lucide-react";
 import { PageHeader, ErrorBanner, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui";
 
@@ -35,11 +35,41 @@ type PreCheckResult = {
   config?: { classCount: number; subjectCount: number; totalLessonsRequired: number; lessonSlotsPerWeek: number };
 };
 
+type ValidationIssue = {
+  rule: string;
+  severity: "ERROR" | "WARNING" | "INFO";
+  message: string;
+  affectedClasses?: string[];
+  affectedTeachers?: string[];
+  affectedSubjects?: string[];
+};
+
+type StaffShortage = {
+  subjectCode: string;
+  subjectName: string;
+  totalLessonsRequired: number;
+  totalLessonsCapacity: number;
+  deficit: number;
+  assignedTeachers: number;
+  estimatedExtraTeachersNeeded: number;
+  affectedClasses: string[];
+  level: "critical" | "high" | "moderate";
+  message: string;
+  suggestion: string;
+};
+
 type GenerationResult = {
   success: boolean; versionId?: string; attempts: number;
   stats?: { totalLessonsScheduled: number; totalLessonsRequired: number; completionRate: number };
-  validation?: { valid: boolean; failedRules: string[]; summary: { errors: number; warnings: number } };
+  validation?: {
+    valid: boolean;
+    failedRules: string[];
+    issues?: ValidationIssue[];
+    summary: { errors: number; warnings: number };
+  };
   warnings?: string[];
+  staffShortages?: StaffShortage[];
+  skippedNoTeacher?: string[];
   error?: string; history?: Array<{ attempt: number; errors: number; warnings: number }>;
 };
 
@@ -444,15 +474,10 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                       </span>
                     </div>
                   )}
-                  {result.validation && (
+                  {result.validation?.valid && (
                     <div className="flex items-center gap-2 mt-2">
                       <Shield className="h-3.5 w-3.5 text-slate" />
-                      {result.validation.valid
-                        ? <span className="text-xs text-success font-medium">All constraints satisfied</span>
-                        : <span className="text-xs text-danger font-medium">
-                            {result.validation.summary.errors} constraint violation{result.validation.summary.errors !== 1 ? "s" : ""}
-                          </span>
-                      }
+                      <span className="text-xs text-success font-medium">All constraints satisfied</span>
                     </div>
                   )}
                 </div>
@@ -500,6 +525,83 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
               </Collapsible>
             )}
 
+            {/* Teacher shortages — subjects with not enough teacher capacity */}
+            {result.staffShortages && result.staffShortages.length > 0 && (
+              <Collapsible
+                title="Teacher shortages"
+                badge={result.staffShortages.length}
+                badgeColor="danger"
+                defaultOpen
+              >
+                <div className="space-y-3">
+                  <p className="text-xs text-slate leading-relaxed">
+                    The following subjects do not have enough teacher capacity to cover all required lessons.
+                    Assign additional teachers to fill the gap.
+                  </p>
+                  {result.staffShortages.map((s, i) => {
+                    const levelColor =
+                      s.level === "critical" ? "border-danger/30 bg-danger/5" :
+                      s.level === "high" ? "border-warn/30 bg-warn/5" :
+                      "border-line bg-paper";
+                    const levelBadge =
+                      s.level === "critical" ? "bg-danger/10 text-danger" :
+                      s.level === "high" ? "bg-warn/10 text-warn" :
+                      "bg-line text-slate";
+                    return (
+                      <div key={i} className={`rounded-lg border p-3 ${levelColor}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Users className="h-3.5 w-3.5 text-slate shrink-0" />
+                          <span className="text-xs font-semibold text-ink">{s.subjectCode} — {s.subjectName}</span>
+                          <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${levelBadge}`}>
+                            {s.level}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink ml-5 mb-1">{s.message}</p>
+                        <div className="ml-5 flex flex-wrap gap-3 text-xs text-slate">
+                          <span>Required: <strong className="text-ink">{s.totalLessonsRequired}</strong> lessons/week</span>
+                          <span>Capacity: <strong className="text-ink">{s.totalLessonsCapacity}</strong> lessons/week</span>
+                          <span>Shortfall: <strong className="text-danger">{s.deficit}</strong> lessons</span>
+                          <span>Assigned teachers: <strong className="text-ink">{s.assignedTeachers}</strong></span>
+                          <span>Extra needed: <strong className="text-danger">{s.estimatedExtraTeachersNeeded}</strong></span>
+                        </div>
+                        {s.affectedClasses.length > 0 && (
+                          <p className="text-xs text-slate ml-5 mt-1">
+                            Affects: {s.affectedClasses.slice(0, 6).join(", ")}
+                            {s.affectedClasses.length > 6 && ` +${s.affectedClasses.length - 6} more`}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate ml-5 mt-1 italic">{s.suggestion}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Collapsible>
+            )}
+
+            {/* Subjects skipped because no teacher is assigned at all */}
+            {result.skippedNoTeacher && result.skippedNoTeacher.length > 0 && (
+              <Collapsible
+                title="Subjects not scheduled — no teacher assigned"
+                badge={result.skippedNoTeacher.length}
+                badgeColor="danger"
+                defaultOpen
+              >
+                <div className="space-y-2">
+                  <p className="text-xs text-slate leading-relaxed">
+                    These subject–class combinations were completely excluded from the timetable
+                    because no teacher is assigned to them. Assign a teacher in the class profile
+                    or subject teachers page, then regenerate.
+                  </p>
+                  {result.skippedNoTeacher.map((line, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-ink">
+                      <XCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" />
+                      <span>{line}</span>
+                    </div>
+                  ))}
+                </div>
+              </Collapsible>
+            )}
+
             {/* Attempt history */}
             {result.history && result.history.length > 1 && (
               <Collapsible title={`Attempt history (${result.history.length} attempts)`} badgeColor="slate">
@@ -517,19 +619,56 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
               </Collapsible>
             )}
 
-            {/* Failed validation rules */}
-            {result.validation?.failedRules && result.validation.failedRules.length > 0 && (
-              <Collapsible title="Constraint violations" badge={result.validation.failedRules.length} badgeColor="danger" defaultOpen>
-                <div className="space-y-1.5">
-                  {result.validation.failedRules.map((rule) => (
-                    <div key={rule} className="flex items-center gap-2 text-xs">
-                      <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0" />
-                      <span className="font-mono text-ink">{rule.replace(/_/g, " ")}</span>
-                    </div>
-                  ))}
+            {/* Constraint violations - COMPLETE_LESSON_COUNT is excluded because
+                missed lessons are already listed individually in the Warnings section
+                above (as engine shortfall messages). Showing them again here would
+                be repetitive. */}
+            {(() => {
+              const otherFailedRules = result.validation?.failedRules?.filter(
+                (r) => r !== "COMPLETE_LESSON_COUNT"
+              ) ?? [];
+              if (otherFailedRules.length === 0) return null;
+              return (
+              <Collapsible title="Constraint violations" badge={otherFailedRules.length} badgeColor="danger" defaultOpen>
+                <div className="space-y-4">
+                  {otherFailedRules.map((rule) => {
+                    const ruleIssues = result.validation?.issues?.filter(
+                      (i) => i.rule === rule && i.severity === "ERROR"
+                    ) ?? [];
+                    return (
+                      <div key={rule}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0" />
+                          <span className="text-xs font-semibold text-danger uppercase tracking-wide">
+                            {rule.replace(/_/g, " ")}
+                          </span>
+                          {ruleIssues.length > 0 && (
+                            <span className="text-xs text-slate ml-auto">{ruleIssues.length} issue{ruleIssues.length !== 1 ? "s" : ""}</span>
+                          )}
+                        </div>
+                        {ruleIssues.length > 0 ? (
+                          <ul className="ml-5 space-y-1">
+                            {ruleIssues.slice(0, 20).map((issue, idx) => (
+                              <li key={idx} className="text-xs text-ink leading-relaxed">
+                                {issue.message}
+                              </li>
+                            ))}
+                            {ruleIssues.length > 20 && (
+                              <li className="text-xs text-slate italic">
+                                … and {ruleIssues.length - 20} more
+                              </li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p className="ml-5 text-xs text-slate italic">No detail available</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </Collapsible>
-            )}
+              );
+            })()}
 
             {/* Next steps */}
             {result.success && !published && result.versionId && (
