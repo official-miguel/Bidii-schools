@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRecordsPermission } from "@/lib/permissions";
 import { summarizeAchievement } from "@/lib/ai/recordsSummary";
+import { notifyParents } from "@/lib/parentNotifications";
 
 const categoryEnum = z.enum(["SPORTS", "LEADERSHIP", "MUSIC_FESTIVAL", "ACADEMICS", "INNOVATION", "OTHER"]);
 
@@ -13,6 +14,7 @@ const createSchema = z.object({
   achievementDate: z.string().min(1, "Enter the achievement date."),
   awardLevel: z.string().trim().optional().or(z.literal("")),
   studentIds: z.array(z.string()).min(1, "Select at least one student."),
+  isVisibleToParent: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
         achievementDate: new Date(d.achievementDate),
         awardLevel: d.awardLevel || null,
         aiSummary,
+        isVisibleToParent: d.isVisibleToParent ?? false,
         recordedById: user.id,
         students: { create: d.studentIds.map((studentId) => ({ studentId })) },
       },
@@ -81,6 +84,22 @@ export async function POST(req: NextRequest) {
         students: { include: { student: { select: { id: true, fullName: true, admissionNumber: true } } } },
       },
     });
+
+    // Notify linked parents for every student on this achievement when visible
+    if (achievement.isVisibleToParent) {
+      for (const as of achievement.students) {
+        void notifyParents({
+          schoolId: user.schoolId!,
+          studentId: as.student.id,
+          module: "ACHIEVEMENTS",
+          priority: "NORMAL",
+          title: "Achievement Recorded",
+          body: `A new achievement has been added: ${achievement.title}`,
+          dedupKey: `ach-${achievement.id}`,
+        }).catch(() => {});
+      }
+    }
+
     return NextResponse.json(achievement, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Couldn't record the achievement." }, { status: 500 });

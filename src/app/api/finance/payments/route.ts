@@ -9,6 +9,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
+import { notifyParents } from "@/lib/parentNotifications";
 
 const createPaymentSchema = z.object({
   studentId: z.string().trim().min(1, "Student ID is required."),
@@ -79,6 +80,17 @@ export async function POST(req: NextRequest) {
         data: { schoolId, studentId, type: "PAYMENT_RECEIVED", message: `Payment of KES ${amount.toFixed(2)} received (${method}) — Receipt ${receiptNumber}` },
       });
     });
+
+    // Fire parent notification outside the transaction (fire-and-forget)
+    void notifyParents({
+      schoolId,
+      studentId,
+      module:   "FEES",
+      priority: "LOW",
+      title:    "Payment Received",
+      body:     `KSh ${amount.toFixed(2)} has been recorded.`,
+      dedupKey: `payment-${paymentId}`,
+    }).catch(() => {});
 
     return NextResponse.json({ paymentId, receiptNumber }, { status: 201 });
   } catch (err) {

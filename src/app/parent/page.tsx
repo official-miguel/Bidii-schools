@@ -8,6 +8,8 @@ import StatCard from "@/components/dashboard/StatCard";
 import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
 import { BookOpen, CheckCircle, AlertTriangle, Award } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function ParentDashboard() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) redirect("/login");
@@ -44,7 +46,7 @@ export default async function ParentDashboard() {
   if (students.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Parent Portal</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Parent Portal</h1>
         <div className="bg-warn-bg border border-warn/20 rounded-xl p-5">
           <p className="text-sm text-warn font-medium">No student records linked to your account.</p>
           <p className="text-sm text-slate mt-1 dark:text-dark-muted">
@@ -107,7 +109,7 @@ export default async function ParentDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
           {students.length === 1
             ? primaryStudent.fullName
             : "My Children"}

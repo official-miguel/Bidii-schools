@@ -29,9 +29,10 @@ import {
   Settings,
   LogOut,
   UserCircle2,
+  Bell,
 } from "lucide-react";
 import { useMobileDrawer } from "@/components/MobileDrawerContext";
-import { getActiveHub } from "@/components/HubSidebar";
+import { getActiveHub, PARENT_HUB_DEFS } from "@/components/HubSidebar";
 import type { NavHub } from "@/lib/permissions";
 
 const HUB_DEFS = [
@@ -58,6 +59,8 @@ interface MobileDrawerProps {
   schoolName?:  string;
   avatarUrl?:   string | null;
   visibleHubs?: Set<NavHub>;
+  /** Unread notification count for the parent portal bell badge. */
+  unreadCount?: number;
 }
 
 export default function MobileDrawer({
@@ -67,6 +70,7 @@ export default function MobileDrawer({
   schoolName,
   avatarUrl,
   visibleHubs,
+  unreadCount = 0,
 }: MobileDrawerProps) {
   const { isOpen, close } = useMobileDrawer();
   const pathname   = usePathname();
@@ -75,9 +79,17 @@ export default function MobileDrawer({
   const activeHub  = getActiveHub(pathname);
   const userInits  = initials(roleLabel, userEmail);
   const profileHref = `/${role}/profile`;
+  const isParent   = role === "parent";
 
   const shouldShow = (hubId: NavHub) =>
     !visibleHubs || hubId === "dashboard" || visibleHubs.has(hubId);
+
+  // Active parent segment (second path segment under /parent/*)
+  const activeParentSeg = (() => {
+    const segs = pathname.split("/").filter(Boolean);
+    if (segs[0] === "parent" && segs.length === 1) return null;
+    return segs[1] ?? null;
+  })();
 
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -213,30 +225,77 @@ export default function MobileDrawer({
           <p className="px-3 mb-2 text-[10px] font-semibold text-slate/60 uppercase tracking-widest dark:text-dark-muted">
             Navigation
           </p>
-          {HUB_DEFS.filter(({ id }) => shouldShow(id)).map(({ id, label, Icon, seg }) => {
-            const href   = seg ? `/${role}/${seg}` : `/${role}`;
-            const active = activeHub === id;
-            return (
-              <Link
-                key={id}
-                href={href}
-                onClick={handleNavClick}
-                aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3.5 w-full px-3 py-3 rounded-xl mb-0.5
-                  text-sm font-medium transition-colors min-h-[44px]
-                  ${active
-                    ? "bg-teal/10 text-teal dark:bg-teal/15 dark:text-teal"
-                    : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
-                  }`}
-              >
-                <span aria-hidden="true"
-                  className={`w-1 h-5 rounded-full shrink-0 transition-colors ${active ? "bg-teal" : "bg-transparent"}`}
-                />
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
+          {isParent ? (
+            // ── Parent-specific nav items ─────────────────────────────────
+            PARENT_HUB_DEFS.map(({ label, href, Icon, seg, ...rest }) => {
+              const hasBadge = "badge" in rest && rest.badge;
+              const active =
+                seg === null ? pathname === href : activeParentSeg === seg;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={handleNavClick}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3.5 w-full px-3 py-3 rounded-xl mb-0.5
+                    text-sm font-medium transition-colors min-h-[44px]
+                    ${active
+                      ? "bg-teal/10 text-teal dark:bg-teal/15 dark:text-teal"
+                      : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                    }`}
+                >
+                  <span aria-hidden="true"
+                    className={`w-1 h-5 rounded-full shrink-0 transition-colors ${active ? "bg-teal" : "bg-transparent"}`}
+                  />
+                  <span className="relative shrink-0">
+                    <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+                    {hasBadge && unreadCount > 0 && (
+                      <span
+                        aria-label={`${unreadCount} unread`}
+                        className="absolute -top-1 -right-1 flex items-center justify-center
+                                   min-w-[14px] h-[14px] px-0.5 rounded-full
+                                   bg-danger text-white text-[9px] font-bold leading-none"
+                      >
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex-1">{label}</span>
+                  {hasBadge && unreadCount > 0 && (
+                    <span className="text-xs font-semibold text-danger tabular-nums">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })
+          ) : (
+            // ── Standard staff hub items ──────────────────────────────────
+            HUB_DEFS.filter(({ id }) => shouldShow(id)).map(({ id, label, Icon, seg }) => {
+              const href   = seg ? `/${role}/${seg}` : `/${role}`;
+              const active = activeHub === id;
+              return (
+                <Link
+                  key={id}
+                  href={href}
+                  onClick={handleNavClick}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3.5 w-full px-3 py-3 rounded-xl mb-0.5
+                    text-sm font-medium transition-colors min-h-[44px]
+                    ${active
+                      ? "bg-teal/10 text-teal dark:bg-teal/15 dark:text-teal"
+                      : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                    }`}
+                >
+                  <span aria-hidden="true"
+                    className={`w-1 h-5 rounded-full shrink-0 transition-colors ${active ? "bg-teal" : "bg-transparent"}`}
+                  />
+                  <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })
+          )}
         </nav>
 
         {/* Footer */}

@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { postLedgerEntry } from "./ledger";
 import { nextInvoiceNumber } from "./receipts";
 import { computeProratedAmount } from "./proration";
+import { notifyParents } from "@/lib/parentNotifications";
 
 export interface BatchInvoicingResult {
   succeeded:          number;
@@ -223,11 +224,9 @@ export async function runBatchInvoicing(
     }
 
     try {
-      await prisma.$transaction(async (tx) => {
+      const txResult = await prisma.$transaction(async (tx) => {
         // Set RLS for this transaction
         await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
-
-        // ── Carry-forward: post an informational OPENING_BALANCE entry ──────────
         // If the student has an outstanding debt from previous terms, record it
         // as an opening balance entry on this new term's ledger so the bursar can
         // see the term starting position. This does NOT change currentBalance
@@ -274,7 +273,7 @@ export async function runBatchInvoicing(
         const invoiceNumber = await nextInvoiceNumber(tx, schoolId, invoicePrefix);
 
         // Create Invoice row
-        await tx.invoice.create({
+        const createdInvoice = await tx.invoice.create({
           data: {
             schoolId,
             studentId:    student.id,
@@ -285,6 +284,7 @@ export async function runBatchInvoicing(
             isProrated:   false,
             generatedById: userId,
           },
+          select: { id: true },
         });
 
         // Post the ledger entry (also updates balance + debtor flag)
@@ -300,13 +300,24 @@ export async function runBatchInvoicing(
           postedById:   userId,
         });
 
-
+        return { id: createdInvoice.id, invoiceNumber };
       });
 
       result.succeeded++;
       // Count students who had a carry-forward posted
       const bal = balanceByStudent.get(student.id) ?? new Decimal(0);
       if (!bal.isZero()) result.carriedForward++;
+
+      // Fire parent notification outside the transaction (fire-and-forget)
+      void notifyParents({
+        schoolId,
+        studentId:  student.id,
+        module:     "FEES",
+        priority:   "NORMAL",
+        title:      "Fee Invoice",
+        body:       `A new invoice of KSh ${totalAmount.toFixed(2)} has been issued.`,
+        dedupKey:   `invoice-${txResult.invoiceNumber}`,
+      }).catch(() => {});
     } catch (err) {
       result.errors.push({
         studentId:       student.id,
@@ -426,6 +437,17 @@ export async function createProratedInvoice(opts: {
 
 
   });
+
+  // Fire parent notification outside the transaction (fire-and-forget)
+  void notifyParents({
+    schoolId,
+    studentId,
+    module:   "FEES",
+    priority: "NORMAL",
+    title:    "Fee Invoice",
+    body:     `A new invoice of KSh ${invoiceAmount.toFixed(2)} has been issued.`,
+    dedupKey: `invoice-${invoiceNumber}`,
+  }).catch(() => {});
 
   return { invoiceNumber, amount: invoiceAmount };
 }

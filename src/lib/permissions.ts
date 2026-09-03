@@ -38,6 +38,7 @@ export const MODULE_INFO: Record<
   ACCOMMODATION:        { label: "Accommodation",             description: "Dormitories, cubicles, beds, and student boarding allocations",     hub: "student-life" },
   ATTENDANCE:           { label: "Attendance",                description: "Take and review daily class attendance for any class",               hub: "academic" },
   FEES:                 { label: "Fees Management",           description: "School finance: fee structures, invoicing, payments, debtor tracking, and reports", hub: "administration" },
+  DIARY:                { label: "Diary",                     description: "Post and view assignments, homework, and subject announcements",                       hub: "diary" },
 };
 
 export const ALL_MODULES = Object.keys(MODULE_INFO) as Module[];
@@ -53,7 +54,9 @@ export type NavHub =
   | "student-life"
   | "calendar"
   | "communication"
-  | "administration";
+  | "administration"
+  | "diary"
+  | "parent";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Granular permission record — mirrors the RolePermission DB columns exactly.

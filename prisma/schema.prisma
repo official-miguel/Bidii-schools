@@ -144,6 +144,13 @@ model School {
   debtorFlags              DebtorFlag[]
   financeNotifications     FinanceNotification[]
   financeImportJobs        FinanceImportJob[]
+  /// Diary module back-relations
+  diaryEntries             DiaryEntry[]
+  diaryRecipients          DiaryRecipient[]
+  diaryNotifications       DiaryNotification[]
+  /// Parent portal back-relations
+  parents                  Parent[]
+  parentNotifications      ParentNotification[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -215,7 +222,9 @@ model User {
   expenseAttachmentsAdded   StudentExpenseAttachment[] @relation("ExpenseAttachedBy")
   expenseAttachmentsRemoved StudentExpenseAttachment[] @relation("ExpenseDetachedBy")
   financeImportJobsCreated  FinanceImportJob[]
-
+  diaryNotifications        DiaryNotification[]
+  /// Parent portal back-relation
+  parent                    Parent?
   /// Email uniqueness is scoped to one school — same email OK at different schools
   @@unique([schoolId, email])
   @@index([role])
@@ -302,6 +311,7 @@ model Subject {
   classSubjectProfiles ClassSubjectProfile[]
   /// HOD formula overrides for this subject
   formulaConfigs       DepartmentFormulaConfig[]
+  diaryEntries         DiaryEntry[]
 
   @@unique([schoolId, code])
   @@unique([schoolId, internalCode])
@@ -357,6 +367,7 @@ model Teacher {
   classElectiveGroupTeachers ClassElectiveGroupTeacher[]
   /// Accommodation: dorms this teacher is the boarding master for
   dormsBoardingMaster    Dormitory[]             @relation("DormBoardingMaster")
+  diaryEntries           DiaryEntry[]
 
   @@unique([schoolId, staffId])
   @@index([primaryDepartmentId])
@@ -536,6 +547,7 @@ model SchoolClass {
   classSubjectProfiles ClassSubjectProfile[]
   /// Per-class elective group teacher pairings
   classElectiveGroupTeachers ClassElectiveGroupTeacher[]
+  diaryTargets               DiaryTarget[]
 
   @@unique([schoolId, name])
   @@index([schoolId, form])
@@ -599,6 +611,9 @@ model Student {
   expenseAttachments       StudentExpenseAttachment[]
   debtorFlags              DebtorFlag[]
   financeNotifications     FinanceNotification[]
+  diaryRecipients          DiaryRecipient[]
+  /// Parent portal back-relation
+  parentLinks              ParentStudent[]
 
   @@unique([schoolId, admissionNumber])
   @@index([classId])
@@ -1136,17 +1151,18 @@ model DisciplineRecord {
   resolution    String?
   dateOfOffence DateTime
   status        DisciplineStatus  @default(OPEN)
-  notes         String?
-  aiSummary     String?
-  recordedById  String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  school        School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student       Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  recordedBy    User?             @relation(fields: [recordedById], references: [id], onDelete: SetNull)
-  caseNotes     DisciplineNote[]
-  events        DisciplineEvent[]
-  files         StudentFile[]
+  notes             String?
+  aiSummary         String?
+  isVisibleToParent Boolean           @default(false)
+  recordedById      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  school            School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student           Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy        User?             @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  caseNotes         DisciplineNote[]
+  events            DisciplineEvent[]
+  files             StudentFile[]
 
   @@index([schoolId, dateOfOffence])
   @@index([studentId, dateOfOffence])
@@ -1221,6 +1237,7 @@ model Achievement {
   achievementDate DateTime
   awardLevel      String?
   aiSummary       String?
+  isVisibleToParent Boolean             @default(false)
   recordedById    String?
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
@@ -2191,6 +2208,8 @@ enum Module {
   ATTENDANCE
   /// Finance/Fees module — full access for Bursar; read-only analytics for Principal
   FEES
+  /// Diary module: teachers post assignments, homework, and announcements to classes.
+  DIARY
 }
 
 /// Every third-party service a school can bring its own credentials for.
@@ -3943,4 +3962,184 @@ model FinanceImportJob {
 
   @@index([schoolId, status])
   @@index([schoolId, createdAt])
+}
+
+// =============================================================================
+// Diary Module
+// =============================================================================
+
+enum DiaryEntryType {
+  ASSIGNMENT
+  HOMEWORK
+  REVISION
+  PROJECT
+  ANNOUNCEMENT
+}
+
+/// DiaryRecipientStatus: OVERDUE is computed at read time via resolveStatus()
+/// and is NEVER written to the database. Only PENDING and COMPLETED are stored.
+enum DiaryRecipientStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+}
+
+/// One diary entry posted by a teacher to one or more classes for a subject.
+model DiaryEntry {
+  id          String         @id @default(cuid())
+  schoolId    String
+  teacherId   String
+  subjectId   String
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  entryType   DiaryEntryType
+  dueDate     DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher   Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+
+  targets       DiaryTarget[]
+  recipients    DiaryRecipient[]
+  notifications DiaryNotification[]
+
+  @@index([schoolId, deletedAt])
+  @@index([teacherId])
+  @@index([schoolId, teacherId, deletedAt])
+  @@index([schoolId, dueDate])
+}
+
+/// Links a DiaryEntry to a specific SchoolClass (one row per targeted class).
+model DiaryTarget {
+  id           String      @id @default(cuid())
+  diaryEntryId String
+  classId      String
+  createdAt    DateTime    @default(now())
+
+  diaryEntry  DiaryEntry  @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([diaryEntryId, classId])
+  @@index([diaryEntryId])
+  @@index([classId])
+}
+
+/// One per-student tracking record for a DiaryEntry.
+/// status column stores only PENDING or COMPLETED; OVERDUE is computed at read time.
+model DiaryRecipient {
+  id           String               @id @default(cuid())
+  diaryEntryId String
+  studentId    String
+  schoolId     String
+  status       DiaryRecipientStatus @default(PENDING)
+  completedAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  diaryEntry DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([diaryEntryId, studentId])
+  @@index([studentId, status])
+  @@index([diaryEntryId])
+  @@index([schoolId])
+}
+
+/// In-app notification created when a new DiaryEntry is posted.
+/// One row per (entry, user) — users are students or parents.
+model DiaryNotification {
+  id           String   @id @default(cuid())
+  schoolId     String
+  diaryEntryId String
+  userId       String
+  message      String
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  diaryEntry DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([schoolId, createdAt])
+  @@index([userId, createdAt])
+}
+
+// =============================================================================
+// Parent Portal & Notification System
+// =============================================================================
+
+/// Notification priority levels for ParentNotification.
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+/// One row per parent account. Phone + schoolId is the login credential pair.
+/// The linked User has role = PARENT and holds the hashed password.
+/// On first login the password hash is the student's admissionNumber;
+/// mustChangePassword = true forces the parent to set a personal password.
+model Parent {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String
+  phone     String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school        School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students      ParentStudent[]
+  notifications ParentNotification[]
+
+  @@unique([schoolId, phone])
+  @@index([schoolId])
+}
+
+/// Many-to-many join between parents and students.
+/// isPrimary marks the primary guardian when a student has multiple parents.
+model ParentStudent {
+  parentId  String
+  studentId String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([parentId, studentId])
+  @@index([studentId])
+  @@index([parentId])
+}
+
+/// Aggregated in-app notification inbox for parents. One row per event.
+/// dedupKey prevents duplicate rows for the same logical event
+/// (e.g. the same invoice generating two calls to notifyParents).
+model ParentNotification {
+  id        String               @id @default(cuid())
+  schoolId  String
+  parentId  String
+  /// "DIARY" | "FEES" | "ATTENDANCE" | "BEHAVIOUR" | "ACHIEVEMENTS" | "CALENDAR"
+  module    String
+  priority  NotificationPriority @default(NORMAL)
+  title     String
+  body      String
+  metadata  Json?
+  dedupKey  String?
+  isRead    Boolean              @default(false)
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  parent Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([parentId, isRead, createdAt])
+  @@unique([schoolId, dedupKey])
 }

@@ -1,0 +1,729 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add Parent, ParentStudent, and ParentNotification models to prisma/schema.prisma": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418474523
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418520704
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419076634
+      }
+    ],
+    "1.2 Add isVisibleToParent fields to DisciplineRecord and Achievement models": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418474743
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418521925
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419077503
+      }
+    ],
+    "1.3 Generate and review Prisma migration": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418475081
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419082138
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419517384
+      }
+    ],
+    "1.4 Write data migration script scripts/migrate-parent-contacts.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418476014
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419522063
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421847714
+      }
+    ],
+    "1.6 Implement requireParent() guard in src/lib/parentAuth.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418476310
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419522777
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421849564
+      }
+    ],
+    "1.7 Implement notifyParents() engine in src/lib/parentNotifications.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418477025
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788419523701
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421852033
+      }
+    ],
+    "1.10 Checkpoint — run prisma generate and confirm TypeScript compiles": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418477244
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788422016361
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788422995180
+      }
+    ],
+    "2.1 Extend NavHub union type in src/lib/permissions.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418477729
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421868258
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421996304
+      }
+    ],
+    "2.2 Update src/middleware.ts to add /parent-login to public paths": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418478142
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421869154
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788421996826
+      }
+    ],
+    "2.3 Create /parent-login page and server action": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418478420
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788423020115
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424146331
+      }
+    ],
+    "2.5 Create set-password page and server action": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418478821
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788423020889
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424146937
+      }
+    ],
+    "2.6 Add route protection for /parent/* in parent layout": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418479091
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788423021865
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424147904
+      }
+    ],
+    "2.7 Checkpoint — verify login flow end-to-end with a test parent user": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418479375
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424154408
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424237682
+      }
+    ],
+    "3.1 Create Zustand parent store in src/lib/stores/parentStore.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418479811
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424244323
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424915483
+      }
+    ],
+    "3.2 Create /api/parent/me/children route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418480063
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424244722
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424918683
+      }
+    ],
+    "3.3 Create ParentHydrator client component": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418480501
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424247203
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424916043
+      }
+    ],
+    "3.4 Create ChildSwitcher client component": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418480861
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424246018
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424918348
+      }
+    ],
+    "3.5 Add \"parent\" hub sidebar links to HubSidebar.tsx": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418481205
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424246418
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424914276
+      }
+    ],
+    "3.6 Rewrite src/app/parent/layout.tsx": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418481671
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424924342
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425577694
+      }
+    ],
+    "3.7 Implement active child display in top nav bar": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418481976
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424925018
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425578361
+      }
+    ],
+    "3.8 Build parent home dashboard page (src/app/parent/page.tsx)": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418482203
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424945237
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425373334
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425579341
+      }
+    ],
+    "3.9 Checkpoint — verify parent layout, child switcher, and home page render correctly": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418484409
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425584744
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425996367
+      }
+    ],
+    "4.1 Create /api/parent/diary route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418484828
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426008435
+      }
+    ],
+    "4.2 Create /api/parent/diary/[id]/read PATCH endpoint": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418485427
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426009286
+      }
+    ],
+    "4.3 Create /parent/diary page": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418485999
+      }
+    ],
+    "4.4 Create ParentDiaryList client component": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418486181
+      }
+    ],
+    "5.1 Implement computePeriodStats in src/lib/parentUtils.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418486618
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788423022830
+      },
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424148768
+      }
+    ],
+    "5.3 Create /api/parent/results route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418486930
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426009921
+      }
+    ],
+    "5.4 Create /parent/results page and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418487197
+      }
+    ],
+    "6.1 Create /api/parent/attendance route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418487560
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426010513
+      }
+    ],
+    "6.2 Implement attendance alert trigger in src/lib/parentNotifications.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418487874
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426011561
+      }
+    ],
+    "6.4 Create AttendanceDotGrid and AttendanceSummaryBar components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418488134
+      }
+    ],
+    "6.5 Create /parent/attendance page": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418488423
+      }
+    ],
+    "7.1 Create /api/parent/fees route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418488976
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426012158
+      }
+    ],
+    "7.2 Wire notifyParents into finance invoice and payment routes": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418489241
+      }
+    ],
+    "7.3 Create /parent/fees page and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418489689
+      }
+    ],
+    "8.1 Create /api/parent/behaviour route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418489976
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426012833
+      }
+    ],
+    "8.2 Create /api/parent/achievements route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418490224
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426013486
+      }
+    ],
+    "8.3 Wire notifyParents into discipline and achievement creation routes": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418490507
+      }
+    ],
+    "8.4 Create /parent/behaviour and /parent/achievements pages and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418491052
+      }
+    ],
+    "8.5 Checkpoint — verify all Phase 1–8 notification triggers fire correctly": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418491573
+      }
+    ],
+    "9.1 Create /api/parent/notifications GET route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418492123
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426014208
+      }
+    ],
+    "9.3 Create /api/parent/notifications/[id]/read PATCH route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418492639
+      }
+    ],
+    "9.4 Create /api/parent/notifications/read-all POST route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418492907
+      }
+    ],
+    "9.5 Create ParentNotificationBadge component and wire into TopAppBar": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418493554
+      }
+    ],
+    "9.6 Create /parent/notifications page and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418493869
+      }
+    ],
+    "9.7 Checkpoint — verify notification centre with real data": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418495054
+      }
+    ],
+    "10.1 Create /api/parent/calendar route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418497644
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426014918
+      }
+    ],
+    "10.2 Create /api/parent/messages route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418498086
+      },
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788426015784
+      }
+    ],
+    "10.3 Wire notifyParents into calendar event creation route": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418498544
+      }
+    ],
+    "10.4 Create /parent/calendar and /parent/messages pages and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418499105
+      }
+    ],
+    "11.1 Implement rate limiter in src/lib/rateLimit.ts": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418499449
+      }
+    ],
+    "11.2 Apply rate limiting to all /api/parent/* route handlers": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418501044
+      }
+    ],
+    "11.4 Audit all /api/parent/* routes for ownership verification completeness": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418503830
+      }
+    ],
+    "11.5 Confirm export const dynamic = \"force-dynamic\" on all parent pages": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418504151
+      }
+    ],
+    "11.6 Implement session expiry redirect in parent layout and API routes": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418505318
+      }
+    ],
+    "11.7 Add empty states to all parent data pages": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418507018
+      }
+    ],
+    "11.8 Mobile responsiveness pass on all parent portal pages and components": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418508867
+      }
+    ],
+    "11.9 Final checkpoint — all tests pass, audit complete": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788418509922
+      }
+    ],
+    "1. Phase 1 — Database Schema & Core Libraries": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788422995368
+      }
+    ],
+    "2. Phase 2 — Parent Authentication": [
+      {
+        "executionId": "b3257883-f184-46e7-8709-c97e56ca1d61",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788424238042
+      }
+    ],
+    "3. Phase 3 — Parent Layout, Navigation & Child Switching": [
+      {
+        "executionId": "8d42d734-696e-40ce-a212-0e684a69174f",
+        "chatSessionId": "sess_5b28a092-1898-4666-b242-3dc44207e88c",
+        "timestamp": 1788425997160
+      }
+    ]
+  }
+}

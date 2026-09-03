@@ -21,7 +21,18 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Search, ChevronDown, LogOut, Menu, UserCircle2 } from "lucide-react";
+
+const ActiveChildBar = dynamic(
+  () => import("@/components/parent/ActiveChildBar"),
+  { ssr: false }
+);
+
+const ParentNotificationBadge = dynamic(
+  () => import("@/components/parent/ParentNotificationBadge"),
+  { ssr: false }
+);
 import { useMobileDrawer } from "@/components/MobileDrawerContext";
 import GlobalSearchModal from "@/components/GlobalSearchModal";
 import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
@@ -203,6 +214,9 @@ export default function TopAppBar({
           </kbd>
         </button>
 
+        {/* ── Active child chip (parent role only) ────────────────────── */}
+        {role === "parent" && <ActiveChildBar />}
+
         {/* Spacer */}
         <div className="flex-1" />
 
@@ -230,16 +244,24 @@ export default function TopAppBar({
         </div>
 
         {/* ── Notifications ────────────────────────────────────────────── */}
-        <div ref={notifRef} className="relative">
-          <NotificationBell
+        {role === "parent" ? (
+          <ParentNotificationBadge
+            role={role}
             onClick={openNotif}
             isOpen={notifOpen}
           />
-          <NotificationCenter
-            isOpen={notifOpen}
-            onClose={() => setNotifOpen(false)}
-          />
-        </div>
+        ) : (
+          <div ref={notifRef} className="relative">
+            <NotificationBell
+              onClick={openNotif}
+              isOpen={notifOpen}
+            />
+            <NotificationCenter
+              isOpen={notifOpen}
+              onClose={() => setNotifOpen(false)}
+            />
+          </div>
+        )}
 
         {/* ── User profile ─────────────────────────────────────────────── */}
         <div ref={profileRef} className="relative">

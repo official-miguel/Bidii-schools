@@ -115,6 +115,38 @@ export async function POST(req: NextRequest) {
       ...event,
       date: event.date.toISOString(),
     });
+
+    // Notify all parents when a PARENTS_ONLY event is created (Requirement 11.5)
+    if (event.audience === "PARENTS_ONLY") {
+      const schoolParents = await prisma.parent.findMany({
+        where:  { schoolId: event.schoolId },
+        select: { id: true },
+      });
+      // Write one ParentNotification per parent, school-wide (not student-scoped)
+      await Promise.all(
+        schoolParents.map((p) =>
+          prisma.parentNotification.upsert({
+            where: {
+              schoolId_dedupKey: {
+                schoolId: event.schoolId,
+                dedupKey: `cal-${event.id}`,
+              },
+            },
+            create: {
+              schoolId: event.schoolId,
+              parentId: p.id,
+              module:   "CALENDAR",
+              priority: "NORMAL",
+              title:    event.title,
+              body:     event.description ?? "A new event has been added to the school calendar.",
+              dedupKey: `cal-${event.id}`,
+            },
+            update: {},
+          })
+        )
+      ).catch((err) => console.error("[calendar notify parents]", err));
+    }
+
     return NextResponse.json(event, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Couldn't create event." }, { status: 500 });

@@ -2,11 +2,13 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardShell from "@/components/DashboardShell";
-
-// Parent portal shows a minimal hub set — only what parents need.
+import ParentHydrator from "@/components/parent/ParentHydrator";
 import type { NavHub } from "@/lib/permissions";
 
-const PARENT_HUBS = new Set<NavHub>(["dashboard", "calendar", "communication"]);
+export const dynamic = "force-dynamic";
+
+// Parent portal shows only the parent-specific hub.
+const PARENT_HUBS = new Set<NavHub>(["parent"]);
 
 export default async function ParentLayout({
   children,
@@ -15,26 +17,47 @@ export default async function ParentLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) {
-    redirect("/login");
+  if (!user || user.role !== "PARENT") {
+    redirect("/parent-login");
   }
 
-  const school = await prisma.school.findUnique({
-    where: { id: user.schoolId! },
-    select: { name: true, motto: true },
+  const parent = await prisma.parent.findUnique({
+    where: { userId: user.id },
+    include: {
+      school: {
+        select: { name: true, motto: true },
+      },
+      students: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              admissionNumber: true,
+              classId: true,
+              schoolClass: { select: { name: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
-  const roleLabel = user.role === "STUDENT" ? "Student" : "Parent";
+  if (!parent) {
+    redirect("/parent-login");
+  }
 
   return (
     <DashboardShell
       role="parent"
-      roleLabel={roleLabel}
+      roleLabel={parent.name}
       userEmail={user.email}
-      schoolName={school?.name}
-      motto={school?.motto}
+      schoolName={parent.school.name}
+      motto={parent.school.motto ?? undefined}
       visibleHubs={PARENT_HUBS}
     >
+      <ParentHydrator />
       {children}
     </DashboardShell>
   );
