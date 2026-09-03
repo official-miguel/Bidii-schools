@@ -1,9 +1,9 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 /**
  * /parent/notifications
  *
- * Server component — fetches notifications server-side and passes them to
+ * Server component - fetches notifications server-side and passes them to
  * the client components for interactive read/mark-all/pagination behaviour.
  */
 
@@ -26,13 +26,14 @@ export default async function ParentNotificationsPage({ searchParams }: Props) {
   const parent = await requireParent();
   if (!parent) redirect("/parent-login");
 
-  const module = searchParams.module || undefined;
+  // Renamed from `module` to `activeModule` to avoid the no-assign-module-variable error.
+  const activeModule = searchParams.module || undefined;
   const page = Math.max(1, Number(searchParams.page) || 1);
   const skip = (page - 1) * 25;
 
   const where = {
     parentId: parent.id,
-    ...(module ? { module } : {}),
+    ...(activeModule ? { module: activeModule } : {}),
   };
 
   const [notifications, total, unreadCount] = await Promise.all([
@@ -50,7 +51,6 @@ export default async function ParentNotificationsPage({ searchParams }: Props) {
 
   return (
     <main className="p-4 sm:p-6 max-w-2xl mx-auto">
-      {/* ── Heading ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 mb-5">
         <h1 className="text-xl sm:text-2xl font-bold text-ink dark:text-dark-text">
           Notifications
@@ -65,11 +65,7 @@ export default async function ParentNotificationsPage({ searchParams }: Props) {
           </span>
         )}
       </div>
-
-      {/* ── Module filter tabs ────────────────────────────────────────────────── */}
-      <NotificationModuleFilter activeModule={module} />
-
-      {/* ── Notification list ─────────────────────────────────────────────────── */}
+      <NotificationModuleFilter activeModule={activeModule} />
       <div className="mt-4">
         <NotificationList
           initialNotifications={notifications}
