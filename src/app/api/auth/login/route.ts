@@ -241,6 +241,38 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Parent fallback — phone number + admission number (or personal password) ──
+  if (!user) {
+    // Parents always log in by phone number (never by email address)
+    if (!isEmail) {
+      const parent = await prisma.parent.findFirst({
+        where: { phone: identifier, user: { isActive: true } },
+        include: {
+          user: {
+            select: {
+              id: true, email: true, passwordHash: true, role: true,
+              mustChangePassword: true, isActive: true, schoolId: true,
+              staffRoleId: true, createdAt: true, updatedAt: true,
+              avatarUrl: true, avatarStoragePath: true,
+            },
+          },
+        },
+      });
+
+      if (parent?.user) {
+        // For parents the "identifier" IS the phone number.
+        // The password can be:
+        //   - the student's admission number (first login)
+        //   - the parent's personal password (subsequent logins)
+        const ok = await verifyPassword(password, parent.user.passwordHash ?? "").catch(() => false);
+        if (ok) {
+          user = parent.user as unknown as UserRow;
+          passwordAlreadyVerified = true;
+        }
+      }
+    }
+  }
+
   if (!user || !user.isActive) return invalid();
 
   // ── Password verification ─────────────────────────────────────────────────

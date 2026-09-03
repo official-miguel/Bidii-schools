@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Data migration: seed Parent, ParentStudent, and User rows from legacy
  * Student.parentContact / Student.parentName fields.
  *
  * Run AFTER `prisma migrate deploy`:
  *   npx tsx scripts/migrate-parent-contacts.ts
  *
- * This script is fully idempotent — it uses upsert / findFirst patterns so it
+ * This script is fully idempotent â€” it uses upsert / findFirst patterns so it
  * can be re-run safely without creating duplicate rows.  The legacy
  * Student.parentContact and Student.parentName columns are NOT removed.
  *
@@ -13,10 +13,10 @@
  */
 
 import { prisma } from "../src/lib/prisma";
-import { hashPassword } from "../src/lib/auth";
+import bcrypt from "bcryptjs"; async function hashPassword(p: string) { return bcrypt.hash(p, 12); }
 
 async function run(): Promise<void> {
-  console.log("Starting parent-contact migration…");
+  console.log("Starting parent-contact migrationâ€¦");
 
   // Fetch all active (non-archived) students that have a phone number recorded.
   const students = await prisma.student.findMany({
@@ -41,11 +41,11 @@ async function run(): Promise<void> {
 
   for (const student of students) {
     // Type narrowed above by the `not: null` filter, but TypeScript doesn't
-    // narrow `select` projections — assert here to satisfy strict mode.
+    // narrow `select` projections â€” assert here to satisfy strict mode.
     const phone = student.parentContact!;
     const internalEmail = `parent_${phone}@bidii.internal`;
 
-    // ── Step 1: Upsert the User account ────────────────────────────────────
+    // â”€â”€ Step 1: Upsert the User account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Look up by the deterministic internal email so the operation is
     // idempotent when multiple students share the same parent phone number.
     let user = await prisma.user.findFirst({
@@ -56,7 +56,7 @@ async function run(): Promise<void> {
     });
 
     if (!user) {
-      // First time we encounter this phone in this school — create the account.
+      // First time we encounter this phone in this school â€” create the account.
       // The initial password is the student's admission number; the parent is
       // forced to change it on first login (mustChangePassword = true).
       const passwordHash = await hashPassword(student.admissionNumber);
@@ -77,7 +77,7 @@ async function run(): Promise<void> {
       skipped++;
     }
 
-    // ── Step 2: Upsert the Parent record ────────────────────────────────────
+    // â”€â”€ Step 2: Upsert the Parent record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Uniqueness key: userId (one Parent per User account).
     let parent = await prisma.parent.findUnique({
       where: { userId: user.id },
@@ -94,7 +94,7 @@ async function run(): Promise<void> {
       });
     }
 
-    // ── Step 3: Upsert the ParentStudent link ────────────────────────────────
+    // â”€â”€ Step 3: Upsert the ParentStudent link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Composite PK [parentId, studentId] makes this naturally idempotent.
     await prisma.parentStudent.upsert({
       where: {
@@ -109,7 +109,7 @@ async function run(): Promise<void> {
         isPrimary: true,
       },
       update: {
-        // No-op update — we only want to create if missing.
+        // No-op update â€” we only want to create if missing.
       },
     });
   }
@@ -128,3 +128,4 @@ run()
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+
