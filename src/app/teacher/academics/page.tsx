@@ -54,24 +54,16 @@ export default async function TeacherAcademicsHub() {
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },
     select: {
-      classTeacherOf:             { select: { id: true, name: true } },
-      subjectAssignments:         { select: { id: true }, take: 1 },
-      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
-      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
+      classTeacherOf: { select: { id: true, name: true } },
     },
   });
 
-  const isClassTeacher   = !!teacher?.classTeacherOf;
-  const isSubjectTeacher =
-    (teacher?.subjectAssignments.length ?? 0) > 0 ||
-    (teacher?.electiveGroupTeachers.length ?? 0) > 0 ||
-    (teacher?.classElectiveGroupTeachers.length ?? 0) > 0;
-  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
+  const isClassTeacher = !!teacher?.classTeacherOf;
+  const navItems = getTeacherAcademicsNav();
 
   // Tiles shown on the hub overview.
   // Class teachers don't need a Subjects tile — it's view-only and not part
   // of their primary workflow. The nav strip still has it for reference.
-  // Non-subject teachers don't get the Diary tile either.
   const tilesToShow = navItems.filter((item) => {
     if (isClassTeacher && item.href === "/teacher/academics/subjects") return false;
     return true;

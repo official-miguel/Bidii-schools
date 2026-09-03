@@ -22,19 +22,9 @@ export default async function TeacherDiaryPage({
     select: {
       id:       true,
       fullName: true,
-      subjectAssignments:         { select: { classId: true }, take: 1 },
-      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
-      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
     },
   });
   if (!teacher) redirect("/teacher");
-
-  // Diary is for subject teachers only — redirect others back to academics hub
-  const isSubjectTeacher =
-    teacher.subjectAssignments.length > 0 ||
-    teacher.electiveGroupTeachers.length > 0 ||
-    teacher.classElectiveGroupTeachers.length > 0;
-  if (!isSubjectTeacher) redirect("/teacher/academics");
 
   const typeFilter = searchParams.type || undefined;
   const LIMIT      = 20;

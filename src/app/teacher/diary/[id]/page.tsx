@@ -16,20 +16,10 @@ export default async function EntryDetailPage({
   const teacher = await prisma.teacher.findUnique({
     where:  { userId: user.id },
     select: {
-      id:       true,
-      subjectAssignments:         { select: { id: true }, take: 1 },
-      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
-      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
+      id: true,
     },
   });
   if (!teacher) redirect("/teacher");
-
-  // Diary is restricted to subject teachers
-  const isSubjectTeacher =
-    teacher.subjectAssignments.length > 0 ||
-    teacher.electiveGroupTeachers.length > 0 ||
-    teacher.classElectiveGroupTeachers.length > 0;
-  if (!isSubjectTeacher) redirect("/teacher/academics");
 
   const entry = await prisma.diaryEntry.findFirst({
     where: {
