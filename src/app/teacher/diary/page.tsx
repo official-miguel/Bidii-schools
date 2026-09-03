@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import ContextNavigation from "@/components/ContextNavigation";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 import DiaryEntryCard from "@/components/diary/DiaryEntryCard";
 import DiaryFilters from "@/components/diary/DiaryFilters";
 import CreateEntryModal from "@/components/diary/CreateEntryModal";
@@ -20,7 +22,7 @@ export default async function TeacherDiaryPage({
     select: {
       id:       true,
       fullName: true,
-      subjectAssignments:         { select: { id: true }, take: 1 },
+      subjectAssignments:         { select: { classId: true }, take: 1 },
       electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
       classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
     },
@@ -88,7 +90,10 @@ export default async function TeacherDiaryPage({
   });
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div>
+      <ContextNavigation items={getTeacherAcademicsNav(true)} />
+
+      <div className="max-w-3xl mx-auto space-y-6 mt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -146,6 +151,7 @@ export default async function TeacherDiaryPage({
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }
