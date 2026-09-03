@@ -191,9 +191,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        if (candidates.length === 0) {
-          return invalid();
-        } else if (candidates.length === 1) {
+        if (candidates.length === 1) {
           user = candidates[0];
         } else {
           // Multiple schools — verify password to find the right candidate
@@ -217,8 +215,9 @@ export async function POST(req: NextRequest) {
             if (ok) matched.push(candidate);
           }
 
-          if (matched.length === 0) return invalid();
-          if (matched.length === 1) {
+          if (matched.length === 0) {
+            // No staff match — fall through to parent fallback below
+          } else if (matched.length === 1) {
             user = matched[0];
             passwordAlreadyVerified = true;
           } else {
