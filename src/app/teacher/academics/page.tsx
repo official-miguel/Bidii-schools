@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ContextNavigation from "@/components/ContextNavigation";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 import {
   BookOpen,
   Building2,
@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ClipboardList,
   BarChart3,
+  NotebookPen,
 } from "lucide-react";
 
 // TEACHER_ACADEMICS_NAV is imported from @/lib/teacherAcademicsNav
@@ -40,6 +41,10 @@ const TILE_META: Record<string, { icon: React.ElementType; description: string }
     icon: BarChart3,
     description: "Exams setup, results entry, and performance analytics.",
   },
+  "/teacher/diary": {
+    icon: NotebookPen,
+    description: "Post assignments, homework, and subject updates to your classes.",
+  },
 };
 
 export default async function TeacherAcademicsHub() {
@@ -49,16 +54,25 @@ export default async function TeacherAcademicsHub() {
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },
     select: {
-      classTeacherOf: { select: { id: true, name: true } },
+      classTeacherOf:             { select: { id: true, name: true } },
+      subjectAssignments:         { select: { id: true }, take: 1 },
+      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
+      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
     },
   });
 
-  const isClassTeacher = !!teacher?.classTeacherOf;
+  const isClassTeacher   = !!teacher?.classTeacherOf;
+  const isSubjectTeacher =
+    (teacher?.subjectAssignments.length ?? 0) > 0 ||
+    (teacher?.electiveGroupTeachers.length ?? 0) > 0 ||
+    (teacher?.classElectiveGroupTeachers.length ?? 0) > 0;
+  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
 
   // Tiles shown on the hub overview.
   // Class teachers don't need a Subjects tile — it's view-only and not part
   // of their primary workflow. The nav strip still has it for reference.
-  const tilesToShow = TEACHER_ACADEMICS_NAV.filter((item) => {
+  // Non-subject teachers don't get the Diary tile either.
+  const tilesToShow = navItems.filter((item) => {
     if (isClassTeacher && item.href === "/teacher/academics/subjects") return false;
     return true;
   });
@@ -75,7 +89,7 @@ export default async function TeacherAcademicsHub() {
         )}
       </p>
 
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={navItems} />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {tilesToShow.map((item) => {

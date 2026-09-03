@@ -67,6 +67,9 @@ export async function GET() {
     classTeacherOf: teacher.classTeacherOf,
     assignments: Array.from(bySubject.values()),
     taughtClasses,
+    isSubjectTeacher:
+      teacher.subjectAssignments.length > 0 ||
+      teacher.classElectiveGroupTeachers.length > 0,
   });
 }
 

@@ -3,29 +3,45 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, EmptyState, Chip } from "@/components/ui";
 import ContextNavigation from "@/components/ContextNavigation";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 export default async function TeacherSubjectsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId! },
-    orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      type: true,
-      applicableForms: true,
-      department: { select: { id: true, name: true } },
-      _count: { select: { teacherSubjects: true } },
-    },
-  });
+  const [subjects, teacherAssignments] = await Promise.all([
+    prisma.subject.findMany({
+      where: { schoolId: user.schoolId! },
+      orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        type: true,
+        applicableForms: true,
+        department: { select: { id: true, name: true } },
+        _count: { select: { teacherSubjects: true } },
+      },
+    }),
+    prisma.teacher.findUnique({
+      where: { userId: user.id },
+      select: {
+        subjectAssignments:         { select: { id: true }, take: 1 },
+        electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
+        classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
+      },
+    }),
+  ]);
+
+  const isSubjectTeacher =
+    (teacherAssignments?.subjectAssignments.length ?? 0) > 0 ||
+    (teacherAssignments?.electiveGroupTeachers.length ?? 0) > 0 ||
+    (teacherAssignments?.classElectiveGroupTeachers.length ?? 0) > 0;
+  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
 
   return (
     <div>
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={navItems} />
 
       <PageHeader
         title="Subjects"

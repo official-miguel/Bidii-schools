@@ -27,9 +27,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   // Class/subject/HOD/dorm assignments add more.
   const visibleHubs = getVisibleHubs(perms);
 
-  // Always add "calendar" and "people" for teachers (they have a People page
-  // and calendar access). The baseline grant doesn't explicitly grant CALENDAR
-  // but teachers always have it — add it manually here.
+  // Always add "calendar" and "people" for teachers
   visibleHubs.add("calendar");
   visibleHubs.add("people");
 

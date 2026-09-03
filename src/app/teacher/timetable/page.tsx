@@ -22,9 +22,7 @@ import {
 } from "lucide-react";
 import ContextNavigation from "@/components/ContextNavigation";
 import { PageHeader, EmptyState, ErrorBanner } from "@/components/ui";
-import { TEACHER_ACADEMICS_NAV as NAV_ITEMS } from "@/lib/teacherAcademicsNav";
-
-// NAV_ITEMS imported from @/lib/teacherAcademicsNav
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAY_FULL  = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -75,6 +73,7 @@ export default function TeacherTimetablePage() {
   const [data,    setData]    = useState<TeacherViewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
+  const [isSubjectTeacher, setIsSubjectTeacher] = useState(false);
 
   // Mobile day pagination
   const [selectedDay, setSelectedDay] = useState(TODAY_IDX);
@@ -82,13 +81,18 @@ export default function TeacherTimetablePage() {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch("/api/timetable/v2/teacher-view");
+      const [res, meRes] = await Promise.all([
+        fetch("/api/timetable/v2/teacher-view"),
+        fetch("/api/teacher/me"),
+      ]);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || "Failed to load your timetable.");
       }
       const d: TeacherViewData = await res.json();
+      const me = meRes.ok ? await meRes.json() : {};
       setData(d);
+      setIsSubjectTeacher(me.isSubjectTeacher ?? false);
       // If today is an active day, show it; otherwise show first active day
       if (d.days.includes(TODAY_IDX)) setSelectedDay(TODAY_IDX);
       else if (d.days.length > 0)     setSelectedDay(d.days[0]);
@@ -193,7 +197,7 @@ export default function TeacherTimetablePage() {
   if (loading) {
     return (
       <div>
-        <ContextNavigation items={NAV_ITEMS} />
+        <ContextNavigation items={getTeacherAcademicsNav(isSubjectTeacher)} />
         <PageHeader title="My Timetable" description="Your weekly schedule." />
         <div className="space-y-3 mt-4">
           {[...Array(3)].map((_, i) => (
@@ -206,7 +210,7 @@ export default function TeacherTimetablePage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={getTeacherAcademicsNav(isSubjectTeacher)} />
       <PageHeader
         title="My Timetable"
         description={data?.teacher ? `${data.teacher.fullName} · Staff ID ${data.teacher.staffId}` : "Your weekly schedule."}

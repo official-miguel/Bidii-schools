@@ -256,6 +256,7 @@ export async function getTeacherEffectivePermissions(user: User): Promise<Effect
     if (hasSubjectAssignments) {
       merge("ASSESSMENTS", { canView: true, canCreate: true, canEdit: true });
       merge("STUDENTS",    { canView: true });
+      merge("DIARY",       { canView: true, canCreate: true, canEdit: true, canDelete: true });
     }
 
     // Source 3: Class Teacher Scope

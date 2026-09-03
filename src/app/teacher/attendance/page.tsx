@@ -6,7 +6,7 @@ import ContextNavigation from "@/components/ContextNavigation";
 import AttendancePageTabs from "@/components/AttendancePageTabs";
 import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 export default async function TeacherAttendancePage() {
   const user = await getCurrentUser();
@@ -34,13 +34,17 @@ export default async function TeacherAttendancePage() {
   const taughtClasses = Array.from(classSet.values());
 
   const isClassTeacher = !!teacher?.classTeacherOf;
+  const isSubjectTeacher =
+    (teacher?.subjectAssignments.length ?? 0) > 0 ||
+    (teacher?.classElectiveGroupTeachers.length ?? 0) > 0;
   const hasAnyClass    = taughtClasses.length > 0;
+  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
 
   // Teacher with no assignments sees a clear message
   if (!hasAnyClass) {
     return (
       <div>
-        <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+        <ContextNavigation items={navItems} />
         <PageHeader title="Attendance" />
         <p className="text-slate text-sm dark:text-dark-muted">
           Attendance is available once you have been assigned to teach a class.
@@ -54,7 +58,7 @@ export default async function TeacherAttendancePage() {
 
   return (
     <div>
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={navItems} />
 
       <PageHeader
         title="Attendance"

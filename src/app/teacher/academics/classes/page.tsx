@@ -20,7 +20,7 @@ import {
 import { SkeletonTable } from "@/components/ui/ProgressivePage";
 import ContextNavigation from "@/components/ContextNavigation";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 import ClassWorkspaceDrawer from "@/components/entity-drawers/ClassWorkspaceDrawer";
 import StaffProfileDrawer from "@/components/entity-drawers/StaffProfileDrawer";
 import SubjectWorkspaceDrawer from "@/components/entity-drawers/SubjectWorkspaceDrawer";
@@ -42,6 +42,7 @@ type TeacherContext = {
   teacherId: string | null;
   classTeacherOf: { id: string; name: string } | null;
   isClassTeacher: boolean;
+  isSubjectTeacher: boolean;
 };
 
 function FrameworkBadge({ type }: { type: string }) {
@@ -53,7 +54,7 @@ function FrameworkBadge({ type }: { type: string }) {
 // ── Component ─────────────────────────────────────────────────────────────
 export default function TeacherClassesPage() {
   const [classes,  setClasses]  = useState<SchoolClass[] | null>(null);
-  const [ctx,      setCtx]      = useState<TeacherContext>({ teacherId: null, classTeacherOf: null, isClassTeacher: false });
+  const [ctx,      setCtx]      = useState<TeacherContext>({ teacherId: null, classTeacherOf: null, isClassTeacher: false, isSubjectTeacher: false });
   const [filterForm,      setFilterForm]      = useState("");
   const [filterFramework, setFilterFramework] = useState("");
 
@@ -83,9 +84,10 @@ export default function TeacherClassesPage() {
 
       const classTeacherOf = ctxData.classTeacherOf ?? null;
       setCtx({
-        teacherId:      ctxData.id ?? null,
+        teacherId:        ctxData.id ?? null,
         classTeacherOf,
-        isClassTeacher: !!classTeacherOf,
+        isClassTeacher:   !!classTeacherOf,
+        isSubjectTeacher: ctxData.isSubjectTeacher ?? false,
       });
 
       // Pin own class to top if class teacher
@@ -118,7 +120,7 @@ export default function TeacherClassesPage() {
 
   return (
     <div>
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={getTeacherAcademicsNav(ctx.isSubjectTeacher)} />
 
       <PageHeader
         title="Classes"

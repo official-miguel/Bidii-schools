@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ContextNavigation from "@/components/ContextNavigation";
 import AssessmentsPageTabs from "@/components/assessment/AssessmentsPageTabs";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 export default async function TeacherAssessmentsPage() {
   const user = await getCurrentUser();
@@ -27,7 +27,7 @@ export default async function TeacherAssessmentsPage() {
 
   return (
     <div>
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={getTeacherAcademicsNav(hasSubjectAssignments)} />
       <AssessmentsPageTabs
         isHod={isHod}
         hasSubjectAssignments={hasSubjectAssignments}

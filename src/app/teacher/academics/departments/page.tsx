@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, EmptyState, Chip } from "@/components/ui";
 import ContextNavigation from "@/components/ContextNavigation";
-import { TEACHER_ACADEMICS_NAV } from "@/lib/teacherAcademicsNav";
+import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 export default async function TeacherDepartmentsPage() {
   const user = await getCurrentUser();
@@ -20,9 +20,25 @@ export default async function TeacherDepartmentsPage() {
     },
   });
 
+  // Resolve whether the signed-in teacher is a subject teacher so the
+  // Diary nav item is shown only when appropriate.
+  const teacherAssignments = await prisma.teacher.findUnique({
+    where: { userId: user.id },
+    select: {
+      subjectAssignments:         { select: { id: true }, take: 1 },
+      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
+      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
+    },
+  });
+  const isSubjectTeacher =
+    (teacherAssignments?.subjectAssignments.length ?? 0) > 0 ||
+    (teacherAssignments?.electiveGroupTeachers.length ?? 0) > 0 ||
+    (teacherAssignments?.classElectiveGroupTeachers.length ?? 0) > 0;
+  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
+
   return (
     <div>
-      <ContextNavigation items={TEACHER_ACADEMICS_NAV} />
+      <ContextNavigation items={navItems} />
 
       <PageHeader
         title="Departments"
