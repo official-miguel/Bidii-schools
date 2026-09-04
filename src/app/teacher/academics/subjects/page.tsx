@@ -9,35 +9,21 @@ export default async function TeacherSubjectsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [subjects, teacherAssignments] = await Promise.all([
-    prisma.subject.findMany({
-      where: { schoolId: user.schoolId! },
-      orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        type: true,
-        applicableForms: true,
-        department: { select: { id: true, name: true } },
-        _count: { select: { teacherSubjects: true } },
-      },
-    }),
-    prisma.teacher.findUnique({
-      where: { userId: user.id },
-      select: {
-        subjectAssignments:         { select: { id: true }, take: 1 },
-        electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
-        classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
-      },
-    }),
-  ]);
+  const subjects = await prisma.subject.findMany({
+    where: { schoolId: user.schoolId! },
+    orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      type: true,
+      applicableForms: true,
+      department: { select: { id: true, name: true } },
+      _count: { select: { teacherSubjects: true } },
+    },
+  });
 
-  const isSubjectTeacher =
-    (teacherAssignments?.subjectAssignments.length ?? 0) > 0 ||
-    (teacherAssignments?.electiveGroupTeachers.length ?? 0) > 0 ||
-    (teacherAssignments?.classElectiveGroupTeachers.length ?? 0) > 0;
-  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
+  const navItems = getTeacherAcademicsNav();
 
   return (
     <div>

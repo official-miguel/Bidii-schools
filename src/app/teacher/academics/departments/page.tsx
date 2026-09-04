@@ -20,21 +20,7 @@ export default async function TeacherDepartmentsPage() {
     },
   });
 
-  // Resolve whether the signed-in teacher is a subject teacher so the
-  // Diary nav item is shown only when appropriate.
-  const teacherAssignments = await prisma.teacher.findUnique({
-    where: { userId: user.id },
-    select: {
-      subjectAssignments:         { select: { id: true }, take: 1 },
-      electiveGroupTeachers:      { select: { groupId: true }, take: 1 },
-      classElectiveGroupTeachers: { select: { groupId: true }, take: 1 },
-    },
-  });
-  const isSubjectTeacher =
-    (teacherAssignments?.subjectAssignments.length ?? 0) > 0 ||
-    (teacherAssignments?.electiveGroupTeachers.length ?? 0) > 0 ||
-    (teacherAssignments?.classElectiveGroupTeachers.length ?? 0) > 0;
-  const navItems = getTeacherAcademicsNav(isSubjectTeacher);
+  const navItems = getTeacherAcademicsNav();
 
   return (
     <div>
