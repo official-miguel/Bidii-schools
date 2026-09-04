@@ -8,7 +8,6 @@
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
  */
 
-import { redirect } from "next/navigation";
 import { requireParent, ownsStudent } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import ParentDiaryList from "@/components/parent/ParentDiaryList";
@@ -20,10 +19,17 @@ interface Props {
 }
 
 export default async function ParentDiaryPage({ searchParams }: Props) {
-  // 1. Auth guard
+  // 1. Auth guard — if no Parent record exists yet (legacy accounts), show
+  //    the empty-children state rather than bouncing to the login page.
+  //    The layout has already verified the user is authenticated and role=PARENT.
   const parent = await requireParent();
   if (!parent) {
-    redirect("/parent-login");
+    return (
+      <div className="space-y-4">
+        <PageHeader />
+        <EmptyNoChildren />
+      </div>
+    );
   }
 
   // 2. Resolve studentId from ?child= param; fall back to first linked student

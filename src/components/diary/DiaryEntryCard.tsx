@@ -37,6 +37,16 @@ const TYPE_CONFIG: Record<string, {
   ANNOUNCEMENT: { label: "Announcement", Icon: Megaphone,  color: "text-slate",   badge: "bg-line text-slate" },
 };
 
+function isDueSoon(date: string | Date): boolean {
+  const due   = new Date(date);
+  const now   = new Date();
+  now.setHours(0, 0, 0, 0);
+  const in7   = new Date(now);
+  in7.setDate(in7.getDate() + 7);
+  in7.setHours(23, 59, 59, 999);
+  return due >= now && due <= in7;
+}
+
 function formatDueDate(date: string | Date): string {
   const d = new Date(date);
   const now = new Date();
@@ -81,13 +91,18 @@ export default function DiaryEntryCard({ entry, variant }: DiaryEntryCardProps) 
                  transition-all group dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
     >
       <div className="p-4">
-        {/* Top row: badge + date */}
+        {/* Top row: badge + due-soon pill + date */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide ${cfg.badge}`}>
               <Icon className="h-3 w-3" aria-hidden="true" />
               {cfg.label}
             </span>
+            {isDue && isDueSoon(entry.dueDate!) && new Date(entry.dueDate!) >= new Date() && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-warn-bg text-warn">
+                Due soon
+              </span>
+            )}
           </div>
           <span className="text-[11px] text-slate dark:text-dark-muted shrink-0">
             {formatPostedDate(entry.createdAt)}

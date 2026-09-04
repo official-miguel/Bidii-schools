@@ -27,7 +27,7 @@ interface Props {
 export default async function FeesPage({ searchParams }: Props) {
   // 1. Auth guard
   const parent = await requireParent();
-  if (!parent) redirect("/parent-login");
+  if (!parent) redirect("/login");
 
   // 2. HARD ownership check — require ?child= and verify ownership
   const studentId = searchParams?.child ?? null;

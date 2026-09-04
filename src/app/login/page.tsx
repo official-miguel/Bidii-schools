@@ -204,7 +204,6 @@ function LoginForm() {
                 </div>
                 <p className="mt-1.5 text-xs text-slate dark:text-dark-muted">
                   Staff: first login password is your school username.
-                  Parents: use your child&apos;s admission number.
                 </p>
               </div>
 
@@ -255,11 +254,6 @@ function LoginForm() {
             </form>
           </div>
         </div>
-
-        {/* Unified portal note */}
-        <p className="text-center text-xs text-slate dark:text-white/40 mt-4">
-          Parents: enter your phone number and your child&apos;s admission number.
-        </p>
 
         <p className="text-center text-sm text-slate dark:text-white/40 mt-4">
           Need help signing in? Contact your school administrator.

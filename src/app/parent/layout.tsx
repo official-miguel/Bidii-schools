@@ -18,7 +18,7 @@ export default async function ParentLayout({
   const user = await getCurrentUser();
 
   if (!user || user.role !== "PARENT") {
-    redirect("/parent-login");
+    redirect("/login");
   }
 
   const parent = await prisma.parent.findUnique({
@@ -45,7 +45,25 @@ export default async function ParentLayout({
   });
 
   if (!parent) {
-    redirect("/parent-login");
+    // Parent user exists but no Parent record — show a setup-pending state
+    // rather than bouncing them back to the login page they just came from.
+    return (
+      <DashboardShell
+        role="parent"
+        roleLabel="Parent"
+        userEmail={user.email}
+        schoolName=""
+        visibleHubs={PARENT_HUBS}
+      >
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+          <p className="text-3xl mb-4">🏫</p>
+          <p className="text-base font-semibold text-ink dark:text-dark-text">Account not fully set up</p>
+          <p className="text-sm text-slate dark:text-dark-muted mt-2 max-w-sm">
+            Your account hasn&apos;t been fully linked yet. Please contact the school office to complete setup.
+          </p>
+        </div>
+      </DashboardShell>
+    );
   }
 
   return (

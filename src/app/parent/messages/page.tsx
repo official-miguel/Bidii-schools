@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ParentMessagesPage() {
   const parent = await requireParent();
-  if (!parent) redirect("/parent-login");
+  if (!parent) redirect("/login");
 
   const rawMessages = await prisma.message.findMany({
     where:   { schoolId: parent.schoolId },

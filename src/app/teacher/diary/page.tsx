@@ -28,45 +28,25 @@ export default async function TeacherDiaryPage({
 
   const typeFilter = searchParams.type || undefined;
   const LIMIT      = 20;
-  const now        = new Date();
-  const soon       = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const [entries, dueSoon] = await Promise.all([
-    prisma.diaryEntry.findMany({
-      where: {
-        schoolId:  user.schoolId!,
-        teacherId: teacher.id,
-        deletedAt: null,
-        ...(typeFilter ? { entryType: typeFilter as never } : {}),
-      },
-      include: {
-        subject: { select: { name: true } },
-        targets: { include: { schoolClass: { select: { id: true, name: true } } } },
-        _count:  { select: { recipients: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take:    LIMIT,
-    }),
-    prisma.diaryEntry.findMany({
-      where: {
-        schoolId:  user.schoolId!,
-        teacherId: teacher.id,
-        deletedAt: null,
-        dueDate:   { gte: now, lte: soon },
-        entryType: { not: "ANNOUNCEMENT" },
-      },
-      include: {
-        subject: { select: { name: true } },
-        targets: { include: { schoolClass: { select: { id: true, name: true } } } },
-        _count:  { select: { recipients: true } },
-      },
-      orderBy: { dueDate: "asc" },
-      take:    5,
-    }),
-  ]);
+  const entries = await prisma.diaryEntry.findMany({
+    where: {
+      schoolId:  user.schoolId!,
+      teacherId: teacher.id,
+      deletedAt: null,
+      ...(typeFilter ? { entryType: typeFilter as never } : {}),
+    },
+    include: {
+      subject: { select: { name: true } },
+      targets: { include: { schoolClass: { select: { id: true, name: true } } } },
+      _count:  { select: { recipients: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take:    LIMIT,
+  });
 
   // Compute completed count for each entry for the progress bar
-  const entryIds = [...entries, ...dueSoon].map((e) => e.id);
+  const entryIds = entries.map((e) => e.id);
   const completedCounts = await prisma.diaryRecipient.groupBy({
     by:     ["diaryEntryId"],
     where:  { diaryEntryId: { in: entryIds }, status: "COMPLETED" },
@@ -94,20 +74,6 @@ export default async function TeacherDiaryPage({
         </div>
         <CreateEntryModal />
       </div>
-
-      {/* Due Soon */}
-      {dueSoon.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-3">
-            Due Soon
-          </h2>
-          <div className="space-y-2">
-            {dueSoon.map((entry) => (
-              <DiaryEntryCard key={entry.id} entry={enrichEntry(entry)} variant="compact" />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Filters + Entries */}
       <section>

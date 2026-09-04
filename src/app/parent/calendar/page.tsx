@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ParentCalendarPage() {
   const parent = await requireParent();
-  if (!parent) redirect("/parent-login");
+  if (!parent) redirect("/login");
 
   const schoolId = parent.schoolId;
 

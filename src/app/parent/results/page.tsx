@@ -26,7 +26,7 @@ export default async function ParentResultsPage({ searchParams }: Props) {
   // 1. Auth guard
   const parent = await requireParent();
   if (!parent) {
-    redirect("/parent-login");
+    redirect("/login");
   }
 
   // 2. Resolve studentId from ?child= param; fall back to first linked student

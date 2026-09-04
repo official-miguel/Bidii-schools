@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 /**
  * /parent/notifications
@@ -24,7 +24,7 @@ interface Props {
 
 export default async function ParentNotificationsPage({ searchParams }: Props) {
   const parent = await requireParent();
-  if (!parent) redirect("/parent-login");
+  if (!parent) redirect("/login");
 
   // Renamed from `module` to `activeModule` to avoid the no-assign-module-variable error.
   const activeModule = searchParams.module || undefined;
