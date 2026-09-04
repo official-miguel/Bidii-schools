@@ -1,16 +1,16 @@
 /**
  * /parent/diary — Diary page for authenticated parents
  *
- * Server component. Fetches diary entries directly via Prisma, scoped to the
- * authenticated parent's active child's class. Renders the ParentDiaryList
- * client component.
- *
- * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+ * Server component. Fetches diary entries via Prisma, scoped to the
+ * authenticated parent's selected child's class. Supports multi-child
+ * switching via ?child= query param.
  */
 
+import Link from "next/link";
 import { requireParent, ownsStudent } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import ParentDiaryList from "@/components/parent/ParentDiaryList";
+import { BookOpen, AlertCircle, Users, CalendarClock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,7 @@ interface Props {
 }
 
 export default async function ParentDiaryPage({ searchParams }: Props) {
-  // 1. Auth guard — if no Parent record exists yet (legacy accounts), show
-  //    the empty-children state rather than bouncing to the login page.
-  //    The layout has already verified the user is authenticated and role=PARENT.
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const parent = await requireParent();
   if (!parent) {
     return (
@@ -32,7 +30,7 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
     );
   }
 
-  // 2. Resolve studentId from ?child= param; fall back to first linked student
+  // ── Resolve active child ──────────────────────────────────────────────────
   let studentId = searchParams.child ?? null;
 
   if (!studentId) {
@@ -48,7 +46,7 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
     studentId = first.studentId;
   }
 
-  // 3. Ownership check — silently fall back to first child if param is tampered
+  // Ownership guard — silently fall back to first child if param is tampered
   if (!ownsStudent(parent, studentId)) {
     const first = parent.students[0];
     if (!first) {
@@ -62,10 +60,10 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
     studentId = first.studentId;
   }
 
-  // 4. Fetch student name + classId
+  // ── Fetch active student details ──────────────────────────────────────────
   const student = await prisma.student.findUnique({
     where:  { id: studentId },
-    select: { fullName: true, classId: true },
+    select: { fullName: true, classId: true, schoolClass: { select: { name: true } } },
   });
 
   if (!student || !student.classId) {
@@ -77,7 +75,20 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
     );
   }
 
-  // 5. Query diary entries targeting the student's class
+  // ── Fetch all linked children for the switcher ────────────────────────────
+  const allChildren = await prisma.student.findMany({
+    where: {
+      id: { in: parent.students.map((ps) => ps.studentId) },
+    },
+    select: {
+      id:          true,
+      fullName:    true,
+      schoolClass: { select: { name: true } },
+    },
+    orderBy: { fullName: "asc" },
+  });
+
+  // ── Fetch diary entries for active child's class ──────────────────────────
   const rawEntries = await prisma.diaryEntry.findMany({
     where: {
       schoolId:  parent.schoolId,
@@ -94,12 +105,12 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
       teacher: { select: { fullName: true } },
     },
     orderBy: [
-      { dueDate: { sort: "desc", nulls: "last" } },
-      { createdAt: "desc" },
+      { dueDate:    { sort: "desc", nulls: "last" } },
+      { createdAt:  "desc" },
     ],
   });
 
-  // 6. Badge count — ASSIGNMENT or HOMEWORK due within next 7 days
+  // ── Badge count — due within 7 days ──────────────────────────────────────
   const today   = new Date();
   today.setHours(0, 0, 0, 0);
   const in7Days = new Date(today);
@@ -114,42 +125,92 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
       e.dueDate <= in7Days,
   ).length;
 
-  // Serialise dates to strings for safe client-component transfer
+  // ── Serialise dates to strings ────────────────────────────────────────────
   const entries: import("@/components/parent/ParentDiaryList").DiaryEntryWithExtras[] =
     rawEntries.map((e) => ({
       id:          e.id,
       title:       e.title,
       description: e.description,
       entryType:   e.entryType as "ASSIGNMENT" | "HOMEWORK" | "REVISION" | "PROJECT" | "ANNOUNCEMENT",
-      dueDate:     e.dueDate ? e.dueDate.toISOString() : null,
+      dueDate:     e.dueDate    ? e.dueDate.toISOString()    : null,
+      createdAt:   e.createdAt.toISOString(),
       subject:     e.subject,
       teacher:     e.teacher,
       recipients:  e.recipients.map((r) => ({ status: r.status as "PENDING" | "COMPLETED" })),
     }));
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Page heading */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
-            Diary — {student.fullName}
+            Diary
           </h1>
           <p className="text-sm text-slate dark:text-dark-muted mt-0.5">
-            Assignments, homework and class announcements
+            {student.fullName} · {student.schoolClass?.name}
           </p>
         </div>
 
-        {/* Badge for upcoming due-soon items */}
         {badgeCount > 0 && (
-          <span className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full
+          <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                            bg-warn-bg text-warn text-xs font-semibold">
-            {badgeCount} assignment{badgeCount !== 1 ? "s" : ""} due this week
+            <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+            {badgeCount} due this week
           </span>
         )}
       </div>
 
-      {/* Main content */}
+      {/* Multi-child switcher */}
+      {allChildren.length > 1 && (
+        <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Select child">
+          {allChildren.map((child) => {
+            const isActive = child.id === studentId;
+            const initials = child.fullName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <Link
+                key={child.id}
+                href={`/parent/diary?child=${child.id}`}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left
+                            transition-all min-h-[52px] no-underline
+                            ${isActive
+                              ? "border-teal/50 bg-teal/5 dark:bg-teal/10 shadow-xs"
+                              : "border-line dark:border-dark-border hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30"
+                            }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center shrink-0
+                    ${isActive
+                      ? "bg-teal text-white"
+                      : "bg-teal/10 text-teal"
+                    }`}
+                  aria-hidden="true"
+                >
+                  {initials}
+                </div>
+                <div>
+                  <p className={`text-sm font-medium leading-none ${isActive ? "text-teal" : "text-ink dark:text-dark-text"}`}>
+                    {child.fullName.split(" ")[0]}
+                  </p>
+                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5 leading-none">
+                    {child.schoolClass.name}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Entries or empty */}
       {entries.length === 0 ? (
         <EmptyNoEntries studentName={student.fullName} />
       ) : (
@@ -160,7 +221,7 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Sub-components — no emojis, icons only
 // ---------------------------------------------------------------------------
 
 function PageHeader() {
@@ -173,11 +234,13 @@ function PageHeader() {
 
 function EmptyNoChildren() {
   return (
-    <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
-      <p className="text-3xl mb-3">📔</p>
-      <p className="text-sm font-medium text-ink dark:text-dark-text">No children linked</p>
+    <div className="bg-card border border-line rounded-xl p-10 text-center dark:bg-dark-surface dark:border-dark-border">
+      <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mx-auto mb-3">
+        <Users className="h-6 w-6 text-teal" aria-hidden="true" />
+      </div>
+      <p className="text-sm font-semibold text-ink dark:text-dark-text">No children linked</p>
       <p className="text-sm text-slate dark:text-dark-muted mt-1">
-        Contact the school office to link your child&apos;s record.
+        Contact the school office to link your child&apos;s record to your account.
       </p>
     </div>
   );
@@ -185,13 +248,19 @@ function EmptyNoChildren() {
 
 function EmptyNoEntries({ studentName }: { studentName?: string | null }) {
   return (
-    <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
-      <p className="text-3xl mb-3">📔</p>
-      <p className="text-sm font-medium text-ink dark:text-dark-text">No assignments</p>
+    <div className="bg-card border border-line rounded-xl p-10 text-center dark:bg-dark-surface dark:border-dark-border">
+      <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mx-auto mb-3">
+        <BookOpen className="h-6 w-6 text-teal" aria-hidden="true" />
+      </div>
+      <p className="text-sm font-semibold text-ink dark:text-dark-text">No diary entries yet</p>
       <p className="text-sm text-slate dark:text-dark-muted mt-1">
-        There are currently no diary entries
-        {studentName ? ` for ${studentName}` : ""}.
+        {studentName
+          ? `No assignments or announcements have been posted for ${studentName} yet.`
+          : "No assignments or announcements have been posted yet."}
       </p>
     </div>
   );
 }
+
+// Suppress unused import lint warning — kept for future use
+void AlertCircle;
