@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, ReceiptText, Banknote, TrendingDown, TrendingUp,
   FileText, CreditCard, Printer, ChevronDown, ChevronRight,
-  AlertTriangle, X, CheckCircle2, Loader2,
+  AlertTriangle, X, CheckCircle2, Loader2, ClipboardList,
 } from "lucide-react";
 import {
   PageHeader, Badge, EmptyState, primaryButtonClass,
@@ -59,6 +59,290 @@ function entryTypeLabel(type: string): { label: string; variant: "success" | "in
     case "OPENING_BALANCE":   return { label: "Opening Bal.", variant: "default" };
     default:                  return { label: type,           variant: "default" };
   }
+}
+
+// ── Setup Invoice Panel ────────────────────────────────────────────────────
+
+interface Term {
+  id: string;
+  name: string;
+  academicYear: number;
+  isActive: boolean;
+}
+
+function SetupInvoicePanel({
+  studentId,
+  studentName,
+  onClose,
+  onSuccess,
+}: {
+  studentId:   string;
+  studentName: string;
+  onClose:     () => void;
+  onSuccess:   () => void;
+}) {
+  const [step,            setStep]           = useState<"form" | "confirm">("form");
+  const [terms,           setTerms]          = useState<Term[]>([]);
+  const [termId,          setTermId]         = useState("");
+  const [basicFees,       setBasicFees]      = useState("");
+  const [expenseAmt,      setExpenseAmt]     = useState("");
+  const [loadingTerms,    setLoadingTerms]   = useState(true);
+  const [submitting,      setSubmitting]     = useState(false);
+  const [err,             setErr]            = useState<string | null>(null);
+
+  // Load terms once on mount
+  useEffect(() => {
+    fetch("/api/finance/terms")
+      .then((r) => r.json())
+      .then((d) => {
+        const list: Term[] = d.terms ?? [];
+        setTerms(list);
+        // Pre-select the active term if one exists
+        const active = list.find((t) => t.isActive);
+        if (active) setTermId(active.id);
+      })
+      .catch(() => setErr("Could not load terms."))
+      .finally(() => setLoadingTerms(false));
+  }, []);
+
+  const basicNum   = parseFloat(basicFees);
+  const expenseNum = parseFloat(expenseAmt) || 0;
+  const totalNum   = (isNaN(basicNum) ? 0 : basicNum) + expenseNum;
+  const valid      = !isNaN(basicNum) && basicNum >= 0 && expenseNum >= 0 && totalNum > 0 && termId !== "";
+
+  const selectedTerm = terms.find((t) => t.id === termId);
+
+  async function submit() {
+    setSubmitting(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/finance/accounts/${studentId}/setup-invoice`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          termId,
+          basicFeesAmount: basicNum,
+          expenseAmount:   expenseNum,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErr(data.error ?? "Failed to create invoice.");
+        setStep("form");
+        return;
+      }
+      onSuccess();
+    } catch {
+      setErr("An unexpected error occurred.");
+      setStep("form");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputCls =
+    "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+    "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
+    "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+
+  return (
+    <div className="rounded-xl border border-warn/40 bg-warn/5 p-5 mb-6 dark:bg-warn/10 dark:border-warn/20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-warn" aria-hidden="true" />
+          Set Up Fees Balance — {studentName}
+        </h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {err && (
+        <p className="mb-3 text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">
+          {err}
+        </p>
+      )}
+
+      {step === "form" ? (
+        <div className="space-y-4">
+          <p className="text-xs text-slate dark:text-dark-muted">
+            This student was added after batch invoicing ran. Enter the fees balance
+            the bursar wants to assign for the selected term. Both fields can be
+            set independently — leave expenses at 0 if not applicable.
+          </p>
+
+          {/* Term selector */}
+          <div>
+            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+              Term <span className="text-danger">*</span>
+            </label>
+            {loadingTerms ? (
+              <div className="h-9 rounded-lg bg-line animate-pulse" />
+            ) : (
+              <select
+                value={termId}
+                onChange={(e) => setTermId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Select a term…</option>
+                {terms.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.academicYear}){t.isActive ? " — Active" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Basic fees */}
+          <div>
+            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+              Basic fees amount (KES) <span className="text-danger">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={basicFees}
+              onChange={(e) => setBasicFees(e.target.value)}
+              placeholder="e.g. 45000"
+              className={inputCls}
+              autoFocus
+            />
+            <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+              The base tuition / term fees component. Can match or differ from
+              what other students in this form pay.
+            </p>
+          </div>
+
+          {/* Expenses */}
+          <div>
+            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+              Expenses amount (KES){" "}
+              <span className="text-slate/50">(optional)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={expenseAmt}
+              onChange={(e) => setExpenseAmt(e.target.value)}
+              placeholder="e.g. 3500"
+              className={inputCls}
+            />
+            <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+              Additional charges (stationery, lab fees, etc.). Leave blank or 0
+              if not applicable.
+            </p>
+          </div>
+
+          {/* Running total preview */}
+          {totalNum > 0 && (
+            <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+              {basicNum > 0 && (
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-slate dark:text-dark-muted">Basic fees</span>
+                  <span className="font-medium tabular-nums text-ink dark:text-dark-text">
+                    KES {basicNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              {expenseNum > 0 && (
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-slate dark:text-dark-muted">Expenses</span>
+                  <span className="font-medium tabular-nums text-ink dark:text-dark-text">
+                    KES {expenseNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between px-4 py-2.5 bg-paper/60 dark:bg-dark-border/10">
+                <span className="font-semibold text-ink dark:text-dark-text">Total invoice</span>
+                <span className="font-bold tabular-nums text-danger">
+                  KES {totalNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setStep("confirm")}
+            disabled={!valid}
+            className={primaryButtonClass + " mt-1"}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Review &amp; Confirm
+          </button>
+        </div>
+      ) : (
+        /* Confirmation step */
+        <div className="space-y-4">
+          <div className="rounded-lg border border-warn/30 bg-warn-bg/60 px-4 py-3 flex gap-3 items-start">
+            <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                Confirm fees balance setup
+              </p>
+              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                This will create a permanent invoice entry in the student&apos;s
+                ledger. The action <span className="font-semibold text-danger">cannot be undone</span>.
+              </p>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+            {[
+              { label: "Student",    value: studentName },
+              { label: "Term",       value: selectedTerm ? `${selectedTerm.name} (${selectedTerm.academicYear})` : termId },
+              { label: "Basic fees", value: `KES ${basicNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
+              ...(expenseNum > 0
+                ? [{ label: "Expenses", value: `KES ${expenseNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` }]
+                : []),
+              { label: "Total invoice", value: `KES ${totalNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
+            ].map((row) => (
+              <div key={row.label} className="flex justify-between px-4 py-2.5">
+                <span className="text-slate dark:text-dark-muted">{row.label}</span>
+                <span className={`font-medium text-ink dark:text-dark-text ${row.label === "Total invoice" ? "text-danger font-bold" : ""}`}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={submit}
+              disabled={submitting}
+              className={primaryButtonClass}
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              {submitting ? "Saving…" : "Confirm & Create Invoice"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("form")}
+              disabled={submitting}
+              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-slate hover:text-ink transition-colors dark:border-dark-border dark:text-dark-muted"
+            >
+              Go back
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Post Payment Panel ─────────────────────────────────────────────────────
@@ -272,6 +556,7 @@ export default function StudentLedgerPage() {
   const [error,          setError]          = useState<string | null>(null);
   const [tab,            setTab]            = useState<Tab>("ledger");
   const [showPayment,    setShowPayment]     = useState(false);
+  const [showSetup,      setShowSetup]      = useState(false);
   const [expandedEntryId,setExpandedEntryId]= useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -303,6 +588,13 @@ export default function StudentLedgerPage() {
 
   const balance = parseFloat(account?.currentBalance ?? "0");
 
+  // A student "needs setup" when finance setup has never been completed AND
+  // they have no invoices yet (i.e. they were added after batch invoicing ran).
+  const needsSetup =
+    account !== null &&
+    !account.financeSetupCompletedAt &&
+    invoices.length === 0;
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: "ledger",   label: "Ledger",   icon: <FileText    className="h-3.5 w-3.5" />, count: entries.length  },
     { id: "payments", label: "Payments", icon: <CreditCard  className="h-3.5 w-3.5" />, count: payments.length },
@@ -323,20 +615,46 @@ export default function StudentLedgerPage() {
         title={loading ? "Loading…" : (student?.fullName ?? "Student")}
         description={student ? `${student.admissionNumber} · ${student.schoolClass.name}` : ""}
         action={
-          account && !showPayment ? (
-            <button
-              type="button"
-              onClick={() => setShowPayment(true)}
-              className={primaryButtonClass}
-            >
-              <Banknote className="h-4 w-4" aria-hidden="true" />
-              Post Payment
-            </button>
+          account && !showPayment && !showSetup ? (
+            <div className="flex gap-2">
+              {needsSetup && (
+                <button
+                  type="button"
+                  onClick={() => setShowSetup(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-warn/50 bg-warn/10 px-4 py-2 text-sm font-semibold text-warn hover:bg-warn/20 transition-colors"
+                >
+                  <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                  Set Up Fees Balance
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowPayment(true)}
+                className={primaryButtonClass}
+              >
+                <Banknote className="h-4 w-4" aria-hidden="true" />
+                Post Payment
+              </button>
+            </div>
           ) : undefined
         }
       />
 
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
+
+      {/* Inline setup invoice panel — shown when student has no invoice yet */}
+      {showSetup && student && (
+        <SetupInvoicePanel
+          studentId={studentId}
+          studentName={student.fullName}
+          onClose={() => setShowSetup(false)}
+          onSuccess={() => {
+            setShowSetup(false);
+            setLoading(true);
+            load();
+          }}
+        />
+      )}
 
       {/* Inline payment panel */}
       {showPayment && student && (
@@ -350,6 +668,29 @@ export default function StudentLedgerPage() {
             load();
           }}
         />
+      )}
+
+      {/* Finance-pending notice */}
+      {!loading && needsSetup && !showSetup && (
+        <div className="mb-5 rounded-xl border border-warn/40 bg-warn/5 px-4 py-3 flex items-start gap-3 dark:bg-warn/10 dark:border-warn/20">
+          <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              Finance setup pending
+            </p>
+            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              This student was added after batch invoicing ran. Use{" "}
+              <button
+                type="button"
+                onClick={() => setShowSetup(true)}
+                className="font-semibold text-warn underline underline-offset-2 hover:no-underline"
+              >
+                Set Up Fees Balance
+              </button>{" "}
+              to assign a custom basic fees and expense amount for the current term.
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Account summary cards */}

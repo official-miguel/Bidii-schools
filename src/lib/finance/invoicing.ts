@@ -332,17 +332,28 @@ export async function runBatchInvoicing(
 }
 
 /**
- * Creates a single prorated invoice for a student who joins mid-term.
- * Used by the new-student finance setup flow.
+ * Creates a single custom invoice for a student who was added after batch invoicing ran.
+ * The bursar supplies explicit basic-fees and (optional) expense amounts.
+ *
+ * When both basicFeesAmount and expenseAmount are provided the invoice will carry two
+ * line items so the ledger breakdown is transparent.  Either amount may be zero but
+ * the combined total must be > 0.
+ *
+ * Legacy callers that pass a single `customAmount` continue to work unchanged.
  */
 export async function createProratedInvoice(opts: {
-  schoolId:    string;
-  studentId:   string;
-  termId:      string;
-  userId:      string;
-  customAmount?: Decimal; // If set, skips proration and uses this amount directly
+  schoolId:         string;
+  studentId:        string;
+  termId:           string;
+  userId:           string;
+  /** @deprecated Use basicFeesAmount + expenseAmount instead. */
+  customAmount?:    Decimal;
+  /** Custom base-fees component (skips fee-structure lookup). */
+  basicFeesAmount?: Decimal;
+  /** Custom expense component added on top of basicFeesAmount. */
+  expenseAmount?:   Decimal;
 }): Promise<{ invoiceNumber: string; amount: Decimal }> {
-  const { schoolId, studentId, termId, userId, customAmount } = opts;
+  const { schoolId, studentId, termId, userId, customAmount, basicFeesAmount, expenseAmount } = opts;
 
   const [student, term, settings] = await Promise.all([
     prisma.student.findUnique({
@@ -365,10 +376,27 @@ export async function createProratedInvoice(opts: {
   let isProrated = false;
   let proratedDays: number | undefined;
 
-  if (customAmount) {
+  // ── Determine line items ──────────────────────────────────────────────────
+  type LineItem = { description: string; amount: number; type: string };
+  let lineItems: LineItem[];
+
+  if (basicFeesAmount !== undefined) {
+    // Explicit two-component invoice from the bursar setup flow
+    const expAmt = expenseAmount ?? new Decimal(0);
+    invoiceAmount = basicFeesAmount.plus(expAmt);
+
+    lineItems = [
+      { description: "Basic fees", amount: basicFeesAmount.toNumber(), type: "BASE_FEE" },
+    ];
+    if (expAmt.greaterThan(0)) {
+      lineItems.push({ description: "Expenses", amount: expAmt.toNumber(), type: "EXPENSE" });
+    }
+  } else if (customAmount) {
+    // Legacy single-amount path
     invoiceAmount = customAmount;
+    lineItems = [{ description: "Term fees", amount: invoiceAmount.toNumber(), type: "BASE_FEE" }];
   } else {
-    // Auto-prorate
+    // Auto-prorate from fee structure
     const structures = await prisma.feeStructure.findMany({
       where:  { schoolId },
       select: { id: true, form: true, stream: true, boardingStatus: true, termNameId: true, amountPerTerm: true },
@@ -385,7 +413,6 @@ export async function createProratedInvoice(opts: {
     if (!structure) throw new Error("No fee structure found for this student.");
 
     const now = new Date();
-    // startDate / endDate are always set (sentinel values used when not explicitly provided)
     const termStart = term.startDate ?? new Date(term.academicYear, 0, 1);
     const termEnd   = term.endDate   ?? new Date(term.academicYear, 11, 31);
     invoiceAmount = computeProratedAmount(
@@ -398,10 +425,11 @@ export async function createProratedInvoice(opts: {
       0,
       Math.floor((termEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     );
+    lineItems = [{ description: "Prorated term fees", amount: invoiceAmount.toNumber(), type: "BASE_FEE" }];
   }
+  // ── End line items ────────────────────────────────────────────────────────
 
   const invoicePrefix = settings?.invoicePrefix ?? "INV-";
-
   let invoiceNumber = "";
 
   await prisma.$transaction(async (tx) => {
@@ -414,8 +442,8 @@ export async function createProratedInvoice(opts: {
         schoolId,
         studentId,
         termId,
-        totalAmount: invoiceAmount,
-        lineItems:   [{ description: `${isProrated ? "Prorated term" : "Term"} fees`, amount: invoiceAmount.toNumber(), type: "BASE_FEE" }],
+        totalAmount:   invoiceAmount,
+        lineItems,
         invoiceNumber,
         isProrated,
         proratedDays:  proratedDays ?? null,
@@ -427,15 +455,13 @@ export async function createProratedInvoice(opts: {
       schoolId,
       studentId,
       termId,
-      entryType:    "INVOICE",
-      amount:       invoiceAmount,
-      description:  `${isProrated ? "Prorated invoice" : "Invoice"} ${invoiceNumber} — ${term.name}`,
-      referenceId:  invoiceNumber,
+      entryType:     "INVOICE",
+      amount:        invoiceAmount,
+      description:   `Invoice ${invoiceNumber} — ${term.name}`,
+      referenceId:   invoiceNumber,
       referenceType: "INVOICE",
-      postedById:   userId,
+      postedById:    userId,
     });
-
-
   });
 
   // Fire parent notification outside the transaction (fire-and-forget)
