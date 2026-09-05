@@ -17,7 +17,7 @@ export interface AttendanceDay {
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"] as const;
 
-function DayCell({ status, day }: { status: AttendanceDay["status"] | null; day?: number }) {
+function DayCell({ status }: { status: AttendanceDay["status"] | null; day?: number }) {
   if (!status) {
     return (
       <div className="w-8 h-8 flex items-center justify-center text-[11px] text-slate/30 dark:text-dark-muted/30">
@@ -85,20 +85,23 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
     statusMap.set(d.date.toDateString(), d.status);
   }
 
-  // Generate weeks
+  // Generate weeks — use an index to avoid mutating a const Date object
   const startMon = sorted.length > 0 ? mondayOf(sorted[0].date) : mondayOf(new Date());
   const weeks: (Date | null)[][] = [];
-
-  let cursor = new Date(startMon);
+  const startTime = startMon.getTime();
   const endDate = sorted.length > 0 ? sorted[sorted.length - 1].date : new Date();
 
-  while (cursor <= endDate || weeks.length < 4) {
+  let dayIndex = 0;
+  while (true) {
     const week: (Date | null)[] = [];
     for (let i = 0; i < 7; i++) {
-      week.push(new Date(cursor));
-      cursor.setDate(cursor.getDate() + 1);
+      const d = new Date(startTime + (dayIndex + i) * 86_400_000);
+      week.push(d);
     }
     weeks.push(week);
+    dayIndex += 7;
+    const lastInWeek = new Date(startTime + (dayIndex - 1) * 86_400_000);
+    if (lastInWeek >= endDate && weeks.length >= 4) break;
     if (weeks.length >= 6) break; // safety cap
   }
 

@@ -32,8 +32,6 @@ import {
   MessageSquare,
   Calendar,
   Bell,
-  ShieldAlert,
-  Award,
   Settings,
   LogOut,
   UserCircle2,
@@ -41,7 +39,6 @@ import {
   X,
   Search,
   ChevronDown,
-  ChevronRight,
   LayoutDashboard,
 } from "lucide-react";
 import { useParentStore } from "@/lib/stores/parentStore";
@@ -101,7 +98,7 @@ export default function ParentPortalShell({
   parentName,
   userEmail,
   avatarUrl,
-  schoolName,
+  schoolName: _schoolName,
   unreadCount = 0,
 }: ParentPortalShellProps) {
   const pathname   = usePathname();
@@ -111,7 +108,6 @@ export default function ParentPortalShell({
 
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [profileOpen,  setProfileOpen]  = useState(false);
-  const [searchOpen,   setSearchOpen]   = useState(false);
   const [imgError,     setImgError]     = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
@@ -221,7 +217,7 @@ export default function ParentPortalShell({
         <div className="hidden md:flex flex-1 max-w-md">
           <button
             type="button"
-            onClick={() => setSearchOpen(true)}
+            onClick={() => {/* TODO: open global search */}}
             className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl
                        bg-[#F5F7FA] dark:bg-dark-surface border border-line dark:border-dark-border
                        text-slate dark:text-dark-muted text-sm hover:border-teal/40 transition-colors"
