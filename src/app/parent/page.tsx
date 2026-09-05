@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUpcomingCalendarItems } from "@/lib/calendarUpcoming";
+import Link from "next/link";
+import { Award, ShieldAlert, ChevronRight } from "lucide-react";
 
 import DashboardGreeting     from "@/components/parent/dashboard/DashboardGreeting";
 import QuickOverviewGrid, { type QuickOverviewData } from "@/components/parent/dashboard/QuickOverviewGrid";
@@ -104,7 +106,10 @@ export default async function ParentDashboard() {
     pendingDiaryCount,
     upcomingDiary,
     financeAccount,
-    recentNotifications,    upcomingCalendar,
+    recentNotifications,
+    recentDiscipline,
+    recentAchievements,
+    upcomingCalendar,
   ] = student
     ? await Promise.all([
         // Attendance last 30 days
@@ -172,6 +177,22 @@ export default async function ParentDashboard() {
           )
           .catch(() => [] as { id: string; title: string; module: string; isRead: boolean; createdAt: Date }[]),
 
+        // Discipline records
+        prisma.disciplineRecord.findMany({
+          where:   { schoolId, studentId: student.id },
+          orderBy: { dateOfOffence: "desc" },
+          take:    3,
+          select:  { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
+        }).catch(() => [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[]),
+
+        // Recent achievements
+        prisma.achievement.findMany({
+          where:   { schoolId, students: { some: { studentId: student.id } } },
+          orderBy: { achievementDate: "desc" },
+          take:    3,
+          select:  { id: true, title: true, category: true, achievementDate: true },
+        }).catch(() => [] as { id: string; title: string; category: string; achievementDate: Date }[]),
+
         // Upcoming calendar events (next 30 days, up to 3)
         getUpcomingCalendarItems(schoolId, { days: 30, limit: 3 }),
       ])
@@ -181,6 +202,8 @@ export default async function ParentDashboard() {
         [] as DiaryWithEntry[],
         null,
         [] as { id: string; title: string; module: string; isRead: boolean; createdAt: Date }[],
+        [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[],
+        [] as { id: string; title: string; category: string; achievementDate: Date }[],
         [] as Awaited<ReturnType<typeof getUpcomingCalendarItems>>,
       ];
 
@@ -410,6 +433,104 @@ export default async function ParentDashboard() {
       {/* Attendance calendar grid */}
       {calendarDays.length > 0 && (
         <AttendanceCalendarGrid days={calendarDays} viewHref="/parent/attendance" />
+      )}
+
+      {/* Discipline & Achievements — side by side on desktop */}
+      {(recentDiscipline.length > 0 || recentAchievements.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Discipline records */}
+          {recentDiscipline.length > 0 && (
+            <section aria-labelledby="discipline-heading">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id="discipline-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+                  Behaviour &amp; discipline
+                </h2>
+                <Link href="/parent/behaviour" className="text-xs font-medium text-teal hover:underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
+                              dark:border-dark-border shadow-xs overflow-hidden divide-y divide-line
+                              dark:divide-dark-border">
+                {recentDiscipline.map((d) => {
+                  const isOpen = d.status === "OPEN";
+                  return (
+                    <Link
+                      key={d.id}
+                      href="/parent/behaviour"
+                      className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F9FAFB]
+                                 dark:hover:bg-dark-border transition-colors group"
+                    >
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0
+                                       ${isOpen ? "bg-[#FFF3E8]" : "bg-[#F5F7FA] dark:bg-dark-border"}`}>
+                        <ShieldAlert
+                          className={`h-4.5 w-4.5 ${isOpen ? "text-[#F79009]" : "text-slate dark:text-dark-muted"}`}
+                          strokeWidth={1.8}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                          {d.offence}
+                        </p>
+                        <p className="text-xs text-slate dark:text-dark-muted">
+                          {new Date(d.dateOfOffence).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                          {" · "}
+                          <span className={isOpen ? "text-[#F79009] font-medium" : "text-[#17B26A] font-medium"}>
+                            {isOpen ? "Open" : "Resolved"}
+                          </span>
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate/30 group-hover:text-teal shrink-0 transition-colors" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Achievements */}
+          {recentAchievements.length > 0 && (
+            <section aria-labelledby="achievements-heading">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id="achievements-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+                  Recent achievements
+                </h2>
+                <Link href="/parent/achievements" className="text-xs font-medium text-teal hover:underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
+                              dark:border-dark-border shadow-xs overflow-hidden divide-y divide-line
+                              dark:divide-dark-border">
+                {recentAchievements.map((a) => (
+                  <Link
+                    key={a.id}
+                    href="/parent/achievements"
+                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F9FAFB]
+                               dark:hover:bg-dark-border transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-[#EDFAF4] flex items-center justify-center shrink-0">
+                      <Award className="h-4.5 w-4.5 text-[#17B26A]" strokeWidth={1.8} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                        {a.title}
+                      </p>
+                      <p className="text-xs text-slate dark:text-dark-muted">
+                        {a.category}
+                        {" · "}
+                        {new Date(a.achievementDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate/30 group-hover:text-teal shrink-0 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+        </div>
       )}
 
       {/* Upcoming events */}
