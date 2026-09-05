@@ -91,12 +91,14 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
   // Persists selections across search changes: studentId → StudentOption
   const [selectedMap,  setSelectedMap]  = useState<Map<string, StudentOption>>(new Map());
 
-  const [search,       setSearch]       = useState("");
-  const [searching,    setSearching]    = useState(false);
-  const [initialising, setInitialising] = useState(true);
-  const [saving,       setSaving]       = useState(false);
-  const [result,       setResult]       = useState<{ created: number; errors: string[] } | null>(null);
-  const [fetchErr,     setFetchErr]     = useState<string | null>(null);
+  const [search,           setSearch]          = useState("");
+  const [searching,        setSearching]       = useState(false);
+  const [initialising,     setInitialising]    = useState(true);
+  const [saving,           setSaving]          = useState(false);
+  const [result,           setResult]          = useState<{ created: number; errors: string[] } | null>(null);
+  const [fetchErr,         setFetchErr]        = useState<string | null>(null);
+  const [useCustomAmount,  setUseCustomAmount] = useState(false);
+  const [customAmountStr,  setCustomAmountStr] = useState("");
 
   // Full student objects for already-attached students (shown before any search)
   const [attachedStudents, setAttachedStudents] = useState<StudentOption[]>([]);
@@ -222,6 +224,8 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
   // ── Submit ────────────────────────────────────────────────────────────
   async function submit() {
     if (selectedMap.size === 0) return;
+    const customAmountNum = useCustomAmount ? parseFloat(customAmountStr) : undefined;
+    if (useCustomAmount && (isNaN(customAmountNum!) || customAmountNum! < 0)) return;
     setSaving(true);
     try {
       const res  = await fetch("/api/finance/expense-attachments", {
@@ -230,6 +234,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
         body:    JSON.stringify({
           expenseItemId: item.id,
           studentIds:    Array.from(selectedMap.keys()),
+          ...(useCustomAmount && customAmountNum !== undefined ? { customAmount: customAmountNum } : {}),
         }),
       });
       const data = await res.json();
@@ -321,6 +326,46 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
             <p className="text-xs text-slate dark:text-dark-muted mt-1.5">
               Type a name or admission number to search this school&apos;s students.
             </p>
+          )}
+
+          {/* Custom amount toggle */}
+          {!initialising && (
+            <div className="mt-3 rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border px-3 py-2.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={useCustomAmount}
+                  onChange={e => {
+                    setUseCustomAmount(e.target.checked);
+                    if (!e.target.checked) setCustomAmountStr("");
+                  }}
+                  className="h-4 w-4 rounded border-line accent-teal"
+                />
+                <span className="text-sm text-ink dark:text-dark-text">
+                  Use custom charge amount
+                  <span className="ml-2 text-xs text-slate dark:text-dark-muted font-normal">
+                    (default: {formatKES(item.currentPrice)})
+                  </span>
+                </span>
+              </label>
+              {useCustomAmount && (
+                <div className="mt-2.5">
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={customAmountStr}
+                    onChange={e => setCustomAmountStr(e.target.value)}
+                    placeholder={`e.g. ${item.currentPrice}`}
+                    className={inputCls}
+                    autoFocus
+                  />
+                  <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+                    This amount will be charged to every selected student instead of the standard price.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -467,7 +512,11 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
               <button
                 type="button"
                 onClick={submit}
-                disabled={saving || selectedCount === 0}
+                disabled={
+                  saving ||
+                  selectedCount === 0 ||
+                  (useCustomAmount && (customAmountStr === "" || isNaN(parseFloat(customAmountStr)) || parseFloat(customAmountStr) < 0))
+                }
                 className={primaryButtonClass}
               >
                 {saving

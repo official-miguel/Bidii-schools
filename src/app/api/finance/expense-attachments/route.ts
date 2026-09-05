@@ -1,8 +1,14 @@
 /**
  * GET  /api/finance/expense-attachments?studentId=  — List attachments for a student (or all)
  * POST /api/finance/expense-attachments             — Attach expense item(s) to student(s)
- *   Body (single):  { studentId: string, expenseItemId: string }
- *   Body (bulk):    { studentIds: string[], expenseItemId: string }
+ *
+ *   Body (single):  { studentId: string,   expenseItemId: string, customAmount?: number }
+ *   Body (bulk):    { studentIds: string[], expenseItemId: string, customAmount?: number }
+ *
+ * customAmount behaviour:
+ *   - When provided (>= 0), it is used as-is for the DEBIT_ADJUSTMENT ledger entry.
+ *   - When omitted the item's currentPrice is used as-is (no auto-proration).
+ *   - Either way, no proration formula is applied — the bursar controls the amount.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -10,16 +16,17 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 import { postLedgerEntry } from "@/lib/finance/ledger";
-import { computeProratedAmount } from "@/lib/finance/proration";
 
 const attachSchema = z.union([
   z.object({
     studentId:     z.string().trim().min(1),
     expenseItemId: z.string().trim().min(1),
+    customAmount:  z.number().min(0).optional(),
   }),
   z.object({
     studentIds:    z.array(z.string().trim().min(1)).min(1),
     expenseItemId: z.string().trim().min(1),
+    customAmount:  z.number().min(0).optional(),
   }),
 ]);
 
@@ -99,6 +106,7 @@ export async function POST(req: NextRequest) {
   const data       = parsed.data;
   const studentIds = "studentIds" in data ? data.studentIds : [data.studentId];
   const { expenseItemId } = data;
+  const customAmount = data.customAmount;
 
   // Verify expense item belongs to this school and is active
   const expenseItem = await prisma.expenseItem.findFirst({
@@ -109,11 +117,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Expense item not found or inactive." }, { status: 404 });
   }
 
-  // Get the active term for proration (only if invoicing has already completed)
+  // Determine the charge amount:
+  //   - If the bursar supplied a customAmount, use it exactly.
+  //   - Otherwise fall back to the item's currentPrice (no proration).
+  const chargeAmount: Decimal =
+    customAmount !== undefined
+      ? new Decimal(customAmount)
+      : new Decimal(expenseItem.currentPrice.toString());
+
+  // Get the active term so the ledger entry can be linked to it.
+  // We no longer require invoicingCompletedAt — the attachment can happen at
+  // any point during an active term.
   const activeTerm = await prisma.term.findFirst({
-    where:   { schoolId, isActive: true, invoicingCompletedAt: { not: null } },
-    orderBy: { startDate: "desc" },
-    select:  { id: true, startDate: true, endDate: true, academicYear: true, name: true, invoicingCompletedAt: true },
+    where:   { schoolId, isActive: true },
+    orderBy: { createdAt: "desc" },
+    select:  { id: true, name: true },
   });
 
   const created: string[] = [];
@@ -148,25 +166,19 @@ export async function POST(req: NextRequest) {
           data: { studentId, expenseItemId, schoolId, attachedById: user.id },
         });
 
-        if (activeTerm) {
-          const termStart = activeTerm.startDate ?? new Date(activeTerm.academicYear, 0, 1);
-          const termEnd   = activeTerm.endDate   ?? new Date(activeTerm.academicYear, 11, 31);
-          const proratedAmount = computeProratedAmount(
-            { startDate: termStart, endDate: termEnd },
-            new Decimal(expenseItem.currentPrice.toString())
-          );
-
-          if (proratedAmount.greaterThan(0)) {
-            await postLedgerEntry(tx, {
-              schoolId,
-              studentId,
-              termId:      activeTerm.id,
-              entryType:   "DEBIT_ADJUSTMENT",
-              amount:      proratedAmount,
-              description: `Mid-term expense: ${expenseItem.name} (prorated)`,
-              postedById:  user.id,
-            });
-          }
+        // Post a DEBIT_ADJUSTMENT for the agreed amount (standard price or
+        // bursar-supplied custom amount). No proration — the bursar controls
+        // exactly what the student is charged.
+        if (chargeAmount.greaterThan(0) && activeTerm) {
+          await postLedgerEntry(tx, {
+            schoolId,
+            studentId,
+            termId:      activeTerm.id,
+            entryType:   "DEBIT_ADJUSTMENT",
+            amount:      chargeAmount,
+            description: `Expense attached: ${expenseItem.name}${customAmount !== undefined ? " (custom amount)" : ""}`,
+            postedById:  user.id,
+          });
         }
       });
 

@@ -70,6 +70,21 @@ interface Term {
   isActive: boolean;
 }
 
+interface ExpenseItemOption {
+  id:           string;
+  name:         string;
+  currentPrice: string;
+  category:     string;
+}
+
+/** One expense item the bursar has chosen to attach, with an optional price override. */
+interface SelectedExpense {
+  itemId:       string;
+  name:         string;
+  defaultPrice: string;   // string so we can display it
+  customPrice:  string;   // empty = use defaultPrice
+}
+
 function SetupInvoicePanel({
   studentId,
   studentName,
@@ -81,56 +96,125 @@ function SetupInvoicePanel({
   onClose:     () => void;
   onSuccess:   () => void;
 }) {
-  const [step,            setStep]           = useState<"form" | "confirm">("form");
-  const [terms,           setTerms]          = useState<Term[]>([]);
-  const [termId,          setTermId]         = useState("");
-  const [basicFees,       setBasicFees]      = useState("");
-  const [expenseAmt,      setExpenseAmt]     = useState("");
-  const [loadingTerms,    setLoadingTerms]   = useState(true);
-  const [submitting,      setSubmitting]     = useState(false);
-  const [err,             setErr]            = useState<string | null>(null);
+  const [step,             setStep]            = useState<"form" | "confirm">("form");
+  const [terms,            setTerms]           = useState<Term[]>([]);
+  const [expenseItems,     setExpenseItems]     = useState<ExpenseItemOption[]>([]);
+  const [termId,           setTermId]          = useState("");
+  const [basicFees,        setBasicFees]       = useState("");
+  const [selectedExpenses, setSelectedExpenses]= useState<SelectedExpense[]>([]);
+  const [loadingInit,      setLoadingInit]     = useState(true);
+  const [submitting,       setSubmitting]      = useState(false);
+  const [err,              setErr]             = useState<string | null>(null);
 
-  // Load terms once on mount
+  // Load terms and expense items once on mount
   useEffect(() => {
-    fetch("/api/finance/terms")
-      .then((r) => r.json())
-      .then((d) => {
-        const list: Term[] = d.terms ?? [];
-        setTerms(list);
-        // Pre-select the active term if one exists
-        const active = list.find((t) => t.isActive);
+    Promise.all([
+      fetch("/api/finance/terms").then((r) => r.json()),
+      fetch("/api/finance/expense-items").then((r) => r.json()),
+    ])
+      .then(([termData, expData]) => {
+        const termList: Term[] = termData.terms ?? [];
+        setTerms(termList);
+        const active = termList.find((t) => t.isActive);
         if (active) setTermId(active.id);
+
+        const items: ExpenseItemOption[] = (expData.items ?? [])
+          .filter((i: { isActive: boolean }) => i.isActive)
+          .map((i: { id: string; name: string; currentPrice: string; category?: { name: string } }) => ({
+            id:           i.id,
+            name:         i.name,
+            currentPrice: i.currentPrice,
+            category:     i.category?.name ?? "",
+          }));
+        setExpenseItems(items);
       })
-      .catch(() => setErr("Could not load terms."))
-      .finally(() => setLoadingTerms(false));
+      .catch(() => setErr("Could not load data. Please try again."))
+      .finally(() => setLoadingInit(false));
   }, []);
 
-  const basicNum   = parseFloat(basicFees);
-  const expenseNum = parseFloat(expenseAmt) || 0;
-  const totalNum   = (isNaN(basicNum) ? 0 : basicNum) + expenseNum;
-  const valid      = !isNaN(basicNum) && basicNum >= 0 && expenseNum >= 0 && totalNum > 0 && termId !== "";
+  // ── Derived values ──────────────────────────────────────────────────────
+  const basicNum = parseFloat(basicFees);
+
+  /** Effective charge per selected expense (custom if set, else default). */
+  function effectivePrice(e: SelectedExpense): number {
+    const custom = parseFloat(e.customPrice);
+    return isNaN(custom) ? parseFloat(e.defaultPrice) : custom;
+  }
+
+  const expensesTotal = selectedExpenses.reduce((sum, e) => sum + effectivePrice(e), 0);
+  const totalNum      = (isNaN(basicNum) ? 0 : basicNum) + expensesTotal;
+  const valid         =
+    !isNaN(basicNum) && basicNum >= 0 && expensesTotal >= 0 &&
+    totalNum > 0 && termId !== "" &&
+    selectedExpenses.every((e) => {
+      const v = parseFloat(e.customPrice);
+      return e.customPrice === "" || (!isNaN(v) && v >= 0);
+    });
 
   const selectedTerm = terms.find((t) => t.id === termId);
 
+  // ── Expense selection helpers ──────────────────────────────────────────
+  function addExpense(itemId: string) {
+    if (selectedExpenses.some((e) => e.itemId === itemId)) return;
+    const item = expenseItems.find((i) => i.id === itemId);
+    if (!item) return;
+    setSelectedExpenses((prev) => [
+      ...prev,
+      { itemId: item.id, name: item.name, defaultPrice: item.currentPrice, customPrice: "" },
+    ]);
+  }
+
+  function removeExpense(itemId: string) {
+    setSelectedExpenses((prev) => prev.filter((e) => e.itemId !== itemId));
+  }
+
+  function setExpenseCustomPrice(itemId: string, value: string) {
+    setSelectedExpenses((prev) =>
+      prev.map((e) => e.itemId === itemId ? { ...e, customPrice: value } : e)
+    );
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────
   async function submit() {
     setSubmitting(true);
     setErr(null);
     try {
-      const res = await fetch(`/api/finance/accounts/${studentId}/setup-invoice`, {
+      // 1. Create the invoice (basic fees + summed expense total)
+      const invoiceRes = await fetch(`/api/finance/accounts/${studentId}/setup-invoice`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
           termId,
           basicFeesAmount: basicNum,
-          expenseAmount:   expenseNum,
+          expenseAmount:   expensesTotal,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setErr(data.error ?? "Failed to create invoice.");
+      const invoiceData = await invoiceRes.json();
+      if (!invoiceRes.ok) {
+        setErr(invoiceData.error ?? "Failed to create invoice.");
         setStep("form");
         return;
       }
+
+      // 2. Attach each selected expense item (fire-and-forget per item;
+      //    errors are non-fatal — the invoice is already created)
+      await Promise.allSettled(
+        selectedExpenses.map((e) => {
+          const customAmt = parseFloat(e.customPrice);
+          return fetch("/api/finance/expense-attachments", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+              studentId,
+              expenseItemId: e.itemId,
+              ...(!isNaN(customAmt) && e.customPrice !== ""
+                ? { customAmount: customAmt }
+                : {}),
+            }),
+          });
+        })
+      );
+
       onSuccess();
     } catch {
       setErr("An unexpected error occurred.");
@@ -144,6 +228,11 @@ function SetupInvoicePanel({
     "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
     "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
     "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+
+  // Items not yet selected (for the dropdown)
+  const availableItems = expenseItems.filter(
+    (i) => !selectedExpenses.some((e) => e.itemId === i.id)
+  );
 
   return (
     <div className="rounded-xl border border-warn/40 bg-warn/5 p-5 mb-6 dark:bg-warn/10 dark:border-warn/20">
@@ -172,9 +261,8 @@ function SetupInvoicePanel({
       {step === "form" ? (
         <div className="space-y-4">
           <p className="text-xs text-slate dark:text-dark-muted">
-            This student was added after batch invoicing ran. Enter the fees balance
-            the bursar wants to assign for the selected term. Both fields can be
-            set independently — leave expenses at 0 if not applicable.
+            This student was added after batch invoicing ran. Set the basic fees and
+            optionally attach expense items — each with a standard or custom charge.
           </p>
 
           {/* Term selector */}
@@ -182,7 +270,7 @@ function SetupInvoicePanel({
             <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
               Term <span className="text-danger">*</span>
             </label>
-            {loadingTerms ? (
+            {loadingInit ? (
               <div className="h-9 rounded-lg bg-line animate-pulse" />
             ) : (
               <select
@@ -216,30 +304,93 @@ function SetupInvoicePanel({
               autoFocus
             />
             <p className="mt-1 text-xs text-slate dark:text-dark-muted">
-              The base tuition / term fees component. Can match or differ from
-              what other students in this form pay.
+              Base tuition / term fees. Can match or differ from what other students pay.
             </p>
           </div>
 
-          {/* Expenses */}
+          {/* Expense items */}
           <div>
             <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
-              Expenses amount (KES){" "}
-              <span className="text-slate/50">(optional)</span>
+              Expense items <span className="text-slate/50">(optional)</span>
             </label>
-            <input
-              type="number"
-              min="0"
-              step="any"
-              value={expenseAmt}
-              onChange={(e) => setExpenseAmt(e.target.value)}
-              placeholder="e.g. 3500"
-              className={inputCls}
-            />
-            <p className="mt-1 text-xs text-slate dark:text-dark-muted">
-              Additional charges (stationery, lab fees, etc.). Leave blank or 0
-              if not applicable.
-            </p>
+
+            {/* Dropdown to add an expense item */}
+            {!loadingInit && (
+              <select
+                value=""
+                onChange={(e) => { if (e.target.value) addExpense(e.target.value); }}
+                className={inputCls}
+                disabled={availableItems.length === 0}
+              >
+                <option value="">
+                  {availableItems.length === 0
+                    ? "All expense items added"
+                    : "Select an expense item to add…"}
+                </option>
+                {availableItems.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.category ? `${i.category} — ` : ""}{i.name}
+                    {" "}(KES {parseFloat(i.currentPrice).toLocaleString("en-KE", { minimumFractionDigits: 2 })})
+                  </option>
+                ))}
+              </select>
+            )}
+            {loadingInit && <div className="h-9 rounded-lg bg-line animate-pulse" />}
+
+            {/* Selected expense items with optional price override */}
+            {selectedExpenses.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {selectedExpenses.map((e) => {
+                  const effectiveAmt = effectivePrice(e);
+                  const customSet    = e.customPrice !== "" && !isNaN(parseFloat(e.customPrice));
+                  return (
+                    <div
+                      key={e.itemId}
+                      className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border px-3 py-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                          {e.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeExpense(e.itemId)}
+                          className="text-slate hover:text-danger transition-colors shrink-0"
+                          aria-label={`Remove ${e.name}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={e.customPrice}
+                          onChange={(ev) => setExpenseCustomPrice(e.itemId, ev.target.value)}
+                          placeholder={`Standard: KES ${parseFloat(e.defaultPrice).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`}
+                          className={inputCls}
+                        />
+                        {customSet && (
+                          <button
+                            type="button"
+                            onClick={() => setExpenseCustomPrice(e.itemId, "")}
+                            className="text-xs text-slate hover:text-ink whitespace-nowrap shrink-0 dark:text-dark-muted"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+                        {customSet
+                          ? `Custom: KES ${effectiveAmt.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`
+                          : `Using standard price: KES ${effectiveAmt.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Running total preview */}
@@ -253,14 +404,14 @@ function SetupInvoicePanel({
                   </span>
                 </div>
               )}
-              {expenseNum > 0 && (
-                <div className="flex justify-between px-4 py-2.5">
-                  <span className="text-slate dark:text-dark-muted">Expenses</span>
+              {selectedExpenses.map((e) => (
+                <div key={e.itemId} className="flex justify-between px-4 py-2.5">
+                  <span className="text-slate dark:text-dark-muted">{e.name}</span>
                   <span className="font-medium tabular-nums text-ink dark:text-dark-text">
-                    KES {expenseNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                    KES {effectivePrice(e).toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
-              )}
+              ))}
               <div className="flex justify-between px-4 py-2.5 bg-paper/60 dark:bg-dark-border/10">
                 <span className="font-semibold text-ink dark:text-dark-text">Total invoice</span>
                 <span className="font-bold tabular-nums text-danger">
@@ -299,12 +450,13 @@ function SetupInvoicePanel({
           {/* Summary */}
           <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
             {[
-              { label: "Student",    value: studentName },
-              { label: "Term",       value: selectedTerm ? `${selectedTerm.name} (${selectedTerm.academicYear})` : termId },
+              { label: "Student", value: studentName },
+              { label: "Term",    value: selectedTerm ? `${selectedTerm.name} (${selectedTerm.academicYear})` : termId },
               { label: "Basic fees", value: `KES ${basicNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
-              ...(expenseNum > 0
-                ? [{ label: "Expenses", value: `KES ${expenseNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` }]
-                : []),
+              ...selectedExpenses.map((e) => ({
+                label: e.name,
+                value: `KES ${effectivePrice(e).toLocaleString("en-KE", { minimumFractionDigits: 2 })}${parseFloat(e.customPrice) !== parseFloat(e.defaultPrice) && e.customPrice !== "" ? " (custom)" : ""}`,
+              })),
               { label: "Total invoice", value: `KES ${totalNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
             ].map((row) => (
               <div key={row.label} className="flex justify-between px-4 py-2.5">

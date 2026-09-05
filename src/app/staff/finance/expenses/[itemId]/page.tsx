@@ -72,16 +72,18 @@ interface AttachModalProps {
 }
 
 function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: AttachModalProps) {
-  const [attachedIds,  setAttachedIds]  = useState<Set<string>>(new Set());
-  const [classMap,     setClassMap]     = useState<Map<string, string>>(new Map());
-  const [results,      setResults]      = useState<StudentOption[]>([]);
-  const [selectedMap,  setSelectedMap]  = useState<Map<string, StudentOption>>(new Map());
-  const [search,       setSearch]       = useState("");
-  const [searching,    setSearching]    = useState(false);
-  const [initialising, setInitialising] = useState(true);
-  const [saving,       setSaving]       = useState(false);
-  const [result,       setResult]       = useState<{ created: number; errors: string[] } | null>(null);
-  const [fetchErr,     setFetchErr]     = useState<string | null>(null);
+  const [attachedIds,      setAttachedIds]      = useState<Set<string>>(new Set());
+  const [classMap,         setClassMap]         = useState<Map<string, string>>(new Map());
+  const [results,          setResults]          = useState<StudentOption[]>([]);
+  const [selectedMap,      setSelectedMap]      = useState<Map<string, StudentOption>>(new Map());
+  const [search,           setSearch]           = useState("");
+  const [searching,        setSearching]        = useState(false);
+  const [initialising,     setInitialising]     = useState(true);
+  const [saving,           setSaving]           = useState(false);
+  const [result,           setResult]           = useState<{ created: number; errors: string[] } | null>(null);
+  const [fetchErr,         setFetchErr]         = useState<string | null>(null);
+  const [useCustomAmount,  setUseCustomAmount]  = useState(false);
+  const [customAmountStr,  setCustomAmountStr]  = useState("");
   const [attachedStudents, setAttachedStudents] = useState<StudentOption[]>([]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -168,12 +170,18 @@ function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: Attac
 
   async function submit() {
     if (selectedMap.size === 0) return;
+    const customAmountNum = useCustomAmount ? parseFloat(customAmountStr) : undefined;
+    if (useCustomAmount && (isNaN(customAmountNum!) || customAmountNum! < 0)) return;
     setSaving(true);
     try {
       const res  = await fetch("/api/finance/expense-attachments", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ expenseItemId: itemId, studentIds: Array.from(selectedMap.keys()) }),
+        body:    JSON.stringify({
+          expenseItemId: itemId,
+          studentIds:    Array.from(selectedMap.keys()),
+          ...(useCustomAmount && customAmountNum !== undefined ? { customAmount: customAmountNum } : {}),
+        }),
       });
       const data = await res.json();
       const successIds = new Set(Array.from(selectedMap.keys()).filter(id => !(data.errors ?? []).some((e: string) => e.includes(id))));
@@ -237,6 +245,46 @@ function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: Attac
           </div>
           {!initialising && !search && (
             <p className="text-xs text-slate dark:text-dark-muted mt-1.5">Type to search this school&apos;s students.</p>
+          )}
+
+          {/* Custom amount toggle */}
+          {!initialising && (
+            <div className="mt-3 rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border px-3 py-2.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={useCustomAmount}
+                  onChange={e => {
+                    setUseCustomAmount(e.target.checked);
+                    if (!e.target.checked) setCustomAmountStr("");
+                  }}
+                  className="h-4 w-4 rounded border-line accent-teal"
+                />
+                <span className="text-sm text-ink dark:text-dark-text">
+                  Use custom charge amount
+                  <span className="ml-2 text-xs text-slate dark:text-dark-muted font-normal">
+                    (default: {formatKES(itemPrice)})
+                  </span>
+                </span>
+              </label>
+              {useCustomAmount && (
+                <div className="mt-2.5">
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={customAmountStr}
+                    onChange={e => setCustomAmountStr(e.target.value)}
+                    placeholder={`e.g. ${itemPrice}`}
+                    className={inputCls}
+                    autoFocus
+                  />
+                  <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+                    This amount will be charged to every selected student instead of the standard price.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -333,7 +381,13 @@ function AttachModal({ itemId, itemName, itemPrice, onClose, onAttached }: Attac
               {result ? "Close" : "Cancel"}
             </button>
             {!result && (
-              <button type="button" onClick={submit} disabled={saving || selectedCount === 0} className={primaryButtonClass}>
+              <button type="button" onClick={submit}
+                disabled={
+                  saving ||
+                  selectedCount === 0 ||
+                  (useCustomAmount && (customAmountStr === "" || isNaN(parseFloat(customAmountStr)) || parseFloat(customAmountStr) < 0))
+                }
+                className={primaryButtonClass}>
                 {saving ? "Attaching…" : `Attach ${selectedCount || "…"} student${selectedCount !== 1 ? "s" : ""}`}
               </button>
             )}
