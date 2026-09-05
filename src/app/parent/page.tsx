@@ -1,14 +1,61 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUpcomingCalendarItems } from "@/lib/calendarUpcoming";
-import UpcomingCalendarWidget from "@/components/UpcomingCalendarWidget";
-import StatCard from "@/components/dashboard/StatCard";
-import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
-import { BookOpen, CheckCircle, AlertTriangle, Award, Wallet, ClipboardList } from "lucide-react";
+
+import DashboardGreeting     from "@/components/parent/dashboard/DashboardGreeting";
+import QuickOverviewGrid, { type QuickOverviewData } from "@/components/parent/dashboard/QuickOverviewGrid";
+import AttendanceCalendarGrid, { type AttendanceDay } from "@/components/parent/dashboard/AttendanceCalendarGrid";
+import TodaysAssignments, { type AssignmentItem } from "@/components/parent/dashboard/TodaysAssignments";
+import RecentActivity, { type ActivityItem } from "@/components/parent/dashboard/RecentActivity";
+import UpcomingEvents, { type UpcomingEvent } from "@/components/parent/dashboard/UpcomingEvents";
 
 export const dynamic = "force-dynamic";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"] as const;
+
+function dueLabelFor(date: Date): { label: string; urgent: boolean } {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due   = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diff  = Math.round((+due - +today) / 86_400_000);
+
+  if (diff < 0)  return { label: "Overdue",     urgent: true  };
+  if (diff === 0) return { label: "Due today",   urgent: true  };
+  if (diff === 1) return { label: "Due tomorrow", urgent: true };
+  const dow = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][due.getDay()];
+  return { label: `Due ${dow}`, urgent: false };
+}
+
+function timeLabel(date: Date): string {
+  const now  = new Date();
+  const diff = Math.round((+now - +date) / 86_400_000);
+  const time = date.toLocaleTimeString("en-KE", { hour: "numeric", minute: "2-digit" });
+  if (diff === 0)  return time;
+  if (diff === 1)  return `Yesterday · ${time}`;
+  const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()];
+  return `${dow} · ${time}`;
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type DiaryWithEntry = {
+  id:            string;
+  diaryEntryId:  string;
+  studentId:     string;
+  schoolId:      string;
+  diaryEntry: {
+    id:          string;
+    title:       string;
+    subject:     { name: string } | null;
+    dueDate:     Date | null;
+    description: string | null;
+  };
+};
+
+// ── page ─────────────────────────────────────────────────────────────────────
 
 export default async function ParentDashboard() {
   const user = await getCurrentUser();
@@ -16,281 +63,358 @@ export default async function ParentDashboard() {
 
   const schoolId = user.schoolId!;
 
-  // Find the student record(s) linked to this parent/student account.
-  // Three paths:
-  //   1. Direct student login (student's own userId)
-  //   2. Legacy: parentContact field on student matches parent's email
-  //   3. Formal parent-linking: ParentStudent join table via Parent.userId
+  // Resolve the parent name to use in the greeting
+  const parentRecord = await prisma.parent.findUnique({
+    where:  { userId: user.id },
+    select: { name: true },
+  }).catch(() => null);
+
+  // Derive a greeting name: prefer "Baba/Mama <FirstName>" style from parent record
+  const parentName = parentRecord?.name ?? user.email.split("@")[0];
+
+  // ── Find linked students ──────────────────────────────────────────────────
   const students = await prisma.student.findMany({
     where: {
       schoolId,
       archivedAt: null,
       OR: [
-        { userId: user.id },
+        { userId:        user.id },
         { parentContact: user.email },
-        { parentLinks: { some: { parent: { userId: user.id } } } },
+        { parentLinks:   { some: { parent: { userId: user.id } } } },
       ],
     },
     select: {
-      id: true, fullName: true, admissionNumber: true,
-      schoolClass: { select: { name: true, form: true } },
-      _count: {
-        select: {
-          attendances:       true,
-          disciplineRecords: true,
-          achievements:      true,
-        },
-      },
+      id:             true,
+      fullName:       true,
+      admissionNumber: true,
+      schoolClass:    { select: { name: true } },
     },
     orderBy: { fullName: "asc" },
   });
 
-  // Use first student as primary (null when no students linked yet)
-  const primaryStudent = students[0] ?? null;
+  const student = students[0] ?? null;
+  const studentName = student?.fullName ?? "your child";
+
+  // ── Parallel data fetches ─────────────────────────────────────────────────
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+  const sevenDaysOut  = new Date(Date.now() + 7 * 86_400_000);
 
   const [
     recentAttendance,
-    recentDiscipline,
-    recentAchievements,
+    pendingDiaryCount,
+    upcomingDiary,
     financeAccount,
-    pendingAssignments,
-    upcomingCalendar,
-  ] = primaryStudent
+    recentNotifications,    upcomingCalendar,
+  ] = student
     ? await Promise.all([
-        // Last 30 days attendance
+        // Attendance last 30 days
         prisma.attendance.findMany({
-          where:   { schoolId, studentId: primaryStudent.id, date: { gte: new Date(Date.now() - 30 * 86400000) } },
-          orderBy: { date: "desc" },
+          where:   { schoolId, studentId: student.id, date: { gte: thirtyDaysAgo } },
+          orderBy: { date: "asc" },
           select:  { date: true, status: true },
         }),
-        // Recent discipline records
-        prisma.disciplineRecord.findMany({
-          where:   { schoolId, studentId: primaryStudent.id, status: { in: ["OPEN", "RESOLVED"] } },
-          orderBy: { dateOfOffence: "desc" },
-          take:    3,
-          select:  { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
-        }),
-        // Recent achievements
-        prisma.achievement.findMany({
-          where:   { schoolId, students: { some: { studentId: primaryStudent.id } } },
-          orderBy: { achievementDate: "desc" },
-          take:    3,
-          select:  { id: true, title: true, category: true, achievementDate: true },
-        }),
-        // School fees balance
-        prisma.studentFinanceAccount.findUnique({
-          where:  { studentId: primaryStudent.id },
-          select: { currentBalance: true },
-        }).catch(() => null),
-        // Pending diary assignments not yet confirmed by parent
+
+        // Pending diary assignments not yet confirmed
         prisma.diaryRecipient.count({
           where: {
-            studentId:    primaryStudent.id,
+            studentId:    student.id,
             schoolId,
             parentStatus: "PENDING",
             diaryEntry:   { deletedAt: null },
           },
-        }).catch(() => 0),
-        getUpcomingCalendarItems(schoolId, { days: 30, limit: 6 }),
+        }).catch(() => 0 as number),
+
+        // Upcoming diary assignments due in the next 7 days
+        prisma.diaryRecipient.findMany({
+          where: {
+            studentId: student.id,
+            schoolId,
+            diaryEntry: {
+              deletedAt: null,
+              dueDate:   { gte: new Date(), lte: sevenDaysOut },
+            },
+          },
+          select: {
+            id:          true,
+            diaryEntryId: true,
+            studentId:   true,
+            schoolId:    true,
+            diaryEntry: {
+              select: {
+                id:          true,
+                title:       true,
+                subject:     { select: { name: true } },
+                dueDate:     true,
+                description: true,
+              },
+            },
+          },
+          orderBy: { diaryEntry: { dueDate: "asc" } },
+          take: 5,
+        }).catch(() => [] as DiaryWithEntry[]) as Promise<DiaryWithEntry[]>,
+
+        // Fees balance
+        prisma.studentFinanceAccount.findUnique({
+          where:  { studentId: student.id },
+          select: { currentBalance: true },
+        }).catch(() => null),
+
+        // Recent notifications (last 10) — look up parent record first
+        prisma.parent.findUnique({ where: { userId: user.id }, select: { id: true } })
+          .then((p) => p
+            ? prisma.parentNotification.findMany({
+                where:   { schoolId, parentId: p.id },
+                orderBy: { createdAt: "desc" },
+                take:    10,
+                select:  { id: true, title: true, module: true, isRead: true, createdAt: true },
+              })
+            : []
+          )
+          .catch(() => [] as { id: string; title: string; module: string; isRead: boolean; createdAt: Date }[]),
+
+        // Upcoming calendar events (next 30 days, up to 3)
+        getUpcomingCalendarItems(schoolId, { days: 30, limit: 3 }),
       ])
     : [
         [] as { date: Date; status: string }[],
-        [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[],
-        [] as { id: string; title: string; category: string; achievementDate: Date }[],
-        null as null,
-        0 as number,
+        0,
+        [] as DiaryWithEntry[],
+        null,
+        [] as { id: string; title: string; module: string; isRead: boolean; createdAt: Date }[],
         [] as Awaited<ReturnType<typeof getUpcomingCalendarItems>>,
       ];
 
-  const absences30 = recentAttendance.filter((a) => a.status === "ABSENT").length;
-  const present30  = recentAttendance.filter((a) => a.status === "PRESENT").length;
-  const attPct     = recentAttendance.length > 0 ? Math.round((present30 / recentAttendance.length) * 100) : null;
+  // ── Derived stats ─────────────────────────────────────────────────────────
 
-  // Fees balance — negative = owes school, positive = in credit
-  const rawBalance     = Number(financeAccount?.currentBalance ?? 0);
-  const owesSchool     = rawBalance < 0;
-  const feesDisplay    = owesSchool
-    ? `KES ${Math.abs(rawBalance).toLocaleString()}`
+  const present30 = recentAttendance.filter((a) => a.status === "PRESENT").length;
+  const absent30  = recentAttendance.filter((a) => a.status === "ABSENT").length;
+  const attPct    = recentAttendance.length > 0
+    ? Math.round((present30 / recentAttendance.length) * 100)
+    : null;
+
+  // Sparkline: last 10 attendance records
+  const sparkDays = recentAttendance.slice(-10).map((a) => ({ present: a.status === "PRESENT" }));
+
+  const rawBalance  = Number(financeAccount?.currentBalance ?? 0);
+  const owesSchool  = rawBalance < 0;
+  const feesDisplay = owesSchool
+    ? Math.abs(rawBalance).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : rawBalance > 0
-    ? `KES ${rawBalance.toLocaleString()} cr`
-    : "KES 0";
-  const feesSub        = owesSchool ? "Outstanding" : rawBalance > 0 ? "In credit" : "Fully paid";
+    ? `${rawBalance.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cr`
+    : "0.00";
+  const feesLabel = owesSchool ? "Outstanding balance" : rawBalance > 0 ? "In credit" : "Fully paid";
 
-  const alerts: AlertItem[] = [];
-  if (absences30 >= 5)
-    alerts.push({ id: "abs", type: "warn", message: `${absences30} absences in the last 30 days. Please contact the school if there are ongoing concerns.` });
-  if (owesSchool)
-    alerts.push({ id: "fees", type: "info", message: `Outstanding school fees of KES ${Math.abs(rawBalance).toLocaleString()}. Please visit the school office to pay.` });
+  // ── Quick overview data object ─────────────────────────────────────────────
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
-          {students.length === 0
-            ? "Parent Portal"
-            : students.length === 1
-            ? primaryStudent!.fullName
-            : "My Children"}
-        </h1>
-        {primaryStudent && (
-          <p className="text-slate text-sm mt-1 dark:text-dark-muted">
-            {primaryStudent.schoolClass.name} · Adm #{primaryStudent.admissionNumber}
+  const overviewData: QuickOverviewData = {
+    attendance: {
+      pct:     attPct,
+      present: present30,
+      absent:  absent30,
+      spark:   sparkDays,
+      href:    "/parent/attendance",
+    },
+    academic: {
+      grade: null,   // TODO: wire from results when available
+      label: "Overall grade",
+      href:  "/parent/results",
+    },
+    assignments: {
+      count: pendingDiaryCount,
+      label: pendingDiaryCount > 0 ? "Need attention" : "All confirmed",
+      href:  "/parent/diary",
+    },
+    fees: {
+      display: feesDisplay,
+      label:   feesLabel,
+      owed:    owesSchool,
+      href:    "/parent/fees",
+    },
+  };
+
+  // ── Alert cards ───────────────────────────────────────────────────────────
+
+  const alertCards: {
+    id: string;
+    variant: "fees" | "assignment" | "attendance";
+    title: string;
+    body: string;
+    linkLabel: string;
+    linkHref: string;
+  }[] = [];
+
+  if (owesSchool) {
+    alertCards.push({
+      id:        "fees-outstanding",
+      variant:   "fees",
+      title:     "Fees outstanding",
+      body:      `KES ${feesDisplay} is outstanding.`,
+      linkLabel: "View fees",
+      linkHref:  "/parent/fees",
+    });
+  }
+
+  if (pendingDiaryCount > 0) {
+    alertCards.push({
+      id:        "assignments-due",
+      variant:   "assignment",
+      title:     `${pendingDiaryCount} assignment${pendingDiaryCount !== 1 ? "s" : ""} due soon`,
+      body:      upcomingDiary.slice(0, 2).map((r) => {
+        const e = r.diaryEntry;
+        if (e?.dueDate) {
+          const { label } = dueLabelFor(new Date(e.dueDate));
+          return `${e.subject?.name ?? "Assignment"} ${label.toLowerCase()}`;
+        }
+        return e?.subject?.name ?? "Assignment";
+      }).join("\n"),
+      linkLabel: "View diary",
+      linkHref:  "/parent/diary",
+    });
+  }
+
+  // Attendance card: always show (good or concerning)
+  if (attPct != null) {
+    const goodAtt = attPct >= 90;
+    alertCards.push({
+      id:        "attendance-summary",
+      variant:   "attendance",
+      title:     goodAtt ? "Attendance looks good" : "Attendance needs attention",
+      body:      `${studentName} attended ${present30} of the last ${recentAttendance.length} school days.`,
+      linkLabel: "View attendance",
+      linkHref:  "/parent/attendance",
+    });
+  }
+
+  // Cap at 3 cards
+  const visibleAlerts = alertCards.slice(0, 3);
+
+  // ── Today's assignments ────────────────────────────────────────────────────
+
+  const assignmentItems: AssignmentItem[] = upcomingDiary.map((r) => {
+    const e = r.diaryEntry;
+    const { label, urgent } = e.dueDate ? dueLabelFor(new Date(e.dueDate)) : { label: "", urgent: false };
+    return {
+      id:          e.id,
+      subject:     e.subject?.name ?? "Assignment",
+      description: e.title ?? e.description ?? "",
+      dueLabel:    label,
+      urgent,
+    };
+  });
+
+  // ── Recent activity ────────────────────────────────────────────────────────
+
+  // Map notification type to activity type
+  type ActivityType =
+    | "assignment_posted"
+    | "announcement"
+    | "attendance_present"
+    | "attendance_absent"
+    | "exam_result"
+    | "notification"
+    | "diary"
+    | "behaviour";
+
+  function mapType(t: string): ActivityType {
+    if (t === "DIARY")        return "assignment_posted";
+    if (t === "CALENDAR")     return "announcement";
+    if (t === "ATTENDANCE")   return "attendance_present";
+    if (t === "FEES")         return "notification";
+    if (t === "ACHIEVEMENTS") return "exam_result";
+    if (t === "BEHAVIOUR")    return "behaviour";
+    return "notification";
+  }
+
+  const activityItems: ActivityItem[] = recentNotifications.map((n) => ({
+    id:        n.id,
+    type:      mapType(n.module),
+    title:     n.title,
+    timeLabel: timeLabel(new Date(n.createdAt)),
+  }));
+
+  // ── Attendance calendar days ───────────────────────────────────────────────
+
+  const calendarDays: AttendanceDay[] = recentAttendance.map((a) => ({
+    date:   new Date(a.date),
+    status: a.status as AttendanceDay["status"],
+  }));
+
+  // ── Upcoming events ────────────────────────────────────────────────────────
+
+  const eventItems: UpcomingEvent[] = upcomingCalendar.map((ev) => {
+    const d = new Date(ev.date);
+    return {
+      id:        ev.id,
+      title:     ev.title,
+      dateLabel: d.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "short", year: "numeric" }),
+      day:       d.getDate(),
+      month:     MONTHS[d.getMonth()],
+    };
+  });
+
+  // ── No-student state ───────────────────────────────────────────────────────
+
+  if (!student) {
+    return (
+      <div className="space-y-6">
+        <DashboardGreeting
+          parentName={parentName}
+          studentName="your child"
+          alerts={[]}
+        />
+        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
+                        dark:border-dark-border p-8 text-center shadow-xs">
+          <p className="text-2xl mb-3">🏫</p>
+          <p className="text-base font-semibold text-ink dark:text-dark-text">
+            No student linked yet
           </p>
-        )}
-      </div>
-
-      {/* No linked students notice — shown inline, cards still render below */}
-      {students.length === 0 && (
-        <div className="bg-warn-bg border border-warn/20 rounded-xl p-5">
-          <p className="text-sm text-warn font-medium">No student records linked to your account.</p>
-          <p className="text-sm text-slate mt-1 dark:text-dark-muted">
+          <p className="text-sm text-slate dark:text-dark-muted mt-2 max-w-sm mx-auto">
             Contact the school office to link your child&apos;s record to your account.
           </p>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Multi-child switcher */}
-      {students.length > 1 && (
-        <div className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-2">
-            Your children
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {students.map((s, i) => (
-              <Link
-                key={s.id}
-                href={`/parent/student/${s.id}`}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors
-                  ${i === 0
-                    ? "border-teal/50 bg-teal/5 text-teal"
-                    : "border-line text-slate hover:border-teal/40 hover:bg-teal-50 dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/40"
-                  }`}
-              >
-                <div className="w-6 h-6 rounded-full bg-teal/10 text-teal text-[10px] font-semibold flex items-center justify-center">
-                  {s.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-medium leading-none">{s.fullName.split(" ")[0]}</p>
-                  <p className="text-[10px] leading-none opacity-70">{s.schoolClass.name}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+  // ── Main render ────────────────────────────────────────────────────────────
+
+  return (
+    <div className="space-y-6">
+
+      {/* Greeting + alert cards */}
+      <DashboardGreeting
+        parentName={parentName}
+        studentName={studentName.split(" ")[0]}
+        alerts={visibleAlerts}
+      />
+
+      {/* Quick overview — 4 tiles */}
+      <section aria-labelledby="overview-heading">
+        <div className="flex items-center justify-between mb-3">
+          <h2 id="overview-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+            Quick overview
+          </h2>
+          <a href="/parent/attendance" className="text-xs font-medium text-teal hover:underline">
+            View all →
+          </a>
         </div>
-      )}
+        <QuickOverviewGrid data={overviewData} />
+      </section>
 
-      <AlertBanner alerts={alerts} />
-
-      {/* Stats — 4 cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="Attendance (30d)"
-          value={attPct != null ? `${attPct}%` : "—"}
-          href="/parent/attendance"
-          icon={CheckCircle}
-          color={attPct != null && attPct < 80 ? "warn" : "success"}
-          sub={`${absences30} absence${absences30 !== 1 ? "s" : ""}`}
-        />
-        <StatCard
-          label="School Fees"
-          value={feesDisplay}
-          href="/parent/fees"
-          icon={Wallet}
-          color={owesSchool ? "warn" : "success"}
-          sub={feesSub}
-        />
-        <StatCard
-          label="Discipline"
-          value={recentDiscipline.length}
-          href="/parent/discipline"
-          icon={AlertTriangle}
-          color={recentDiscipline.filter((d) => d.status === "OPEN").length > 0 ? "warn" : "success"}
-        />
-        <StatCard
-          label="Pending Assignments"
-          value={pendingAssignments}
-          href="/parent/diary"
-          icon={ClipboardList}
-          color={pendingAssignments > 0 ? "warn" : "success"}
-          sub={pendingAssignments > 0 ? "Not yet confirmed" : "All confirmed"}
-        />
+      {/* Desktop: two-column layout for assignments + recent activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodaysAssignments items={assignmentItems} viewHref="/parent/diary" />
+        <RecentActivity    items={activityItems}   viewHref="/parent/notifications" />
       </div>
 
-      {/* Attendance history snippet */}
-      {recentAttendance.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Attendance — last 30 days</p>
-            <Link href="/parent/attendance" className="text-xs text-teal hover:underline">Full history</Link>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {recentAttendance.slice(0, 30).reverse().map((a, i) => (
-              <div
-                key={i}
-                title={`${new Date(a.date).toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })} — ${a.status}`}
-                className={`w-6 h-6 rounded-md text-[9px] font-bold flex items-center justify-center
-                  ${a.status === "PRESENT" ? "bg-success-bg text-success" : "bg-danger-bg text-danger"}`}
-              >
-                {new Date(a.date).getDate()}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Attendance calendar grid */}
+      {calendarDays.length > 0 && (
+        <AttendanceCalendarGrid days={calendarDays} viewHref="/parent/attendance" />
       )}
 
-      {/* Achievements */}
-      {recentAchievements.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Recent achievements</p>
-            <Link href="/parent/achievements" className="text-xs text-teal hover:underline">All achievements</Link>
-          </div>
-          <div className="space-y-2">
-            {recentAchievements.map((a) => (
-              <div key={a.id} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-success shrink-0" />
-                  <span className="text-ink dark:text-dark-text">{a.title}</span>
-                </div>
-                <span className="text-xs text-slate dark:text-dark-muted shrink-0">
-                  {new Date(a.achievementDate).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Upcoming events */}
+      <UpcomingEvents events={eventItems} calendarHref="/parent/calendar" />
 
-      {/* Quick links */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Link href="/parent/results"
-          className="flex items-center gap-3 p-4 bg-card border border-line rounded-xl shadow-xs
-                     hover:border-teal/40 hover:shadow-sm transition-all
-                     dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30">
-          <div className="w-10 h-10 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Exam results</p>
-            <p className="text-xs text-slate dark:text-dark-muted">View report cards and performance</p>
-          </div>
-        </Link>
-        <Link href="/parent/messages"
-          className="flex items-center gap-3 p-4 bg-card border border-line rounded-xl shadow-xs
-                     hover:border-teal/40 hover:shadow-sm transition-all
-                     dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30">
-          <div className="w-10 h-10 rounded-lg bg-info/10 text-info flex items-center justify-center shrink-0">
-            <CheckCircle className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">School messages</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Announcements and notifications from the school</p>
-          </div>
-        </Link>
-      </div>
-
-      <UpcomingCalendarWidget items={upcomingCalendar} calendarHref="/parent/calendar" />
     </div>
   );
 }
