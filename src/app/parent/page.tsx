@@ -6,7 +6,7 @@ import { getUpcomingCalendarItems } from "@/lib/calendarUpcoming";
 import UpcomingCalendarWidget from "@/components/UpcomingCalendarWidget";
 import StatCard from "@/components/dashboard/StatCard";
 import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
-import { BookOpen, CheckCircle, AlertTriangle, Award } from "lucide-react";
+import { BookOpen, CheckCircle, AlertTriangle, Award, Wallet, ClipboardList } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -17,16 +17,18 @@ export default async function ParentDashboard() {
   const schoolId = user.schoolId!;
 
   // Find the student record(s) linked to this parent/student account.
-  // A parent may have multiple children; a student has themselves.
+  // Three paths:
+  //   1. Direct student login (student's own userId)
+  //   2. Legacy: parentContact field on student matches parent's email
+  //   3. Formal parent-linking: ParentStudent join table via Parent.userId
   const students = await prisma.student.findMany({
     where: {
       schoolId,
       archivedAt: null,
       OR: [
-        // Direct student login
         { userId: user.id },
-        // Parent linked via phone/contact (matching by email if used as contact)
         { parentContact: user.email },
+        { parentLinks: { some: { parent: { userId: user.id } } } },
       ],
     },
     select: {
@@ -34,9 +36,9 @@ export default async function ParentDashboard() {
       schoolClass: { select: { name: true, form: true } },
       _count: {
         select: {
-          attendances:      true,
+          attendances:       true,
           disciplineRecords: true,
-          achievements:     true,
+          achievements:      true,
         },
       },
     },
@@ -50,31 +52,45 @@ export default async function ParentDashboard() {
     recentAttendance,
     recentDiscipline,
     recentAchievements,
-    libraryCard,
+    financeAccount,
+    pendingAssignments,
     upcomingCalendar,
   ] = primaryStudent
     ? await Promise.all([
+        // Last 30 days attendance
         prisma.attendance.findMany({
-          where: { schoolId, studentId: primaryStudent.id, date: { gte: new Date(Date.now() - 30 * 86400000) } },
+          where:   { schoolId, studentId: primaryStudent.id, date: { gte: new Date(Date.now() - 30 * 86400000) } },
           orderBy: { date: "desc" },
-          select: { date: true, status: true },
+          select:  { date: true, status: true },
         }),
+        // Recent discipline records
         prisma.disciplineRecord.findMany({
-          where: { schoolId, studentId: primaryStudent.id, status: { in: ["OPEN", "RESOLVED"] } },
+          where:   { schoolId, studentId: primaryStudent.id, status: { in: ["OPEN", "RESOLVED"] } },
           orderBy: { dateOfOffence: "desc" },
-          take: 3,
-          select: { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
+          take:    3,
+          select:  { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
         }),
+        // Recent achievements
         prisma.achievement.findMany({
-          where: { schoolId, students: { some: { studentId: primaryStudent.id } } },
+          where:   { schoolId, students: { some: { studentId: primaryStudent.id } } },
           orderBy: { achievementDate: "desc" },
-          take: 3,
-          select: { id: true, title: true, category: true, achievementDate: true },
+          take:    3,
+          select:  { id: true, title: true, category: true, achievementDate: true },
         }),
-        prisma.libraryCard.findUnique({
-          where: { studentId: primaryStudent.id },
-          select: { fineBalance: true, currentBorrowCount: true, status: true },
+        // School fees balance
+        prisma.studentFinanceAccount.findUnique({
+          where:  { studentId: primaryStudent.id },
+          select: { currentBalance: true },
         }).catch(() => null),
+        // Pending diary assignments not yet confirmed by parent
+        prisma.diaryRecipient.count({
+          where: {
+            studentId:    primaryStudent.id,
+            schoolId,
+            parentStatus: "PENDING",
+            diaryEntry:   { deletedAt: null },
+          },
+        }).catch(() => 0),
         getUpcomingCalendarItems(schoolId, { days: 30, limit: 6 }),
       ])
     : [
@@ -82,18 +98,29 @@ export default async function ParentDashboard() {
         [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[],
         [] as { id: string; title: string; category: string; achievementDate: Date }[],
         null as null,
+        0 as number,
         [] as Awaited<ReturnType<typeof getUpcomingCalendarItems>>,
       ];
 
-  const absences30  = recentAttendance.filter((a) => a.status === "ABSENT").length;
-  const present30   = recentAttendance.filter((a) => a.status === "PRESENT").length;
-  const attPct      = recentAttendance.length > 0 ? Math.round((present30 / recentAttendance.length) * 100) : null;
+  const absences30 = recentAttendance.filter((a) => a.status === "ABSENT").length;
+  const present30  = recentAttendance.filter((a) => a.status === "PRESENT").length;
+  const attPct     = recentAttendance.length > 0 ? Math.round((present30 / recentAttendance.length) * 100) : null;
+
+  // Fees balance — negative = owes school, positive = in credit
+  const rawBalance     = Number(financeAccount?.currentBalance ?? 0);
+  const owesSchool     = rawBalance < 0;
+  const feesDisplay    = owesSchool
+    ? `KES ${Math.abs(rawBalance).toLocaleString()}`
+    : rawBalance > 0
+    ? `KES ${rawBalance.toLocaleString()} cr`
+    : "KES 0";
+  const feesSub        = owesSchool ? "Outstanding" : rawBalance > 0 ? "In credit" : "Fully paid";
 
   const alerts: AlertItem[] = [];
   if (absences30 >= 5)
     alerts.push({ id: "abs", type: "warn", message: `${absences30} absences in the last 30 days. Please contact the school if there are ongoing concerns.` });
-  if (libraryCard && libraryCard.fineBalance > 0)
-    alerts.push({ id: "fine", type: "info", message: `Outstanding library fine of KES ${libraryCard.fineBalance.toLocaleString()}. Please clear at the library desk.` });
+  if (owesSchool)
+    alerts.push({ id: "fees", type: "info", message: `Outstanding school fees of KES ${Math.abs(rawBalance).toLocaleString()}. Please visit the school office to pay.` });
 
   return (
     <div className="space-y-6">
@@ -113,7 +140,7 @@ export default async function ParentDashboard() {
         )}
       </div>
 
-      {/* No linked students notice */}
+      {/* No linked students notice — shown inline, cards still render below */}
       {students.length === 0 && (
         <div className="bg-warn-bg border border-warn/20 rounded-xl p-5">
           <p className="text-sm text-warn font-medium">No student records linked to your account.</p>
@@ -155,7 +182,7 @@ export default async function ParentDashboard() {
 
       <AlertBanner alerts={alerts} />
 
-      {/* Stats */}
+      {/* Stats — 4 cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Attendance (30d)"
@@ -166,12 +193,12 @@ export default async function ParentDashboard() {
           sub={`${absences30} absence${absences30 !== 1 ? "s" : ""}`}
         />
         <StatCard
-          label="Library borrows"
-          value={libraryCard?.currentBorrowCount ?? 0}
-          href="/parent/library"
-          icon={BookOpen}
-          color="teal"
-          sub={libraryCard && libraryCard.fineBalance > 0 ? `KES ${libraryCard.fineBalance} fine` : "No fines"}
+          label="School Fees"
+          value={feesDisplay}
+          href="/parent/fees"
+          icon={Wallet}
+          color={owesSchool ? "warn" : "success"}
+          sub={feesSub}
         />
         <StatCard
           label="Discipline"
@@ -181,11 +208,12 @@ export default async function ParentDashboard() {
           color={recentDiscipline.filter((d) => d.status === "OPEN").length > 0 ? "warn" : "success"}
         />
         <StatCard
-          label="Achievements"
-          value={recentAchievements.length}
-          href="/parent/achievements"
-          icon={Award}
-          color="success"
+          label="Pending Assignments"
+          value={pendingAssignments}
+          href="/parent/diary"
+          icon={ClipboardList}
+          color={pendingAssignments > 0 ? "warn" : "success"}
+          sub={pendingAssignments > 0 ? "Not yet confirmed" : "All confirmed"}
         />
       </div>
 
@@ -196,7 +224,6 @@ export default async function ParentDashboard() {
             <p className="text-sm font-semibold text-ink dark:text-dark-text">Attendance — last 30 days</p>
             <Link href="/parent/attendance" className="text-xs text-teal hover:underline">Full history</Link>
           </div>
-          {/* Dot calendar */}
           <div className="flex flex-wrap gap-1.5">
             {recentAttendance.slice(0, 30).reverse().map((a, i) => (
               <div
@@ -235,7 +262,7 @@ export default async function ParentDashboard() {
         </div>
       )}
 
-      {/* Exam results quick link */}
+      {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Link href="/parent/results"
           className="flex items-center gap-3 p-4 bg-card border border-line rounded-xl shadow-xs
