@@ -207,7 +207,7 @@ export default function SuperAdminOverviewPage() {
     : "teal";
 
   return (
-    <div className="space-y-7 animate-fade-in">
+    <div className="space-y-5 sm:space-y-7 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <PageHeader
           title="Overview"
@@ -219,7 +219,7 @@ export default function SuperAdminOverviewPage() {
           title="Refresh"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
+          <span className="hidden xs:inline">Refresh</span>
         </button>
       </div>
 
@@ -366,56 +366,88 @@ export default function SuperAdminOverviewPage() {
             No critical errors right now
           </div>
         ) : (
-          <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-dark-surface text-left text-xs font-semibold
-                               text-slate dark:text-dark-muted uppercase tracking-wide">
-                  <th className="px-5 py-3.5">Error</th>
-                  <th className="px-5 py-3.5 hidden sm:table-cell">School</th>
-                  <th className="px-5 py-3.5 hidden md:table-cell">Module</th>
-                  <th className="px-5 py-3.5">Severity</th>
-                  <th className="px-5 py-3.5 hidden lg:table-cell">Occurrences</th>
-                  <th className="px-5 py-3.5 hidden lg:table-cell">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
-                {data.recentErrors.map(err => (
-                  <tr
-                    key={err.id}
-                    onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
-                    className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors"
-                  >
-                    <td className="px-5 py-3.5">
-                      <p className="text-sm text-ink dark:text-dark-text truncate max-w-[260px]">
-                        {err.message}
-                      </p>
-                      <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
-                        {new Date(err.createdAt).toLocaleDateString()}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell text-sm text-slate dark:text-dark-muted">
-                      {err.school?.name ?? "—"}
-                    </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate dark:text-dark-muted font-mono">
-                      {err.module ?? "—"}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <SeverityBadge severity={err.severity} />
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate dark:text-dark-muted tabular-nums">
-                      {err.occurrences}
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <Badge variant={err.status === "RESOLVED" ? "success" : err.status === "INVESTIGATING" ? "warn" : "danger"}>
-                        {err.status}
-                      </Badge>
-                    </td>
+          <>
+            {/* Mobile: card list */}
+            <div className="sm:hidden space-y-3">
+              {data.recentErrors.map(err => (
+                <button
+                  key={err.id}
+                  type="button"
+                  onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
+                  className="w-full text-left bg-white dark:bg-dark-surface border border-line
+                             dark:border-dark-border rounded-xl p-4 shadow-xs
+                             hover:border-teal/40 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <p className="text-sm text-ink dark:text-dark-text font-medium leading-snug flex-1 min-w-0">
+                      {err.message}
+                    </p>
+                    <SeverityBadge severity={err.severity} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate dark:text-dark-muted">
+                    {err.school?.name && <span>{err.school.name}</span>}
+                    {err.module && <span className="font-mono">{err.module}</span>}
+                    <span>{new Date(err.createdAt).toLocaleDateString()}</span>
+                    <Badge variant={err.status === "RESOLVED" ? "success" : err.status === "INVESTIGATING" ? "warn" : "danger"}>
+                      {err.status}
+                    </Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+              <table className="min-w-full divide-y divide-line dark:divide-dark-border">
+                <thead>
+                  <tr className="bg-slate-50/80 dark:bg-dark-surface text-left text-xs font-semibold
+                                 text-slate dark:text-dark-muted uppercase tracking-wide">
+                    <th className="px-5 py-3.5">Error</th>
+                    <th className="px-5 py-3.5 hidden sm:table-cell">School</th>
+                    <th className="px-5 py-3.5 hidden md:table-cell">Module</th>
+                    <th className="px-5 py-3.5">Severity</th>
+                    <th className="px-5 py-3.5 hidden lg:table-cell">Occurrences</th>
+                    <th className="px-5 py-3.5 hidden lg:table-cell">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+                  {data.recentErrors.map(err => (
+                    <tr
+                      key={err.id}
+                      onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
+                      className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors"
+                    >
+                      <td className="px-5 py-3.5">
+                        <p className="text-sm text-ink dark:text-dark-text truncate max-w-[260px]">
+                          {err.message}
+                        </p>
+                        <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                          {new Date(err.createdAt).toLocaleDateString()}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3.5 hidden sm:table-cell text-sm text-slate dark:text-dark-muted">
+                        {err.school?.name ?? "—"}
+                      </td>
+                      <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate dark:text-dark-muted font-mono">
+                        {err.module ?? "—"}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <SeverityBadge severity={err.severity} />
+                      </td>
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate dark:text-dark-muted tabular-nums">
+                        {err.occurrences}
+                      </td>
+                      <td className="px-5 py-3.5 hidden lg:table-cell">
+                        <Badge variant={err.status === "RESOLVED" ? "success" : err.status === "INVESTIGATING" ? "warn" : "danger"}>
+                          {err.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

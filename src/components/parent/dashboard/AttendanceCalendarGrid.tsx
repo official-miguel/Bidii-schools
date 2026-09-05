@@ -111,18 +111,18 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
       className="rounded-2xl bg-white dark:bg-dark-surface border border-line
                  dark:border-dark-border shadow-xs overflow-hidden"
     >
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <h2 id="att-calendar-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+      <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
+        <h2 id="att-calendar-heading" className="text-sm sm:text-base font-semibold text-ink dark:text-dark-text">
           Attendance – Last 30 days
         </h2>
-        <Link href={viewHref} className="text-xs font-medium text-teal hover:underline">
-          View full attendance →
+        <Link href={viewHref} className="text-xs font-medium text-teal hover:underline whitespace-nowrap">
+          View full →
         </Link>
       </div>
 
-      <div className="px-5 pb-5 overflow-x-auto">
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5 overflow-x-auto">
         {/* Header row */}
-        <div className="grid grid-cols-7 mb-1">
+        <div className="grid grid-cols-7 mb-1 min-w-[224px]">
           {DOW.map((d, i) => (
             <div key={i} className="w-8 h-6 flex items-center justify-center
                                     text-[10px] font-semibold text-slate/50 uppercase tracking-wide">
@@ -132,7 +132,7 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
         </div>
 
         {/* Weeks */}
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-[224px]">
           {weeks.map((week, wi) => (
             <div key={wi} className="grid grid-cols-7">
               {week.map((date, di) => {
@@ -145,7 +145,7 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-line dark:border-dark-border">
+        <div className="flex flex-wrap gap-x-3 gap-y-2 mt-3 pt-3 border-t border-line dark:border-dark-border">
           <span className="flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted">
             <span className="w-5 h-5 rounded-full bg-[#EDFAF4] text-[#17B26A] flex items-center justify-center">
               <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5}>

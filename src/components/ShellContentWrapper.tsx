@@ -33,7 +33,10 @@ export default function ShellContentWrapper({ children }: Props) {
   const leftPad = match ? match.cls : DEFAULT_PADDING;
 
   return (
-    <div className={`${leftPad} pt-16 min-h-screen`}>
+    <div
+      className={`${leftPad} pt-16 min-h-screen`}
+      style={{ paddingTop: "calc(4rem + env(safe-area-inset-top, 0px))" }}
+    >
       {children}
     </div>
   );

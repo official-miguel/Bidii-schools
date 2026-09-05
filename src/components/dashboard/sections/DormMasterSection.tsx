@@ -50,38 +50,38 @@ export default function DormMasterSection({
       </div>
 
       {dorms.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-line rounded-xl p-4 sm:p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-ink dark:text-dark-text">Dormitory status</p>
             <Link href={accomBase} className="text-xs text-teal hover:underline">Manage</Link>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {dorms.map((dorm) => {
               const pct = dorm.totalCapacity > 0
                 ? Math.round((dorm._count.beds / dorm.totalCapacity) * 100)
                 : 0;
               return (
-                <div key={dorm.id} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between text-sm mb-0.5">
-                      <span className="text-ink dark:text-dark-text">{dorm.name}</span>
-                      <span className="text-xs text-slate dark:text-dark-muted shrink-0">
+                <div key={dorm.id}>
+                  <div className="flex items-center justify-between gap-2 text-sm mb-1">
+                    <span className="text-ink dark:text-dark-text font-medium truncate min-w-0">{dorm.name}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {dorm.genderPolicy !== "MIXED" && (
+                        <span className="text-[10px] uppercase font-semibold text-slate bg-line
+                                         px-1.5 py-0.5 rounded dark:bg-dark-border dark:text-dark-muted">
+                          {dorm.genderPolicy}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate dark:text-dark-muted">
                         {dorm._count.beds}/{dorm.totalCapacity} · {pct}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-line dark:bg-dark-border rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${pct > 95 ? "bg-danger" : pct > 80 ? "bg-warn" : "bg-teal"}`}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
                   </div>
-                  {dorm.genderPolicy !== "MIXED" && (
-                    <span className="text-[10px] uppercase font-semibold text-slate bg-line
-                                     px-1.5 py-0.5 rounded dark:bg-dark-border dark:text-dark-muted">
-                      {dorm.genderPolicy}
-                    </span>
-                  )}
+                  <div className="h-1.5 bg-line dark:bg-dark-border rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${pct > 95 ? "bg-danger" : pct > 80 ? "bg-warn" : "bg-teal"}`}
+                      style={{ width: `${Math.min(pct, 100)}%` }}
+                    />
+                  </div>
                 </div>
               );
             })}

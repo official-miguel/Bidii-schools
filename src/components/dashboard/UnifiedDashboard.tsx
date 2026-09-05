@@ -216,16 +216,16 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
   const calendarHref = `/${rolePrefix}/calendar`;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text leading-snug">
           {isPrincipal ? "Overview" : `Welcome, ${displayName}`}
         </h1>
         <p className="text-slate text-sm mt-1 dark:text-dark-muted">
           {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           {assignedRoleNames.length > 0 && (
-            <span className="ml-2 text-slate/60">
+            <span className="ml-2 text-slate/60 block xs:inline">
               · {assignedRoleNames.slice(0, 2).join(" & ")}{assignedRoleNames.length > 2 ? " +more" : ""}
             </span>
           )}

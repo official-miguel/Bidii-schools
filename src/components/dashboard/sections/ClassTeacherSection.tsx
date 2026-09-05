@@ -50,13 +50,14 @@ export default function ClassTeacherSection({
       </div>
 
       {recentAbsentees.length > 0 && (
-        <div className="bg-warn-bg border border-warn/20 rounded-xl p-4">
+        <div className="bg-warn-bg border border-warn/20 rounded-xl p-3 sm:p-4">
           <p className="text-sm font-semibold text-warn mb-2">Frequent absentees (last 14 days)</p>
           <div className="flex flex-wrap gap-2">
             {recentAbsentees.map((s) => (
               <Link key={s.id} href={`/${rolePrefix}/students/${s.id}`}
-                className="text-xs bg-white border border-warn/30 text-ink px-2 py-1 rounded-lg
-                           hover:bg-warn-bg/60 transition-colors dark:bg-dark-surface dark:text-dark-text">
+                className="text-xs bg-white border border-warn/30 text-ink px-2 py-1.5 rounded-lg
+                           hover:bg-warn-bg/60 transition-colors dark:bg-dark-surface dark:text-dark-text
+                           min-h-[36px] flex items-center">
                 {s.fullName}
               </Link>
             ))}
@@ -65,15 +66,17 @@ export default function ClassTeacherSection({
       )}
 
       {activePeriods.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-line rounded-xl p-4 sm:p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
           <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">Assessment deadlines</p>
           <ul className="space-y-2">
             {activePeriods.map((ap) => (
-              <li key={ap.id} className="flex items-center justify-between text-sm">
-                <span className="text-ink dark:text-dark-text truncate pr-2">{ap.name}</span>
-                {ap.closingDate
-                  ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Due" />
-                  : <span className="text-xs text-slate dark:text-dark-muted">No deadline</span>}
+              <li key={ap.id} className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 text-sm">
+                <span className="text-ink dark:text-dark-text min-w-0 xs:truncate xs:pr-2">{ap.name}</span>
+                <span className="shrink-0">
+                  {ap.closingDate
+                    ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Due" />
+                    : <span className="text-xs text-slate dark:text-dark-muted">No deadline</span>}
+                </span>
               </li>
             ))}
           </ul>

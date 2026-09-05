@@ -44,7 +44,7 @@ export default function LibrarianSection({
       </div>
 
       <div className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="grid grid-cols-2 xs:flex xs:flex-wrap gap-2">
           {[
             { label: "Issue book",     href: `${libBase}/issue`     },
             { label: "Return book",    href: `${libBase}/return`    },
@@ -52,8 +52,9 @@ export default function LibrarianSection({
             { label: "Manage fines",   href: `${libBase}/fines`     },
           ].map((a) => (
             <Link key={a.href} href={a.href}
-              className="text-xs font-medium text-teal border border-teal/30 rounded-lg px-3 py-1.5
-                         hover:bg-teal hover:text-white transition-colors min-h-[36px] flex items-center">
+              className="text-xs font-medium text-teal border border-teal/30 rounded-lg px-3 py-2
+                         hover:bg-teal hover:text-white transition-colors min-h-[40px] flex items-center
+                         justify-center xs:justify-start">
               {a.label}
             </Link>
           ))}

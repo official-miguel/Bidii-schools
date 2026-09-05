@@ -168,6 +168,7 @@ export default function TopAppBar({
                    bg-white/95 backdrop-blur-sm border-b border-line
                    dark:bg-dark-sidebar/95 dark:border-dark-border
                    md:left-16 left-0"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         {/* ── Hamburger (mobile only) ─────────────────────────────────── */}
         <button
@@ -180,7 +181,7 @@ export default function TopAppBar({
         </button>
 
         {/* ── Mobile logo / school name ───────────────────────────────── */}
-        <div className="md:hidden flex items-center gap-2 mx-1">
+        <div className="md:hidden flex items-center gap-2 mx-1 min-w-0 flex-1">
           <div className="h-7 w-7 rounded overflow-hidden shrink-0">
             <Image
               src="/logo.png"
@@ -190,7 +191,7 @@ export default function TopAppBar({
               className="object-contain"
             />
           </div>
-          <span className="font-semibold text-sm text-ink dark:text-dark-text truncate max-w-[140px] xs:max-w-[180px]">
+          <span className="font-semibold text-sm text-ink dark:text-dark-text truncate">
             {schoolName ?? "Bidii"}
           </span>
         </div>
@@ -217,8 +218,8 @@ export default function TopAppBar({
         {/* ── Active child chip (parent role only) ────────────────────── */}
         {role === "parent" && <ActiveChildBar />}
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Spacer — desktop only (mobile school name div already uses flex-1) */}
+        <div className="hidden md:flex flex-1" />
 
         {/* ── Mobile search icon ──────────────────────────────────────── */}
         <button
@@ -231,7 +232,7 @@ export default function TopAppBar({
         </button>
 
         {/* ── Quick Actions ────────────────────────────────────────────── */}
-        <div ref={quickActionsRef} className="relative">
+        <div ref={quickActionsRef} className="relative shrink-0">
           <QuickActionsButton
             onClick={openQuickActions}
             isOpen={quickActionsOpen}
@@ -251,7 +252,7 @@ export default function TopAppBar({
             isOpen={notifOpen}
           />
         ) : (
-          <div ref={notifRef} className="relative">
+          <div ref={notifRef} className="relative shrink-0">
             <NotificationBell
               onClick={openNotif}
               isOpen={notifOpen}
@@ -264,13 +265,13 @@ export default function TopAppBar({
         )}
 
         {/* ── User profile ─────────────────────────────────────────────── */}
-        <div ref={profileRef} className="relative">
+        <div ref={profileRef} className="relative shrink-0">
           <button
             type="button"
             onClick={openProfile}
             aria-expanded={profileOpen}
             aria-haspopup="true"
-            className="flex items-center gap-2 h-11 pl-1 pr-2.5 rounded-lg
+            className="flex items-center gap-1.5 h-11 pl-1 pr-2 rounded-lg
                        hover:bg-teal-50 transition-colors group
                        dark:hover:bg-dark-border"
           >
@@ -291,8 +292,8 @@ export default function TopAppBar({
                 {userInitials}
               </div>
             )}
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-medium text-ink leading-none dark:text-dark-text">
+            <div className="hidden sm:block text-left max-w-[100px]">
+              <p className="text-xs font-medium text-ink leading-none dark:text-dark-text truncate">
                 {roleLabel}
               </p>
             </div>

@@ -47,18 +47,20 @@ export default function HODSection({
       </div>
 
       {activePeriods.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-line rounded-xl p-4 sm:p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-ink dark:text-dark-text">Marks submission deadlines</p>
             <Link href={assessmentsHref} className="text-xs text-teal hover:underline">Enter marks</Link>
           </div>
           <ul className="space-y-3">
             {activePeriods.map((ap) => (
-              <li key={ap.id} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-ink dark:text-dark-text">{ap.name}</span>
-                {ap.closingDate
-                  ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Closes" />
-                  : <span className="text-xs text-slate dark:text-dark-muted">No deadline set</span>}
+              <li key={ap.id} className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1">
+                <span className="text-sm text-ink dark:text-dark-text min-w-0 xs:truncate xs:pr-2">{ap.name}</span>
+                <span className="shrink-0">
+                  {ap.closingDate
+                    ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Closes" />
+                    : <span className="text-xs text-slate dark:text-dark-muted">No deadline set</span>}
+                </span>
               </li>
             ))}
           </ul>

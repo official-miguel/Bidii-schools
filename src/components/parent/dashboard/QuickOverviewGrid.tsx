@@ -100,15 +100,15 @@ function Tile({
     <Link
       href={href}
       className="flex flex-col gap-2 bg-white dark:bg-dark-surface border border-line
-                 dark:border-dark-border rounded-2xl p-4 shadow-xs
+                 dark:border-dark-border rounded-2xl p-3 sm:p-4 shadow-xs
                  hover:border-teal/40 hover:shadow-sm transition-all duration-150 group"
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate dark:text-dark-muted">
+      <div className="flex items-start justify-between gap-1">
+        <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-slate dark:text-dark-muted leading-tight">
           {label}
         </p>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
-          <Icon className={`h-4 w-4 ${iconColor}`} strokeWidth={1.8} />
+        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+          <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${iconColor}`} strokeWidth={1.8} />
         </div>
       </div>
       {children}
@@ -132,12 +132,12 @@ export default function QuickOverviewGrid({ data }: { data: QuickOverviewData })
         iconBg="bg-[#EDFAF4]"
         iconColor="text-[#17B26A]"
       >
-        <p className="text-3xl font-bold text-[#17B26A] leading-none">
+        <p className="text-2xl sm:text-3xl font-bold text-[#17B26A] leading-none">
           {data.attendance.pct != null ? `${data.attendance.pct}%` : "—"}
         </p>
         <AttendanceSparkline points={data.attendance.spark} />
-        <p className="text-xs text-slate dark:text-dark-muted -mt-1">
-          {data.attendance.present} Present · {data.attendance.absent} Absent
+        <p className="text-[10px] sm:text-xs text-slate dark:text-dark-muted -mt-1">
+          {data.attendance.present}P · {data.attendance.absent}A
         </p>
       </Tile>
 
@@ -149,10 +149,10 @@ export default function QuickOverviewGrid({ data }: { data: QuickOverviewData })
         iconBg="bg-[#F3EEFF]"
         iconColor="text-[#7B5EA7]"
       >
-        <p className={`text-3xl font-bold leading-none ${data.academic.grade ? "text-[#7B5EA7]" : "text-slate"}`}>
+        <p className={`text-2xl sm:text-3xl font-bold leading-none ${data.academic.grade ? "text-[#7B5EA7]" : "text-slate"}`}>
           {data.academic.grade ?? "—"}
         </p>
-        <p className="text-xs text-slate dark:text-dark-muted">{data.academic.label}</p>
+        <p className="text-[10px] sm:text-xs text-slate dark:text-dark-muted">{data.academic.label}</p>
       </Tile>
 
       {/* Assignments */}
@@ -163,10 +163,10 @@ export default function QuickOverviewGrid({ data }: { data: QuickOverviewData })
         iconBg="bg-[#FFF3E8]"
         iconColor="text-[#F79009]"
       >
-        <p className={`text-3xl font-bold leading-none ${data.assignments.count > 0 ? "text-[#F79009]" : "text-[#17B26A]"}`}>
+        <p className={`text-2xl sm:text-3xl font-bold leading-none ${data.assignments.count > 0 ? "text-[#F79009]" : "text-[#17B26A]"}`}>
           {data.assignments.count}
         </p>
-        <p className="text-xs text-slate dark:text-dark-muted">{data.assignments.label}</p>
+        <p className="text-[10px] sm:text-xs text-slate dark:text-dark-muted">{data.assignments.label}</p>
       </Tile>
 
       {/* School fees */}
@@ -177,9 +177,9 @@ export default function QuickOverviewGrid({ data }: { data: QuickOverviewData })
         iconBg="bg-[#FEF3F2]"
         iconColor="text-[#F04438]"
       >
-        <div>
+        <div className="min-w-0">
           <p className="text-[10px] text-slate dark:text-dark-muted uppercase font-semibold tracking-wider">KES</p>
-          <p className={`text-2xl font-bold leading-none ${data.fees.owed ? "text-[#F04438]" : "text-[#17B26A]"}`}>
+          <p className={`text-xl sm:text-2xl font-bold leading-none break-all ${data.fees.owed ? "text-[#F04438]" : "text-[#17B26A]"}`}>
             {data.fees.display.replace("KES ", "")}
           </p>
         </div>

@@ -183,8 +183,12 @@ export default function ParentPortalShell({
 
       {/* ── Fixed top bar ──────────────────────────────────────────────── */}
       <header
-        className="fixed top-0 left-0 right-0 h-16 z-40 bg-white dark:bg-dark-sidebar
+        className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-dark-sidebar
                    border-b border-line dark:border-dark-border flex items-center gap-3 px-4 md:px-6"
+        style={{
+          height: "calc(4rem + env(safe-area-inset-top, 0px))",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+        }}
       >
         {/* Hamburger — mobile only */}
         <button
@@ -345,7 +349,13 @@ export default function ParentPortalShell({
                    bg-white dark:bg-dark-sidebar border-r border-line dark:border-dark-border"
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 h-16 px-5 shrink-0 border-b border-line dark:border-dark-border">
+        <div
+          className="flex items-center gap-3 px-5 shrink-0 border-b border-line dark:border-dark-border"
+          style={{
+            height: "calc(4rem + env(safe-area-inset-top, 0px))",
+            paddingTop: "env(safe-area-inset-top, 0px)",
+          }}
+        >
           <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0">
             <Image src="/logo.png" alt="Bidii" width={36} height={36} className="object-contain" />
           </div>
@@ -590,8 +600,12 @@ export default function ParentPortalShell({
 
       {/* ── Main content area ────────────────────────────────────────────── */}
       <main
-        className="md:pl-56 pt-16 pb-20 md:pb-0 min-h-screen"
+        className="md:pl-56 min-h-screen"
         id="main-content"
+        style={{
+          paddingTop: "calc(4rem + env(safe-area-inset-top, 0px))",
+          paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))",
+        }}
       >
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {children}
@@ -601,10 +615,13 @@ export default function ParentPortalShell({
       {/* ── Mobile bottom tab bar ────────────────────────────────────────── */}
       <nav
         aria-label="Main navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 h-[68px] z-40
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40
                    bg-white dark:bg-dark-sidebar border-t border-line dark:border-dark-border
                    flex items-start pt-2 px-1 gap-0"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          minHeight: "68px",
+        }}
       >
         {BOTTOM_TABS.map(({ label, href, Icon, seg, ...rest }) => {
           const badgeCount = "badge" in rest ? (rest as { badge?: number }).badge ?? 0 : 0;

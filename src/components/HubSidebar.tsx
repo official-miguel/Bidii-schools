@@ -184,8 +184,14 @@ export default function HubSidebar({
                    dark:bg-dark-sidebar dark:border-dark-border"
       >
         {/* Logo */}
-        <div className="flex items-center justify-center h-16 shrink-0
-                        border-b border-line dark:border-dark-border">
+        <div
+          className="flex items-center justify-center shrink-0
+                      border-b border-line dark:border-dark-border"
+          style={{
+            height: "calc(4rem + env(safe-area-inset-top, 0px))",
+            paddingTop: "env(safe-area-inset-top, 0px)",
+          }}
+        >
           <Link
             href={`/${role}`}
             aria-label={`${schoolName ?? "Bidii"} home`}
