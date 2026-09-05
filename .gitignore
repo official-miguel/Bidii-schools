@@ -40,3 +40,10 @@ next-env.d.ts
 
 # Misc
 build_output.txt
+tsc-errors.txt
+tsc-output.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

@@ -1,0 +1,202 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `DIARY` to the `Module` enum and add new diary enums and models to `prisma/schema.prisma`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350592888
+      },
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350609737
+      },
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788351421782
+      }
+    ],
+    "1.2 Run `prisma generate` and `prisma migrate dev` to apply the schema changes": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593059
+      },
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788351426964
+      }
+    ],
+    "1.3 Register diary navigation in `src/lib/permissions.ts`, `src/components/HubSidebar.tsx`, `src/app/teacher/layout.tsx`, and `src/app/parent/layout.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593216
+      }
+    ],
+    "2.1 Implement `getTeacherDiaryContext` and `resolveStatus` utility functions": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593343
+      }
+    ],
+    "2.2 Implement `createDiaryNotifications` function in `src/app/api/diary/_lib.ts`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593614
+      }
+    ],
+    "3.1 Create `GET /api/diary/teacher-context` route (`src/app/api/diary/teacher-context/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593801
+      }
+    ],
+    "3.2 Create `POST /api/diary` (create entry) and `GET /api/diary` (list entries) routes (`src/app/api/diary/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350593951
+      }
+    ],
+    "4.1 Create `GET`, `PATCH`, and `DELETE` routes for `src/app/api/diary/[id]/route.ts`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350594086
+      }
+    ],
+    "5.1 Create `GET /api/diary/[id]/recipients` route (`src/app/api/diary/[id]/recipients/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350594299
+      }
+    ],
+    "5.2 Create `PATCH /api/diary/[id]/recipients` route (mark complete/pending)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350594575
+      }
+    ],
+    "6. Checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350594729
+      }
+    ],
+    "7.1 Create `GET /api/diary/student` route (`src/app/api/diary/student/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350594879
+      }
+    ],
+    "7.2 Create `GET /api/diary/parent` route (`src/app/api/diary/parent/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350595025
+      }
+    ],
+    "8.1 Create `GET /api/diary/notifications` and `PATCH /api/diary/notifications` routes (`src/app/api/diary/notifications/route.ts`)": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350595252
+      }
+    ],
+    "9.1 Create teacher diary home page at `src/app/teacher/diary/page.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350595551
+      }
+    ],
+    "9.2 Create teacher entry detail page at `src/app/teacher/diary/[id]/page.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350595684
+      }
+    ],
+    "9.3 Create parent/student diary page at `src/app/parent/diary/page.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350595848
+      }
+    ],
+    "10.1 Create `src/components/diary/DiaryEntryCard.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350596062
+      }
+    ],
+    "10.2 Create `src/components/diary/DiaryFilters.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350596486
+      }
+    ],
+    "11.1 Create `src/components/diary/CreateEntryModal.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350596651
+      }
+    ],
+    "12.1 Create `src/components/diary/EntryDetailClient.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350596843
+      }
+    ],
+    "12.2 Create `EditEntryModal` (or inline form) within `EntryDetailClient`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350597130
+      }
+    ],
+    "12.3 Add delete action to `EntryDetailClient`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350597291
+      }
+    ],
+    "13.1 Create `src/components/diary/StudentDiaryView.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350597447
+      }
+    ],
+    "13.3 Create `src/components/diary/ParentDiaryView.tsx`": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350597610
+      }
+    ],
+    "14. Final checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "f545efe1-05a2-4943-95b5-d946df40afd2",
+        "chatSessionId": "sess_68e4ba48-6c78-441f-b763-ef2db59a8a3a",
+        "timestamp": 1788350597743
+      }
+    ]
+  }
+}
