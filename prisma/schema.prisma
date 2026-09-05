@@ -4028,23 +4028,28 @@ model DiaryTarget {
 }
 
 /// One per-student tracking record for a DiaryEntry.
-/// status column stores only PENDING or COMPLETED; OVERDUE is computed at read time.
+/// parentStatus stores only PENDING or COMPLETED; OVERDUE is computed at read time.
+/// status is kept for legacy compatibility but the teacher view now reads parentStatus.
 model DiaryRecipient {
-  id           String               @id @default(cuid())
-  diaryEntryId String
-  studentId    String
-  schoolId     String
-  status       DiaryRecipientStatus @default(PENDING)
-  completedAt  DateTime?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  id                String               @id @default(cuid())
+  diaryEntryId      String
+  studentId         String
+  schoolId          String
+  /// Legacy teacher-side status — kept for backward compatibility.
+  status            DiaryRecipientStatus @default(PENDING)
+  completedAt       DateTime?
+  /// Parent-confirmed status — set by the parent's "Mark done" action.
+  parentStatus      DiaryRecipientStatus @default(PENDING)
+  parentCompletedAt DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 
   diaryEntry DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
   student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([diaryEntryId, studentId])
-  @@index([studentId, status])
+  @@index([studentId, parentStatus])
   @@index([diaryEntryId])
   @@index([schoolId])
 }

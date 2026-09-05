@@ -20,20 +20,20 @@ type DiaryEntry = {
 };
 
 type Recipient = {
-  id:             string;
-  studentId:      string;
-  status:         string;
-  completedAt?:   string | null;
-  resolvedStatus: "PENDING" | "COMPLETED" | "OVERDUE";
+  id:                string;
+  studentId:         string;
+  parentStatus:      string;
+  parentCompletedAt?: string | null;
+  resolvedStatus:    "PENDING" | "COMPLETED" | "OVERDUE";
   student: { id: string; fullName: string; admissionNumber: string };
 };
 
 type Stats = { COMPLETED: number; PENDING: number; OVERDUE: number; total: number };
 
 const STATUS_CONFIG = {
-  COMPLETED: { label: "Completed", Icon: CheckCircle2, color: "text-success", dot: "bg-success" },
-  PENDING:   { label: "Pending",   Icon: Clock,        color: "text-warn",    dot: "bg-warn" },
-  OVERDUE:   { label: "Overdue",   Icon: AlertCircle,  color: "text-danger",  dot: "bg-danger" },
+  COMPLETED: { label: "Parent checked",  color: "text-success", dot: "bg-success" },
+  PENDING:   { label: "Pending",          color: "text-warn",    dot: "bg-warn"    },
+  OVERDUE:   { label: "Overdue",          color: "text-danger",  dot: "bg-danger"  },
 } as const;
 
 const TYPE_LABELS: Record<string, string> = {
@@ -42,18 +42,15 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function wasEdited(entry: DiaryEntry): boolean {
-  const created = new Date(entry.createdAt).getTime();
-  const updated = new Date(entry.updatedAt).getTime();
-  return updated - created > 60_000;
+  return new Date(entry.updatedAt).getTime() - new Date(entry.createdAt).getTime() > 60_000;
 }
 
 function relativeTime(dateStr: string): string {
-  const d    = new Date(dateStr);
-  const diff = Date.now() - d.getTime();
+  const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 60)   return `${mins}m ago`;
+  if (mins < 60)  return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)    return `${hrs}h ago`;
+  if (hrs < 24)   return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -64,21 +61,21 @@ interface EntryDetailClientProps {
 export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
   const router = useRouter();
 
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
-  const [stats,      setStats]      = useState<Stats>({ COMPLETED: 0, PENDING: 0, OVERDUE: 0, total: 0 });
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState("");
+  const [recipients,   setRecipients]   = useState<Recipient[]>([]);
+  const [stats,        setStats]        = useState<Stats>({ COMPLETED: 0, PENDING: 0, OVERDUE: 0, total: 0 });
+  const [loading,      setLoading]      = useState(true);
+  const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor,   setNextCursor]   = useState<string | null>(null);
+  const [loadingMore,  setLoadingMore]  = useState(false);
 
   // Edit state
-  const [editOpen,      setEditOpen]      = useState(false);
-  const [editTitle,     setEditTitle]     = useState(entry.title);
-  const [editDesc,      setEditDesc]      = useState(entry.description ?? "");
-  const [editDueDate,   setEditDueDate]   = useState(entry.dueDate ? entry.dueDate.split("T")[0] : "");
-  const [editSaving,    setEditSaving]    = useState(false);
-  const [editError,     setEditError]     = useState<string | null>(null);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editTitle,   setEditTitle]   = useState(entry.title);
+  const [editDesc,    setEditDesc]    = useState(entry.description ?? "");
+  const [editDueDate, setEditDueDate] = useState(entry.dueDate ? entry.dueDate.split("T")[0] : "");
+  const [editSaving,  setEditSaving]  = useState(false);
+  const [editError,   setEditError]   = useState<string | null>(null);
 
   // Delete state
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -106,16 +103,6 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
     setLoading(true);
     fetchRecipients().finally(() => setLoading(false));
   }, [fetchRecipients]);
-
-  const handleMarkComplete = async (studentId: string, currentStatus: string) => {
-    const newStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
-    await fetch(`/api/diary/${entry.id}/recipients`, {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ studentId, status: newStatus }),
-    });
-    fetchRecipients();
-  };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,7 +186,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
         )}
       </div>
 
-      {/* Completion stats */}
+      {/* Completion stats — based on parent check */}
       <div className="grid grid-cols-3 gap-3">
         {(["COMPLETED", "PENDING", "OVERDUE"] as const).map((s) => {
           const cfg   = STATUS_CONFIG[s];
@@ -207,15 +194,21 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
           return (
             <div key={s} className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border text-center">
               <p className={`text-2xl font-bold ${cfg.color}`}>{count}</p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{cfg.label}</p>
+              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                {s === "COMPLETED" ? "Parent checked" : cfg.label}
+              </p>
             </div>
           );
         })}
       </div>
 
-      {/* Student list */}
+      {/* Student list — read-only, shows parent confirmation */}
       <div className="bg-card border border-line rounded-2xl shadow-xs dark:bg-dark-surface dark:border-dark-border">
         <div className="p-4 border-b border-line dark:border-dark-border">
+          {/* Header label */}
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-3">
+            Parent confirmations
+          </p>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
@@ -235,7 +228,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
                 aria-label="Filter by status"
               >
                 <option value="">All</option>
-                <option value="COMPLETED">Completed</option>
+                <option value="COMPLETED">Parent checked</option>
                 <option value="PENDING">Pending</option>
                 <option value="OVERDUE">Overdue</option>
               </select>
@@ -262,9 +255,11 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
         ) : (
           <ul role="list" className="divide-y divide-line dark:divide-dark-border">
             {recipients.map((r) => {
-              const cfg = STATUS_CONFIG[r.resolvedStatus] ?? STATUS_CONFIG.PENDING;
+              const cfg       = STATUS_CONFIG[r.resolvedStatus] ?? STATUS_CONFIG.PENDING;
+              const isChecked = r.resolvedStatus === "COMPLETED";
               return (
                 <li key={r.id} className="flex items-center justify-between px-4 py-3 gap-3">
+                  {/* Student info */}
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} aria-hidden="true" />
                     <div className="min-w-0">
@@ -272,20 +267,24 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
                       <p className="text-xs text-slate dark:text-dark-muted">{r.student.admissionNumber}</p>
                     </div>
                   </div>
+
+                  {/* Read-only parent-check indicator */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
-                    <button
-                      onClick={() => handleMarkComplete(r.studentId, r.resolvedStatus)}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]
-                        ${r.resolvedStatus === "COMPLETED"
+                    <span className={`text-xs font-medium ${cfg.color}`}>
+                      {isChecked ? "Parent checked" : cfg.label}
+                    </span>
+                    {/* Static circle — no onClick, purely visual */}
+                    <span
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                        ${isChecked
                           ? "border-success bg-success text-white"
-                          : "border-line dark:border-dark-border hover:border-success"
+                          : "border-line dark:border-dark-border"
                         }`}
-                      aria-label={r.resolvedStatus === "COMPLETED" ? `Mark ${r.student.fullName} as pending` : `Mark ${r.student.fullName} as complete`}
-                      title={r.resolvedStatus === "COMPLETED" ? "Mark as pending" : "Mark as complete"}
+                      aria-label={isChecked ? `${r.student.fullName} — confirmed by parent` : `${r.student.fullName} — not yet confirmed`}
+                      role="img"
                     >
-                      {r.resolvedStatus === "COMPLETED" && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
-                    </button>
+                      {isChecked && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
+                    </span>
                   </div>
                 </li>
               );

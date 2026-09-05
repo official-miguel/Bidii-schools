@@ -43,22 +43,8 @@ export default async function ParentDashboard() {
     orderBy: { fullName: "asc" },
   });
 
-  if (students.length === 0) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Parent Portal</h1>
-        <div className="bg-warn-bg border border-warn/20 rounded-xl p-5">
-          <p className="text-sm text-warn font-medium">No student records linked to your account.</p>
-          <p className="text-sm text-slate mt-1 dark:text-dark-muted">
-            Contact the school office to link your child&apos;s record to your account.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Use first student as primary; parent can navigate to others
-  const primaryStudent = students[0];
+  // Use first student as primary (null when no students linked yet)
+  const primaryStudent = students[0] ?? null;
 
   const [
     recentAttendance,
@@ -66,34 +52,38 @@ export default async function ParentDashboard() {
     recentAchievements,
     libraryCard,
     upcomingCalendar,
-  ] = await Promise.all([
-    // Last 30 days attendance
-    prisma.attendance.findMany({
-      where: { schoolId, studentId: primaryStudent.id, date: { gte: new Date(Date.now() - 30 * 86400000) } },
-      orderBy: { date: "desc" },
-      select: { date: true, status: true },
-    }),
-    // Shared discipline records
-    prisma.disciplineRecord.findMany({
-      where: { schoolId, studentId: primaryStudent.id, status: { in: ["OPEN", "RESOLVED"] } },
-      orderBy: { dateOfOffence: "desc" },
-      take: 3,
-      select: { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
-    }),
-    // Achievements
-    prisma.achievement.findMany({
-      where: { schoolId, students: { some: { studentId: primaryStudent.id } } },
-      orderBy: { achievementDate: "desc" },
-      take: 3,
-      select: { id: true, title: true, category: true, achievementDate: true },
-    }),
-    // Library card
-    prisma.libraryCard.findUnique({
-      where: { studentId: primaryStudent.id },
-      select: { fineBalance: true, currentBorrowCount: true, status: true },
-    }).catch(() => null),
-    getUpcomingCalendarItems(schoolId, { days: 30, limit: 6 }),
-  ]);
+  ] = primaryStudent
+    ? await Promise.all([
+        prisma.attendance.findMany({
+          where: { schoolId, studentId: primaryStudent.id, date: { gte: new Date(Date.now() - 30 * 86400000) } },
+          orderBy: { date: "desc" },
+          select: { date: true, status: true },
+        }),
+        prisma.disciplineRecord.findMany({
+          where: { schoolId, studentId: primaryStudent.id, status: { in: ["OPEN", "RESOLVED"] } },
+          orderBy: { dateOfOffence: "desc" },
+          take: 3,
+          select: { id: true, offence: true, dateOfOffence: true, status: true, actionTaken: true },
+        }),
+        prisma.achievement.findMany({
+          where: { schoolId, students: { some: { studentId: primaryStudent.id } } },
+          orderBy: { achievementDate: "desc" },
+          take: 3,
+          select: { id: true, title: true, category: true, achievementDate: true },
+        }),
+        prisma.libraryCard.findUnique({
+          where: { studentId: primaryStudent.id },
+          select: { fineBalance: true, currentBorrowCount: true, status: true },
+        }).catch(() => null),
+        getUpcomingCalendarItems(schoolId, { days: 30, limit: 6 }),
+      ])
+    : [
+        [] as { date: Date; status: string }[],
+        [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[],
+        [] as { id: string; title: string; category: string; achievementDate: Date }[],
+        null as null,
+        [] as Awaited<ReturnType<typeof getUpcomingCalendarItems>>,
+      ];
 
   const absences30  = recentAttendance.filter((a) => a.status === "ABSENT").length;
   const present30   = recentAttendance.filter((a) => a.status === "PRESENT").length;
@@ -110,14 +100,28 @@ export default async function ParentDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
-          {students.length === 1
-            ? primaryStudent.fullName
+          {students.length === 0
+            ? "Parent Portal"
+            : students.length === 1
+            ? primaryStudent!.fullName
             : "My Children"}
         </h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
-          {primaryStudent.schoolClass.name} · Adm #{primaryStudent.admissionNumber}
-        </p>
+        {primaryStudent && (
+          <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+            {primaryStudent.schoolClass.name} · Adm #{primaryStudent.admissionNumber}
+          </p>
+        )}
       </div>
+
+      {/* No linked students notice */}
+      {students.length === 0 && (
+        <div className="bg-warn-bg border border-warn/20 rounded-xl p-5">
+          <p className="text-sm text-warn font-medium">No student records linked to your account.</p>
+          <p className="text-sm text-slate mt-1 dark:text-dark-muted">
+            Contact the school office to link your child&apos;s record to your account.
+          </p>
+        </div>
+      )}
 
       {/* Multi-child switcher */}
       {students.length > 1 && (

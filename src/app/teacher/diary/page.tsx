@@ -45,14 +45,14 @@ export default async function TeacherDiaryPage({
     take:    LIMIT,
   });
 
-  // Compute completed count for each entry for the progress bar
+  // Compute parent-confirmed completed count for each entry for the progress bar
   const entryIds = entries.map((e) => e.id);
   const completedCounts = await prisma.diaryRecipient.groupBy({
     by:     ["diaryEntryId"],
-    where:  { diaryEntryId: { in: entryIds }, status: "COMPLETED" },
-    _count: { id: true },
+    where:  { diaryEntryId: { in: entryIds }, parentStatus: "COMPLETED" },
+    _count: { _all: true },
   });
-  const completedMap = new Map(completedCounts.map((c) => [c.diaryEntryId, c._count.id]));
+  const completedMap = new Map(completedCounts.map((c) => [c.diaryEntryId, c._count._all]));
 
   const enrichEntry = (e: typeof entries[0]) => ({
     ...e,

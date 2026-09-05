@@ -71,22 +71,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Announcements cannot be marked complete" }, { status: 422 });
   }
 
-  // Find the recipient record and toggle
+  // Find the recipient record and toggle the parent-specific status
   const recipient = await prisma.diaryRecipient.findUnique({
     where: { diaryEntryId_studentId: { diaryEntryId: params.id, studentId } },
-    select: { id: true, status: true },
+    select: { id: true, parentStatus: true },
   });
 
   if (!recipient) {
     return NextResponse.json({ error: "Recipient record not found" }, { status: 404 });
   }
 
-  const newStatus      = recipient.status === "COMPLETED" ? "PENDING" : "COMPLETED";
-  const completedAt    = newStatus === "COMPLETED" ? new Date() : null;
+  const newStatus         = recipient.parentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
+  const parentCompletedAt = newStatus === "COMPLETED" ? new Date() : null;
 
   await prisma.diaryRecipient.update({
     where: { id: recipient.id },
-    data:  { status: newStatus, completedAt },
+    data:  { parentStatus: newStatus, parentCompletedAt },
   });
 
   return NextResponse.json({ status: newStatus });
