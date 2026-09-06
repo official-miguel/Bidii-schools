@@ -37,12 +37,25 @@ async function resolveHODDepartment(teacherId: string, schoolId: string) {
   });
 }
 
-/** Guard: must be HOD, DIRECTOR, EXAM_OFFICER, or PRINCIPAL. */
-function canManageFormulas(actor: Awaited<ReturnType<typeof resolveAssessmentActor>>) {
-  return (
-    actor.isPrincipal ||
-    actor.roles.some((r) => ["HOD", "DIRECTOR", "EXAM_OFFICER"].includes(r.role))
-  );
+/** Guard: must be HOD, DIRECTOR, EXAM_OFFICER, or PRINCIPAL.
+ * Also allows teachers who are set as department head via Department.headTeacherId
+ * even if they have no explicit AssessmentRole row.
+ */
+async function canManageFormulas(
+  actor: Awaited<ReturnType<typeof resolveAssessmentActor>>,
+  schoolId: string
+): Promise<boolean> {
+  if (actor.isPrincipal) return true;
+  if (actor.roles.some((r) => ["HOD", "DIRECTOR", "EXAM_OFFICER"].includes(r.role))) return true;
+  // Also allow HR-appointed department heads (headTeacherId on Department)
+  if (actor.teacher?.id) {
+    const isDeptHead = await prisma.department.findFirst({
+      where: { schoolId, headTeacherId: actor.teacher.id },
+      select: { id: true },
+    });
+    if (isDeptHead) return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +68,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
-  if (!canManageFormulas(actor)) {
+  if (!await canManageFormulas(actor, user.schoolId!)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -109,7 +122,7 @@ export async function PUT(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
-  if (!canManageFormulas(actor)) {
+  if (!await canManageFormulas(actor, user.schoolId!)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -198,7 +211,7 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
-  if (!canManageFormulas(actor)) {
+  if (!await canManageFormulas(actor, user.schoolId!)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
