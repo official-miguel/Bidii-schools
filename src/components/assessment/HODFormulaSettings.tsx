@@ -196,8 +196,8 @@ function FormulaCalculator({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-line">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-line shrink-0">
           <div>
             <h2 className="text-base font-semibold text-ink">% Formula</h2>
             <p className="text-xs text-slate mt-0.5">Build how the percentage is calculated.</p>
@@ -207,7 +207,7 @@ function FormulaCalculator({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Display bar */}
           <div className="relative">
             <div ref={displayRef}
@@ -294,7 +294,7 @@ function FormulaCalculator({
             </span>
           </p>
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 border-t border-line sticky bottom-0 bg-white -mx-5 px-5 py-3 mt-0">
             {formula && (
               <button type="button" onClick={() => { onApply(""); onClose(); }}
                 className="text-xs text-slate hover:text-danger underline underline-offset-2 transition-colors mr-auto">
