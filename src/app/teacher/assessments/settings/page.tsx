@@ -129,13 +129,24 @@ export default async function HODAssessmentSettingsPage() {
   }
 
   // ── Distinct form numbers registered at this school ─────────────────────
+  // Fetch both form (integer) and name so we can display the real class name
+  // rather than the generic "Form X" label.
   const schoolClassForms = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
-    select: { form: true },
-    distinct: ["form"],
-    orderBy: { form: "asc" },
+    select: { form: true, name: true },
+    orderBy: { form: "asc", name: "asc" },
   });
-  const schoolForms = schoolClassForms.map((c) => c.form);
+
+  // Deduplicate by form number, keeping the first (alphabetically sorted) name
+  // at each level as the canonical label for formula rows.
+  const schoolForms: number[] = [];
+  const schoolFormLabels: Record<number, string> = {};
+  for (const c of schoolClassForms) {
+    if (!(c.form in schoolFormLabels)) {
+      schoolForms.push(c.form);
+      schoolFormLabels[c.form] = c.name;
+    }
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -155,6 +166,7 @@ export default async function HODAssessmentSettingsPage() {
         frameworks={frameworks}
         initialFormulas={existingFormulas}
         schoolForms={schoolForms}
+        schoolFormLabels={schoolFormLabels}
       />
     </div>
   );

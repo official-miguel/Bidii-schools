@@ -67,6 +67,9 @@ interface HODFormulaSettingsProps {
   /** Distinct form numbers registered at this school — used as the fallback
    *  when a subject has an empty applicableForms array. */
   schoolForms: number[];
+  /** Maps each form number to the actual class name as saved, e.g. { 3: "Form 3 North" }.
+   *  Used to display the real name instead of the generic "Form X" label. */
+  schoolFormLabels?: Record<number, string>;
 }
 
 type Tab = "frameworks" | "formulas";
@@ -323,6 +326,7 @@ function SubjectFormulaCard({
   formulas,
   onFormulaChange,
   schoolForms,
+  schoolFormLabels = {},
 }: {
   subject: Subject;
   frameworks: Framework[];
@@ -330,6 +334,7 @@ function SubjectFormulaCard({
   formulas: FormulaConfig[];
   onFormulaChange: (config: FormulaConfig) => void;
   schoolForms: number[];
+  schoolFormLabels?: Record<number, string>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -360,7 +365,7 @@ function SubjectFormulaCard({
           <div className="min-w-0">
             <p className="font-semibold text-ink text-sm truncate">{subject.name}</p>
             <p className="text-xs text-slate mt-0.5">
-              {subject.code} · Forms {forms.join(", ")}
+              {subject.code} · {forms.map((f) => schoolFormLabels[f] ?? `Form ${f}`).join(", ")}
             </p>
           </div>
         </div>
@@ -392,6 +397,7 @@ function SubjectFormulaCard({
                   key={form}
                   subject={subject}
                   form={form}
+                  formLabel={schoolFormLabels[form] ?? `Form ${form}`}
                   frameworks={kcseFrameworks}
                   departmentId={departmentId}
                   formulas={formulas}
@@ -413,6 +419,7 @@ function SubjectFormulaCard({
 function FormFormulaRow({
   subject,
   form,
+  formLabel,
   frameworks,
   departmentId,
   formulas,
@@ -420,6 +427,8 @@ function FormFormulaRow({
 }: {
   subject: Subject;
   form: number;
+  /** The real class name to display (e.g. "Form 3 North"), falls back to "Form {form}". */
+  formLabel: string;
   frameworks: Framework[];
   departmentId: string;
   formulas: FormulaConfig[];
@@ -507,7 +516,7 @@ function FormFormulaRow({
         {/* Form label */}
         <div className="shrink-0 w-20">
           <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 text-ink text-xs font-semibold px-2.5 py-1.5 w-full">
-            Form {form}
+            {formLabel}
           </span>
         </div>
 
@@ -645,6 +654,7 @@ export default function HODFormulaSettings({
   frameworks,
   initialFormulas,
   schoolForms,
+  schoolFormLabels = {},
 }: HODFormulaSettingsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("formulas");
   const [formulas, setFormulas] = useState<FormulaConfig[]>(initialFormulas);
@@ -721,6 +731,7 @@ export default function HODFormulaSettings({
                   formulas={formulas}
                   onFormulaChange={handleFormulaChange}
                   schoolForms={schoolForms}
+                  schoolFormLabels={schoolFormLabels}
                 />
               ))}
             </div>
