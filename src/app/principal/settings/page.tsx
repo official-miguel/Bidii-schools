@@ -11,7 +11,7 @@ import {
   CheckCircle2, AlertCircle, Zap, Calendar, MessageSquare,
   Mail, Key, Trash2, RefreshCw, BookOpen, BarChart3, Sparkles,
   Plug, ChevronRight, BedDouble, Users, ShieldCheck, ArrowRight,
-  School,
+  School, GraduationCap, Plus, Pencil, RotateCcw, X,
 } from "lucide-react";
 import SomaAIConfigPanel from "@/components/SomaAIConfigPanel";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
@@ -30,7 +30,7 @@ type IntegrationStatus = {
   updatedAt: string | null;
 };
 
-type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school";
+type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar nav definition
@@ -42,12 +42,13 @@ const SECTIONS: Array<{
   sublabel: string;
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: "school",       label: "School Configuration", sublabel: "Logo, motto, gender & boarding", Icon: School    },
-  { id: "integrations", label: "API Integrations",      sublabel: "Connect external services",       Icon: Plug      },
-  { id: "ranking",      label: "Ranking",               sublabel: "Teacher performance weights",     Icon: BarChart3 },
-  { id: "library",      label: "Library",               sublabel: "Borrowing rules & fines",         Icon: BookOpen  },
-  { id: "dormitory",    label: "Dormitory",             sublabel: "Boarding & allocation config",    Icon: BedDouble },
-  { id: "ai",           label: "AI Configuration",      sublabel: "Soma AI & Gemini",                Icon: Sparkles  },
+  { id: "school",       label: "School Configuration", sublabel: "Logo, motto, gender & boarding", Icon: School       },
+  { id: "integrations", label: "API Integrations",      sublabel: "Connect external services",       Icon: Plug         },
+  { id: "ranking",      label: "Ranking",               sublabel: "Teacher performance weights",     Icon: BarChart3    },
+  { id: "library",      label: "Library",               sublabel: "Borrowing rules & fines",         Icon: BookOpen     },
+  { id: "dormitory",    label: "Dormitory",             sublabel: "Boarding & allocation config",    Icon: BedDouble    },
+  { id: "ai",           label: "AI Configuration",      sublabel: "Soma AI & Gemini",                Icon: Sparkles     },
+  { id: "cbe-scale",    label: "CBE Grading Scale",     sublabel: "Customise grade band boundaries", Icon: GraduationCap },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1254,6 +1255,401 @@ function SchoolConfigForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CbeGradingScaleForm
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface GradeBandRow {
+  id: string;
+  bandName: string;
+  achievementLevel: number;
+  minPercentage: number;
+  maxPercentage: number;
+  points: number;
+  description: string;
+  isActive: boolean;
+}
+
+interface ScaleResponse {
+  isCustom: boolean;
+  bands: GradeBandRow[];
+  defaultBands: GradeBandRow[];
+}
+
+/** A single editable band row inside the custom-scale editor. */
+interface DraftBand {
+  _key: number; // local react key
+  bandName: string;
+  achievementLevel: string; // kept as string while editing
+  minPercentage: string;
+  maxPercentage: string;
+  points: string;
+  description: string;
+}
+
+function mkKey() { return Date.now() + Math.random(); }
+
+function draftFromBand(b: GradeBandRow): DraftBand {
+  return {
+    _key:             mkKey(),
+    bandName:         b.bandName,
+    achievementLevel: String(b.achievementLevel),
+    minPercentage:    String(b.minPercentage),
+    maxPercentage:    String(b.maxPercentage),
+    points:           String(b.points),
+    description:      b.description,
+  };
+}
+
+function CbeGradingScaleForm() {
+  const [data,       setData]       = useState<ScaleResponse | null>(null);
+  const [editing,    setEditing]    = useState(false);
+  const [draft,      setDraft]      = useState<DraftBand[]>([]);
+  const [saving,     setSaving]     = useState(false);
+  const [resetting,  setResetting]  = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Array<{ field: string; message: string }>>([]);
+  const [saved,      setSaved]      = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const load = useCallback(async () => {
+    setError(null);
+    const res = await fetch("/api/assessments/cbe/grading-scale");
+    if (!res.ok) { setError("Failed to load grading scale."); return; }
+    const json: ScaleResponse = await res.json();
+    setData(json);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  function startEditing() {
+    if (!data) return;
+    setDraft((data.isCustom ? data.bands : data.defaultBands).map(draftFromBand));
+    setFieldErrors([]);
+    setError(null);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+    setDraft([]);
+    setFieldErrors([]);
+    setError(null);
+  }
+
+  function addBand() {
+    setDraft((prev) => [
+      ...prev,
+      { _key: mkKey(), bandName: "", achievementLevel: "", minPercentage: "", maxPercentage: "", points: "", description: "" },
+    ]);
+  }
+
+  function removeBand(key: number) {
+    setDraft((prev) => prev.filter((b) => b._key !== key));
+  }
+
+  function updateBand(key: number, field: keyof Omit<DraftBand, "_key">, value: string) {
+    setDraft((prev) => prev.map((b) => b._key === key ? { ...b, [field]: value } : b));
+  }
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    setError(null); setFieldErrors([]); setSaving(true);
+
+    const bands = draft.map((b) => ({
+      bandName:         b.bandName.trim(),
+      achievementLevel: parseInt(b.achievementLevel),
+      minPercentage:    parseFloat(b.minPercentage),
+      maxPercentage:    parseFloat(b.maxPercentage),
+      points:           parseInt(b.points),
+      description:      b.description.trim(),
+    }));
+
+    const res = await fetch("/api/assessments/cbe/grading-scale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bands }),
+    });
+    const json = await res.json();
+    setSaving(false);
+
+    if (!res.ok) {
+      if (res.status === 422 && json.details) {
+        setFieldErrors(json.details);
+      } else {
+        setError(json.error ?? "Failed to save grading scale.");
+      }
+      return;
+    }
+
+    setData({ isCustom: json.isCustom, bands: json.bands, defaultBands: data?.defaultBands ?? [] });
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  async function handleReset() {
+    setResetting(true); setError(null);
+    const res = await fetch("/api/assessments/cbe/grading-scale/reset", { method: "DELETE" });
+    const json = await res.json();
+    setResetting(false); setConfirmReset(false);
+    if (!res.ok) { setError(json.error ?? "Failed to reset."); return; }
+    setData({ isCustom: false, bands: json.bands, defaultBands: json.bands });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  // ── Loading skeleton ────────────────────────────────────────────────────
+  if (!data && !error) {
+    return (
+      <div className="space-y-3 max-w-3xl">
+        <SkeletonBar height="1rem" width="50%" />
+        {[...Array(4)].map((_, i) => <SkeletonBar key={i} height="2.5rem" />)}
+      </div>
+    );
+  }
+
+  // ── Error state ─────────────────────────────────────────────────────────
+  if (error && !data) {
+    return <ErrorBanner message={error} onDismiss={() => { setError(null); load(); }} />;
+  }
+
+  // ── Read-only view ──────────────────────────────────────────────────────
+  if (!editing) {
+    const activeBands = data!.bands;
+    const isCustom = data!.isCustom;
+
+    return (
+      <div className="max-w-3xl space-y-5">
+        {error  && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+        {saved  && <SuccessBanner message={isCustom ? "Custom grading scale saved." : "Scale reset to government default."} />}
+
+        {/* Status badge */}
+        <div className={`inline-flex items-center gap-2 text-sm font-medium rounded-lg px-3 py-2 ${
+          isCustom
+            ? "bg-teal/8 text-teal border border-teal/20"
+            : "bg-line/60 text-slate border border-line dark:bg-dark-border/40 dark:text-dark-muted dark:border-dark-border"
+        }`}>
+          {isCustom
+            ? <><CheckCircle2 className="h-4 w-4 shrink-0" /> Custom scale active</>
+            : <><ShieldCheck className="h-4 w-4 shrink-0" /> Using Government Default (EE/ME/AE/BE)</>
+          }
+        </div>
+
+        {/* Band table */}
+        <div className="rounded-xl border border-line overflow-hidden dark:border-dark-border">
+          <table className="w-full text-sm">
+            <thead className="bg-paper dark:bg-dark-surface">
+              <tr>
+                {["Band", "Min %", "Max %", "Points", "Achievement Level", "Description"].map((h) => (
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-slate dark:text-dark-muted">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line dark:divide-dark-border">
+              {[...activeBands]
+                .sort((a, b) => b.minPercentage - a.minPercentage)
+                .map((band) => (
+                  <tr key={band.id} className="bg-white dark:bg-dark-bg hover:bg-paper/50 dark:hover:bg-dark-surface/50 transition-colors">
+                    <td className="px-3 py-2.5 font-semibold text-ink dark:text-dark-text">{band.bandName}</td>
+                    <td className="px-3 py-2.5 text-slate dark:text-dark-muted tabular-nums">{band.minPercentage}%</td>
+                    <td className="px-3 py-2.5 text-slate dark:text-dark-muted tabular-nums">{band.maxPercentage}%</td>
+                    <td className="px-3 py-2.5 text-slate dark:text-dark-muted tabular-nums">{band.points}</td>
+                    <td className="px-3 py-2.5 text-slate dark:text-dark-muted tabular-nums">{band.achievementLevel}</td>
+                    <td className="px-3 py-2.5 text-slate dark:text-dark-muted">{band.description}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className={royalButtonClass} onClick={startEditing}>
+            <Pencil className="h-4 w-4" />
+            {isCustom ? "Edit custom scale" : "Customise scale"}
+          </button>
+          {isCustom && (
+            <button
+              type="button"
+              className={`${secondaryButtonClass} text-danger border-danger/30 hover:bg-danger-bg/30`}
+              onClick={() => setConfirmReset(true)}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset to government default
+            </button>
+          )}
+        </div>
+
+        {/* Reset confirmation modal */}
+        {confirmReset && (
+          <Modal
+            title="Reset to government default?"
+            description="Your custom grading scale will be deactivated. Grading will immediately revert to the government default KNEC CBE Achievement Level boundaries (EE1–BE2). Your custom rows are kept in history and are not permanently deleted."
+            onClose={() => setConfirmReset(false)}
+          >
+            <div className="flex justify-end gap-3 pt-1">
+              <button type="button" className={secondaryButtonClass} onClick={() => setConfirmReset(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`${royalButtonClass} bg-danger border-danger hover:bg-danger/90`}
+                disabled={resetting}
+                onClick={handleReset}
+              >
+                <RotateCcw className="h-4 w-4" />
+                {resetting ? "Resetting…" : "Yes, reset"}
+              </button>
+            </div>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  // ── Editor ──────────────────────────────────────────────────────────────
+  // Collect all field-level error messages into a map for inline display.
+  const fieldErrMap = new Map(fieldErrors.map((e) => [e.field, e.message]));
+  // Global errors (field = "bands") shown at the top.
+  const globalErrors = fieldErrors.filter((e) => e.field === "bands");
+
+  return (
+    <form onSubmit={handleSave} className="max-w-4xl space-y-5">
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+      {globalErrors.map((e, i) => <ErrorBanner key={i} message={e.message} />)}
+
+      <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:border-amber-800/40 dark:text-amber-300 leading-relaxed">
+        <strong>Important:</strong> bands must cover the full 0–100% range with no gaps or overlaps.
+        The scale takes effect immediately for all future grade calculations at this school.
+      </div>
+
+      {/* Editable band rows */}
+      <div className="rounded-xl border border-line overflow-x-auto dark:border-dark-border">
+        <table className="w-full text-sm min-w-[700px]">
+          <thead className="bg-paper dark:bg-dark-surface">
+            <tr>
+              {["Band name", "Min %", "Max %", "Points", "AL", "Description", ""].map((h) => (
+                <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-slate dark:text-dark-muted whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line dark:divide-dark-border">
+            {draft.map((band, idx) => {
+              const rowPrefix = `bands[${idx}]`;
+              return (
+                <tr key={band._key} className="bg-white dark:bg-dark-bg">
+                  {/* Band name */}
+                  <td className="px-2 py-2">
+                    <input
+                      required
+                      value={band.bandName}
+                      onChange={(e) => updateBand(band._key, "bandName", e.target.value)}
+                      placeholder="e.g. A"
+                      className={`${inputClass} w-20 ${fieldErrMap.has(`${rowPrefix}.bandName`) ? "border-danger" : ""}`}
+                    />
+                  </td>
+                  {/* Min % */}
+                  <td className="px-2 py-2">
+                    <input
+                      required
+                      type="number" min={0} max={100} step={0.01}
+                      value={band.minPercentage}
+                      onChange={(e) => updateBand(band._key, "minPercentage", e.target.value)}
+                      placeholder="0"
+                      className={`${inputClass} w-20 ${fieldErrMap.has(`${rowPrefix}.minPercentage`) ? "border-danger" : ""}`}
+                    />
+                  </td>
+                  {/* Max % */}
+                  <td className="px-2 py-2">
+                    <input
+                      required
+                      type="number" min={0} max={100} step={0.01}
+                      value={band.maxPercentage}
+                      onChange={(e) => updateBand(band._key, "maxPercentage", e.target.value)}
+                      placeholder="100"
+                      className={`${inputClass} w-20 ${fieldErrMap.has(`${rowPrefix}.maxPercentage`) ? "border-danger" : ""}`}
+                    />
+                  </td>
+                  {/* Points */}
+                  <td className="px-2 py-2">
+                    <input
+                      required
+                      type="number" min={1} step={1}
+                      value={band.points}
+                      onChange={(e) => updateBand(band._key, "points", e.target.value)}
+                      placeholder="12"
+                      className={`${inputClass} w-16 ${fieldErrMap.has(`${rowPrefix}.points`) ? "border-danger" : ""}`}
+                    />
+                  </td>
+                  {/* Achievement Level */}
+                  <td className="px-2 py-2">
+                    <input
+                      required
+                      type="number" min={1} step={1}
+                      value={band.achievementLevel}
+                      onChange={(e) => updateBand(band._key, "achievementLevel", e.target.value)}
+                      placeholder="12"
+                      className={`${inputClass} w-16 ${fieldErrMap.has(`${rowPrefix}.achievementLevel`) ? "border-danger" : ""}`}
+                    />
+                  </td>
+                  {/* Description */}
+                  <td className="px-2 py-2">
+                    <input
+                      value={band.description}
+                      onChange={(e) => updateBand(band._key, "description", e.target.value)}
+                      placeholder="e.g. Excellent"
+                      className={`${inputClass} w-36`}
+                    />
+                  </td>
+                  {/* Delete */}
+                  <td className="px-2 py-2">
+                    <button
+                      type="button"
+                      onClick={() => removeBand(band._key)}
+                      aria-label="Remove band"
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-slate hover:text-danger hover:bg-danger-bg/30 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Per-row validation errors rendered below the table */}
+      {fieldErrors.filter((e) => e.field !== "bands").length > 0 && (
+        <div className="rounded-lg bg-danger-bg border border-danger/20 px-4 py-3 space-y-1">
+          {fieldErrors.filter((e) => e.field !== "bands").map((e, i) => (
+            <p key={i} className="text-xs text-danger">{e.message}</p>
+          ))}
+        </div>
+      )}
+
+      <button type="button" className={secondaryButtonClass} onClick={addBand}>
+        <Plus className="h-4 w-4" />
+        Add band
+      </button>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button type="submit" disabled={saving} className={royalButtonClass}>
+          {saving ? "Saving…" : "Save custom scale"}
+        </button>
+        <button type="button" className={secondaryButtonClass} onClick={cancelEditing}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Section content map
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1287,6 +1683,11 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
     heading: "AI Configuration",
     description: "Configure Soma AI — the intelligent assistant powered by Google Gemini. API keys are encrypted at rest and never exposed to the browser.",
     Content: SomaAIConfigPanel,
+  },
+  "cbe-scale": {
+    heading: "CBE Grading Scale",
+    description: "Customise the grade-band boundaries used when converting Senior CBE pathway scores to achievement levels. Schools that don't customise automatically use the government default (KNEC EE/ME/AE/BE scale).",
+    Content: CbeGradingScaleForm,
   },
 };
 

@@ -151,6 +151,8 @@ model School {
   /// Parent portal back-relations
   parents                  Parent[]
   parentNotifications      ParentNotification[]
+  /// CBE grading scale customisation
+  cbeGradingScales         CbeGradingScale[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -4147,4 +4149,58 @@ model ParentNotification {
 
   @@index([parentId, isRead, createdAt])
   @@unique([schoolId, dedupKey])
+}
+
+// =============================================================================
+// CBE GRADING SCALE — per-school customisable KCSE-equivalent band table
+// =============================================================================
+//
+// Design:
+//   • schoolId IS NULL  → the "Government Default" scale, seeded once by
+//     migration and never mutated by the application.
+//   • schoolId NOT NULL → a school's custom override.  Only one set of rows
+//     per school may have isActive = true at a time.
+//
+// Fallback rule (enforced in application code):
+//   1. Look for rows where schoolId = <current school> AND isActive = true.
+//   2. If none found, use rows where schoolId IS NULL.
+//
+// The government-default rows are immutable from the application layer
+// (the API refuses to POST/DELETE them).  Schools that have never
+// customised will always fall through to the default, preserving the
+// existing grading behaviour.
+
+/// One band row in a CBE grading scale (KCSE-equivalent mapping).
+/// Rows with schoolId = NULL are the government default; rows with a
+/// schoolId are that school's active custom scale.
+model CbeGradingScale {
+  id                String   @id @default(cuid())
+  /// NULL  ⟹ government default (immutable, seeded by migration).
+  /// Non-null ⟹ school-specific custom scale.
+  schoolId          String?
+  /// KCSE band name, e.g. "A", "A-", "B+", … "E".
+  bandName          String
+  /// Integer 1–12, matching the KCSE points scale.
+  achievementLevel  Int
+  /// Lower boundary (inclusive), percentage 0–100.
+  minPercentage     Float
+  /// Upper boundary (inclusive), percentage 0–100.
+  maxPercentage     Float
+  /// Points value for mean-grade aggregation (same as achievementLevel
+  /// in the default scale, but schools may override).
+  points            Int
+  /// Human-readable description shown in the UI.
+  description       String   @default("")
+  /// Only the active set is used for grading.  Government-default rows are
+  /// always is_active = true.  When a school saves a custom scale, ALL
+  /// their previous rows are set inactive and replaced.
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  school            School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, isActive])
+  /// Prevents a school from having duplicate band names in the same active set.
+  @@index([schoolId, bandName, isActive])
 }

@@ -5,7 +5,6 @@
  */
 
 import { levelColour, LEVEL_LABELS, LEVEL_SHORT, type PerformanceLevel } from "@/lib/assessment/gradingCbe";
-import { gradeColour, type KcseGrade } from "@/lib/assessment/grading844";
 import type {
   CbeReportCardData,
   JuniorReportCardData,
@@ -30,11 +29,28 @@ function LvlBadge({ level }: { level: PerformanceLevel | null }) {
   );
 }
 
-function GradeCell({ grade }: { grade: KcseGrade | null }) {
+/**
+ * Renders a CBE band name badge with colour-coding based on the EE/ME/AE/BE
+ * category prefix.  Works for both the government default (EE1, ME2, etc.)
+ * and any custom band names a school may define.
+ *   EE → green   (Exceeds Expectation)
+ *   ME → blue    (Meets Expectation)
+ *   AE → amber   (Approaches Expectation)
+ *   BE → orange  (Below Expectation)
+ *   other → teal (custom / unknown)
+ */
+function GradeCell({ grade }: { grade: string | null }) {
   if (!grade) return <Dash />;
-  const { bg, text } = gradeColour(grade);
+
+  const upper = grade.toUpperCase();
+  let className = "bg-teal/10 text-teal"; // default for fully custom names
+  if (upper.startsWith("EE")) className = "bg-green-100 text-green-800";
+  else if (upper.startsWith("ME")) className = "bg-blue-100 text-blue-800";
+  else if (upper.startsWith("AE")) className = "bg-amber-100 text-amber-800";
+  else if (upper.startsWith("BE")) className = "bg-orange-100 text-orange-800";
+
   return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${bg} ${text}`}>
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${className}`}>
       {grade}
     </span>
   );

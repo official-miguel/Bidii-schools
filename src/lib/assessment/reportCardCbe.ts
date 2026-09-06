@@ -15,7 +15,7 @@ import {
   DEFAULT_PATHWAY_WEIGHT,
   type PerformanceLevel,
 } from "@/lib/assessment/gradingCbe";
-import { scoreToGrade, type KcseGrade } from "@/lib/assessment/grading844";
+import { resolveCbeGrade } from "@/lib/assessment/gradingScale";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -79,8 +79,8 @@ export interface SeniorSubjectResult {
   examWeight: number;
   /** Weighted combined percentage (0–100). Null if either score is missing. */
   weightedScore: number | null;
-  /** Indicative KCSE-equivalent grade derived from weightedScore. */
-  indicativeGrade: KcseGrade | null;
+  /** Indicative grade band derived from weightedScore (e.g. "A", "B+"). */
+  indicativeGrade: string | null;
 }
 
 export interface SeniorReportCardData {
@@ -286,7 +286,7 @@ export async function buildSeniorReportCard(
     select: { subjectId: true, paperId: true, numericScore: true },
   }) as Array<{ subjectId: string | null; paperId: string | null; numericScore: number | null }>;
 
-  const subjectResults: SeniorSubjectResult[] = subjects.map((subj) => {
+  const subjectResults: SeniorSubjectResult[] = await Promise.all(subjects.map(async (subj) => {
     const w = weightMap.get(subj.id) ?? DEFAULT_PATHWAY_WEIGHT;
     const sPapers = papersBySubject.get(subj.id) ?? [];
     const sbaId  = (sPapers.find((p) => /sba|school/i.test(p.name))?.id ?? sPapers[0]?.id) as string | undefined;
@@ -298,7 +298,9 @@ export async function buildSeniorReportCard(
     const examScore = examItem?.numericScore ?? null;
 
     const ws    = pathwayScore(sbaScore, examScore, w.sbaWeight, w.examWeight, w.sbaMaxMarks, w.examMaxMarks);
-    const grade = ws !== null ? scoreToGrade(ws).grade : null;
+    // Resolve grade from the school's active scale (DB-driven, falls back to govt default).
+    const gradeResult = ws !== null ? await resolveCbeGrade(schoolId, ws, 100) : null;
+    const grade = gradeResult?.bandName ?? null;
 
     return {
       subject:        { id: subj.id, name: subj.name, code: subj.code },
@@ -311,7 +313,7 @@ export async function buildSeniorReportCard(
       weightedScore:  ws !== null ? Math.round(ws * 10) / 10 : null,
       indicativeGrade: grade,
     };
-  });
+  }));
 
   const scores = subjectResults.map((r) => r.weightedScore).filter((v): v is number => v !== null);
   const overallMean = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null;

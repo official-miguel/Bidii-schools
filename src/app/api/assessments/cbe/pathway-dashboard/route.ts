@@ -6,7 +6,7 @@ import {
   pathwayScore,
   DEFAULT_PATHWAY_WEIGHT,
 } from "@/lib/assessment/gradingCbe";
-import { scoreToGrade } from "@/lib/assessment/grading844";
+import { resolveCbeGrade } from "@/lib/assessment/gradingScale";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -214,7 +214,7 @@ export async function GET(req: NextRequest) {
 
   // ---- Per-student summary row ----
   // Uses pre-resolved subjectPaperIds and itemScoreMap — O(students × subjects), no find().
-  const studentSummaries = students.map((student) => {
+  const studentSummaries = await Promise.all(students.map(async (student) => {
     const scores: number[] = [];
     for (const subj of subjects) {
       const { sbaId, examId, w } = subjectPaperIds.get(subj.id)!;
@@ -224,9 +224,15 @@ export async function GET(req: NextRequest) {
       if (ws !== null) scores.push(ws);
     }
     const overall = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null;
-    const grade   = overall !== null ? scoreToGrade(overall) : null;
-    return { student: { id: student.id, fullName: student.fullName, admissionNumber: student.admissionNumber }, overallWeighted: overall, grade: grade?.grade ?? null, subjectCount: scores.length };
-  });
+    // Resolve grade from school's active scale (falls back to govt default).
+    const gradeResult = overall !== null ? await resolveCbeGrade(user.schoolId!, overall, 100) : null;
+    return {
+      student:       { id: student.id, fullName: student.fullName, admissionNumber: student.admissionNumber },
+      overallWeighted: overall,
+      grade:         gradeResult?.bandName ?? null,
+      subjectCount:  scores.length,
+    };
+  }));
 
   return NextResponse.json({
     period,
