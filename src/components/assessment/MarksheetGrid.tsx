@@ -1069,7 +1069,21 @@ export default function MarksheetGrid({
       )}
 
       {!loading && data && data.rows.length === 0 && (
-        <EmptyState message="No students in this class yet." />
+        <div className="space-y-3">
+          <EmptyState message="No students in this class yet." />
+          {canManagePapers && !readOnly && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAddPaper(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-teal/40 bg-teal-50 px-4 py-2 text-sm font-medium text-teal hover:bg-teal hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-teal/40"
+              >
+                <Plus className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+                Add paper
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ---- Grid ---- */}
