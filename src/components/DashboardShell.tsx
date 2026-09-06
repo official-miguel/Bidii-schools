@@ -116,7 +116,12 @@ export default function DashboardShell({
           </ShellContentWrapper>
 
           {/* Mobile bottom tab bar — teacher & principal only */}
-          {BOTTOM_NAV_ROLES.has(role) && <MobileBottomNav role={role} />}
+          {BOTTOM_NAV_ROLES.has(role) && (
+            <MobileBottomNav
+              role={role}
+              visibleHubs={visibleHubs ? [...visibleHubs] : undefined}
+            />
+          )}
         </div>
       </SomaAIProvider>
     </MobileDrawerProvider>

@@ -45,7 +45,7 @@ import type { NavHub } from "@/lib/permissions";
 
 // ── Hub definitions ───────────────────────────────────────────────────────────
 
-const HUB_DEFS = [
+export const HUB_DEFS = [
   { id: "dashboard"      as NavHub, label: "Dashboard",     Icon: Home,          seg: null },
   { id: "academic"       as NavHub, label: "Academic",       Icon: GraduationCap, seg: "academics" },
   { id: "people"         as NavHub, label: "People",         Icon: Users,         seg: "people" },
