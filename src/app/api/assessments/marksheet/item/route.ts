@@ -39,7 +39,6 @@ export async function PUT(req: NextRequest) {
     where: {
       id: periodId,
       schoolId: user.schoolId!,
-      framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
     },
     select: { id: true, frameworkId: true },
   });

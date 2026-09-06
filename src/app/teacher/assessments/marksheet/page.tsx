@@ -32,10 +32,17 @@ export default async function TeacherMarksheetPage({
 
   /** Load periods for a given framework type. */
   async function periodsForFramework(fwType: string): Promise<PeriodOption[]> {
-    const fw = await db.assessmentFramework.findFirst({
+    // Look for an active framework first; if none is active, fall back to
+    // any framework of this type so periods remain accessible even when the
+    // admin has deactivated the old framework (e.g. after year rollover).
+    const fw = (await db.assessmentFramework.findFirst({
       where: { schoolId, type: fwType, isActive: true },
       select: { id: true },
-    }) as { id: string } | null;
+    }) ?? await db.assessmentFramework.findFirst({
+      where: { schoolId, type: fwType },
+      orderBy: { academicYear: "desc" },
+      select: { id: true },
+    })) as { id: string } | null;
     if (!fw) return [];
     return db.assessmentPeriod.findMany({
       where: { schoolId, frameworkId: fw.id },

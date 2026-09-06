@@ -38,7 +38,6 @@ export async function GET(req: NextRequest) {
     where: {
       id: periodId,
       schoolId: user.schoolId!,
-      framework: { type: classFrameworkType as "EIGHT_FOUR_FOUR" | "CBE", isActive: true },
     },
     select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
   });
@@ -55,7 +54,7 @@ export async function GET(req: NextRequest) {
       where: {
         subjectId,
         schoolId: user.schoolId!,
-        framework: { type: classFrameworkType as "EIGHT_FOUR_FOUR" | "CBE", isActive: true },
+        frameworkId: period.frameworkId,
       },
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true, maxMarks: true, sortOrder: true },

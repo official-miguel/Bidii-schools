@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
       where: {
         id: { in: uniquePeriodIds },
         schoolId: user.schoolId!,
-        framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
       },
       select: { id: true, frameworkId: true },
     }) as Promise<PeriodRow[]>,

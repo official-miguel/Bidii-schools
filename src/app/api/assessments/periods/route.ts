@@ -28,17 +28,24 @@ export async function GET(request: Request) {
   let frameworkId: string | null = frameworkIdParam;
 
   if (!frameworkId) {
-    const fw844 = await db.assessmentFramework.findFirst({
+    // Prefer an active 8-4-4 framework; fall back to any active framework;
+    // final fallback to most-recent inactive 8-4-4 so periods remain visible
+    // even after a year rollover deactivates the old framework.
+    const fw844Active = await db.assessmentFramework.findFirst({
       where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
       select: { id: true },
     });
-
-    const fwAny = fw844 ?? await db.assessmentFramework.findFirst({
+    const fwAnyActive = fw844Active ?? await db.assessmentFramework.findFirst({
       where: { schoolId: user.schoolId!, isActive: true },
       orderBy: { academicYear: "desc" },
       select: { id: true },
     });
-    frameworkId = fwAny?.id ?? null;
+    const fwFallback = fwAnyActive ?? await db.assessmentFramework.findFirst({
+      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR" },
+      orderBy: { academicYear: "desc" },
+      select: { id: true },
+    });
+    frameworkId = fwFallback?.id ?? null;
   } else {
     // Verify this framework belongs to the user's school.
     const framework = await db.assessmentFramework.findUnique({
