@@ -19,7 +19,8 @@ export default async function TeacherMarksheetPage({
   const user = await getCurrentUser();
   if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId!);
+  const schoolId = user.schoolId!;
+  const actor = await resolveAssessmentActor(user, schoolId);
   const classTeacherOfId = actor.classTeacherOfId;
 
   // Periods are loaded later, after we know the selected class's frameworkType.
@@ -32,12 +33,12 @@ export default async function TeacherMarksheetPage({
   /** Load periods for a given framework type. */
   async function periodsForFramework(fwType: string): Promise<PeriodOption[]> {
     const fw = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: fwType, isActive: true },
+      where: { schoolId, type: fwType, isActive: true },
       select: { id: true },
     }) as { id: string } | null;
     if (!fw) return [];
     return db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId!, frameworkId: fw.id },
+      where: { schoolId, frameworkId: fw.id },
       orderBy: [{ academicYear: "desc" }, { term: "desc" }],
       select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
     });
@@ -69,7 +70,7 @@ export default async function TeacherMarksheetPage({
     let hodDepartmentName: string | undefined;
     if (isHOD && actor.teacher?.id) {
       const hodDept = await prisma.department.findFirst({
-        where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
+        where: { schoolId, headTeacherId: actor.teacher.id },
         select: { name: true },
       });
       if (hodDept) {
@@ -108,7 +109,7 @@ export default async function TeacherMarksheetPage({
     });
     if (teacherRow?.primaryDepartmentId) {
       const deptSubjects = await prisma.subject.findMany({
-        where: { schoolId: user.schoolId!, departmentId: teacherRow.primaryDepartmentId },
+        where: { schoolId, departmentId: teacherRow.primaryDepartmentId },
         select: { id: true },
       });
       deptSubjectIds = new Set(deptSubjects.map((s) => s.id));
@@ -117,7 +118,7 @@ export default async function TeacherMarksheetPage({
 
   // ── Resolve classes ───────────────────────────────────────────────────────
   const allClasses = await db.schoolClass.findMany({
-    where: { schoolId: user.schoolId! },
+    where: { schoolId },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
@@ -170,13 +171,13 @@ export default async function TeacherMarksheetPage({
   // ── CBE path ──────────────────────────────────────────────────────────────
   if (frameworkType === "CBE") {
     const cbeFramework = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
+      where: { schoolId, type: "CBE", isActive: true },
       select: { id: true },
     }) as { id: string } | null;
 
     const hasLearningAreas = cbeFramework
       ? (await db.learningArea.count({
-          where: { schoolId: user.schoolId!, frameworkId: cbeFramework.id },
+          where: { schoolId, frameworkId: cbeFramework.id },
         })) > 0
       : false;
 
@@ -224,7 +225,7 @@ export default async function TeacherMarksheetPage({
 
   // ── 8-4-4 path ───────────────────────────────────────────────────────────
   const allSubjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId! },
+    where: { schoolId },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, applicableForms: true, departmentId: true },
   });
