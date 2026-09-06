@@ -21,31 +21,26 @@ export default async function HODAssessmentSettingsPage() {
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
 
-  const isHOD = actor.roles.some((r) => r.role === "HOD");
+  const hasAssessmentHOD = actor.roles.some((r) => r.role === "HOD");
   const isWide = actor.isPrincipal || actor.roles.some((r) =>
     ["DIRECTOR", "EXAM_OFFICER"].includes(r.role)
   );
 
-  if (!isHOD && !isWide) {
-    return (
-      <div className="space-y-3 px-6 py-10">
-        <h1 className="font-display text-xl font-semibold text-ink">Settings</h1>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
-          This page is only available to Heads of Department.
-        </div>
-      </div>
-    );
-  }
-
   // ── Resolve the HOD's department ─────────────────────────────────────────
+  // Check both the assessment-role HOD and the HR/timetable HOD
+  // (Department.headTeacherId) so that a teacher set as department head
+  // via People → Departments automatically gets access here, matching
+  // the same check used in the nav layout.
   let department: { id: string; name: string } | null = null;
   if (actor.teacher?.id) {
+    // Primary check: are they explicitly the head of a department?
     department = await prisma.department.findFirst({
       where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true, name: true },
     });
-    // Fall back to primary department if not head of any
-    if (!department) {
+    // Fall back to primary department if not head of any but has an
+    // assessment HOD role
+    if (!department && hasAssessmentHOD) {
       const t = await prisma.teacher.findUnique({
         where: { id: actor.teacher.id },
         select: { primaryDepartmentId: true },
@@ -57,6 +52,20 @@ export default async function HODAssessmentSettingsPage() {
         });
       }
     }
+  }
+
+  // isDeptHead covers both the HR-level appointment and the assessment role
+  const isDeptHead = !!department || hasAssessmentHOD;
+
+  if (!isDeptHead && !isWide) {
+    return (
+      <div className="space-y-3 px-6 py-10">
+        <h1 className="font-display text-xl font-semibold text-ink">Settings</h1>
+        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+          This page is only available to Heads of Department.
+        </div>
+      </div>
+    );
   }
 
   if (!department) {
