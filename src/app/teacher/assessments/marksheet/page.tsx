@@ -247,13 +247,7 @@ export default async function TeacherMarksheetPage({
     ? canEnterMarks(actor, defaultSubjectId) || deptSubjectIds.has(defaultSubjectId)
     : false;
 
-  const canManagePapers =
-    actor.isPrincipal ||
-    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)) ||
-    // Any teacher who can enter marks for the selected subject can also manage
-    // papers for it — they need to be able to add the paper column before
-    // they can type a single score.
-    (defaultSubjectId ? canEnterMarks(actor, defaultSubjectId) : false);
+  const canManagePapers = editAllowed;
 
   if (viewableSubjects.length === 0) {
     return (
