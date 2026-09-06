@@ -131,7 +131,8 @@ function PanelShell({
         />
         {/* Sheet */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-50
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px))] md:bottom-0
+                     left-0 right-0 z-50
                      h-[72vh] rounded-t-2xl overflow-hidden
                      shadow-xl border-t border-line dark:border-dark-border
                      animate-soma-slide-in-up

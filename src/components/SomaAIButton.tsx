@@ -34,7 +34,8 @@ export default function SomaAIButton({ isOpen, onClick }: Props) {
       title={isOpen ? undefined : "Soma AI"}
       className={`
         fixed z-40
-        bottom-5 right-5
+        bottom-[calc(60px+env(safe-area-inset-bottom,0px)+1.25rem)] md:bottom-5
+        right-5
         flex items-center
         rounded-full
         shadow-md hover:shadow-lg
