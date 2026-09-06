@@ -151,8 +151,8 @@ const GEMINI_OVERRIDE_PATTERNS: RegExp[] = [
   /report card.*(remark|comment|draft|generate|write|improve)/i,
 
   // Concept explanation (not data lookup)
-  /\bexplain\b.{0,40}\b(cbc|8-4-4|cbee?|competency|grading|framework)\b/i,
-  /\b(cbc|8-4-4|cbee?|competency)\b.*(mean|explain|work|differ)/i,
+  /\bexplain\b.{0,40}\b(cbe|8-4-4|competency|grading|framework)\b/i,
+  /\b(cbe|8-4-4|competency)\b.*(mean|explain|work|differ)/i,
   /what (does|do|did) .{5,40} mean/i,
 
   // Genuine reasoning / advice

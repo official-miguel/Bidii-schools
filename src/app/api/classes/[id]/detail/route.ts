@@ -5,7 +5,7 @@
  *  - class info, class teacher, enrolled students (capped at 30)
  *  - allSubjects: subjects for this class's form where the class's
  *    frameworkType is contained in the subject's frameworkTypes array.
- *    A subject tagged [EIGHT_FOUR_FOUR, CBC] appears in both class types.
+ *    A subject tagged [EIGHT_FOUR_FOUR, CBE] appears in both class types.
  *  - teachersBySubject: qualified teachers per subject (for pickers)
  *  - electiveGroups: elective groups that apply to this class (scoped by
  *    form and stream), each with their subjects, form-wide teacher pairings

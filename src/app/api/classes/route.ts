@@ -57,7 +57,7 @@ const createSchema = z.object({
   form: z.number().int().min(1).optional().default(1),
   stream: z.string().trim().optional().or(z.literal("")),
   classTeacherId: z.string().nullable().optional(),
-  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
+  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
 });
 
 export async function POST(req: NextRequest) {

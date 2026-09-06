@@ -153,7 +153,7 @@ export async function detectAtRisk(
 
   const framework = schoolClass?.frameworkType ?? "EIGHT_FOUR_FOUR";
 
-  if (framework === "EIGHT_FOUR_FOUR" || framework === "CBC") {
+  if (framework === "EIGHT_FOUR_FOUR") {
     return detect844AtRisk(schoolId, classId, currentPeriodId);
   }
   return detectCbeAtRisk(schoolId, classId, currentPeriodId);

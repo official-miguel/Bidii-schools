@@ -35,7 +35,7 @@ type ClassInfo = {
   name: string;
   form: number;
   stream: string | null;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: { id: string; fullName: string } | null;
 };
 
@@ -569,7 +569,6 @@ export default function ClassProfilePage({
 
   const frameworkLabel: Record<string, string> = {
     EIGHT_FOUR_FOUR: "8-4-4",
-    CBC: "CBC",
     CBE: "CBE",
   };
 

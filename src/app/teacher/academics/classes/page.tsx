@@ -33,7 +33,7 @@ import { ExternalLink, Users, Star } from "lucide-react";
 type Teacher = { id: string; fullName: string };
 type SchoolClass = {
   id: string; name: string; form: number; stream: string | null;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: Teacher | null;
   _count: { students: number };
 };
@@ -46,8 +46,7 @@ type TeacherContext = {
 };
 
 function FrameworkBadge({ type }: { type: string }) {
-  if (type === "CBE")  return <Chip variant="purple" size="xs">CBE</Chip>;
-  if (type === "CBC")  return <Chip variant="teal"   size="xs">CBC</Chip>;
+  if (type === "CBE")  return <Chip variant="teal" size="xs">CBE</Chip>;
   return                      <Chip variant="default" size="xs">8-4-4</Chip>;
 }
 
@@ -156,8 +155,7 @@ export default function TeacherClassesPage() {
           options={[
             { value: "", label: "All frameworks" },
             { value: "EIGHT_FOUR_FOUR", label: "8-4-4" },
-            { value: "CBC",             label: "CBC"   },
-            { value: "CBE",             label: "CBE"   },
+            { value: "CBE", label: "CBE" },
           ]}
           onChange={setFilterFramework}
         />

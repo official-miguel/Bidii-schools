@@ -100,13 +100,13 @@ const SECTIONS: Section[] = [
       {
         key:          "CLASSES",
         label:        "Classes",
-        description:  "Form groups with curriculum framework (8-4-4 / CBC / CBE)",
+        description:  "Form groups with curriculum framework (8-4-4 / CBE)",
         icon:         GraduationCap,
         iconClass:    "bg-sky-100 text-sky-600",
         template:     "classes-import.csv",
         requiredCols: ["name", "form"],
         optionalCols: ["stream", "framework_type"],
-        note:         "framework_type: EIGHT_FOUR_FOUR, CBC, or CBE. Defaults to EIGHT_FOUR_FOUR.",
+        note:         "framework_type: EIGHT_FOUR_FOUR or CBE. Defaults to EIGHT_FOUR_FOUR.",
       },
       {
         key:          "SUBJECTS",

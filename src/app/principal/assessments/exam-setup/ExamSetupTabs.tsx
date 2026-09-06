@@ -257,7 +257,7 @@ export default function ExamSetupTabs() {
               Assessment Frameworks
             </h2>
             <p className="text-sm text-slate">
-              A framework ties together a curriculum type (8-4-4, CBC, or CBE), an
+              A framework ties together a curriculum type (8-4-4 or CBE), an
               academic year, and the exam periods within it. Create one framework
               per curriculum type per year, then add the periods teachers will use
               to enter marks.

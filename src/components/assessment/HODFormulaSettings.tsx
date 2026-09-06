@@ -75,14 +75,12 @@ type Tab = "frameworks" | "formulas";
 
 const FRAMEWORK_TYPE_LABELS: Record<string, string> = {
   EIGHT_FOUR_FOUR: "8-4-4 / KCSE",
-  CBC: "CBC (Junior Secondary)",
-  CBE: "CBE / TVET",
+  CBE: "CBE",
 };
 
 const FRAMEWORK_TYPE_COLORS: Record<string, string> = {
   EIGHT_FOUR_FOUR: "bg-amber-100 text-amber-800",
-  CBC: "bg-blue-100 text-blue-800",
-  CBE: "bg-green-100 text-green-800",
+  CBE: "bg-blue-100 text-blue-800",
 };
 
 // ── Formula evaluator (same logic as MarksheetGrid) ───────────────────────────

@@ -66,7 +66,7 @@ export async function resolveAssessmentActor(
 ): Promise<AssessmentActor> {
   // Find the framework to use for role lookups.
   // Prefer an active 8-4-4 framework (legacy default); fall back to any
-  // active framework so CBC/CBE schools still get their roles resolved.
+  // active framework so CBE schools still get their roles resolved.
   const framework =
     ((await (prisma as any).assessmentFramework.findFirst({ // eslint-disable-line @typescript-eslint/no-explicit-any
       where: { schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
@@ -227,7 +227,7 @@ export function canReadPeriods(actor: AssessmentActor): boolean {
   if (actor.user.role === "ADMIN_STAFF") return actor.adminCanView || actor.adminCanManage;
   // Teachers: permit if they have any assessment role, are a class teacher,
   // or the school has no 8-4-4 framework yet (roles array will be empty but
-  // the teacher is legitimately using a CBC/CBE framework).
+  // the teacher is legitimately using a CBE framework).
   if (actor.teacher !== null) return true;
   return canViewMarksheet(actor) || canAccessDashboard(actor);
 }

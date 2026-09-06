@@ -29,7 +29,7 @@ interface ReportRemark {
 interface Props {
   studentId: string;
   periodId: string;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   /** When true the Generate button is skipped and data loads immediately. */
   autoLoad?: boolean;
 }

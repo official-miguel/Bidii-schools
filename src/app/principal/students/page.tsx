@@ -44,7 +44,7 @@ function useDebounced<T>(value: T, ms: number): T {
 // Types
 // ---------------------------------------------------------------------------
 
-type SchoolClass = { id: string; name: string; form: number; frameworkType?: "EIGHT_FOUR_FOUR" | "CBC" | "CBE" };
+type SchoolClass = { id: string; name: string; form: number; frameworkType?: "EIGHT_FOUR_FOUR" | "CBE" };
 type Subject     = { id: string; name: string; code: string; type: "CORE" | "ELECTIVE"; applicableForms: number[] };
 type SchoolPolicy = {
   genderPolicy: string;
@@ -80,9 +80,7 @@ const VIRTUAL_THRESHOLD = 100;
 function FrameworkChip({ type }: { type?: string }) {
   if (!type) return null;
   if (type === "CBE")
-    return <Chip variant="purple" size="xs">CBE</Chip>;
-  if (type === "CBC")
-    return <Chip variant="teal" size="xs">CBC</Chip>;
+    return <Chip variant="teal" size="xs">CBE</Chip>;
   return <Chip variant="default" size="xs">8-4-4</Chip>;
 }
 

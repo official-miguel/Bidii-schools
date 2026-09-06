@@ -17,7 +17,7 @@ import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type FrameworkType = "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+type FrameworkType = "EIGHT_FOUR_FOUR" | "CBE";
 
 interface Framework {
   id: string;
@@ -41,14 +41,12 @@ interface Period {
 
 const FRAMEWORK_TYPE_LABELS: Record<FrameworkType, string> = {
   EIGHT_FOUR_FOUR: "8-4-4 / KCSE",
-  CBC: "CBC (Junior Secondary)",
-  CBE: "CBE / TVET",
+  CBE: "CBE (Junior & Senior)",
 };
 
 const FRAMEWORK_TYPE_COLORS: Record<FrameworkType, string> = {
   EIGHT_FOUR_FOUR: "bg-amber-100 text-amber-800",
-  CBC: "bg-blue-100 text-blue-800",
-  CBE: "bg-green-100 text-green-800",
+  CBE: "bg-blue-100 text-blue-800",
 };
 
 // ── Helper: small inline classes ───────────────────────────────────────────
@@ -307,8 +305,7 @@ export default function FrameworkManager() {
                   // Pre-fill a sensible default label
                   const labels: Record<FrameworkType, string> = {
                     EIGHT_FOUR_FOUR: "KCSE",
-                    CBC: "CBC Grade 7–9",
-                    CBE: "CBE / TVET",
+                    CBE: "CBE",
                   };
                   setCreateLabel(labels[e.target.value as FrameworkType]);
                 }}

@@ -35,7 +35,7 @@ type ClassInfo = {
   id: string;
   name: string;
   stream: string | null;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   _count: { students: number };
 };
 

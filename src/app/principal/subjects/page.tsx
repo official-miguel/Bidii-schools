@@ -28,7 +28,7 @@ type Subject = {
   name: string;
   code: string;
   type: "CORE" | "ELECTIVE";
-  frameworkTypes: ("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[];
+  frameworkTypes: ("EIGHT_FOUR_FOUR" | "CBE")[];
   applicableForms: number[];
   department: Department | null;
   _count: { teacherSubjects: number };
@@ -47,7 +47,7 @@ export default function SubjectsPage() {
   const [editing, setEditing] = useState<Subject | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedForms, setSelectedForms] = useState<number[]>([]);
-  const [frameworkTypes, setFrameworkTypes] = useState<("EIGHT_FOUR_FOUR" | "CBC" | "CBE")[]>(["EIGHT_FOUR_FOUR"]);
+  const [frameworkTypes, setFrameworkTypes] = useState<("EIGHT_FOUR_FOUR" | "CBE")[]>(["EIGHT_FOUR_FOUR"]);
 
   // Workspace toolbar filters
   const [search, setSearch] = useState("");
@@ -217,7 +217,6 @@ export default function SubjectsPage() {
           options={[
             { value: "", label: "All frameworks" },
             { value: "EIGHT_FOUR_FOUR", label: "8-4-4" },
-            { value: "CBC", label: "CBC" },
             { value: "CBE", label: "CBE" },
           ]}
           onChange={setFilterFramework}
@@ -265,7 +264,7 @@ export default function SubjectsPage() {
                     if (q && !s.name.toLowerCase().includes(q) && !s.code.toLowerCase().includes(q)) return false;
                     if (filterDept && (!s.department || s.department.id !== filterDept)) return false;
                     if (filterType && s.type !== filterType) return false;
-                    if (filterFramework && !("isGroup" in s && s.isGroup) && !(s as Subject).frameworkTypes?.includes(filterFramework as "EIGHT_FOUR_FOUR" | "CBC" | "CBE")) return false;
+                    if (filterFramework && !("isGroup" in s && s.isGroup) && !(s as Subject).frameworkTypes?.includes(filterFramework as "EIGHT_FOUR_FOUR" | "CBE")) return false;
                     return true;
                   })
                   .map((s) => (
@@ -312,7 +311,7 @@ export default function SubjectsPage() {
                           {((s as Subject).frameworkTypes ?? ["EIGHT_FOUR_FOUR"]).map((fw) => (
                             <Chip
                               key={fw}
-                              variant={fw === "CBC" ? "teal" : fw === "CBE" ? "purple" : "default"}
+                              variant={fw === "CBE" ? "teal" : "default"}
                               size="xs"
                             >
                               {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
@@ -445,7 +444,7 @@ export default function SubjectsPage() {
             <div>
               <label className={labelClass}>Curriculum frameworks</label>
               <div className="grid grid-cols-3 gap-2 mt-1">
-                {(["EIGHT_FOUR_FOUR", "CBC", "CBE"] as const).map((fw) => {
+                {(["EIGHT_FOUR_FOUR", "CBE"] as const).map((fw) => {
                   const active = frameworkTypes.includes(fw);
                   return (
                     <button
@@ -468,7 +467,7 @@ export default function SubjectsPage() {
                         {fw === "EIGHT_FOUR_FOUR" ? "8-4-4" : fw}
                       </span>
                       <span className={`text-[11px] block mt-0.5 ${active ? "text-white/80" : "text-slate"}`}>
-                        {fw === "EIGHT_FOUR_FOUR" ? "KCSE" : fw === "CBC" ? "Competency-based" : "TVET / CBE"}
+                        {fw === "EIGHT_FOUR_FOUR" ? "KCSE" : "Competency-based"}
                       </span>
                     </button>
                   );

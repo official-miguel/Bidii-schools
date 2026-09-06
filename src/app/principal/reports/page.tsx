@@ -47,14 +47,14 @@ const CATEGORIES: ReportCategory[] = [
         icon: FileText,
         label: "Report Cards",
         description:
-          "Generate and print individual or class-wide report cards. Supports 8-4-4, CBC, and CBE frameworks — auto-detected per class.",
+          "Generate and print individual or class-wide report cards. Supports 8-4-4 and CBE frameworks — auto-detected per class.",
       },
       {
         href: "/principal/assessments/report-cards-cbe",
         icon: FileText,
         label: "CBE Report Cards",
         description:
-          "CBE-specific report card generator. Junior and Senior CBC/CBE templates, print all or individual students.",
+          "CBE-specific report card generator. Junior and Senior CBE templates, print all or individual students.",
         badge: "CBE",
       },
       {

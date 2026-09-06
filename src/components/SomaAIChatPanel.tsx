@@ -56,7 +56,7 @@ const GREETING_SUGGESTIONS = [
   "Show me this term's attendance summary",
   "How do I generate a report card?",
   "Draft a notice to parents about upcoming exams",
-  "What does the CBC assessment framework mean?",
+  "What does the CBE assessment framework mean?",
   "How do I add a new student to the system?",
   "Explain the grading scale for Form 3",
 ];

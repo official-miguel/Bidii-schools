@@ -112,9 +112,9 @@ async function processDepartments(rows: Record<string, string>[], schoolId: stri
 async function processClasses(rows: Record<string, string>[], schoolId: string): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
-  const VALID_FW = new Set(["EIGHT_FOUR_FOUR", "CBC", "CBE"]);
+  const VALID_FW = new Set(["EIGHT_FOUR_FOUR", "CBE"]);
 
-  type ValidClass = { rowNum: number; name: string; form: number; stream: string | null; frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE" };
+  type ValidClass = { rowNum: number; name: string; form: number; stream: string | null; frameworkType: "EIGHT_FOUR_FOUR" | "CBE" };
   const validRows: ValidClass[] = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -134,9 +134,9 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
       errors.push({ row: rowNum, field: "form", message: `"${formRaw}" is not a valid form number — use a number or e.g. "Form 3", "Grade 10"` }); continue;
     }
     if (!VALID_FW.has(fwRaw)) {
-      errors.push({ row: rowNum, field: "framework_type", message: `Must be EIGHT_FOUR_FOUR, CBC, or CBE — got "${fwRaw}"` }); continue;
+      errors.push({ row: rowNum, field: "framework_type", message: `Must be EIGHT_FOUR_FOUR or CBE — got "${fwRaw}"` }); continue;
     }
-    validRows.push({ rowNum, name, form, stream, frameworkType: fwRaw as "EIGHT_FOUR_FOUR" | "CBC" | "CBE" });
+    validRows.push({ rowNum, name, form, stream, frameworkType: fwRaw as "EIGHT_FOUR_FOUR" | "CBE" });
   }
 
   if (validRows.length === 0) return { succeeded, errors };

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
-const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]);
+const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBE"]);
 
 const updateSchema = z.object({
   name: z.string().trim().min(2).optional(),

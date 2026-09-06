@@ -39,7 +39,7 @@ export function scoreToGradeSql(col: string): string {
 }
 
 /**
- * CBC performance-level numeric mapping, mirroring LEVEL_POINTS in gradingCbe.ts:
+ * CBE performance-level numeric mapping, mirroring LEVEL_POINTS in gradingCbe.ts:
  *   'EE' → 4, 'ME' → 3, 'AE' → 2, 'BE' → 1
  *
  * @param col  SQL expression for the performanceLevel enum column

@@ -31,7 +31,7 @@ export default async function StudentReportPage({
   const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canGenerateReportCard(actor, student.classId)) redirect("/principal/assessments/report-cards");
 
-  const frameworkType = student.schoolClass.frameworkType as "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  const frameworkType = student.schoolClass.frameworkType as "EIGHT_FOUR_FOUR" | "CBE";
 
   return (
     <div className="space-y-4">

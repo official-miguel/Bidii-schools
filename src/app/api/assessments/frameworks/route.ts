@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const VALID_TYPES = ["EIGHT_FOUR_FOUR", "CBC", "CBE"];
+  const VALID_TYPES = ["EIGHT_FOUR_FOUR", "CBE"];
   if (!VALID_TYPES.includes(type)) {
     return NextResponse.json({ error: "Invalid framework type" }, { status: 422 });
   }

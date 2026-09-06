@@ -137,7 +137,7 @@ export async function buildJuniorReportCard(
 
   const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } });
 
-  // Fetch the full CBC/CBE hierarchy scoped to this framework.
+  // Fetch the full CBE hierarchy scoped to this framework.
   const learningAreas = await db.learningArea.findMany({
     where: { frameworkId: period.frameworkId, schoolId },
     orderBy: { name: "asc" },

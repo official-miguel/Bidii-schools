@@ -19,7 +19,7 @@ type ClassProfile = {
   name: string;
   form: number;
   stream: string | null;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: { id: string; fullName: string } | null;
   _count: { students: number };
   subjectCounts: { core: number; elective: number; total: number };
@@ -33,8 +33,7 @@ type FormGroup = {
 };
 
 function FrameworkBadge({ type }: { type: string }) {
-  if (type === "CBE") return <Chip variant="purple" size="xs">CBE</Chip>;
-  if (type === "CBC") return <Chip variant="teal"   size="xs">CBC</Chip>;
+  if (type === "CBE") return <Chip variant="teal" size="xs">CBE</Chip>;
   return                     <Chip variant="default" size="xs">8-4-4</Chip>;
 }
 

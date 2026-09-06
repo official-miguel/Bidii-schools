@@ -622,7 +622,7 @@ export default function RequirementsPage() {
             {/* Top bar */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-slate">
-                Requirements differ per class — 8-4-4, CBC, and CBE have different lesson counts.
+                Requirements differ per class — 8-4-4 and CBE have different lesson counts.
               </p>
               <button type="button" onClick={handleAutoPopulate} disabled={autoPopulating}
                 className={secondaryButtonClass}

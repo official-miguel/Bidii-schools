@@ -13,7 +13,7 @@ const db = prisma as any;
  * Unified teacher report-cards page.
  * Shows all accessible classes (class-teacher's own class + any classes
  * where teacher has EXAM_OFFICER or DIRECTOR role).
- * Auto-detects framework (8-4-4, CBC, CBE) from the selected class.
+ * Auto-detects framework (8-4-4, CBE) from the selected class.
  */
 export default async function TeacherReportCardsPage({
   searchParams,
@@ -76,12 +76,10 @@ export default async function TeacherReportCardsPage({
   const lockClass = accessibleClasses.length === 1;
 
   const fwLabel =
-    frameworkType === "CBE" ? "CBE" :
-    frameworkType === "CBC" ? "CBC" : "8-4-4";
+    frameworkType === "CBE" ? "CBE" : "8-4-4";
   const fwBadge =
-    frameworkType === "CBE"  ? "bg-green-100 text-green-800"  :
-    frameworkType === "CBC"  ? "bg-purple-100 text-purple-800" :
-                               "bg-amber-100 text-amber-800";
+    frameworkType === "CBE" ? "bg-blue-100 text-blue-800" :
+                              "bg-amber-100 text-amber-800";
 
   return (
     <div className="space-y-5">

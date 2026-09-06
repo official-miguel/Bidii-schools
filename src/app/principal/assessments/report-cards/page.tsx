@@ -11,7 +11,7 @@ const db = prisma as any;
 
 /**
  * Unified report-cards page.
- * Works for 8-4-4, CBC, and CBE classes — framework is auto-detected from
+ * Works for 8-4-4 and CBE classes — framework is auto-detected from
  * the selected class's frameworkType, and the appropriate period list is
  * fetched accordingly.
  */
@@ -74,13 +74,10 @@ export default async function ReportCardsPage({
 
   // Framework badge colour.
   const fwBadge =
-    frameworkType === "CBE"         ? "bg-green-100 text-green-800"  :
-    frameworkType === "CBC"         ? "bg-purple-100 text-purple-800" :
-                                      "bg-amber-100 text-amber-800";
+    frameworkType === "CBE" ? "bg-blue-100 text-blue-800" :
+                              "bg-amber-100 text-amber-800";
   const fwLabel =
-    frameworkType === "CBE"         ? "CBE"     :
-    frameworkType === "CBC"         ? "CBC"     :
-                                      "8-4-4";
+    frameworkType === "CBE" ? "CBE" : "8-4-4";
 
   return (
     <div className="space-y-5">

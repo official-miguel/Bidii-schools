@@ -20,14 +20,13 @@ import { Pencil, Trash2, CalendarDays, Plus, Users, ExternalLink } from "lucide-
 type Teacher = { id: string; fullName: string };
 type SchoolClass = {
   id: string; name: string; form: number; stream: string | null;
-  frameworkType: "EIGHT_FOUR_FOUR" | "CBC" | "CBE";
+  frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: Teacher | null;
   _count: { students: number };
 };
 
 function FrameworkBadge({ type }: { type: string }) {
-  if (type === "CBE")  return <Chip variant="purple" size="xs">CBE</Chip>;
-  if (type === "CBC")  return <Chip variant="teal"   size="xs">CBC</Chip>;
+  if (type === "CBE")  return <Chip variant="teal" size="xs">CBE</Chip>;
   return                      <Chip variant="default" size="xs">8-4-4</Chip>;
 }
 
@@ -38,7 +37,7 @@ export default function ClassesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]     = useState<SchoolClass | null>(null);
   const [error, setError]         = useState<string | null>(null);
-  const [frameworkType, setFrameworkType] = useState<"EIGHT_FOUR_FOUR" | "CBC" | "CBE">("EIGHT_FOUR_FOUR");
+  const [frameworkType, setFrameworkType] = useState<"EIGHT_FOUR_FOUR" | "CBE">("EIGHT_FOUR_FOUR");
   const [filterForm, setFilterForm]           = useState("");
   const [filterFramework, setFilterFramework] = useState("");
 
@@ -145,7 +144,6 @@ export default function ClassesPage() {
           options={[
             { value: "", label: "All frameworks" },
             { value: "EIGHT_FOUR_FOUR", label: "8-4-4" },
-            { value: "CBC", label: "CBC" },
             { value: "CBE", label: "CBE" },
           ]}
           onChange={setFilterFramework}
@@ -319,6 +317,7 @@ export default function ClassesPage() {
                         key={fw}
                         className={`radio-card ${frameworkType === fw ? "selected" : ""}`}
                       >
+
                         <input
                           type="radio"
                           name="frameworkType"

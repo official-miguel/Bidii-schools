@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest) {
   return NextResponse.json([...enrichedSubjects, ...groupAsSubjects]);
 }
 
-const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]);
+const frameworkEnum = z.enum(["EIGHT_FOUR_FOUR", "CBE"]);
 
 const createSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters."),

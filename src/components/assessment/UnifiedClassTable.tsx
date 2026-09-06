@@ -20,8 +20,7 @@ interface UnifiedClassTableProps {
 }
 
 function FrameworkBadge({ type }: { type: string }) {
-  if (type === "CBE") return <Chip variant="purple" size="xs">CBE</Chip>;
-  if (type === "CBC") return <Chip variant="teal"   size="xs">CBC</Chip>;
+  if (type === "CBE") return <Chip variant="teal" size="xs">CBE</Chip>;
   return                     <Chip variant="default" size="xs">8-4-4</Chip>;
 }
 

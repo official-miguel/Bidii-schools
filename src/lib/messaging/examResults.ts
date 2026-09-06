@@ -3,7 +3,7 @@
  *
  * Builds a personalised exam-results message for a single student.
  * Fetches published AssessmentItem rows, formats the /results block
- * for both 8-4-4 (numeric) and CBC (performance level), then applies
+ * for both 8-4-4 (numeric) and CBE (performance level), then applies
  * all placeholders.
  *
  * SERVER-SIDE ONLY.
@@ -69,8 +69,8 @@ export async function buildResultsMessage(
 
   const resultsLines: string[] = [];
 
-  if (period?.framework?.type === "CBC") {
-    // CBC: group by learning area → strand → sub-strand
+  if (period?.framework?.type === "CBE" && items.some(i => i.performanceLevel)) {
+    // CBE junior: group by learning area → strand → sub-strand
     const grouped = new Map<string, { strand: string; subStrand: string; level: string }[]>();
     for (const item of items) {
       const area = item.learningArea?.name ?? "Unknown Area";
