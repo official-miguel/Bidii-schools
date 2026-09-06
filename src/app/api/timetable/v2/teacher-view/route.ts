@@ -1,18 +1,31 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
-import { computePeriodTimes } from "@/lib/scheduleTimes";
+import { TimetableSlotType } from "@prisma/client";
 import { collapseGroupSlotsForDisplay } from "@/lib/timetable/engineHelpers";
 import type { GroupPayloadDescriptor } from "@/lib/timetable/engineHelpers";
 
-// â”€â”€ GET /api/timetable/v2/teacher-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/timetable/v2/teacher-view ─────────────────────────────────────
 // Returns the personal weekly timetable grid for a teacher.
 // Accessible to the teacher themselves (TEACHER role, own teacherId),
 // and to the principal.
 //
 // Query params:
-//   teacherId â€” required for PRINCIPAL callers; auto-resolved for TEACHER callers.
-//   versionId â€” optional; defaults to the published version / legacy slots.
+//   teacherId – required for PRINCIPAL callers; auto-resolved for TEACHER callers.
+//   versionId – optional; defaults to the published version / legacy slots.
+
+function parseMinutes(time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!m) return 0;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function formatMinutes(totalMinutes: number): string {
+  const hours24 = Math.floor(totalMinutes / 60) % 24;
+  const mins = totalMinutes % 60;
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${String(mins).padStart(2, "0")}`;
+}
 
 export async function GET(req: NextRequest) {
   const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
@@ -43,7 +56,7 @@ export async function GET(req: NextRequest) {
   });
   if (!teacher) return NextResponse.json({ error: "Teacher not found." }, { status: 404 });
 
-  // â”€â”€ Fetch slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch slots ──────────────────────────────────────────────────────────
   type SlotRow = {
     id: string; classId: string; className: string;
     dayOfWeek: number; period: number;
@@ -89,7 +102,7 @@ export async function GET(req: NextRequest) {
     `;
   }
 
-  // â”€â”€ Fetch group information for display collapse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch group information for display collapse ─────────────────────────
   const electiveGroups = await prisma.electiveGroup.findMany({
     where: { schoolId },
     select: {
@@ -103,7 +116,6 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Build group descriptors for collapse function
   const groupDescriptors: GroupPayloadDescriptor[] = electiveGroups
     .filter((g) => g.members.length > 0)
     .map((g) => ({
@@ -112,48 +124,90 @@ export async function GET(req: NextRequest) {
       subjectIds: g.members.map((m) => m.subjectId),
       lessonsPerWeek: g.lessonsPerWeek,
       doublesPerWeek: g.doublesPerWeek ?? 0,
-      classIds: [], // Not needed for display collapse
+      classIds: [],
     }));
 
-  // Collapse slots by group for display
   const displaySlots = collapseGroupSlotsForDisplay(slots, groupDescriptors);
 
-  // â”€â”€ Fetch config for period-to-time mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch config (operating days + template columns) ─────────────────────
   const config = await prisma.timetableConfig.findUnique({
     where: { schoolId },
+    include: { columns: { orderBy: { position: "asc" } } },
   });
 
-  const DEFAULTS = {
-    periodsPerDay: 8, dayStartTime: "08:00", periodDurationMinutes: 40,
-    breakAfterPeriod: null, breakDurationMinutes: 15,
-    lunchAfterPeriod: null, lunchDurationMinutes: 45,
+  const operatingDays: number[] = config?.operatingDays ?? [0, 1, 2, 3, 4];
+  const templateColumns = config?.columns ?? [];
+
+  // Compute period times from template LESSON columns
+  // Period number is 1-based index among LESSON columns only
+  let lessonIndex = 0;
+  type PeriodTime = {
+    period: number; startMinutes: number; endMinutes: number; label: string;
   };
-  const periodTimes = computePeriodTimes({ ...DEFAULTS, ...(config ?? {}) });
+  const periodTimes: PeriodTime[] = [];
 
-  // â”€â”€ Fetch special periods (non-lesson slots) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const specialPeriods = await prisma.$queryRaw<
-    Array<{ type: string; label: string; dayOfWeek: number | null; period: number }>
-  >`SELECT type, label, "dayOfWeek", period
-    FROM "SpecialPeriod"
-    WHERE "schoolId" = ${schoolId} AND "isActive" = true
-    ORDER BY period`;
+  for (const col of templateColumns) {
+    if (col.slotType === TimetableSlotType.LESSON) {
+      lessonIndex++;
+      const startMinutes = parseMinutes(col.startTime);
+      const endMinutes   = parseMinutes(col.endTime);
+      periodTimes.push({
+        period: lessonIndex,
+        startMinutes,
+        endMinutes,
+        label: `${formatMinutes(startMinutes)}–${formatMinutes(endMinutes)}`,
+      });
+    }
+  }
 
-  // â”€â”€ Fetch operating days â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const operatingDays = await prisma.$queryRaw<Array<{ dayOfWeek: number; isActive: boolean }>>`
-    SELECT "dayOfWeek", "isActive" FROM "OperatingDay"
-    WHERE "schoolId" = ${schoolId} ORDER BY "dayOfWeek"
-  `;
+  // If no template configured, fall back to a sensible default (8 periods from 8:00)
+  if (periodTimes.length === 0) {
+    let cursor = 8 * 60;
+    for (let p = 1; p <= 8; p++) {
+      const start = cursor;
+      const end   = cursor + 40;
+      periodTimes.push({
+        period: p,
+        startMinutes: start,
+        endMinutes: end,
+        label: `${formatMinutes(start)}–${formatMinutes(end)}`,
+      });
+      cursor = end;
+      if (p === 3) cursor += 15; // break after period 3
+      if (p === 5) cursor += 45; // lunch after period 5
+    }
+  }
 
-  const activeDays = operatingDays.filter((d) => d.isActive).map((d) => d.dayOfWeek);
-  const days = activeDays.length > 0 ? activeDays : [0, 1, 2, 3, 4];
+  // ── Build special periods from non-lesson template columns ───────────────
+  // Re-compute lesson index mapping for non-lesson columns
+  type SpecialPeriod = {
+    type: string; label: string; dayOfWeek: number | null; period: number;
+  };
+  const specialPeriods: SpecialPeriod[] = [];
+  let lessonIdx2 = 0;
+  for (const col of templateColumns) {
+    if (col.slotType === TimetableSlotType.LESSON) {
+      lessonIdx2++;
+    } else {
+      // Assign a pseudo-period number: the next lesson period that follows this column
+      // For display purposes we attach it to the nearest surrounding lesson period
+      const nearestPeriod = lessonIdx2 + 1; // shows before the next lesson
+      specialPeriods.push({
+        type:       col.slotType,
+        label:      col.label ?? col.slotType,
+        dayOfWeek:  null, // applies to all days
+        period:     nearestPeriod,
+      });
+    }
+  }
 
-  // â”€â”€ Fetch teacher's unavailability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch teacher's unavailability ───────────────────────────────────────
   const unavailability = await prisma.teacherUnavailability.findMany({
     where: { teacherId: teacher.id },
     select: { dayOfWeek: true, period: true },
   });
 
-  // â”€â”€ Compute weekly load stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Compute weekly load stats ─────────────────────────────────────────────
   const subjectCounts = new Map<string, number>();
   for (const s of displaySlots) {
     subjectCounts.set(s.subjectCode, (subjectCounts.get(s.subjectCode) ?? 0) + 1);
@@ -161,13 +215,12 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     teacher: { id: teacher.id, fullName: teacher.fullName, staffId: teacher.staffId },
-    days,
+    days:            operatingDays,
     periods:         periodTimes,
-    slots: displaySlots,
+    slots:           displaySlots,
     specialPeriods,
     unavailability,
     weeklyLessons:   displaySlots.length,
     subjectBreakdown: Array.from(subjectCounts.entries()).map(([code, count]) => ({ code, count })),
   });
 }
-
