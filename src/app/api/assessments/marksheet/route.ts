@@ -24,21 +24,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Resolve the class first — we need its frameworkType to scope the
+  // period and papers queries to the correct framework.
+  const schoolClass = await prisma.schoolClass.findFirst({
+    where: { id: classId, schoolId: user.schoolId! },
+    select: { id: true, name: true, form: true, frameworkType: true },
+  });
+  if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
+
+  const classFrameworkType = schoolClass.frameworkType as string;
+
   const period = await prisma.assessmentPeriod.findFirst({
     where: {
       id: periodId,
       schoolId: user.schoolId!,
-      framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
+      framework: { type: classFrameworkType as "EIGHT_FOUR_FOUR" | "CBE", isActive: true },
     },
     select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
   });
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
-
-  const schoolClass = await prisma.schoolClass.findFirst({
-    where: { id: classId, schoolId: user.schoolId! },
-    select: { id: true, name: true, form: true },
-  });
-  if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
   const subject = await prisma.subject.findFirst({
     where: { id: subjectId, schoolId: user.schoolId! },
@@ -51,7 +55,7 @@ export async function GET(req: NextRequest) {
       where: {
         subjectId,
         schoolId: user.schoolId!,
-        framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
+        framework: { type: classFrameworkType as "EIGHT_FOUR_FOUR" | "CBE", isActive: true },
       },
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true, maxMarks: true, sortOrder: true },

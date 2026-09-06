@@ -18,14 +18,7 @@ export default async function MarksheetPage({
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
-  // Resolve current period id for DoneBar.
-  const currentPeriod = await db.assessmentPeriod.findFirst({
-    where: { schoolId: user.schoolId!, isCurrent: true },
-    select: { id: true },
-  }) as { id: string } | null;
-  const currentPeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Load all classes first so we can determine the selected class's framework.
   const classes = await (prisma as any).schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
@@ -34,22 +27,33 @@ export default async function MarksheetPage({
 
   const defaultClassId = searchParams.classId ?? classes[0]?.id ?? "";
   const selectedClass  = classes.find((c) => c.id === defaultClassId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const framework      = (selectedClass as any)?.frameworkType ?? "EIGHT_FOUR_FOUR";
+  const framework      = (selectedClass?.frameworkType ?? "EIGHT_FOUR_FOUR") as string;
+
+  // Resolve the current period scoped to this class's framework so DoneBar
+  // always uses the right framework's active period.
+  const classFramework = await db.assessmentFramework.findFirst({
+    where: { schoolId: user.schoolId!, type: framework, isActive: true },
+    select: { id: true },
+  }) as { id: string } | null;
+
+  const currentPeriod = classFramework
+    ? await db.assessmentPeriod.findFirst({
+        where: { schoolId: user.schoolId!, frameworkId: classFramework.id, isCurrent: true },
+        select: { id: true },
+      }) as { id: string } | null
+    : null;
+
+  const currentPeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
   // ---- CBE routing ----
   if (framework === "CBE") {
-    // Detect sub-type: learning areas (junior) vs competency units (senior pathway).
-    const cbeFramework = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
-      select: { id: true },
-    }) as { id: string } | null;
-
-    const hasLearningAreas = cbeFramework
-      ? (await db.learningArea.count({ where: { schoolId: user.schoolId!, frameworkId: cbeFramework.id } })) > 0
+    // classFramework is already the CBE framework resolved above.
+    const hasLearningAreas = classFramework
+      ? (await db.learningArea.count({ where: { schoolId: user.schoolId!, frameworkId: classFramework.id } })) > 0
       : false;
 
-    const cbeClasses = classes.map((c) => ({ id: c.id, name: c.name }));
+    const cbeClasses = classes.filter((c) => c.frameworkType === "CBE")
+      .map((c) => ({ id: c.id, name: c.name }));
 
     return (
       <div>
@@ -93,7 +97,7 @@ export default async function MarksheetPage({
         description="Enter and review student scores per subject and period."
       />
       <MarksheetGrid
-        classes={classes.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+        classes={classes.filter((c) => c.frameworkType === "EIGHT_FOUR_FOUR").map((c) => ({ id: c.id, name: c.name, form: c.form }))}
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}

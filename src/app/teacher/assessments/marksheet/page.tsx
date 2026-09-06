@@ -22,34 +22,47 @@ export default async function TeacherMarksheetPage({
   const actor = await resolveAssessmentActor(user, user.schoolId!);
   const classTeacherOfId = actor.classTeacherOfId;
 
-  // ── Resolve all periods for the period selector ───────────────────────────
-  const framework = await db.assessmentFramework.findFirst({
-    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
-    select: { id: true },
-  }) as { id: string } | null;
-
-  const allPeriods: Array<{
+  // Periods are loaded later, after we know the selected class's frameworkType.
+  // Defined here so TypeScript has the type available throughout the function.
+  type PeriodOption = {
     id: string; name: string; academicYear: string;
     term: number | null; isCurrent: boolean;
-  }> = framework
-    ? await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, frameworkId: framework.id },
-        orderBy: [{ academicYear: "desc" }, { term: "desc" }],
-        select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
-      })
-    : [];
+  };
 
-  const currentPeriod = allPeriods.find((p) => p.isCurrent) ?? allPeriods[0] ?? null;
-  const activePeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
+  /** Load periods for a given framework type. */
+  async function periodsForFramework(fwType: string): Promise<PeriodOption[]> {
+    const fw = await db.assessmentFramework.findFirst({
+      where: { schoolId: user.schoolId!, type: fwType, isActive: true },
+      select: { id: true },
+    }) as { id: string } | null;
+    if (!fw) return [];
+    return db.assessmentPeriod.findMany({
+      where: { schoolId: user.schoolId!, frameworkId: fw.id },
+      orderBy: [{ academicYear: "desc" }, { term: "desc" }],
+      select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
+    });
+  }
 
   // ── Determine mode ────────────────────────────────────────────────────────
   // Landing mode: no classId or no subjectId — show the cards grid.
   const isGridMode = !!(searchParams.classId && searchParams.subjectId);
 
   if (!isGridMode) {
-    // Landing — just render the card grid via MarksheetPageClient.
-    // No need to resolve classes/subjects on the server; TeacherMarksheetCards
-    // fetches the assignments client-side.
+    // Landing — render the card grid via MarksheetPageClient.
+    // Load periods for all active frameworks so the period selector shows
+    // every valid period regardless of framework mix.
+    const [periods844, periodsCBE] = await Promise.all([
+      periodsForFramework("EIGHT_FOUR_FOUR"),
+      periodsForFramework("CBE"),
+    ]);
+    // Combine, sort descending by year then term, deduplicate by id.
+    const allPeriods = [...periods844, ...periodsCBE]
+      .sort((a, b) =>
+        b.academicYear.localeCompare(a.academicYear) ||
+        ((b.term ?? 0) - (a.term ?? 0))
+      );
+    const currentPeriod = allPeriods.find((p) => p.isCurrent) ?? allPeriods[0] ?? null;
+    const activePeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
     // ── HOD detection: resolve department name for the tab label ────────────
     const isHOD = actor.roles.some((r) => r.role === "HOD");
@@ -133,8 +146,10 @@ export default async function TeacherMarksheetPage({
   const classes = [...ownClass, ...otherAssigned, ...otherAll];
 
   if (classes.length === 0) {
+    const fallbackPeriods = await periodsForFramework("EIGHT_FOUR_FOUR");
+    const fallbackPeriodId = searchParams.periodId ?? fallbackPeriods.find((p) => p.isCurrent)?.id ?? fallbackPeriods[0]?.id ?? "";
     return (
-      <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
+      <MarksheetPageClient periods={fallbackPeriods} activePeriodId={fallbackPeriodId} isGridMode={true}>
         <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
           You have no class assignments yet. Contact the principal to be assigned to
           classes and subjects.
@@ -146,6 +161,11 @@ export default async function TeacherMarksheetPage({
   const defaultClassId = searchParams.classId ?? classes[0]?.id ?? "";
   const selectedClass  = classes.find((c) => c.id === defaultClassId) ?? classes[0];
   const frameworkType  = selectedClass?.frameworkType ?? "EIGHT_FOUR_FOUR";
+
+  // Load periods scoped to this class's framework.
+  const allPeriods = await periodsForFramework(frameworkType);
+  const currentPeriod = allPeriods.find((p) => p.isCurrent) ?? allPeriods[0] ?? null;
+  const activePeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
   // ── CBE path ──────────────────────────────────────────────────────────────
   if (frameworkType === "CBE") {
@@ -166,25 +186,11 @@ export default async function TeacherMarksheetPage({
         actor.roles.some((r) => r.role === "CLASS_TEACHER")) ||
       actor.roles.some((r) =>
         ["SUBJECT_TEACHER", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)
-      );
-
-    const cbePeriods: typeof allPeriods = framework
-      ? allPeriods
-      : await (async () => {
-          const cbeF = await db.assessmentFramework.findFirst({
-            where: { schoolId: user.schoolId!, type: "CBE", isActive: true },
-            select: { id: true },
-          }) as { id: string } | null;
-          if (!cbeF) return [];
-          return db.assessmentPeriod.findMany({
-            where: { schoolId: user.schoolId!, frameworkId: cbeF.id },
-            orderBy: [{ academicYear: "desc" }, { term: "desc" }],
-            select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
-          });
-        })();
+      ) ||
+      actor.assignedSubjectIds.size > 0;
 
     return (
-      <MarksheetPageClient periods={cbePeriods} activePeriodId={activePeriodId} isGridMode={true}>
+      <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
         <div className="space-y-4">
           <div>
             <h1 className="font-display text-xl font-semibold text-ink">Mark Sheets</h1>
