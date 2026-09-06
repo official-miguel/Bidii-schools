@@ -48,6 +48,12 @@ export interface AssessmentActor {
   classTeacherOfId: string | null;
   adminCanView: boolean;
   adminCanManage: boolean;
+  /**
+   * Subject IDs assigned to this teacher via the timetable (ClassSubjectTeacher
+   * + ClassElectiveGroupTeacher). Used as a fallback when no explicit
+   * AssessmentRole rows have been configured for the teacher.
+   */
+  assignedSubjectIds: Set<string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,10 +100,19 @@ export async function resolveAssessmentActor(
     select: {
       id: true,
       classTeacherOf: { select: { id: true } },
+      subjectAssignments: { select: { subjectId: true } },
+      classElectiveGroupTeachers: { select: { subjectId: true } },
     },
   });
 
   const classTeacherOfId = teacherRow?.classTeacherOf?.id ?? null;
+
+  // Build the set of subjects this teacher is assigned to via the timetable.
+  // This is used as a fallback when no explicit AssessmentRole rows exist.
+  const assignedSubjectIds = new Set<string>([
+    ...(teacherRow?.subjectAssignments.map((a) => a.subjectId) ?? []),
+    ...(teacherRow?.classElectiveGroupTeachers.map((a) => a.subjectId) ?? []),
+  ]);
 
   if (!framework) {
     return {
@@ -108,6 +123,7 @@ export async function resolveAssessmentActor(
       classTeacherOfId,
       adminCanView,
       adminCanManage,
+      assignedSubjectIds,
     };
   }
 
@@ -126,6 +142,7 @@ export async function resolveAssessmentActor(
     classTeacherOfId,
     adminCanView,
     adminCanManage,
+    assignedSubjectIds,
   };
 }
 
@@ -157,6 +174,8 @@ export function canEnterMarks(actor: AssessmentActor, subjectId: string): boolea
   if (hasRole(actor, "DIRECTOR", "EXAM_OFFICER")) return true;
   if (actor.classTeacherOfId !== null && hasRole(actor, "CLASS_TEACHER")) return true;
   if (hasRoleForSubject(actor, "SUBJECT_TEACHER", subjectId)) return true;
+  // Fallback: teacher assigned via timetable (ClassSubjectTeacher / elective group)
+  if (actor.assignedSubjectIds.has(subjectId)) return true;
   return false;
 }
 
@@ -171,8 +190,12 @@ export function canViewMarksheet(actor: AssessmentActor, subjectId?: string): bo
       (r) => r.role === "HOD" && (r.subjectId === subjectId || r.subjectId === null)
     );
     if (isHodForSubject) return true;
+    // Fallback: teacher assigned via timetable (ClassSubjectTeacher / elective group)
+    if (actor.assignedSubjectIds.has(subjectId)) return true;
   } else {
     if (hasRole(actor, "HOD")) return true;
+    // Fallback: any timetable assignment qualifies for the no-subjectId check
+    if (actor.assignedSubjectIds.size > 0) return true;
   }
   return false;
 }
