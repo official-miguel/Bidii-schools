@@ -69,11 +69,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Find current period.
-  const currentPeriod = await db.assessmentPeriod.findFirst({
+  // Find all current periods (one per framework — both 8-4-4 and CBE can
+  // have a current period simultaneously).
+  const currentPeriods = await db.assessmentPeriod.findMany({
     where: { schoolId: user.schoolId!, isCurrent: true },
-    select: { id: true, frameworkId: true },
-  }) as { id: string; frameworkId: string } | null;
+    select: { id: true, frameworkId: true, framework: { select: { type: true } } },
+  }) as Array<{ id: string; frameworkId: string; framework: { type: string } }>;
+
+  // For summary aggregations, use all current period IDs together so classes
+  // from both frameworks show correct stats in the same dashboard view.
+  const currentPeriodIds = currentPeriods.map((p) => p.id);
+  // Keep a single "currentPeriod" for backwards-compatible code paths that
+  // expect one period (e.g. early-return empty state check).
+  const currentPeriod = currentPeriods[0] ?? null;
 
   // Determine classes in scope.
   let classQuery: Record<string, unknown> = { schoolId: user.schoolId! };
@@ -101,7 +109,7 @@ export async function GET(req: NextRequest) {
     select: { id: true, name: true, form: true, frameworkType: true },
   }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
 
-  if (!currentPeriod || classes.length === 0) {
+  if (currentPeriodIds.length === 0 || classes.length === 0) {
     return NextResponse.json({
       scope,
       meanPoints: null,
@@ -154,13 +162,13 @@ export async function GET(req: NextRequest) {
        FROM     "AssessmentItem" ai
        JOIN     "Student" s ON s."id" = ai."studentId"
        WHERE    ai."schoolId"   = $1
-         AND    ai."periodId"   = $2
+         AND    ai."periodId"   = ANY($2::text[])
          AND    s."classId"     = ANY($3::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
        GROUP BY s."classId"`,
       user.schoolId!,
-      currentPeriod.id,
+      currentPeriodIds,
       classIds
     ),
 
@@ -170,14 +178,14 @@ export async function GET(req: NextRequest) {
        FROM     "AssessmentItem" ai
        JOIN     "Student" s ON s."id" = ai."studentId"
        WHERE    ai."schoolId"   = $1
-         AND    ai."periodId"   = $2
+         AND    ai."periodId"   = ANY($2::text[])
          AND    s."classId"     = ANY($3::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
          AND    ai."subjectId" IS NOT NULL
        GROUP BY ai."subjectId"`,
       user.schoolId!,
-      currentPeriod.id,
+      currentPeriodIds,
       classIds
     ),
 
@@ -189,7 +197,7 @@ export async function GET(req: NextRequest) {
          FROM     "AssessmentItem" ai
          JOIN     "Student" s ON s."id" = ai."studentId"
          WHERE    ai."schoolId"   = $1
-           AND    ai."periodId"   = $2
+           AND    ai."periodId"   = ANY($2::text[])
            AND    s."classId"     = ANY($3::text[])
            AND    ai."resultKind" = 'NUMERIC'
            AND    ai."numericScore" IS NOT NULL
@@ -199,7 +207,7 @@ export async function GET(req: NextRequest) {
        FROM   student_means
        WHERE  mean_pts < 4`,
       user.schoolId!,
-      currentPeriod.id,
+      currentPeriodIds,
       classIds
     ),
 

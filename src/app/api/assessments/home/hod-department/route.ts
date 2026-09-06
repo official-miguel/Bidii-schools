@@ -123,16 +123,25 @@ export async function GET(req: Request) {
 
   const allClassIds = allClasses.map((c) => c.id);
 
-  // ── Resolve the period ────────────────────────────────────────────────────
-  const resolvedPeriod = periodIdParam
-    ? await db.assessmentPeriod.findFirst({
+  // ── Resolve the period(s) — one per active framework ─────────────────────
+  // When both 8-4-4 and CBE have a current period, we fetch both and later
+  // match each card to its class's framework type.
+  const currentPeriods = periodIdParam
+    ? await db.assessmentPeriod.findMany({
         where: { id: periodIdParam, schoolId: user.schoolId! },
-        select: { id: true, name: true, frameworkId: true },
-      }) as { id: string; name: string; frameworkId: string } | null
-    : await db.assessmentPeriod.findFirst({
+        select: { id: true, name: true, frameworkId: true,
+                  framework: { select: { type: true } } },
+      }) as Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>
+    : await db.assessmentPeriod.findMany({
         where: { schoolId: user.schoolId!, isCurrent: true },
-        select: { id: true, name: true, frameworkId: true },
-      }) as { id: string; name: string; frameworkId: true } | null;
+        select: { id: true, name: true, frameworkId: true,
+                  framework: { select: { type: true } } },
+      }) as Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>;
+
+  const periodByFrameworkType = new Map<string, typeof currentPeriods[0]>();
+  for (const p of currentPeriods) periodByFrameworkType.set(p.framework.type, p);
+  const resolvedPeriod = currentPeriods[0] ?? null;
+  const allCurrentPeriodIds = currentPeriods.map((p) => p.id);
 
   // ── Batch: class-subject-teacher assignments for dept subjects ────────────
   const assignments = await db.classSubjectTeacher.findMany({
@@ -193,19 +202,22 @@ export async function GET(req: Request) {
     studentCountRows.map((r) => [r.classId, r._count.id])
   );
 
-  // ── Batch: entered counts per (class, subject) for the resolved period ────
+  // ── Batch: entered counts per (class, subject) across all current periods ─
   let enteredMap = new Map<string, number>(); // "classId:subjectId"
-  if (resolvedPeriod) {
+  if (allCurrentPeriodIds.length > 0) {
     const enteredItems = await db.assessmentItem.findMany({
       where: {
         schoolId: user.schoolId!,
-        periodId: resolvedPeriod.id,
+        periodId: { in: allCurrentPeriodIds },
         subjectId: { in: pairSubjectIds },
         student: { classId: { in: pairClassIds } },
       },
-      distinct: ["studentId", "subjectId"],
-      select: { studentId: true, subjectId: true, student: { select: { classId: true } } },
-    }) as Array<{ studentId: string; subjectId: string; student: { classId: string } }>;
+      distinct: ["studentId", "subjectId", "periodId"],
+      select: {
+        studentId: true, subjectId: true, periodId: true,
+        student: { select: { classId: true } },
+      },
+    }) as Array<{ studentId: string; subjectId: string; periodId: string; student: { classId: string } }>;
 
     const buckets = new Map<string, Set<string>>();
     for (const item of enteredItems) {
@@ -221,6 +233,8 @@ export async function GET(req: Request) {
   const cards: HODDeptCard[] = pairs.map(({ classId, subjectId }) => {
     const cls = classById.get(classId)!;
     const subj = subjectById.get(subjectId)!;
+    // Pick the current period matching this class's framework type.
+    const period = periodByFrameworkType.get(cls.frameworkType) ?? resolvedPeriod;
     return {
       classId,
       className: cls.name,
@@ -228,8 +242,8 @@ export async function GET(req: Request) {
       subjectName: subj.name,
       subjectCode: subj.code,
       frameworkType: cls.frameworkType,
-      periodId: resolvedPeriod?.id ?? null,
-      periodName: resolvedPeriod?.name ?? null,
+      periodId: period?.id ?? null,
+      periodName: period?.name ?? null,
       totalStudents: studentCountByClass.get(classId) ?? 0,
       enteredCount: enteredMap.get(`${classId}:${subjectId}`) ?? 0,
       teacherName: teacherByPair.get(`${classId}:${subjectId}`) ?? null,

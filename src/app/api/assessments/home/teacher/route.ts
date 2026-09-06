@@ -48,18 +48,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ cards: [] });
   }
 
-  // Fetch the current period and all assignments in parallel — neither
-  // depends on the other.
-  const [resolvedPeriod, assignments] = await Promise.all([
+  // Fetch the current periods (one per framework) and all assignments in
+  // parallel — neither depends on the other.
+  const [currentPeriods, assignments] = await Promise.all([
     periodIdParam
-      ? db.assessmentPeriod.findFirst({
+      ? db.assessmentPeriod.findMany({
           where: { id: periodIdParam, schoolId: user.schoolId! },
-          select: { id: true, name: true, frameworkId: true },
-        }) as Promise<{ id: string; name: string; frameworkId: string } | null>
-      : db.assessmentPeriod.findFirst({
+          select: { id: true, name: true, frameworkId: true,
+                    framework: { select: { type: true } } },
+        }) as Promise<Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>>
+      : db.assessmentPeriod.findMany({
           where: { schoolId: user.schoolId!, isCurrent: true },
-          select: { id: true, name: true, frameworkId: true },
-        }) as Promise<{ id: string; name: string; frameworkId: string } | null>,
+          select: { id: true, name: true, frameworkId: true,
+                    framework: { select: { type: true } } },
+        }) as Promise<Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>>,
 
     db.classSubjectTeacher.findMany({
       where: { teacherId: teacher.id },
@@ -76,6 +78,17 @@ export async function GET(req: Request) {
       subject: { id: string; name: string; code: string };
     }>>,
   ]);
+
+  // Map framework type → current period so each card gets its own framework's period.
+  // e.g. EIGHT_FOUR_FOUR → period A,  CBE → period B
+  const periodByFrameworkType = new Map<string, typeof currentPeriods[0]>();
+  for (const p of currentPeriods) {
+    periodByFrameworkType.set(p.framework.type, p);
+  }
+
+  // Convenience: pick the best single period for the legacy resolvedPeriod
+  // return value (used by the UI when a single period was explicitly requested).
+  const resolvedPeriod = currentPeriods[0] ?? null;
 
   if (assignments.length === 0) {
     return NextResponse.json({ cards: [], currentPeriod: resolvedPeriod });
@@ -95,22 +108,25 @@ export async function GET(req: Request) {
     studentCountRows.map((r) => [r.classId, r._count.id])
   );
 
-  // Batch 2: entered student IDs per (subjectId, classId) for the resolved
-  // period — one query instead of N.
+  // Batch 2: entered student IDs per (subjectId, classId) for each current
+  // period — one query per distinct current period (max 2 with two frameworks).
   let enteredMap = new Map<string, number>(); // key: "classId:subjectId"
-  if (resolvedPeriod) {
+  if (currentPeriods.length > 0) {
+    const allPeriodIds = currentPeriods.map((p) => p.id);
     const enteredItems = await db.assessmentItem.findMany({
       where: {
         schoolId: user.schoolId!,
-        periodId: resolvedPeriod.id,
+        periodId: { in: allPeriodIds },
         subjectId: { in: assignedSubjectIds },
         student: { classId: { in: assignedClassIds } },
       },
-      distinct: ["studentId", "subjectId"],
-      select: { studentId: true, subjectId: true, student: { select: { classId: true } } },
-    }) as Array<{ studentId: string; subjectId: string; student: { classId: string } }>;
+      distinct: ["studentId", "subjectId", "periodId"],
+      select: {
+        studentId: true, subjectId: true, periodId: true,
+        student: { select: { classId: true } },
+      },
+    }) as Array<{ studentId: string; subjectId: string; periodId: string; student: { classId: string } }>;
 
-    // Group by "classId:subjectId" — count distinct students per pair.
     const buckets = new Map<string, Set<string>>();
     for (const item of enteredItems) {
       const key = `${item.student.classId}:${item.subjectId}`;
@@ -123,18 +139,22 @@ export async function GET(req: Request) {
     );
   }
 
-  const cards: TeacherClassCard[] = assignments.map((a) => ({
-    classId: a.classId,
-    className: a.schoolClass.name,
-    subjectId: a.subjectId,
-    subjectName: a.subject.name,
-    subjectCode: a.subject.code,
-    frameworkType: a.schoolClass.frameworkType,
-    periodId: resolvedPeriod?.id ?? null,
-    periodName: resolvedPeriod?.name ?? null,
-    totalStudents: studentCountByClass.get(a.classId) ?? 0,
-    enteredCount: enteredMap.get(`${a.classId}:${a.subjectId}`) ?? 0,
-  }));
+  const cards: TeacherClassCard[] = assignments.map((a) => {
+    // Pick the current period that matches this class's framework type.
+    const period = periodByFrameworkType.get(a.schoolClass.frameworkType) ?? resolvedPeriod;
+    return {
+      classId: a.classId,
+      className: a.schoolClass.name,
+      subjectId: a.subjectId,
+      subjectName: a.subject.name,
+      subjectCode: a.subject.code,
+      frameworkType: a.schoolClass.frameworkType,
+      periodId: period?.id ?? null,
+      periodName: period?.name ?? null,
+      totalStudents: studentCountByClass.get(a.classId) ?? 0,
+      enteredCount: enteredMap.get(`${a.classId}:${a.subjectId}`) ?? 0,
+    };
+  });
 
   // Sort: incomplete first, then alphabetical by class name.
   cards.sort((a, b) => {
