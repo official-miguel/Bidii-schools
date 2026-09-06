@@ -22,7 +22,11 @@ import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
 import SomaAIProvider from "@/components/SomaAIProvider";
 import BackButton from "@/components/BackButton";
 import ShellContentWrapper from "@/components/ShellContentWrapper";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import type { NavHub } from "@/lib/permissions";
+
+/** Roles that get the persistent mobile bottom tab bar. */
+const BOTTOM_NAV_ROLES = new Set(["teacher", "principal"]);
 
 function initials(email: string, label: string): string {
   const parts = label.trim().split(/\s+/);
@@ -90,7 +94,7 @@ export default function DashboardShell({
            *   /staff/finance/* → md:pl-64 (FinanceSidebarNav width)
            *   everywhere else  → md:pl-16 (HubSidebar icon rail width)
            */}
-          <ShellContentWrapper>
+          <ShellContentWrapper showBottomNav={BOTTOM_NAV_ROLES.has(role)}>
             {/* School motto banner */}
             {motto && (
               <div className="bg-teal/5 border-b border-teal/10 dark:bg-teal/10 dark:border-teal/20">
@@ -110,6 +114,9 @@ export default function DashboardShell({
               {children}
             </div>
           </ShellContentWrapper>
+
+          {/* Mobile bottom tab bar — teacher & principal only */}
+          {BOTTOM_NAV_ROLES.has(role) && <MobileBottomNav role={role} />}
         </div>
       </SomaAIProvider>
     </MobileDrawerProvider>

@@ -8,13 +8,15 @@
  *
  * - Default (icon rail present):    md:pl-16  (HubSidebar = w-16)
  * - Finance module (/staff/finance): md:pl-64  (FinanceSidebarNav = w-64)
+ * - Library module (/staff/library): md:pl-64
  *
- * Add more entries to MODULE_PADDING when new modules get their own sidebar.
+ * When showBottomNav is true (teacher / principal), a nested div adds bottom
+ * padding on mobile so content isn't hidden behind the fixed MobileBottomNav.
+ * A second md: override resets the padding back to 0 on desktop.
  */
 
 import { usePathname } from "next/navigation";
 
-/** Map of path prefix → Tailwind left-padding class for the content area. */
 const MODULE_PADDING: Array<{ prefix: string; cls: string }> = [
   { prefix: "/staff/finance", cls: "md:pl-64" },
   { prefix: "/staff/library", cls: "md:pl-64" },
@@ -23,10 +25,12 @@ const MODULE_PADDING: Array<{ prefix: string; cls: string }> = [
 const DEFAULT_PADDING = "md:pl-16";
 
 interface Props {
-  children: React.ReactNode;
+  children:       React.ReactNode;
+  /** When true, adds bottom padding on mobile to clear the bottom tab bar. */
+  showBottomNav?: boolean;
 }
 
-export default function ShellContentWrapper({ children }: Props) {
+export default function ShellContentWrapper({ children, showBottomNav = false }: Props) {
   const pathname = usePathname();
 
   const match   = MODULE_PADDING.find((m) => pathname.startsWith(m.prefix));
@@ -34,10 +38,25 @@ export default function ShellContentWrapper({ children }: Props) {
 
   return (
     <div
-      className={`${leftPad} pt-16 min-h-screen`}
+      className={`${leftPad} min-h-screen`}
       style={{ paddingTop: "calc(4rem + env(safe-area-inset-top, 0px))" }}
     >
-      {children}
+      {/*
+       * Bottom-padding shim for mobile bottom nav.
+       * pb-[76px] on mobile (60px bar + ~16px breathing room) → md:pb-0
+       * Uses env(safe-area-inset-bottom) via an additional inline style only
+       * when the bottom nav is present, so notched phones get extra clearance.
+       */}
+      {showBottomNav ? (
+        <div
+          className="md:pb-0"
+          style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px))" }}
+        >
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }
