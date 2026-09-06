@@ -64,20 +64,6 @@ export async function resolveAssessmentActor(
   user: User,
   schoolId: string
 ): Promise<AssessmentActor> {
-  // Find the framework to use for role lookups.
-  // Prefer an active 8-4-4 framework (legacy default); fall back to any
-  // active framework so CBE schools still get their roles resolved.
-  const framework =
-    ((await (prisma as any).assessmentFramework.findFirst({ // eslint-disable-line @typescript-eslint/no-explicit-any
-      where: { schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
-      select: { id: true },
-    })) as { id: string } | null) ??
-    ((await (prisma as any).assessmentFramework.findFirst({ // eslint-disable-line @typescript-eslint/no-explicit-any
-      where: { schoolId, isActive: true },
-      orderBy: { academicYear: "desc" },
-      select: { id: true },
-    })) as { id: string } | null);
-
   // For ADMIN_STAFF, check module permissions.
   let adminCanView = false;
   let adminCanManage = false;
@@ -114,23 +100,12 @@ export async function resolveAssessmentActor(
     ...(teacherRow?.classElectiveGroupTeachers.map((a) => a.subjectId) ?? []),
   ]);
 
-  if (!framework) {
-    return {
-      user,
-      teacher: teacherRow ? { id: teacherRow.id } : null,
-      roles: [],
-      isPrincipal: user.role === "PRINCIPAL",
-      classTeacherOfId,
-      adminCanView,
-      adminCanManage,
-      assignedSubjectIds,
-    };
-  }
-
-  // Fetch assessment roles for this teacher in this framework.
+  // Fetch assessment roles for this teacher across ALL frameworks in this school.
+  // Roles are not tied to a specific academic year — a HOD/subject teacher
+  // assignment remains valid even after a new framework is created for a new year.
   const roles: AssessmentRoleRow[] = teacherRow
     ? await (prisma as any).assessmentRole.findMany({ // eslint-disable-line @typescript-eslint/no-explicit-any
-        where: { teacherId: teacherRow.id, frameworkId: framework.id },
+        where: { teacherId: teacherRow.id, schoolId },
       }) as AssessmentRoleRow[]
     : [];
 
