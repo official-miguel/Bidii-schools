@@ -20,6 +20,24 @@ import { SkeletonTable } from "@/components/ui/ProgressivePage";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
 
 // ---------------------------------------------------------------------------
+// Virtual papers — always available in the formula calculator
+// ---------------------------------------------------------------------------
+// Paper 1 / 2 / 3 are always shown in the calculator so formulas can be built
+// before the actual paper records exist. Virtual papers are shown with a dashed
+// border so the user can distinguish them from real ones.
+const VIRTUAL_PAPERS: Paper[] = [
+  { id: "__virtual_p1", name: "Paper 1", maxMarks: 100, sortOrder: 0 },
+  { id: "__virtual_p2", name: "Paper 2", maxMarks: 100, sortOrder: 1 },
+  { id: "__virtual_p3", name: "Paper 3", maxMarks: 100, sortOrder: 2 },
+];
+
+function mergeWithVirtuals(realPapers: Paper[]): Paper[] {
+  const realNames = new Set(realPapers.map((p) => p.name.trim().toLowerCase()));
+  const virtuals = VIRTUAL_PAPERS.filter((v) => !realNames.has(v.name.toLowerCase()));
+  return [...realPapers, ...virtuals].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+// ---------------------------------------------------------------------------
 // Formula evaluator
 // ---------------------------------------------------------------------------
 // Evaluates a formula string like:
@@ -515,19 +533,33 @@ function FormulaCalculator({
           {/* ── Paper name chips ── */}
           <div>
             <p className="text-xs font-medium text-slate mb-2 uppercase tracking-wide">Papers</p>
+            {papers.some((p) => p.id.startsWith("__virtual_")) && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 leading-relaxed">
+                Papers with a dashed border haven&apos;t been added yet. The formula won&apos;t calculate until they exist with scores entered.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
-              {papers.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => append(p.name)}
-                  className={paperBtn}
-                >
-                  <FileText className="w-3 h-3 opacity-80" strokeWidth={1.8} aria-hidden="true" />
-                  {p.name}
-                  <span className="opacity-60 text-[10px]">/{p.maxMarks}</span>
-                </button>
-              ))}
+              {mergeWithVirtuals(papers).map((p) => {
+                const isVirtual = p.id.startsWith("__virtual_");
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => append(p.name)}
+                    className={isVirtual
+                      ? "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border-2 border-dashed border-teal/40 text-teal/70 text-xs font-medium hover:bg-teal/5 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/40 select-none shrink-0"
+                      : paperBtn
+                    }
+                  >
+                    <FileText className="w-3 h-3 opacity-80" strokeWidth={1.8} aria-hidden="true" />
+                    {p.name}
+                    {isVirtual
+                      ? <span className="opacity-50 text-[10px]">(not added)</span>
+                      : <span className="opacity-60 text-[10px]">/{p.maxMarks}</span>
+                    }
+                  </button>
+                );
+              })}
               {papers.length === 0 && (
                 <p className="text-xs text-slate italic">No papers added yet.</p>
               )}
@@ -657,8 +689,8 @@ function AddPaperModal({
   onClose: () => void;
   onAdded: (paper: Paper) => void;
 }) {
+  // Name is always "Paper N" — read-only, auto-incremented.
   const defaultName = `Paper ${existingCount + 1}`;
-  const [name, setName] = useState(defaultName);
   const [maxMarks, setMaxMarks] = useState("100");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -666,7 +698,6 @@ function AddPaperModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const mm = parseInt(maxMarks, 10);
-    if (!name.trim()) { setError("Paper name is required."); return; }
     if (isNaN(mm) || mm < 1 || mm > 9999) { setError("Max marks must be between 1 and 9999."); return; }
 
     setSaving(true);
@@ -675,7 +706,7 @@ function AddPaperModal({
       const res = await fetch("/api/assessments/papers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, frameworkId, name: name.trim(), maxMarks: mm }),
+        body: JSON.stringify({ subjectId, frameworkId, name: defaultName, maxMarks: mm }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Couldn't add paper."); return; }
@@ -688,7 +719,6 @@ function AddPaperModal({
   }
 
   return (
-    /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -706,19 +736,20 @@ function AddPaperModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Paper name — shown read-only so teachers know what they're adding */}
           <div>
             <label className={labelClass}>Paper name</label>
-            <input
-              className={inputClass}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Paper 1"
-              autoFocus
-            />
+            <div className="flex items-center gap-2 rounded-lg border border-line bg-slate-50 px-3 py-2 text-sm text-ink">
+              <span className="font-medium">{defaultName}</span>
+              <span className="text-xs text-slate ml-auto">(auto-named)</span>
+            </div>
+            <p className="text-xs text-slate mt-1">
+              Papers are named Paper 1, Paper 2, Paper 3 automatically.
+            </p>
           </div>
 
           <div>
-            <label className={labelClass}>Out of (max marks)</label>
+            <label className={labelClass}>Out of (max marks) <span className="text-danger">*</span></label>
             <input
               type="number"
               min={1}
@@ -726,10 +757,11 @@ function AddPaperModal({
               className={inputClass}
               value={maxMarks}
               onChange={(e) => setMaxMarks(e.target.value)}
-              placeholder="100"
+              placeholder="e.g. 80"
+              autoFocus
             />
             <p className="text-xs text-slate mt-1">
-              Teachers enter the raw score (e.g. 47/80). The system calculates the percentage.
+              Enter the raw score (e.g. 47/{maxMarks || "80"}). The system calculates the percentage.
             </p>
           </div>
 
@@ -742,7 +774,7 @@ function AddPaperModal({
               disabled={saving}
               className={primaryButtonClass}
             >
-              {saving ? "Adding…" : "Add paper"}
+              {saving ? "Adding…" : `Add ${defaultName}`}
             </button>
           </div>
         </form>

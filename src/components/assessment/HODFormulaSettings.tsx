@@ -108,10 +108,36 @@ function evaluateFormula(
   } catch { return null; }
 }
 
+// ── Virtual papers — always available in the formula calculator ───────────────
+// These are the three standard paper names every subject always has available
+// in the formula builder, even before the actual paper records exist in the DB.
+// At grading time the evaluator skips any paper whose score is null, so a
+// formula that references Paper 2 is simply not evaluated until Paper 2 exists.
+const VIRTUAL_PAPERS: Paper[] = [
+  { id: "__virtual_p1", name: "Paper 1", maxMarks: 100, sortOrder: 0 },
+  { id: "__virtual_p2", name: "Paper 2", maxMarks: 100, sortOrder: 1 },
+  { id: "__virtual_p3", name: "Paper 3", maxMarks: 100, sortOrder: 2 },
+];
+
+/**
+ * Merge real papers (from DB) with the virtual defaults.
+ * Real papers take precedence — if Paper 1 already exists in the DB, the
+ * virtual placeholder for it is removed. Any real paper beyond Paper 3 is
+ * appended at the end.
+ */
+function mergeWithVirtuals(realPapers: Paper[]): { papers: Paper[]; hasVirtuals: boolean } {
+  const realNames = new Set(realPapers.map((p) => p.name.trim().toLowerCase()));
+  const virtuals = VIRTUAL_PAPERS.filter(
+    (v) => !realNames.has(v.name.toLowerCase())
+  );
+  const merged = [...realPapers, ...virtuals].sort((a, b) => a.sortOrder - b.sortOrder);
+  return { papers: merged, hasVirtuals: virtuals.length > 0 };
+}
+
 // ── FormulaCalculator modal (extracted from MarksheetGrid, self-contained) ────
 
 function FormulaCalculator({
-  papers,
+  papers: realPapers,
   formula,
   onApply,
   onClose,
@@ -123,6 +149,9 @@ function FormulaCalculator({
 }) {
   const [expr, setExpr] = useState(formula);
   const displayRef = useRef<HTMLDivElement>(null);
+
+  // Always show Paper 1 / 2 / 3 — merge real papers with virtual placeholders.
+  const { papers, hasVirtuals } = useMemo(() => mergeWithVirtuals(realPapers), [realPapers]);
 
   function append(token: string) {
     setExpr((prev) => {
@@ -192,15 +221,32 @@ function FormulaCalculator({
           {/* Paper chips */}
           <div>
             <p className="text-xs font-medium text-slate mb-2 uppercase tracking-wide">Papers</p>
+            {hasVirtuals && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 leading-relaxed">
+                <span className="font-semibold">Note:</span> Papers shown with a dashed border haven&apos;t been added to the marksheet yet.
+                The formula will only calculate once those papers exist and have scores entered.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
-              {papers.map((p) => (
-                <button key={p.id} type="button" onClick={() => append(p.name)} className={paperBtn}>
-                  <FileText className="w-3 h-3 opacity-80" />
-                  {p.name}
-                  <span className="opacity-60 text-[10px]">/{p.maxMarks}</span>
-                </button>
-              ))}
-              {papers.length === 0 && <p className="text-xs text-slate italic">No papers for this subject/framework yet — add them in the marksheet first.</p>}
+              {papers.map((p) => {
+                const isVirtual = p.id.startsWith("__virtual_");
+                return (
+                  <button key={p.id} type="button" onClick={() => append(p.name)}
+                    className={`inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal/40 select-none shrink-0 ${
+                      isVirtual
+                        ? "border-2 border-dashed border-teal/40 text-teal/70 hover:bg-teal/5"
+                        : "bg-teal text-white hover:bg-teal-dark"
+                    }`}
+                  >
+                    <FileText className="w-3 h-3 opacity-80" />
+                    {p.name}
+                    {isVirtual
+                      ? <span className="opacity-50 text-[10px]">(not added yet)</span>
+                      : <span className="opacity-60 text-[10px]">/{p.maxMarks}</span>
+                    }
+                  </button>
+                );
+              })}
             </div>
           </div>
           {/* Keyboard */}
@@ -242,9 +288,9 @@ function FormulaCalculator({
           <p className="text-xs text-slate/70 leading-relaxed">
             Example:{" "}
             <span className="font-mono bg-slate-100 px-1 rounded">
-              {papers.length >= 2
-                ? `(${papers[0].name} / ${papers[0].maxMarks}) * 40 + (${papers[1].name} / ${papers[1].maxMarks}) * 60`
-                : papers.length === 1 ? `${papers[0].name} / ${papers[0].maxMarks} * 100` : "Paper 1 / 80 * 100"}
+              {realPapers.length >= 2
+                ? `(${realPapers[0].name} / ${realPapers[0].maxMarks}) * 40 + (${realPapers[1].name} / ${realPapers[1].maxMarks}) * 60`
+                : `(Paper 1 / 80) * 40 + (Paper 2 / 100) * 60`}
             </span>
           </p>
           {/* Actions */}
