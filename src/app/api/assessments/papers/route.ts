@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveAssessmentActor } from "@/lib/assessment/auth844";
+import { resolveAssessmentActor, canEnterMarks } from "@/lib/assessment/auth844";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -65,16 +65,6 @@ export async function POST(req: NextRequest) {
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
 
-  // Only principal or HOD / Exam Officer may add papers.
-  const canManage =
-    actor.isPrincipal ||
-    actor.roles.some((r) =>
-      ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)
-    );
-  if (!canManage) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const raw = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) {
@@ -85,6 +75,17 @@ export async function POST(req: NextRequest) {
   }
 
   const { subjectId, frameworkId, name, maxMarks } = parsed.data;
+
+  // Any teacher who can enter marks for this subject may also create paper
+  // columns for it — they need the paper to exist before they can type scores.
+  // Principals, HODs, Exam Officers and Directors can manage papers for any subject.
+  const canManage =
+    actor.isPrincipal ||
+    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)) ||
+    canEnterMarks(actor, subjectId);
+  if (!canManage) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // Verify framework belongs to this school.
   const framework = await db.assessmentFramework.findFirst({
@@ -144,12 +145,6 @@ export async function PATCH(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
-  const canManage =
-    actor.isPrincipal ||
-    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role));
-  if (!canManage) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   const { searchParams } = new URL(req.url);
   const paperId = searchParams.get("paperId");
@@ -159,10 +154,18 @@ export async function PATCH(req: NextRequest) {
 
   const paper = await db.paper.findFirst({
     where: { id: paperId, schoolId: user.schoolId! },
-    select: { id: true },
+    select: { id: true, subjectId: true },
   });
   if (!paper) {
     return NextResponse.json({ error: "Paper not found." }, { status: 404 });
+  }
+
+  const canManage =
+    actor.isPrincipal ||
+    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)) ||
+    canEnterMarks(actor, paper.subjectId);
+  if (!canManage) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const raw = await req.json().catch(() => null);
@@ -199,12 +202,6 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
-  const canManage =
-    actor.isPrincipal ||
-    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role));
-  if (!canManage) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   const { searchParams } = new URL(req.url);
   const paperId = searchParams.get("paperId");
@@ -214,10 +211,18 @@ export async function DELETE(req: NextRequest) {
 
   const paper = await db.paper.findFirst({
     where: { id: paperId, schoolId: user.schoolId! },
-    select: { id: true },
+    select: { id: true, subjectId: true },
   });
   if (!paper) {
     return NextResponse.json({ error: "Paper not found." }, { status: 404 });
+  }
+
+  const canManage =
+    actor.isPrincipal ||
+    actor.roles.some((r) => ["HOD", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)) ||
+    canEnterMarks(actor, paper.subjectId);
+  if (!canManage) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const itemCount: number = await db.assessmentItem.count({ where: { paperId } });
