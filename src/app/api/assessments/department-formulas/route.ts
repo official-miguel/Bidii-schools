@@ -11,10 +11,28 @@ const db = prisma as any;
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Resolve the department this HOD heads. Returns null if not an HOD. */
+/** Resolve the department this HOD heads. Returns null if not an HOD.
+ * Checks both Department.headTeacherId (HR appointment) and the teacher's
+ * primaryDepartmentId as a fallback — matching the same logic used in
+ * the settings page and nav layout.
+ */
 async function resolveHODDepartment(teacherId: string, schoolId: string) {
-  return prisma.department.findFirst({
+  // Primary: explicitly set as department head
+  const byHead = await prisma.department.findFirst({
     where: { schoolId, headTeacherId: teacherId },
+    select: { id: true, name: true },
+  });
+  if (byHead) return byHead;
+
+  // Fallback: use the teacher's primary department
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: { primaryDepartmentId: true },
+  });
+  if (!teacher?.primaryDepartmentId) return null;
+
+  return prisma.department.findUnique({
+    where: { id: teacher.primaryDepartmentId },
     select: { id: true, name: true },
   });
 }

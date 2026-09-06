@@ -86,9 +86,11 @@ export default async function HODAssessmentSettingsPage() {
     select: { id: true, name: true, code: true, applicableForms: true },
   });
 
-  // ── Active 8-4-4 frameworks (these are what papers belong to) ────────────
+  // ── All 8-4-4 frameworks (active or not) for the formula dropdown ────────
+  // We include inactive ones so the HOD can still manage formulas for past
+  // periods even after a new framework is created for a new year.
   const frameworks = await db.assessmentFramework.findMany({
-    where: { schoolId: user.schoolId!, isActive: true },
+    where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR" },
     orderBy: { academicYear: "desc" },
     select: {
       id: true,
