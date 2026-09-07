@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/finance/reports/payment-volume?from=&to=&granularity=daily|weekly
  * Returns daily aggregated payment totals within a date range for Recharts BarChart.
  */
@@ -22,10 +22,18 @@ export async function GET(req: NextRequest) {
     ? new Date(toParam)
     : new Date(new Date().toISOString().slice(0, 10) + "T23:59:59.999Z");
 
+  // Enforce a max date range of 366 days to prevent unbounded scans.
+  const MAX_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
+  if (to.getTime() - from.getTime() > MAX_RANGE_MS) {
+    return NextResponse.json({ error: "Date range cannot exceed 366 days." }, { status: 400 });
+  }
+
+  // take: 10000 — additional safety cap; daily aggregation for a 366-day window
   const payments = await prisma.payment.findMany({
     where:   { schoolId, paidAt: { gte: from, lte: to } },
     select:  { amount: true, paidAt: true },
     orderBy: { paidAt: "asc" },
+    take:    10000,  // bounded by 366-day range guard above
   });
 
   // Aggregate by day (ISO date string YYYY-MM-DD)

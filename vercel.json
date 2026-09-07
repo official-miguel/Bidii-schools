@@ -8,6 +8,10 @@
     {
       "path": "/api/finance/jobs/debtor-refresh",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/messaging/scheduled-flush",
+      "schedule": "* * * * *"
     }
   ]
 }

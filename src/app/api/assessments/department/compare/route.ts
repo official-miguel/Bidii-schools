@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { scoreToGradeSql } from "@/lib/assessment/gradingSql";
 
@@ -105,21 +106,20 @@ export async function GET(req: NextRequest) {
   // We then aggregate per-department in JS — avoids N dept queries.
   const pointsExpr = scoreToGradeSql('"numericScore"');
 
-  const rows = await prisma.$queryRawUnsafe<
+  // SAFE: pointsExpr is a server-side SQL expression from scoreToGradeSql() —
+  // only fixed CASE/WHEN literals, no user input. Arrays are DB-returned IDs.
+  const rows = await prisma.$queryRaw<
     Array<{ period_id: string; subject_id: string; mean_pts: number }>
-  >(
-    `SELECT "periodId"  AS period_id,
+  >(Prisma.sql`
+    SELECT "periodId"  AS period_id,
             "subjectId" AS subject_id,
-            AVG(${pointsExpr})::float AS mean_pts
+            AVG(${Prisma.raw(pointsExpr)})::float AS mean_pts
      FROM "AssessmentItem"
-     WHERE "schoolId"      = $1
-       AND "periodId"      = ANY($2::text[])
+     WHERE "schoolId"      = ${user.schoolId!}
+       AND "periodId"      = ANY(${allPeriodIds}::text[])
        AND "resultKind"    = 'NUMERIC'
        AND "numericScore"  IS NOT NULL
-     GROUP BY "periodId", "subjectId"`,
-    user.schoolId!,
-    allPeriodIds
-  );
+     GROUP BY "periodId", "subjectId"`);
 
   // Build: Map<periodId, Map<subjectId, meanPts>>
   const periodSubjectMean = new Map<string, Map<string, number>>();

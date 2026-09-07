@@ -159,8 +159,8 @@ export async function POST(req: NextRequest) {
 
     try {
       await prisma.$transaction(async (tx) => {
-        // schoolId is a server-controlled cuid — interpolation is safe here
-        await tx.$executeRawUnsafe(`SET LOCAL app.current_school_id = '${schoolId}'`);
+        // schoolId is a server-controlled value — use parameterized $executeRaw
+        await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
 
         await tx.studentExpenseAttachment.create({
           data: { studentId, expenseItemId, schoolId, attachedById: user.id },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import {
   meanAttainment,
@@ -128,49 +129,44 @@ export async function GET(req: NextRequest) {
 
   const [subStrandAggr, learningAreaAggr, subStrands] = await Promise.all([
     // Per sub-strand counts + mean attainment.
-    prisma.$queryRawUnsafe<SubStrandAggrRow[]>(
-      `SELECT "subStrandId"                                                   AS sub_strand_id,
+    // SAFE: levelExpr is a server-side SQL expression from levelToPointsSql() —
+    // it contains only fixed CASE/WHEN literals, no user input. studentIds and
+    // subStrandIds are validated arrays of DB-returned IDs from earlier queries.
+    prisma.$queryRaw<SubStrandAggrRow[]>(Prisma.sql`
+      SELECT "subStrandId"                                                   AS sub_strand_id,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'EE')::bigint       AS ee_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'ME')::bigint       AS me_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'AE')::bigint       AS ae_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'BE')::bigint       AS be_count,
               COUNT(*) FILTER (WHERE "performanceLevel" IS NULL)::bigint      AS null_count,
               COUNT(*)::bigint                                                 AS entered_count,
-              AVG(${levelExpr})::float                                        AS mean_pts
+              AVG(${Prisma.raw(levelExpr)})::float                           AS mean_pts
        FROM   "AssessmentItem"
-       WHERE  "schoolId"    = $1
-         AND  "periodId"    = $2
-         AND  "studentId"   = ANY($3::text[])
+       WHERE  "schoolId"    = ${user.schoolId!}
+         AND  "periodId"    = ${periodId}
+         AND  "studentId"   = ANY(${studentIds}::text[])
          AND  "resultKind"  = 'PERFORMANCE_LEVEL'
-         AND  "subStrandId" = ANY($4::text[])
-       GROUP BY "subStrandId"`,
-      user.schoolId!,
-      periodId,
-      studentIds,
-      subStrandIds
-    ),
+         AND  "subStrandId" = ANY(${subStrandIds}::text[])
+       GROUP BY "subStrandId"`),
 
     // Per learning-area counts + mean attainment.
-    prisma.$queryRawUnsafe<LearningAreaAggrRow[]>(
-      `SELECT "learningAreaId"                                                AS learning_area_id,
+    // SAFE: same as above — levelExpr is a fixed server-side expression.
+    prisma.$queryRaw<LearningAreaAggrRow[]>(Prisma.sql`
+      SELECT "learningAreaId"                                                AS learning_area_id,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'EE')::bigint       AS ee_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'ME')::bigint       AS me_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'AE')::bigint       AS ae_count,
               COUNT(*) FILTER (WHERE "performanceLevel" = 'BE')::bigint       AS be_count,
               COUNT(*) FILTER (WHERE "performanceLevel" IS NULL)::bigint      AS null_count,
               COUNT(*)::bigint                                                 AS entered_count,
-              AVG(${levelExpr})::float                                        AS mean_pts
+              AVG(${Prisma.raw(levelExpr)})::float                           AS mean_pts
        FROM   "AssessmentItem"
-       WHERE  "schoolId"      = $1
-         AND  "periodId"      = $2
-         AND  "studentId"     = ANY($3::text[])
+       WHERE  "schoolId"      = ${user.schoolId!}
+         AND  "periodId"      = ${periodId}
+         AND  "studentId"     = ANY(${studentIds}::text[])
          AND  "resultKind"    = 'PERFORMANCE_LEVEL'
          AND  "learningAreaId" IS NOT NULL
-       GROUP BY "learningAreaId"`,
-      user.schoolId!,
-      periodId,
-      studentIds
-    ),
+       GROUP BY "learningAreaId"`),
 
     // Sub-strand hierarchy for labels.
     db.subStrand.findMany({

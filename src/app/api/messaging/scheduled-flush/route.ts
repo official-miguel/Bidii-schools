@@ -1,11 +1,14 @@
-/**
+﻿/**
  * GET /api/messaging/scheduled-flush
  *
  * Cron-triggered route that dispatches all scheduled messages whose
- * scheduledAt <= now(). Add to vercel.json:
- *   { "crons": [{ "path": "/api/messaging/scheduled-flush", "schedule": "* * * * *" }] }
+ * scheduledAt <= now().
+ *
+ * Protected by Authorization: Bearer ${CRON_SECRET} — same pattern as
+ * /api/finance/jobs/debtor-refresh. The Vercel cron entry in vercel.json
+ * must include the header (see vercel.json).
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveRecipients, buildRecipientSummary } from "@/lib/messaging/resolve";
 import { dispatchMessage } from "@/lib/messaging/dispatch";
@@ -13,12 +16,22 @@ import { dispatchMessage } from "@/lib/messaging/dispatch";
 // Never statically pre-rendered — always runs at request time
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // ── Auth: require CRON_SECRET bearer token ───────────────────────────────
+  const authHeader = req.headers.get("authorization") ?? "";
+  const cronSecret = process.env.CRON_SECRET ?? "";
+
+  // Reject if CRON_SECRET is not set or the header doesn't match
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  // take: 100 — cap messages processed per cron tick to bound memory and execution time.
   const due = await prisma.message.findMany({
     where: {
       status:      "PENDING",
       scheduledAt: { lte: new Date() },
     },
+    take: 100,  // process at most 100 messages per cron invocation; remainder picked up next minute
   });
 
   let dispatched = 0;

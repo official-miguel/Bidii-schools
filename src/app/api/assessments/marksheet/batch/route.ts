@@ -150,6 +150,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // SAFE: $executeRawUnsafe is required here because the VALUES list length
+      // varies at runtime (one tuple per score item). The SQL structure itself
+      // (column names, ON CONFLICT target) is static. All values are bound via
+      // positional $N placeholders in valueArgs — no user-supplied string is
+      // interpolated directly into the query template. The constraint name
+      // "item_paper" is a fixed literal.
       await tx.$executeRawUnsafe(
         `INSERT INTO "AssessmentItem"
            ("id","schoolId","frameworkId","periodId","studentId","paperId","subjectId",
@@ -175,6 +181,10 @@ export async function POST(req: NextRequest) {
         tupleArgs.push(item.studentId, item.periodId, item.paperId);
       }
 
+      // SAFE: $executeRawUnsafe is required because the IN (VALUES …) list length
+      // varies at runtime. All values are bound via positional $N placeholders in
+      // tupleArgs — no user-supplied string is interpolated into the template.
+      // Column names are static literals.
       await tx.$executeRawUnsafe(
         `DELETE FROM "AssessmentItem"
          WHERE ("studentId","periodId","paperId")

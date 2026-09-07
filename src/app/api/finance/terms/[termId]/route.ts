@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET    /api/finance/terms/[termId]  — Fetch a single term
  * PUT    /api/finance/terms/[termId]  — Update a term (locked once invoicing completes)
  * DELETE /api/finance/terms/[termId]  — Delete a term and all associated financial data
@@ -115,7 +115,9 @@ export async function DELETE(
   try {
     // Step 1 — Read ledger entries OUTSIDE the transaction (read-only, no RLS needed,
     // all rows are already scoped to schoolId + termId).
+    // take: 5000 — all entries needed for balance-reversal arithmetic; bounded by term size.
     const ledgerEntries = await prisma.ledgerEntry.findMany({
+      take:   5000,
       where:  { termId: params.termId, schoolId, isVoided: false },
       select: { studentId: true, entryType: true, amount: true, referenceType: true },
     });

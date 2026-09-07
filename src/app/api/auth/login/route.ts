@@ -16,6 +16,13 @@
  *   Same email at two schools → requiresSchoolSlug=true until disambiguated.
  *
  * Accepts email OR phone number as the identifier.
+ *
+ * Rate limiting:
+ *   - 10 attempts per IP per 15 minutes (IP-level, pre-auth)
+ *   - 5 failed attempts per identifier per 15 minutes (identifier-level)
+ *   - Successful login resets the per-identifier counter
+ *   - Both limiters use Upstash Redis (distributed, works across serverless instances)
+ *   - If Redis is not configured the endpoint REJECTS (fail-closed)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -28,6 +35,7 @@ import {
   SESSION_TTL_MS,
   buildOfflineToken,
 } from "@/lib/auth";
+import { checkLoginRateLimit, resetLoginIdentifierLimit } from "@/lib/rateLimit";
 
 // ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
@@ -67,6 +75,15 @@ const schema = z.object({
   schoolSlug: z.string().trim().optional().or(z.literal("")),
 });
 
+// ── Extract real client IP (handles Vercel/reverse-proxy headers) ─────────────
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try { body = await req.json(); }
@@ -81,14 +98,25 @@ export async function POST(req: NextRequest) {
   }
 
   const { identifier, password, schoolSlug } = parsed.data;
-  
-  console.log('[LOGIN] Attempt:', {
-    identifier,
-    passwordLength: password.length,
-    schoolSlug: schoolSlug || 'none',
-    isEmail: identifier.includes("@")
-  });
-  
+
+  // ── Rate limiting (must happen before any DB work) ────────────────────────
+  const ip          = getClientIp(req);
+  const rlResult    = await checkLoginRateLimit(ip, identifier);
+  if (!rlResult.allowed) {
+    if (rlResult.reason === "redis_unavailable") {
+      console.error("[LOGIN] Rate limiter unavailable — Redis not configured (UPSTASH_REDIS_REST_URL/TOKEN missing). Login rejected.");
+      return NextResponse.json(
+        { error: "Authentication service temporarily unavailable. Please try again later." },
+        { status: 503 }
+      );
+    }
+    // ip_limit or identifier_limit
+    return NextResponse.json(
+      { error: "Too many login attempts. Please wait 15 minutes before trying again." },
+      { status: 429 }
+    );
+  }
+
   const invalid = () =>
     NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
 
@@ -117,17 +145,8 @@ export async function POST(req: NextRequest) {
 
       if (rows.length > 0) {
         const candidate = rows[0];
-        console.log('[LOGIN] SUPER_ADMIN found:', candidate.id, candidate.email);
-        if (!candidate.passwordHash) {
-          console.log('[LOGIN] SUPER_ADMIN has no password hash');
-          return invalid();
-        }
-        console.log('[LOGIN] Testing password for SUPER_ADMIN...');
-        const ok = await verifyPassword(password, candidate.passwordHash).catch((err) => {
-          console.error('[LOGIN] Password verification error:', err);
-          return false;
-        });
-        console.log('[LOGIN] Password verification result:', ok);
+        if (!candidate.passwordHash) return invalid();
+        const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
         if (!ok) return invalid();
         user = candidate;
         passwordAlreadyVerified = true;
@@ -233,7 +252,7 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err) {
-    console.error("[LOGIN] DB error:", err);
+    console.error("[LOGIN] DB lookup failed:", { code: (err as NodeJS.ErrnoException)?.code ?? "UNKNOWN" });
     return NextResponse.json(
       { error: "Authentication service temporarily unavailable." },
       { status: 503 }
@@ -259,10 +278,6 @@ export async function POST(req: NextRequest) {
       });
 
       if (parent?.user) {
-        // For parents the "identifier" IS the phone number.
-        // The password can be:
-        //   - the student's admission number (first login)
-        //   - the parent's personal password (subsequent logins)
         const ok = await verifyPassword(password, parent.user.passwordHash ?? "").catch(() => false);
         if (ok) {
           user = parent.user as unknown as UserRow;
@@ -288,15 +303,18 @@ export async function POST(req: NextRequest) {
     if (!valid) return invalid();
   }
 
+  // ── Reset per-identifier rate limit counter on successful login ───────────
+  // Best-effort; a Redis error here must not break the login flow.
+  await resetLoginIdentifierLimit(identifier).catch(() => {});
+
   // ── Session + offline token ───────────────────────────────────────────────
   let token: string;
   let offlineToken: ReturnType<typeof buildOfflineToken>;
   try {
     token        = await createSession(user.id);
-    // buildOfflineToken expects a User-shaped object; schoolId may be null for SUPER_ADMIN
     offlineToken = buildOfflineToken(user as unknown as Parameters<typeof buildOfflineToken>[0]);
   } catch (err) {
-    console.error("[LOGIN] Session error:", err);
+    console.error("[LOGIN] Session creation failed:", { code: (err as NodeJS.ErrnoException)?.code ?? "UNKNOWN" });
     return NextResponse.json(
       { error: "Failed to create session. Please try again." },
       { status: 500 }

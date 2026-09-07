@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!checkRateLimit(parent.userId)) {
+  if (!(await checkRateLimit(parent.userId))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
@@ -57,13 +57,16 @@ export async function GET(req: NextRequest) {
     termStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   }
 
-  // 4. Query attendance records for the student from term start
+  // 4. Query attendance records for the student from term start.
+  //    Cap at 200 rows — a full term is ~90 school days (≤ 200 records).
+  //    Any school with > 200 records per term per student has a data anomaly.
   const records = await prisma.attendance.findMany({
     where: {
       studentId,
       date: { gte: termStart },
     },
     orderBy: { date: "desc" },
+    take:    200,
     select: { date: true, status: true },
   });
 

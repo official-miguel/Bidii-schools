@@ -17,14 +17,46 @@
  *   Same email at multiple schools → API returns requiresSchoolSlug=true (409).
  *   Client shows the school username field and re-submits.
  *
- * Session is persisted to AsyncStorage via Zustand persist middleware so the
- * user stays signed in across app restarts.
+ * ── Storage security ─────────────────────────────────────────────────────────
+ * Auth tokens (session bearer token) are stored in expo-secure-store, which
+ * uses the iOS Keychain and Android Keystore — both hardware-backed encrypted
+ * stores. This replaces the previous AsyncStorage backing which is
+ * unencrypted on-device.
+ *
+ * Non-sensitive state (role, schoolId, email) is stored alongside the token
+ * in SecureStore since the values are small and we want a single source of
+ * truth. SecureStore has a 2 KB per-value limit on some platforms; the auth
+ * slice is well under that.
+ *
+ * ── Migration ────────────────────────────────────────────────────────────────
+ * Existing installs may have a token persisted in AsyncStorage under the old
+ * Zustand key "@bidii:auth" and the API client key "@bidii:auth_token".
+ * On first launch after upgrade, migrateTokenToSecureStore() moves those
+ * tokens to SecureStore and deletes the AsyncStorage copies, so users stay
+ * logged in without needing to re-authenticate.
+ * Call migrateTokenToSecureStore() once in the root layout before init().
  */
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "@/services/api";
+
+// ── SecureStore adapter for Zustand persist ───────────────────────────────────
+// Zustand's createJSONStorage expects a Storage-like object with
+// getItem / setItem / removeItem methods. SecureStore's API matches exactly.
+//
+// Note: SecureStore operations are synchronous on native but the adapter
+// must still be async (matches the Storage interface). We wrap in promises.
+const secureStorage = {
+  getItem: (key: string): Promise<string | null> =>
+    SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string): Promise<void> =>
+    SecureStore.setItemAsync(key, value),
+  removeItem: (key: string): Promise<void> =>
+    SecureStore.deleteItemAsync(key),
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -124,7 +156,6 @@ export const useAuth = create<AuthState>()(
               method:  "POST",
               headers: {
                 "Content-Type": "application/json",
-                // Include the session token so the server knows who is changing
                 Authorization: `Bearer ${get().token ?? ""}`,
               },
               body: JSON.stringify({ newPassword }),
@@ -161,12 +192,65 @@ export const useAuth = create<AuthState>()(
       },
     }),
     {
-      name:       "@bidii:auth",
-      storage:    createJSONStorage(() => AsyncStorage),
+      name:    "@bidii:auth",
+      storage: createJSONStorage(() => secureStorage),
+      // Only persist the token and user — keep ephemeral UI state (isLoading,
+      // error) out of storage so stale error messages never survive a restart.
       partialize: (s) => ({ user: s.user, token: s.token }),
     }
   )
 );
+
+// ── Migration helper ──────────────────────────────────────────────────────────
+
+/**
+ * One-time migration: moves auth tokens persisted by older app versions
+ * from AsyncStorage (unencrypted) to SecureStore (encrypted).
+ *
+ * Migrates two legacy keys:
+ *   - "@bidii:auth"        — Zustand persist snapshot { state: { user, token } }
+ *   - "@bidii:auth_token"  — raw token string written by ApiClient
+ *
+ * After migrating, the old AsyncStorage entries are deleted so no credentials
+ * remain in the unencrypted store.
+ *
+ * This is idempotent: if either key is already absent (already migrated or
+ * never written) the function is a no-op for that key.
+ *
+ * Call once from the root layout BEFORE calling init():
+ *   await migrateTokenToSecureStore();
+ *   await init();
+ */
+export async function migrateTokenToSecureStore(): Promise<void> {
+  try {
+    // ── 1. Migrate Zustand persist snapshot ───────────────────────────────
+    const oldAuthJson = await AsyncStorage.getItem("@bidii:auth");
+    if (oldAuthJson) {
+      // Only migrate if SecureStore doesn't already have the key
+      // (prevents overwriting a newer SecureStore value with an older
+      // AsyncStorage one on subsequent cold starts during a race).
+      const existing = await SecureStore.getItemAsync("@bidii:auth");
+      if (!existing) {
+        await SecureStore.setItemAsync("@bidii:auth", oldAuthJson);
+      }
+      await AsyncStorage.removeItem("@bidii:auth");
+    }
+
+    // ── 2. Migrate standalone API client token ─────────────────────────────
+    const oldApiToken = await AsyncStorage.getItem("@bidii:auth_token");
+    if (oldApiToken) {
+      const existing = await SecureStore.getItemAsync("@bidii:auth_token");
+      if (!existing) {
+        await SecureStore.setItemAsync("@bidii:auth_token", oldApiToken);
+      }
+      await AsyncStorage.removeItem("@bidii:auth_token");
+    }
+  } catch (err) {
+    // Migration failure must not crash the app or block startup.
+    // The user will need to log in again, which is acceptable.
+    console.warn("[auth] Token migration failed — user may need to log in again:", err);
+  }
+}
 
 // ── Role helpers ──────────────────────────────────────────────────────────────
 

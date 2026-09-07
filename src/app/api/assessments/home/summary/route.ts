@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { pointsToGrade } from "@/lib/assessment/grading844";
 import { scoreToGradeSql } from "@/lib/assessment/gradingSql";
@@ -155,61 +156,51 @@ export async function GET(req: NextRequest) {
   type AtRiskRow = { at_risk_count: bigint };
 
   const [classAggr, subjectAggr, atRiskRows, totalTeachingStaff] = await Promise.all([
-    prisma.$queryRawUnsafe<ClassAggrRow[]>(
-      `SELECT   s."classId"                    AS class_id,
-                AVG(${pointsExpr})::float       AS mean_pts,
+    // SAFE: pointsExpr is a server-side SQL expression from scoreToGradeSql() —
+    // only fixed CASE/WHEN literals, no user input. Arrays are DB-returned IDs.
+    prisma.$queryRaw<ClassAggrRow[]>(Prisma.sql`
+      SELECT   s."classId"                    AS class_id,
+                AVG(${Prisma.raw(pointsExpr)})::float       AS mean_pts,
                 COUNT(DISTINCT ai."studentId")  AS entered_count
        FROM     "AssessmentItem" ai
        JOIN     "Student" s ON s."id" = ai."studentId"
-       WHERE    ai."schoolId"   = $1
-         AND    ai."periodId"   = ANY($2::text[])
-         AND    s."classId"     = ANY($3::text[])
+       WHERE    ai."schoolId"   = ${user.schoolId!}
+         AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
+         AND    s."classId"     = ANY(${classIds}::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
-       GROUP BY s."classId"`,
-      user.schoolId!,
-      currentPeriodIds,
-      classIds
-    ),
+       GROUP BY s."classId"`),
 
-    prisma.$queryRawUnsafe<SubjectAggrRow[]>(
-      `SELECT   ai."subjectId"                AS subject_id,
-                AVG(${pointsExpr})::float     AS mean_pts
+    prisma.$queryRaw<SubjectAggrRow[]>(Prisma.sql`
+      SELECT   ai."subjectId"                AS subject_id,
+                AVG(${Prisma.raw(pointsExpr)})::float     AS mean_pts
        FROM     "AssessmentItem" ai
        JOIN     "Student" s ON s."id" = ai."studentId"
-       WHERE    ai."schoolId"   = $1
-         AND    ai."periodId"   = ANY($2::text[])
-         AND    s."classId"     = ANY($3::text[])
+       WHERE    ai."schoolId"   = ${user.schoolId!}
+         AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
+         AND    s."classId"     = ANY(${classIds}::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
          AND    ai."subjectId" IS NOT NULL
-       GROUP BY ai."subjectId"`,
-      user.schoolId!,
-      currentPeriodIds,
-      classIds
-    ),
+       GROUP BY ai."subjectId"`),
 
     // CTE: compute per-student mean pts, then count those below threshold 4.
-    prisma.$queryRawUnsafe<AtRiskRow[]>(
-      `WITH student_means AS (
+    prisma.$queryRaw<AtRiskRow[]>(Prisma.sql`
+      WITH student_means AS (
          SELECT   ai."studentId",
-                  AVG(${pointsExpr})::float AS mean_pts
+                  AVG(${Prisma.raw(pointsExpr)})::float AS mean_pts
          FROM     "AssessmentItem" ai
          JOIN     "Student" s ON s."id" = ai."studentId"
-         WHERE    ai."schoolId"   = $1
-           AND    ai."periodId"   = ANY($2::text[])
-           AND    s."classId"     = ANY($3::text[])
+         WHERE    ai."schoolId"   = ${user.schoolId!}
+           AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
+           AND    s."classId"     = ANY(${classIds}::text[])
            AND    ai."resultKind" = 'NUMERIC'
            AND    ai."numericScore" IS NOT NULL
          GROUP BY ai."studentId"
        )
        SELECT COUNT(*)::bigint AS at_risk_count
        FROM   student_means
-       WHERE  mean_pts < 4`,
-      user.schoolId!,
-      currentPeriodIds,
-      classIds
-    ),
+       WHERE  mean_pts < 4`),
 
     scope === "school"
       ? prisma.teacher.count({ where: { schoolId: user.schoolId! } })
