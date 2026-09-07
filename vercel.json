@@ -1,6 +1,5 @@
 {
   "buildCommand": "prisma migrate deploy && prisma generate && next build",
-  "nodeVersion": "20.x",
   "functions": {
     "src/app/api/timetable/v2/generate/route.ts": {
       "maxDuration": 90
