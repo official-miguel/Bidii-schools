@@ -112,8 +112,16 @@ export async function checkLoginRateLimit(
   const identifierLimiter = getLoginIdentifierLimiter();
 
   if (!ipLimiter || !identifierLimiter) {
-    // Redis not configured — fail closed for login
-    return { allowed: false, reason: "redis_unavailable" };
+    // Production: fail closed — no Redis means no login
+    if (process.env.NODE_ENV === "production") {
+      return { allowed: false, reason: "redis_unavailable" };
+    }
+    // Development: fail open — skip rate limiting so local dev works without Redis
+    console.warn(
+      "[rateLimit] Redis not configured — login rate limiting DISABLED (dev mode only). " +
+      "Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN before deploying."
+    );
+    return { allowed: true };
   }
 
   const [ipResult, idResult] = await Promise.all([
