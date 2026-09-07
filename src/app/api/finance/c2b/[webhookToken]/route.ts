@@ -140,7 +140,7 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   }
 
   // 5d. Prefix search (catches "ADM001" matching "ADM0010" etc.) — still indexed.
-  let matchResult: { studentId: string; confidence: number } | null = null;
+  let matchResult: { studentId?: string; confidence: number } | null = null;
   if (exactStudent) {
     matchResult = { studentId: exactStudent.id, confidence: 1.0 };
   } else if (normalisedRef.length >= 3) {
