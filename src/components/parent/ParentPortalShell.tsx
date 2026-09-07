@@ -173,9 +173,21 @@ export default function ParentPortalShell({
     ? (children_list.find((c) => c.id === activeChildId) ?? children_list[0])
     : null;
 
-  // ── Sidebar link helper ────────────────────────────────────────────────────
+  // ── Sidebar link helpers ───────────────────────────────────────────────────
   function isActive(seg: string | null): boolean {
     return seg === null ? activeSeg === null : activeSeg === seg;
+  }
+
+  /**
+   * Returns the effective href for a nav item.
+   * For the fees route, appends ?child=<activeChildId> so the server
+   * component always receives the correct child param without a redirect.
+   */
+  function navHref(href: string): string {
+    if (href === "/parent/fees" && activeChild?.id) {
+      return `/parent/fees?child=${activeChild.id}`;
+    }
+    return href;
   }
 
   return (
@@ -375,7 +387,7 @@ export default function ParentPortalShell({
             return (
               <Link
                 key={href}
-                href={href}
+                href={navHref(href)}
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                              transition-colors duration-100 group relative
@@ -538,7 +550,7 @@ export default function ParentPortalShell({
                 return (
                   <Link
                     key={href}
-                    href={href}
+                    href={navHref(href)}
                     onClick={() => setDrawerOpen(false)}
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-3.5 w-full px-3 py-3 rounded-xl text-sm

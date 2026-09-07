@@ -4,15 +4,18 @@
  * Server component. Displays a parent's child fee balance, invoices, and
  * payment history fetched directly from Prisma.
  *
- * HARD ownership check on ?child= param — no fallback. If the param is
- * missing or the student is not owned by the authenticated parent, the page
- * shows a "Please select a child" message instead of data.
+ * Ownership check on ?child= param — if the param is missing and the parent
+ * has exactly one linked child, we auto-select that child via a redirect so
+ * single-child parents never see the "Please select a child" dead-end.
+ * If the param is present but not owned by this parent, the page falls back
+ * to the first owned child (multiple children) or shows the selector card
+ * (no children linked).
  *
  * Requirements: 7.1, 7.2, 7.3
  */
 
 import { redirect } from "next/navigation";
-import { requireParent, ownsStudent } from "@/lib/parentAuth";
+import { requireParent, ownsStudent, parentStudentIds } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import FeesBalanceCard from "@/components/parent/FeesBalanceCard";
 import InvoiceList from "@/components/parent/InvoiceList";
@@ -29,10 +32,23 @@ export default async function FeesPage({ searchParams }: Props) {
   const parent = await requireParent();
   if (!parent) redirect("/login");
 
-  // 2. HARD ownership check — require ?child= and verify ownership
-  const studentId = searchParams?.child ?? null;
+  const ownedIds = [...parentStudentIds(parent)];
+
+  // 2. Resolve which student to show
+  let studentId = searchParams?.child ?? null;
 
   if (!studentId || !ownsStudent(parent, studentId)) {
+    if (ownedIds.length === 1) {
+      // Single child — redirect to make the URL canonical so nav stays correct
+      redirect(`/parent/fees?child=${ownedIds[0]}`);
+    }
+
+    if (ownedIds.length > 1 && !studentId) {
+      // Multiple children, no param — redirect to the first child
+      redirect(`/parent/fees?child=${ownedIds[0]}`);
+    }
+
+    // No linked children, or invalid child param with no fallback
     return (
       <div className="space-y-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Fees</h1>
