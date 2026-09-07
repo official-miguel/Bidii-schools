@@ -6,7 +6,7 @@
  * Strips fields associated with personal data before events reach Sentry.
  * Extend SENSITIVE_KEYS as the schema grows.
  */
-import type { Event as SentryEvent } from "@sentry/nextjs";
+import type { ErrorEvent as SentryEvent } from "@sentry/nextjs";
 
 /** Keys whose values must never reach Sentry (case-insensitive, symbols stripped). */
 const SENSITIVE_KEYS = new Set([
