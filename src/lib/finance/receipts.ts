@@ -18,6 +18,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 // The Prisma transaction client type
 type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -40,7 +41,7 @@ export async function nextReceiptNumber(
   // Acquire a transaction-scoped advisory lock keyed on the school's ID hash.
   // This serialises receipt number generation for this school — any concurrent
   // transaction trying the same lock waits until this one commits or rolls back.
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${schoolId}))`;
+  await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
 
   // Find the highest existing receipt number for this school.
   // Order by receiptNumber desc (not paidAt) — payments posted at the same
@@ -84,7 +85,7 @@ export async function nextInvoiceNumber(
   schoolId: string,
   prefix: string
 ): Promise<string> {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${schoolId}))`;
+  await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
 
   const last = await tx.invoice.findFirst({
     where:   { schoolId },
