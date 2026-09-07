@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/messaging/scheduled-flush",
-      "schedule": "* * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }
