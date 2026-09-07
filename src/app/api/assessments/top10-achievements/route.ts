@@ -80,15 +80,20 @@ export async function POST(req: NextRequest) {
 
   const studentIdSet = new Set(allStudents.map((s) => s.id));
 
-  // Gather all subjects grouped by form
+  // PERF: replaced per-form loop (N queries for N distinct form numbers) with a
+  // single findMany that returns all subjects for this school. Filter by form in JS.
+  const allSubjectsForSchool = await prisma.subject.findMany({
+    where: { schoolId: user.schoolId! },
+    select: { id: true, applicableForms: true },
+  });
+
   const formSet = new Set(classes.map((c) => c.form));
   const subjectsByForm = new Map<number, Array<{ id: string }>>();
   for (const form of formSet) {
-    const subs = await prisma.subject.findMany({
-      where: { schoolId: user.schoolId!, applicableForms: { has: form } },
-      select: { id: true },
-    });
-    subjectsByForm.set(form, subs);
+    subjectsByForm.set(
+      form,
+      allSubjectsForSchool.filter((s) => s.applicableForms.includes(form))
+    );
   }
 
   // All papers for this period's framework

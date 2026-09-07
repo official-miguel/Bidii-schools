@@ -17,7 +17,7 @@ export async function GET() {
   if (auth.error) return auth.error;
   const { schoolId } = auth;
 
-  // Only pull accounts with a negative balance (students who owe money)
+  // Only pull accounts with a negative balance (students who owe money).
   const accounts = await prisma.studentFinanceAccount.findMany({
     where: { schoolId, currentBalance: { lt: 0 } },
     select: {
@@ -35,34 +35,47 @@ export async function GET() {
     },
   });
 
+  if (accounts.length === 0) return NextResponse.json({ rows: [] });
+
+  const studentIds = accounts.map((a) => a.student.id);
+
+  // PERF: instead of N parallel findFirst queries (one per debtor), fetch the
+  // oldest un-voided INVOICE date per student in a single DB groupBy aggregate.
+  const oldestInvoices = await prisma.ledgerEntry.groupBy({
+    by: ["studentId"],
+    where: {
+      schoolId,
+      studentId: { in: studentIds },
+      entryType: "INVOICE",
+      isVoided: false,
+    },
+    _min: { postedAt: true },
+  });
+
+  const oldestByStudent = new Map(
+    oldestInvoices.map((r) => [r.studentId, r._min.postedAt])
+  );
+
   const now = new Date();
 
-  const rows = await Promise.all(
-    accounts.map(async (acc) => {
-      // Find the oldest unpaid INVOICE entry to calculate days overdue
-      const oldest = await prisma.ledgerEntry.findFirst({
-        where:   { schoolId, studentId: acc.student.id, entryType: "INVOICE", isVoided: false },
-        orderBy: { postedAt: "asc" },
-        select:  { postedAt: true },
-      });
+  const rows = accounts.map((acc) => {
+    const oldest = oldestByStudent.get(acc.student.id) ?? null;
+    const daysOverdue = oldest
+      ? Math.floor((now.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
 
-      const daysOverdue = oldest
-        ? Math.floor((now.getTime() - oldest.postedAt.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-
-      return {
-        studentId:       acc.student.id,
-        fullName:        acc.student.fullName,
-        admissionNumber: acc.student.admissionNumber,
-        className:       acc.student.schoolClass?.name ?? null,
-        totalInvoiced:   acc.totalInvoiced.toString(),
-        totalPaid:       acc.totalPaid.toString(),
-        balance:         acc.currentBalance.toString(),
-        daysOverdue,
-        bucket:          agingBucket(daysOverdue),
-      };
-    })
-  );
+    return {
+      studentId:       acc.student.id,
+      fullName:        acc.student.fullName,
+      admissionNumber: acc.student.admissionNumber,
+      className:       acc.student.schoolClass?.name ?? null,
+      totalInvoiced:   acc.totalInvoiced.toString(),
+      totalPaid:       acc.totalPaid.toString(),
+      balance:         acc.currentBalance.toString(),
+      daysOverdue,
+      bucket:          agingBucket(daysOverdue),
+    };
+  });
 
   return NextResponse.json({ rows });
 }

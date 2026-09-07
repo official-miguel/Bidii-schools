@@ -108,15 +108,63 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   ]);
   if (existingEntry || existingQueue) return NextResponse.json(OK);
 
-  // 5. Fuzzy-match admission number
-  const allStudents = await prisma.student.findMany({
-    where:  { schoolId, archivedAt: null },
+  // 5. Match BillRefNumber → admission number.
+  //
+  // PERF: instead of fetching ALL students and fuzzy-matching in JS
+  // (O(N) memory + full table scan on every payment), we:
+  //   a) Try an exact DB match first (indexed lookup, sub-millisecond).
+  //   b) Only if that fails, fall back to a prefix-LIKE search to catch
+  //      minor typos (e.g. "ADM/001" vs "ADM001").
+  //   c) If still no match, queue for manual reconciliation without ever
+  //      loading the full student table.
+
+  // 5a. Normalise the account number the same way the fuzzy matcher does.
+  const normalisedRef = rawAccountNumber.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+  // 5b. Exact DB match on admissionNumber (schoolId + admissionNumber is indexed).
+  let exactStudent = await prisma.student.findFirst({
+    where: { schoolId, archivedAt: null, admissionNumber: rawAccountNumber },
     select: { id: true, admissionNumber: true },
   });
-  const matchResult = matchAdmissionNumber(
-    allStudents.map(s => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
-    rawAccountNumber
-  );
+
+  // 5c. Normalised exact match (strips punctuation).
+  if (!exactStudent && normalisedRef.length > 0) {
+    exactStudent = await prisma.student.findFirst({
+      where: {
+        schoolId,
+        archivedAt: null,
+        admissionNumber: { equals: normalisedRef, mode: "insensitive" },
+      },
+      select: { id: true, admissionNumber: true },
+    });
+  }
+
+  // 5d. Prefix search (catches "ADM001" matching "ADM0010" etc.) — still indexed.
+  let matchResult: { studentId: string; confidence: number } | null = null;
+  if (exactStudent) {
+    matchResult = { studentId: exactStudent.id, confidence: 1.0 };
+  } else if (normalisedRef.length >= 3) {
+    // Load only students whose admissionNumber starts with the first 6 chars of
+    // the ref — at most a handful of rows, not the whole school.
+    const prefix = normalisedRef.slice(0, Math.min(normalisedRef.length, 6));
+    const candidates = await prisma.student.findMany({
+      where: {
+        schoolId,
+        archivedAt: null,
+        admissionNumber: { startsWith: prefix, mode: "insensitive" },
+      },
+      select: { id: true, admissionNumber: true },
+      take: 20,
+    });
+    if (candidates.length > 0) {
+      // Use the original fuzzy matcher on this small candidate set.
+      const fuzzy = matchAdmissionNumber(
+        candidates.map((s) => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
+        rawAccountNumber,
+      );
+      if (fuzzy) matchResult = fuzzy;
+    }
+  }
 
   const prefix = receiptPrefix ?? "REC-";
 

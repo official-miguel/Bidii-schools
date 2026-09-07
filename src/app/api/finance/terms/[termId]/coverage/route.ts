@@ -14,30 +14,31 @@ export async function GET(
   if (auth.error) return auth.error;
   const { schoolId } = auth;
 
-  const term = await prisma.term.findFirst({
-    where:  { id: params.termId, schoolId },
-    select: { id: true, name: true, termNameId: true },
-  });
+  // PERF: term is fast (PK lookup). classes and structures are independent of
+  // each other — run all three in parallel, then check term after resolution.
+  const [term, classes, allStructures] = await Promise.all([
+    prisma.term.findFirst({
+      where:  { id: params.termId, schoolId },
+      select: { id: true, name: true, termNameId: true },
+    }),
+    prisma.schoolClass.findMany({
+      where:   { schoolId },
+      select:  { id: true, name: true, form: true, stream: true },
+      orderBy: [{ form: "asc" }, { stream: "asc" }],
+    }),
+    // Fetch all structures; we'll filter by termNameId in JS after term resolves.
+    prisma.feeStructure.findMany({
+      where: { schoolId },
+      select: { form: true, stream: true, termNameId: true, amountPerTerm: true },
+    }),
+  ]);
+
   if (!term) return NextResponse.json({ error: "Term not found." }, { status: 404 });
 
-  // All classes in the school
-  const classes = await prisma.schoolClass.findMany({
-    where:   { schoolId },
-    select:  { id: true, name: true, form: true, stream: true },
-    orderBy: [{ form: "asc" }, { stream: "asc" }],
-  });
-
-  // All fee structures — prefer termNameId match, fallback to null (all terms)
-  const structures = await prisma.feeStructure.findMany({
-    where: {
-      schoolId,
-      OR: [
-        { termNameId: term.termNameId },
-        { termNameId: null },
-      ],
-    },
-    select: { form: true, stream: true, termNameId: true, amountPerTerm: true },
-  });
+  // Filter structures to those matching this term or with no term restriction.
+  const structures = allStructures.filter(
+    (s) => s.termNameId === term.termNameId || s.termNameId === null
+  );
 
   // Build a lookup: "form:stream" → best structure (term-specific wins over generic)
   const structureMap = new Map<string, { amountPerTerm: string; termSpecific: boolean }>();

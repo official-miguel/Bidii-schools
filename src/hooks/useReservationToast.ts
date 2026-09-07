@@ -99,9 +99,14 @@ function showReservationToast(payload: ReservationActivatedPayload, durationMs =
 
 export function useReservationToast(): void {
   useEffect(() => {
-    const es = new EventSource("/api/library/sse/library");
+    // PERF: use a module-level shared EventSource so that multiple components
+    // mounting this hook on the same page don't each open their own SSE
+    // connection. The connection is opened on first use and reused for all
+    // subsequent mounts. It stays open as long as at least one component is
+    // subscribed; the actual close happens when the last subscriber unmounts.
+    const connection = SharedLibrarySSE.acquire();
 
-    es.onmessage = (evt) => {
+    const handler = (evt: MessageEvent) => {
       try {
         const event = JSON.parse(evt.data) as { type: string; payload: unknown };
         if (event.type !== "libraryReservation.activated") return;
@@ -111,12 +116,37 @@ export function useReservationToast(): void {
       }
     };
 
-    es.onerror = () => {
-      // EventSource auto-reconnects — no explicit retry needed
-    };
+    connection.addEventListener("message", handler);
 
     return () => {
-      es.close();
+      connection.removeEventListener("message", handler);
+      SharedLibrarySSE.release();
     };
   }, []);
 }
+
+// ── Shared singleton SSE connection ──────────────────────────────────────────
+// Keeps a reference count so the underlying EventSource is only created once
+// per page regardless of how many components call useReservationToast().
+const SharedLibrarySSE = (() => {
+  let es: EventSource | null = null;
+  let refCount = 0;
+
+  function acquire(): EventSource {
+    if (!es || es.readyState === EventSource.CLOSED) {
+      es = new EventSource("/api/library/sse/library");
+    }
+    refCount++;
+    return es;
+  }
+
+  function release(): void {
+    refCount = Math.max(0, refCount - 1);
+    if (refCount === 0 && es) {
+      es.close();
+      es = null;
+    }
+  }
+
+  return { acquire, release };
+})();

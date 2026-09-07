@@ -34,21 +34,28 @@ export async function GET(req: NextRequest) {
 
   const classFrameworkType = schoolClass.frameworkType as string;
 
-  const period = await prisma.assessmentPeriod.findFirst({
-    where: {
-      id: periodId,
-      schoolId: user.schoolId!,
-    },
-    select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-  });
-  if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
+  // PERF: period, subject, and students are all independent of each other —
+  // run them in parallel instead of three sequential round-trips.
+  const [period, subject, students] = await Promise.all([
+    prisma.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
+    }),
+    prisma.subject.findFirst({
+      where: { id: subjectId, schoolId: user.schoolId! },
+      select: { id: true, name: true, code: true },
+    }),
+    prisma.student.findMany({
+      where: { classId, schoolId: user.schoolId! },
+      orderBy: { admissionNumber: "asc" },
+      select: { id: true, fullName: true, admissionNumber: true },
+    }),
+  ]);
 
-  const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, schoolId: user.schoolId! },
-    select: { id: true, name: true, code: true },
-  });
+  if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
   if (!subject) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
 
+  // Papers depend on period.frameworkId so they must come after period resolves.
   const papers: Array<{ id: string; name: string; maxMarks: number; sortOrder: number }> =
     await prisma.paper.findMany({
       where: {
@@ -59,12 +66,6 @@ export async function GET(req: NextRequest) {
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true, maxMarks: true, sortOrder: true },
     });
-
-  const students = await prisma.student.findMany({
-    where: { classId, schoolId: user.schoolId! },
-    orderBy: { admissionNumber: "asc" },
-    select: { id: true, fullName: true, admissionNumber: true },
-  });
 
   if (students.length === 0) {
     return NextResponse.json({ period, subject, schoolClass, papers, rows: [] });

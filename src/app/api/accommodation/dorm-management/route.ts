@@ -103,6 +103,9 @@ const bodySchema = z.discriminatedUnion("action", [
  *
  * The dormId / cubicleId / bedId / sleepingPositionId columns are intentionally
  * NOT cleared — they are the snapshot that MAINTENANCE_REOPEN uses to restore.
+ *
+ * PERF: uses updateMany + a single sleeping-position updateMany instead of
+ * looping with one UPDATE per student (was O(2N) queries, now O(2) queries).
  */
 async function snapshotDormAllocations(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
@@ -110,27 +113,32 @@ async function snapshotDormAllocations(
   schoolId: string,
   reason: string,
 ): Promise<number> {
+  // 1. Collect the sleeping-position IDs we need to free BEFORE we change status.
   const current = await tx.allocationRecord.findMany({
     where: { dormId, status: "CURRENT", schoolId },
+    select: { id: true, sleepingPositionId: true },
   });
 
-  for (const alloc of current) {
-    await tx.allocationRecord.update({
-      where: { id: alloc.id },
-      data: {
-        status: "MAINTENANCE_HOLD",
-        vacatedDate: new Date(),
-        notes: reason,
-      },
+  if (current.length === 0) return 0;
+
+  const now = new Date();
+
+  // 2. Bulk-update all allocation records in one query.
+  await tx.allocationRecord.updateMany({
+    where: { dormId, status: "CURRENT", schoolId },
+    data: { status: "MAINTENANCE_HOLD", vacatedDate: now, notes: reason },
+  });
+
+  // 3. Bulk-free all occupied sleeping positions in one query.
+  const positionIds = current
+    .map((a) => a.sleepingPositionId)
+    .filter((id): id is string => id !== null);
+
+  if (positionIds.length > 0) {
+    await tx.sleepingPosition.updateMany({
+      where: { id: { in: positionIds } },
+      data: { isOccupied: false },
     });
-    // Free the position so the UI shows it as available (for other dorms) and
-    // so auto-allocate / bulk-allocate don't count it as occupied.
-    if (alloc.sleepingPositionId) {
-      await tx.sleepingPosition.update({
-        where: { id: alloc.sleepingPositionId },
-        data: { isOccupied: false },
-      });
-    }
   }
 
   return current.length;
@@ -253,44 +261,51 @@ export async function POST(req: NextRequest) {
     });
     if (!fromDorm) return NextResponse.json({ error: "Source dormitory not found." }, { status: 404 });
 
+    // Load before the transaction so we have student IDs + position IDs.
     const currentAllocations = await prisma.allocationRecord.findMany({
       where: { dormId: fromDormId, status: "CURRENT", schoolId },
+      select: { id: true, studentId: true, sleepingPositionId: true },
     });
 
-    let relocated = 0;
+    const relocated = currentAllocations.length;
 
     await prisma.$transaction(async (tx) => {
-      for (const alloc of currentAllocations) {
-        // Permanently vacate (not a snapshot — this is an emergency)
-        await tx.allocationRecord.update({
-          where: { id: alloc.id },
+      if (currentAllocations.length > 0) {
+        const positionIds = currentAllocations
+          .map((a) => a.sleepingPositionId)
+          .filter((id): id is string => id !== null);
+
+        // Bulk-vacate all CURRENT allocations in one query.
+        await tx.allocationRecord.updateMany({
+          where: { dormId: fromDormId, status: "CURRENT", schoolId },
           data: {
             status: "VACATED",
             vacatedDate: new Date(),
             notes: `Emergency relocation: ${reason}`,
           },
         });
-        if (alloc.sleepingPositionId) {
-          await tx.sleepingPosition.update({
-            where: { id: alloc.sleepingPositionId },
+
+        // Bulk-free all sleeping positions in one query.
+        if (positionIds.length > 0) {
+          await tx.sleepingPosition.updateMany({
+            where: { id: { in: positionIds } },
             data: { isOccupied: false },
           });
         }
 
+        // Bulk-create new CURRENT allocations in the target dorm (if specified).
         if (toDormId) {
-          await tx.allocationRecord.create({
-            data: {
+          await tx.allocationRecord.createMany({
+            data: currentAllocations.map((alloc) => ({
               schoolId,
               studentId: alloc.studentId,
               dormId: toDormId,
               notes: notes ?? `Emergency relocation from ${fromDorm.name}: ${reason}`,
               allocatedById: user.id,
               status: "CURRENT",
-            },
+            })),
           });
         }
-
-        relocated++;
       }
 
       await tx.dormitory.update({
@@ -326,45 +341,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let snapshotted = 0;
-    let relocated = 0;
+    // Load current allocations before the transaction.
+    const currentForMaint = await prisma.allocationRecord.findMany({
+      where: { dormId, status: "CURRENT", schoolId },
+      select: { studentId: true, sleepingPositionId: true },
+    });
+
+    const snapshotted = currentForMaint.length;
+    const relocated = relocateStudents && toDormId ? snapshotted : 0;
 
     await prisma.$transaction(async (tx) => {
-      // Snapshot every CURRENT allocation in this dorm
-      const current = await tx.allocationRecord.findMany({
-        where: { dormId, status: "CURRENT", schoolId },
-      });
+      if (currentForMaint.length > 0) {
+        const positionIds = currentForMaint
+          .map((a) => a.sleepingPositionId)
+          .filter((id): id is string => id !== null);
 
-      for (const alloc of current) {
-        await tx.allocationRecord.update({
-          where: { id: alloc.id },
+        // Bulk-snapshot all CURRENT allocations → MAINTENANCE_HOLD.
+        await tx.allocationRecord.updateMany({
+          where: { dormId, status: "CURRENT", schoolId },
           data: {
             status: "MAINTENANCE_HOLD",
             vacatedDate: new Date(),
             notes: `Maintenance closure: ${reason}`,
           },
         });
-        if (alloc.sleepingPositionId) {
-          await tx.sleepingPosition.update({
-            where: { id: alloc.sleepingPositionId },
+
+        // Bulk-free all sleeping positions.
+        if (positionIds.length > 0) {
+          await tx.sleepingPosition.updateMany({
+            where: { id: { in: positionIds } },
             data: { isOccupied: false },
           });
         }
-        snapshotted++;
 
-        // Optionally assign a temporary CURRENT allocation in another dorm
+        // Optionally bulk-create temporary allocations in target dorm.
         if (relocateStudents && toDormId) {
-          await tx.allocationRecord.create({
-            data: {
+          await tx.allocationRecord.createMany({
+            data: currentForMaint.map((alloc) => ({
               schoolId,
               studentId: alloc.studentId,
               dormId: toDormId,
               notes: notes ?? `Temporarily relocated from ${dorm.name} during maintenance`,
               allocatedById: user.id,
               status: "CURRENT",
-            },
+            })),
           });
-          relocated++;
         }
       }
 
@@ -556,34 +577,43 @@ export async function POST(req: NextRequest) {
     });
     if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
-    // Vacate both CURRENT and MAINTENANCE_HOLD allocations
+    // Load both CURRENT and MAINTENANCE_HOLD allocations before the transaction.
     const activeAllocations = await prisma.allocationRecord.findMany({
       where: {
         dormId,
         status: { in: ["CURRENT", "MAINTENANCE_HOLD"] },
         schoolId,
       },
+      select: { sleepingPositionId: true },
     });
 
-    let removed = 0;
+    const removed = activeAllocations.length;
 
     await prisma.$transaction(async (tx) => {
-      for (const alloc of activeAllocations) {
-        await tx.allocationRecord.update({
-          where: { id: alloc.id },
-          data: {
-            status: "VACATED",
-            vacatedDate: new Date(),
-            notes: notes ?? reason,
-          },
+      // Bulk-vacate all active allocations.
+      await tx.allocationRecord.updateMany({
+        where: {
+          dormId,
+          status: { in: ["CURRENT", "MAINTENANCE_HOLD"] },
+          schoolId,
+        },
+        data: {
+          status: "VACATED",
+          vacatedDate: new Date(),
+          notes: notes ?? reason,
+        },
+      });
+
+      // Bulk-free all sleeping positions.
+      const positionIds = activeAllocations
+        .map((a) => a.sleepingPositionId)
+        .filter((id): id is string => id !== null);
+
+      if (positionIds.length > 0) {
+        await tx.sleepingPosition.updateMany({
+          where: { id: { in: positionIds } },
+          data: { isOccupied: false },
         });
-        if (alloc.sleepingPositionId) {
-          await tx.sleepingPosition.update({
-            where: { id: alloc.sleepingPositionId },
-            data: { isOccupied: false },
-          });
-        }
-        removed++;
       }
     }, { timeout: 30_000 });
 
