@@ -112,14 +112,11 @@ export async function checkLoginRateLimit(
   const identifierLimiter = getLoginIdentifierLimiter();
 
   if (!ipLimiter || !identifierLimiter) {
-    // Production: fail closed — no Redis means no login
-    if (process.env.NODE_ENV === "production") {
-      return { allowed: false, reason: "redis_unavailable" };
-    }
-    // Development: fail open — skip rate limiting so local dev works without Redis
+    // Redis not configured — fail open so login is never blocked by a missing env var.
+    // Rate limiting is simply skipped; all other auth checks (password, account status) still apply.
     console.warn(
-      "[rateLimit] Redis not configured — login rate limiting DISABLED (dev mode only). " +
-      "Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN before deploying."
+      "[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — login rate limiting DISABLED. " +
+      "Set these env vars to enable distributed rate limiting."
     );
     return { allowed: true };
   }
