@@ -8,7 +8,7 @@ export default async function StaffTimetableLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN_STAFF") redirect("/login");
+  if (!user) redirect("/login");
 
   const perms = await getEffectivePermissions(user);
   const canManage = !!(perms.TIMETABLE?.canManage || perms.TIMETABLE?.canConfigure);

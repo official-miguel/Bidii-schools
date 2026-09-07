@@ -15,7 +15,7 @@ export default async function ParentLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== "PARENT") {
+  if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) {
     redirect("/login");
   }
 

@@ -107,19 +107,19 @@ class ApiClient {
     if (params?.form) search.set('form', params.form.toString());
     if (params?.subject) search.set('subject', params.subject);
     if (params?.page) search.set('page', params.page.toString());
-    return this.get<CatalogueListResult>(`/api/library/catalogues?${search}`);
+    return this.get<CatalogueListResult>(`/api/library/catalogue?${search}`);
   }
 
   createCatalogue(data: CreateCatalogueInput) {
-    return this.post<CatalogueRecord>('/api/library/catalogues', data);
+    return this.post<CatalogueRecord>('/api/library/catalogue', data);
   }
 
   updateCatalogue(id: string, data: Partial<CreateCatalogueInput>) {
-    return this.patch<CatalogueRecord>(`/api/library/catalogues/${id}`, data);
+    return this.patch<CatalogueRecord>(`/api/library/catalogue/${id}`, data);
   }
 
   getCatalogueWithCopies(id: string) {
-    return this.get<CatalogueWithCopies>(`/api/library/catalogues/${id}`);
+    return this.get<CatalogueWithCopies>(`/api/library/catalogue/${id}`);
   }
 
   // ── Copies ────────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ class ApiClient {
   }
 
   bulkImportCatalogues(data: CreateCatalogueInput[]) {
-    return this.post<{ created: number; errors: string[] }>('/api/library/catalogues/bulk', { records: data });
+    return this.post<{ created: number; errors: string[] }>('/api/library/catalogue/bulk', { records: data });
   }
 
   // ── Circulation ───────────────────────────────────────────────────────────

@@ -1,0 +1,4 @@
+.next/types/app/parent-login/page.ts(2,24): error TS2307: Cannot find module '../../../../src/app/parent-login/page.js' or its corresponding type declarations.
+.next/types/app/parent-login/page.ts(5,29): error TS2307: Cannot find module '../../../../src/app/parent-login/page.js' or its corresponding type declarations.
+.next/types/app/parent-login/set-password/page.ts(2,24): error TS2307: Cannot find module '../../../../../src/app/parent-login/set-password/page.js' or its corresponding type declarations.
+.next/types/app/parent-login/set-password/page.ts(5,29): error TS2307: Cannot find module '../../../../../src/app/parent-login/set-password/page.js' or its corresponding type declarations.

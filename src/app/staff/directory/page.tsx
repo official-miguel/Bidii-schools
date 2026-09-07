@@ -14,7 +14,7 @@ import { Avatar, Chip } from "@/components/ui";
 
 export default async function StaffDirectoryPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN_STAFF") redirect("/login");
+  if (!user || (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR")) redirect("/login");
 
   const teachers = await prisma.teacher.findMany({
     where:   { schoolId: user.schoolId! },

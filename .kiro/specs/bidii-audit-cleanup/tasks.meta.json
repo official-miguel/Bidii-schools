@@ -1,0 +1,530 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Traverse web pages and record interactive elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737606823
+      },
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737623767
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741037672
+      }
+    ],
+    "1.2 Traverse mobile screens and record interactive elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737607176
+      },
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737624300
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741047532
+      }
+    ],
+    "1.3 Write phase1-inventory.md report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737607659
+      },
+      {
+        "executionId": "cae9c3ff-aa67-4df9-8316-44f6916164a4",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788739766740
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741051351
+      }
+    ],
+    "2. Approval Gate — Phase 1 Report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608010
+      }
+    ],
+    "3.1 Run Check A — middleware coverage for auth-check-misfiring elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608139
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741056090
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743101309
+      }
+    ],
+    "3.2 Run Check B — server-side guard resolution for auth-check-misfiring elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608303
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741056694
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743101905
+      }
+    ],
+    "3.3 Run Check C — page / screen existence for missing-route elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608607
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741057403
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743102799
+      }
+    ],
+    "3.4 Run Check D — API route existence for api-route-missing elements": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608749
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741058016
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743104609
+      }
+    ],
+    "3.5 Run Check E — error boundary coverage scan": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737608949
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741058486
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743104736
+      }
+    ],
+    "3.6 Write phase2-diagnosis.md report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737609165
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743108936
+      },
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743261229
+      }
+    ],
+    "4. Approval Gate — Phase 2 Report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737609356
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743420287
+      }
+    ],
+    "5.1 Create missing web page.tsx files for missing-route items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737609563
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743426611
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745132518
+      }
+    ],
+    "5.2 Create missing mobile screen files for missing-route items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737609776
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743427083
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745132835
+      }
+    ],
+    "6.1 Patch guard calls for auth-check-misfiring items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737610037
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743426007
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745130821
+      }
+    ],
+    "7.1 Add missing event bindings for handler-not-wired items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737610194
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745139068
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745535736
+      }
+    ],
+    "8.1 Create missing route.ts files for api-route-missing items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737610398
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745139939
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745535223
+      }
+    ],
+    "9.1 Add error.tsx at each portal root that is missing one": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737611732
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743425083
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745131736
+      }
+    ],
+    "10.1 Correct wrong permission guard parameters": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737612084
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745140618
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745536778
+      }
+    ],
+    "11.1 Apply case-by-case fixes for other category items": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737612231
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745541364
+      }
+    ],
+    "12. Checkpoint — Phase 3 complete": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737612383
+      },
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745569155
+      }
+    ],
+    "13.1 Scan for unused imports and unexported dead symbols": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737612725
+      }
+    ],
+    "13.2 Scan for components never rendered and unreachable API routes": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737612908
+      }
+    ],
+    "13.3 Scan for utility functions with no callers and duplicate implementations": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737613128
+      }
+    ],
+    "13.4 Scan for debug statements and commented-out code blocks": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737613291
+      }
+    ],
+    "13.5 Write phase4-dead-code.md report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737613465
+      }
+    ],
+    "14. Approval Gate — Phase 4 Report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737613622
+      }
+    ],
+    "15.1 Remove approved Tier 1 items one at a time": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737613775
+      }
+    ],
+    "16. Checkpoint — Phase 4 complete": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737614005
+      }
+    ],
+    "17.1 Scan for hardcoded string constants repeated in 3+ files": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737614354
+      }
+    ],
+    "17.2 Scan for inconsistent auth-guard patterns": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737614605
+      }
+    ],
+    "17.3 Scan for missing or inconsistent error handling": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737615366
+      }
+    ],
+    "17.4 Scan for orphaned scripts at src/ and mobile/ root": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737615615
+      }
+    ],
+    "17.5 Write phase5-foundation.md report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737615813
+      }
+    ],
+    "18. Approval Gate — Phase 5 Report": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737616204
+      }
+    ],
+    "19.1 Apply approved foundation fixes one at a time": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737616502
+      }
+    ],
+    "20. Checkpoint — Phase 5 complete": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737616683
+      }
+    ],
+    "21.1 Generate fix-verification test cases for every Phase 3 fix": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737616835
+      }
+    ],
+    "21.2 Generate regression test cases for each touched module": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737617063
+      }
+    ],
+    "21.3 Generate auth-redirect test cases for guard and middleware changes": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737617250
+      }
+    ],
+    "21.4 Group test cases by role and write phase6-verification.md": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737617450
+      }
+    ],
+    "22. Final Checkpoint — Audit complete": [
+      {
+        "executionId": "5595c592-81af-4a74-831a-65ada8497f08",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788737617735
+      }
+    ],
+    "1. Phase 1 — Interactive Element Inventory": [
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788741051440
+      }
+    ],
+    "3. Phase 2 — Auth and Routing Diagnosis": [
+      {
+        "executionId": "06a5b719-599b-47ab-b225-ed8c393ad839",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788743261462
+      }
+    ],
+    "6. Phase 3 — Broken Element Fixes (Group 2: auth-check-misfiring)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745131089
+      }
+    ],
+    "9. Phase 3 — Broken Element Fixes (Group 5: error boundaries)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745131903
+      }
+    ],
+    "5. Phase 3 — Broken Element Fixes (Group 1: missing-route)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745132999
+      }
+    ],
+    "8. Phase 3 — Broken Element Fixes (Group 4: api-route-missing)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745535336
+      }
+    ],
+    "7. Phase 3 — Broken Element Fixes (Group 3: handler-not-wired)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745535980
+      }
+    ],
+    "10. Phase 3 — Broken Element Fixes (Group 6: wrong-permission-check)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745536986
+      }
+    ],
+    "11. Phase 3 — Broken Element Fixes (Group 7: other)": [
+      {
+        "executionId": "b7c06714-6446-4d52-8653-e46f5fcf8002",
+        "chatSessionId": "sess_3f46115c-b12e-481b-9575-e2553b2abee9",
+        "timestamp": 1788745541468
+      }
+    ]
+  }
+}

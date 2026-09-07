@@ -5,7 +5,7 @@ import UnifiedDashboard from "@/components/dashboard/UnifiedDashboard";
 
 export default async function StaffPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN_STAFF") redirect("/login");
+  if (!user || (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR")) redirect("/login");
 
   // Guard for users who navigate directly to /staff.
   // The root dispatcher already handles this at login, so this is purely a
