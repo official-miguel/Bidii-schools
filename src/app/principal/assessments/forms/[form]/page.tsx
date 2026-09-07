@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import UnifiedClassTable from "@/components/assessment/UnifiedClassTable";
 import type { ClassRow } from "@/components/assessment/UnifiedClassTable";
 
@@ -73,18 +74,15 @@ export default async function FormStreamsPage({ params }: PageProps) {
       entered_count: bigint;
     };
 
-    const aggr = await prisma.$queryRawUnsafe<ClassAggrRow[]>(
-      `SELECT   s."classId"                    AS class_id,
-                AVG(${pointsExpr})::float       AS mean_pts,
+    const aggr = await prisma.$queryRaw<ClassAggrRow[]>(Prisma.sql`
+      SELECT   s."classId"                    AS class_id,
+                AVG(${Prisma.raw(pointsExpr)})::float       AS mean_pts,
                 COUNT(DISTINCT ai."studentId")  AS entered_count
        FROM     "AssessmentItem" ai
        JOIN     "Student" s ON s."id" = ai."studentId"
-       WHERE    ai."periodId" = $1
-         AND    s."classId" = ANY($2::text[])
-       GROUP BY s."classId"`,
-      currentPeriod.id,
-      classIds
-    );
+       WHERE    ai."periodId" = ${currentPeriod.id}
+         AND    s."classId" = ANY(${classIds}::text[])
+       GROUP BY s."classId"`);
 
     // Total active (non-archived) students per class for completion %
     const studentCounts = await prisma.student.groupBy({

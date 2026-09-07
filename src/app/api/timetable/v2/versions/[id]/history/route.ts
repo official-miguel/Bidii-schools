@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma }                   from "@/lib/prisma";
+import { Prisma }                   from "@prisma/client";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 
@@ -28,13 +29,17 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const search = req.nextUrl.searchParams;
   const page   = Math.max(1,   Number(search.get("page")  ?? "1"));
   const limit  = Math.min(200, Math.max(1, Number(search.get("limit") ?? "50")));
-  const source = search.get("source");   // optional filter
+  const source = search.get("source");   // optional filter — must be an allowlisted value
   const offset = (page - 1) * limit;
 
-  // Build source filter
-  const sourceClause = source
-    ? `AND l."changeSource" = '${source.replace(/'/g, "''")}'`
-    : "";
+  // Allowlist the source filter value so it can be safely included in SQL.
+  // Any value not in this set is silently ignored (treated as "no filter").
+  const ALLOWED_SOURCES = new Set(["MANUAL", "AI", "SYSTEM"] as const);
+  type AllowedSource = "MANUAL" | "AI" | "SYSTEM";
+  const safeSource: AllowedSource | null =
+    source && ALLOWED_SOURCES.has(source as AllowedSource)
+      ? (source as AllowedSource)
+      : null;
 
   type LogRow = {
     id: string;
@@ -51,7 +56,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     performerRole:  string | null;
   };
 
-  const rows = await prisma.$queryRawUnsafe<LogRow[]>(`
+  const rows = await prisma.$queryRaw<LogRow[]>(Prisma.sql`
     SELECT
       l.id,
       l.action,
@@ -67,16 +72,18 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       u.role      AS "performerRole"
     FROM "TimetableChangeLog" l
     LEFT JOIN "User" u ON u.id = l."performedById"
-    WHERE l."versionId" = $1 ${sourceClause}
+    WHERE l."versionId" = ${params.id}
+      ${safeSource ? Prisma.sql`AND l."changeSource" = ${safeSource}` : Prisma.empty}
     ORDER BY l."performedAt" DESC
-    LIMIT $2 OFFSET $3
-  `, params.id, limit, offset);
+    LIMIT ${limit} OFFSET ${offset}
+  `);
 
   // Total count for pagination
-  const countRows = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(`
+  const countRows = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
     SELECT COUNT(*) FROM "TimetableChangeLog"
-    WHERE "versionId" = $1 ${sourceClause}
-  `, params.id);
+    WHERE "versionId" = ${params.id}
+      ${safeSource ? Prisma.sql`AND "changeSource" = ${safeSource}` : Prisma.empty}
+  `);
 
   const total = Number(countRows[0]?.count ?? 0);
 

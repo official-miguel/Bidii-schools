@@ -106,20 +106,15 @@ export async function GET(req: NextRequest) {
     }
 
     type DayRow = { day: string; present_count: bigint; total_count: bigint };
-    const rows = await prisma.$queryRawUnsafe<DayRow[]>(
-      `SELECT   TO_CHAR(a.date, 'YYYY-MM-DD') AS day,
-                COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint AS present_count,
-                COUNT(*)::bigint AS total_count
-       FROM     "Attendance" a
-       WHERE    a."schoolId" = $1 AND a."classId" = $2
-         AND    a.date >= $3 AND a.date <= $4
-       GROUP BY a.date
-       ORDER BY a.date ASC`,
-      user.schoolId!,
-      classId,
-      from,
-      to,
-    );
+    const rows = await prisma.$queryRaw<DayRow[]>`
+      SELECT   TO_CHAR(a.date, 'YYYY-MM-DD') AS day,
+               COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint AS present_count,
+               COUNT(*)::bigint AS total_count
+      FROM     "Attendance" a
+      WHERE    a."schoolId" = ${user.schoolId!} AND a."classId" = ${classId}
+        AND    a.date >= ${from} AND a.date <= ${to}
+      GROUP BY a.date
+      ORDER BY a.date ASC`;
 
     return NextResponse.json(
       rows.map((r) => ({
@@ -275,9 +270,9 @@ export async function GET(req: NextRequest) {
       trend_absent: bigint;
     };
 
-    // Parameters: $1 = schoolId, $2 = date, $3 = trendFrom (30 days ago)
-    const rows = await prisma.$queryRawUnsafe<AbsentRow[]>(
-      `SELECT
+    // Parameters: schoolId, date, trendFrom (30 days ago)
+    const rows = await prisma.$queryRaw<AbsentRow[]>`
+      SELECT
          s.id                                                                 AS student_id,
          s."fullName"                                                         AS full_name,
          s."admissionNumber"                                                  AS admission_number,
@@ -290,26 +285,21 @@ export async function GET(req: NextRequest) {
        FROM "Attendance" a
        JOIN "Student"     s  ON s.id  = a."studentId"
        JOIN "SchoolClass" sc ON sc.id = a."classId"
-       -- 30-day aggregate for the trend column (LEFT JOIN so rows still appear even with no history)
        LEFT JOIN (
          SELECT
            "studentId",
            COUNT(*) FILTER (WHERE status = 'PRESENT')::bigint AS trend_present,
            COUNT(*) FILTER (WHERE status = 'ABSENT')::bigint  AS trend_absent
          FROM   "Attendance"
-         WHERE  "schoolId" = $1
-           AND  date >= $3
-           AND  date <= $2
+         WHERE  "schoolId" = ${user.schoolId!}
+           AND  date >= ${trendFrom}
+           AND  date <= ${date}
          GROUP BY "studentId"
        ) t ON t."studentId" = s.id
-       WHERE a."schoolId" = $1
-         AND a.date       = $2
+       WHERE a."schoolId" = ${user.schoolId!}
+         AND a.date       = ${date}
          AND a.status     = 'ABSENT'
-       ORDER BY sc."form" ASC, sc."name" ASC, s."fullName" ASC`,
-      user.schoolId!,
-      date,
-      trendFrom,
-    );
+       ORDER BY sc."form" ASC, sc."name" ASC, s."fullName" ASC`;
 
     const students = rows.map((r) => {
       const trendPresent = Number(r.trend_present);
@@ -364,58 +354,50 @@ export async function GET(req: NextRequest) {
 
     const [formRows, streamRows, studentRows, totalRows] = await Promise.all([
       // GROUP BY form
-      prisma.$queryRawUnsafe<FormRow[]>(
-        `SELECT   sc."form",
+      prisma.$queryRaw<FormRow[]>`
+        SELECT   sc."form",
                   COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint AS present_count,
                   COUNT(*) FILTER (WHERE a.status = 'ABSENT')::bigint  AS absent_count
          FROM     "Attendance" a
          JOIN     "SchoolClass" sc ON sc.id = a."classId"
-         WHERE    a."schoolId" = $1
-           AND    a.date >= $2
-           AND    a.date <= $3
+         WHERE    a."schoolId" = ${user.schoolId!}
+           AND    a.date >= ${from}
+           AND    a.date <= ${to}
          GROUP BY sc."form"`,
-        user.schoolId!, from, to
-      ),
 
       // GROUP BY class (stream)
-      prisma.$queryRawUnsafe<StreamRow[]>(
-        `SELECT   sc.id                                                  AS class_id,
+      prisma.$queryRaw<StreamRow[]>`
+        SELECT   sc.id                                                  AS class_id,
                   sc."name"                                              AS class_name,
                   sc.stream,
                   COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint  AS present_count,
                   COUNT(*) FILTER (WHERE a.status = 'ABSENT')::bigint   AS absent_count
          FROM     "Attendance" a
          JOIN     "SchoolClass" sc ON sc.id = a."classId"
-         WHERE    a."schoolId" = $1
-           AND    a.date >= $2
-           AND    a.date <= $3
+         WHERE    a."schoolId" = ${user.schoolId!}
+           AND    a.date >= ${from}
+           AND    a.date <= ${to}
          GROUP BY sc.id, sc."name", sc.stream`,
-        user.schoolId!, from, to
-      ),
 
       // GROUP BY student
-      prisma.$queryRawUnsafe<StudentRow[]>(
-        `SELECT   s.id                                                   AS student_id,
+      prisma.$queryRaw<StudentRow[]>`
+        SELECT   s.id                                                   AS student_id,
                   s."fullName"                                           AS full_name,
                   s."admissionNumber"                                    AS admission_number,
                   COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint  AS present_count,
                   COUNT(*) FILTER (WHERE a.status = 'ABSENT')::bigint   AS absent_count
          FROM     "Attendance" a
          JOIN     "Student" s ON s.id = a."studentId"
-         WHERE    a."schoolId" = $1
-           AND    a.date >= $2
-           AND    a.date <= $3
+         WHERE    a."schoolId" = ${user.schoolId!}
+           AND    a.date >= ${from}
+           AND    a.date <= ${to}
          GROUP BY s.id, s."fullName", s."admissionNumber"`,
-        user.schoolId!, from, to
-      ),
 
       // Total recorded
-      prisma.$queryRawUnsafe<[{ total: bigint }]>(
-        `SELECT COUNT(*)::bigint AS total
+      prisma.$queryRaw<[{ total: bigint }]>`
+        SELECT COUNT(*)::bigint AS total
          FROM   "Attendance"
-         WHERE  "schoolId" = $1 AND date >= $2 AND date <= $3`,
-        user.schoolId!, from, to
-      ),
+         WHERE  "schoolId" = ${user.schoolId!} AND date >= ${from} AND date <= ${to}`,
     ]);
 
     const addRate = (p: bigint, a: bigint) => {

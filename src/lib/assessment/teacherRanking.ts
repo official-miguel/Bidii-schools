@@ -17,6 +17,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { scoreToGradeSql } from "@/lib/assessment/gradingSql";
 import { pointsToGrade, type KcseGrade } from "@/lib/assessment/grading844";
 
@@ -140,36 +141,32 @@ export async function computeTeacherRanking(
   };
 
   const [currentAggr, prevAggr] = await Promise.all([
-    prisma.$queryRawUnsafe<AggrRow[]>(
-      `SELECT "enteredById"                           AS entered_by_id,
-              AVG(${pointsExpr})::float               AS mean_pts,
+    // SAFE: pointsExpr is produced by scoreToGradeSql() — a fixed server-side
+    // CASE/WHEN expression over enum literals. All WHERE values are parameterized.
+    // teacherIds is an array of DB-returned IDs validated upstream.
+    prisma.$queryRaw<AggrRow[]>(Prisma.sql`
+      SELECT "enteredById"                           AS entered_by_id,
+              AVG(${Prisma.raw(pointsExpr)})::float               AS mean_pts,
               COUNT(DISTINCT "studentId")             AS entered_count
        FROM   "AssessmentItem"
-       WHERE  "schoolId"    = $1
-         AND  "periodId"    = $2
-         AND  "enteredById" = ANY($3::text[])
+       WHERE  "schoolId"    = ${schoolId}
+         AND  "periodId"    = ${currentPeriod.id}
+         AND  "enteredById" = ANY(${teacherIds}::text[])
          AND  "resultKind"  = 'NUMERIC'
          AND  "numericScore" IS NOT NULL
-       GROUP BY "enteredById"`,
-      schoolId,
-      currentPeriod.id,
-      teacherIds
-    ),
+       GROUP BY "enteredById"`),
     previousPeriod
-      ? prisma.$queryRawUnsafe<AggrRow[]>(
-          `SELECT "enteredById"               AS entered_by_id,
-                  AVG(${pointsExpr})::float   AS mean_pts
+      // SAFE: same as above.
+      ? prisma.$queryRaw<AggrRow[]>(Prisma.sql`
+          SELECT "enteredById"               AS entered_by_id,
+                  AVG(${Prisma.raw(pointsExpr)})::float   AS mean_pts
            FROM   "AssessmentItem"
-           WHERE  "schoolId"    = $1
-             AND  "periodId"    = $2
-             AND  "enteredById" = ANY($3::text[])
+           WHERE  "schoolId"    = ${schoolId}
+             AND  "periodId"    = ${previousPeriod.id}
+             AND  "enteredById" = ANY(${teacherIds}::text[])
              AND  "resultKind"  = 'NUMERIC'
              AND  "numericScore" IS NOT NULL
-           GROUP BY "enteredById"`,
-          schoolId,
-          previousPeriod.id,
-          teacherIds
-        )
+           GROUP BY "enteredById"`)
       : Promise.resolve([] as AggrRow[]),
   ]);
 

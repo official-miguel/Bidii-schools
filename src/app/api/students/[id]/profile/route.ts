@@ -99,13 +99,11 @@ export async function GET(
     }) as Promise<TodayAttRow | null>,
 
     // Attendance summary — COUNT in SQL, no row transfer.
-    prisma.$queryRawUnsafe<AttSummaryRow[]>(
-      `SELECT COUNT(*)::bigint                                         AS total,
+    prisma.$queryRaw<AttSummaryRow[]>`
+      SELECT COUNT(*)::bigint                                         AS total,
               COUNT(*) FILTER (WHERE status = 'PRESENT')::bigint       AS present_count
        FROM   "Attendance"
-       WHERE  "studentId" = $1`,
-      student.id
-    ),
+       WHERE  "studentId" = ${student.id}`,
 
     // 8-4-4 framework.
     db.assessmentFramework.findFirst({

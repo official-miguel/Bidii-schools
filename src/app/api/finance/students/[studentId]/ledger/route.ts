@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/finance/students/[studentId]/ledger — Individual student ledger with running balance
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -20,19 +20,24 @@ export async function GET(_req: NextRequest, { params }: { params: { studentId: 
   if (!student) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const [entries, invoices, payments, account] = await Promise.all([
+    // take: 500 — running-balance needs all entries in order; cannot paginate mid-stream.
+    // 500 is ~8x a realistic per-student maximum (~60 entries). Exceeding it is a data anomaly.
     prisma.ledgerEntry.findMany({
       where:   { schoolId, studentId: params.studentId },
       orderBy: { postedAt: "asc" },
+      take:    500,
       select:  { id: true, entryType: true, amount: true, description: true, referenceId: true, referenceType: true, postedAt: true, paymentMethod: true, isVoided: true, term: { select: { name: true } } },
     }),
     prisma.invoice.findMany({
       where:   { schoolId, studentId: params.studentId },
       orderBy: { generatedAt: "desc" },
+      take:    100,
       select:  { id: true, invoiceNumber: true, totalAmount: true, lineItems: true, generatedAt: true, isProrated: true, proratedDays: true, term: { select: { name: true } } },
     }),
     prisma.payment.findMany({
       where:   { schoolId, studentId: params.studentId },
       orderBy: { paidAt: "desc" },
+      take:    200,
       select:  { id: true, receiptNumber: true, amount: true, method: true, paidAt: true, reference: true, reconciliationStatus: true, term: { select: { name: true } } },
     }),
     prisma.studentFinanceAccount.findUnique({

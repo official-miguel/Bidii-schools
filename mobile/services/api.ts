@@ -7,8 +7,10 @@
 
 import { API_BASE_URL, SCHOOL_ID } from '@/constants';
 import { fineEngine } from './fineEngine';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
+// Legacy AsyncStorage key — kept only for the one-time migration in auth.ts.
+// The api client itself now reads/writes from SecureStore exclusively.
 const AUTH_TOKEN_KEY = '@bidii:auth_token';
 
 class ApiClient {
@@ -16,19 +18,19 @@ class ApiClient {
 
   /** Load stored token on startup */
   async init(): Promise<void> {
-    this.token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    this.token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
   }
 
   /** Save auth token after login */
   async setToken(token: string): Promise<void> {
     this.token = token;
-    await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
   }
 
   /** Clear token on logout */
   async clearToken(): Promise<void> {
     this.token = null;
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
   }
 
   /** Build headers for every request */

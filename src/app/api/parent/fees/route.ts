@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!checkRateLimit(parent.userId)) {
+  if (!(await checkRateLimit(parent.userId))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { scoreToGrade, pointsToGrade } from "@/lib/assessment/grading844";
 import { scoreToGradeSql } from "@/lib/assessment/gradingSql";
@@ -167,33 +168,28 @@ export async function GET(req: NextRequest) {
       // PostgreSQL AVG(CASE WHEN ...) pushes the grade-point conversion into the DB.
       const pointsExpr = scoreToGradeSql('"numericScore"');
 
+      // SAFE: pointsExpr is a server-side SQL expression from scoreToGradeSql() —
+      // only fixed CASE/WHEN literals. Arrays are DB-returned period/subject IDs.
       const [deptRows, schoolRows] = await Promise.all([
-        prisma.$queryRawUnsafe<Array<{ period_id: string; mean_pts: number | null }>>(
-          `SELECT "periodId" AS period_id,
-                  AVG(${pointsExpr})::float AS mean_pts
+        prisma.$queryRaw<Array<{ period_id: string; mean_pts: number | null }>>(Prisma.sql`
+          SELECT "periodId" AS period_id,
+                  AVG(${Prisma.raw(pointsExpr)})::float AS mean_pts
            FROM "AssessmentItem"
-           WHERE "schoolId"   = $1
-             AND "periodId"   = ANY($2::text[])
-             AND "subjectId"  = ANY($3::text[])
+           WHERE "schoolId"   = ${user.schoolId!}
+             AND "periodId"   = ANY(${allPeriodIds}::text[])
+             AND "subjectId"  = ANY(${deptSubjectIds}::text[])
              AND "resultKind" = 'NUMERIC'
              AND "numericScore" IS NOT NULL
-           GROUP BY "periodId"`,
-          user.schoolId!,
-          allPeriodIds,
-          deptSubjectIds
-        ),
-        prisma.$queryRawUnsafe<Array<{ period_id: string; mean_pts: number | null }>>(
-          `SELECT "periodId" AS period_id,
-                  AVG(${pointsExpr})::float AS mean_pts
+           GROUP BY "periodId"`),
+        prisma.$queryRaw<Array<{ period_id: string; mean_pts: number | null }>>(Prisma.sql`
+          SELECT "periodId" AS period_id,
+                  AVG(${Prisma.raw(pointsExpr)})::float AS mean_pts
            FROM "AssessmentItem"
-           WHERE "schoolId"   = $1
-             AND "periodId"   = ANY($2::text[])
+           WHERE "schoolId"   = ${user.schoolId!}
+             AND "periodId"   = ANY(${allPeriodIds}::text[])
              AND "resultKind" = 'NUMERIC'
              AND "numericScore" IS NOT NULL
-           GROUP BY "periodId"`,
-          user.schoolId!,
-          allPeriodIds
-        ),
+           GROUP BY "periodId"`),
       ]);
 
       // Build O(1) lookup maps.
