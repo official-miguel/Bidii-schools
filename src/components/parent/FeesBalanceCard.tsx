@@ -9,7 +9,7 @@
  * Requirements: 7.1, 7.3
  */
 
-import { AlertTriangle, CheckCircle, HelpCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, HelpCircle, AlertCircle } from "lucide-react";
 
 interface FeesBalanceCardProps {
   /** Current balance as a number. Positive = credit, negative = owes money. */
@@ -91,8 +91,9 @@ export default function FeesBalanceCard({
               {formatKsh(currentBalance)}{" "}
               <span className="text-sm font-normal">outstanding</span>
             </p>
-            <p className="text-xs text-warn/80 mt-0.5">
-              ⚠️ Outstanding balance — KSh{" "}
+            <p className="text-xs text-warn/80 mt-0.5 flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              Outstanding balance — KSh{" "}
               {Math.abs(currentBalance).toLocaleString()} — please clear at the
               school bursar&apos;s office.
             </p>
@@ -120,15 +121,17 @@ export default function FeesBalanceCard({
                 {formatKsh(currentBalance)}{" "}
                 <span className="text-sm font-normal">credit</span>
               </p>
-              <p className="text-xs text-success/80 mt-0.5">
-                ✅ Fees are up to date — account has a credit.
+              <p className="text-xs text-success/80 mt-0.5 flex items-center gap-1">
+                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                Fees are up to date — account has a credit.
               </p>
             </>
           ) : (
             <>
               <p className="text-2xl font-bold text-success">KES 0.00</p>
-              <p className="text-xs text-success/80 mt-0.5">
-                ✅ Fees are up to date — no outstanding balance.
+              <p className="text-xs text-success/80 mt-0.5 flex items-center gap-1">
+                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                Fees are up to date — no outstanding balance.
               </p>
             </>
           )}

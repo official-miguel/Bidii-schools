@@ -15,6 +15,7 @@
  */
 
 import { redirect } from "next/navigation";
+import { CreditCard } from "lucide-react";
 import { requireParent, parentStudentIds } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import FeesBalanceCard from "@/components/parent/FeesBalanceCard";
@@ -68,7 +69,11 @@ export default async function FeesPage({ searchParams }: Props) {
       <div className="space-y-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Fees</h1>
         <div className="rounded-xl border border-line bg-card p-8 text-center dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-3xl mb-3">💳</p>
+          <div className="flex justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl bg-slate/10 flex items-center justify-center">
+              <CreditCard className="h-6 w-6 text-slate dark:text-dark-muted" />
+            </div>
+          </div>
           <p className="text-sm font-semibold text-ink dark:text-dark-text">
             No linked children
           </p>
