@@ -15,7 +15,7 @@
  */
 
 import { redirect } from "next/navigation";
-import { requireParent, ownsStudent, parentStudentIds } from "@/lib/parentAuth";
+import { requireParent, parentStudentIds } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import FeesBalanceCard from "@/components/parent/FeesBalanceCard";
 import InvoiceList from "@/components/parent/InvoiceList";
@@ -32,42 +32,60 @@ export default async function FeesPage({ searchParams }: Props) {
   const parent = await requireParent();
   if (!parent) redirect("/login");
 
-  const ownedIds = [...parentStudentIds(parent)];
+  // 2. Get owned student IDs — query directly so we never rely solely on the
+  //    eagerly-loaded relation which can return empty if Prisma's include/select
+  //    has a type mismatch in the deployed build.
+  const [relationIds, directRows] = await Promise.all([
+    Promise.resolve([...parentStudentIds(parent)]),
+    prisma.parentStudent.findMany({
+      where:   { parentId: parent.id },
+      orderBy: { createdAt: "asc" },
+      select:  { studentId: true },
+    }),
+  ]);
 
-  // 2. Resolve which student to show
-  let studentId = searchParams?.child ?? null;
+  // Prefer the direct query (guaranteed fresh), fall back to relation data.
+  const ownedIds: string[] =
+    directRows.length > 0
+      ? directRows.map((r) => r.studentId)
+      : relationIds;
 
-  if (!studentId || !ownsStudent(parent, studentId)) {
-    if (ownedIds.length === 1) {
-      // Single child — redirect to make the URL canonical so nav stays correct
+  // 3. Resolve which student to show
+  const studentId = searchParams?.child ?? null;
+
+  // Build owned set for fast ownership check
+  const ownedSet = new Set(ownedIds);
+  const validStudentId = studentId && ownedSet.has(studentId) ? studentId : null;
+
+  if (!validStudentId) {
+    if (ownedIds.length >= 1) {
+      // Auto-select the first (or only) child — no dead-end for any parent
       redirect(`/parent/fees?child=${ownedIds[0]}`);
     }
 
-    if (ownedIds.length > 1 && !studentId) {
-      // Multiple children, no param — redirect to the first child
-      redirect(`/parent/fees?child=${ownedIds[0]}`);
-    }
-
-    // No linked children, or invalid child param with no fallback
+    // Truly no linked children
     return (
       <div className="space-y-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Fees</h1>
         <div className="rounded-xl border border-line bg-card p-8 text-center dark:bg-dark-surface dark:border-dark-border">
           <p className="text-3xl mb-3">💳</p>
           <p className="text-sm font-semibold text-ink dark:text-dark-text">
-            Please select a child
+            No linked children
           </p>
           <p className="text-xs text-slate dark:text-dark-muted mt-1">
-            Use the child switcher to select a child and view their fee details.
+            Contact your school administrator to link your child to this account.
           </p>
         </div>
       </div>
     );
   }
 
+  // Reassign for the rest of the function
+  const resolvedStudentId = validStudentId;
+
   // 3. Fetch student name
   const student = await prisma.student.findUnique({
-    where:  { id: studentId },
+    where:  { id: resolvedStudentId },
     select: { fullName: true },
   });
   if (!student) redirect("/parent");
@@ -76,13 +94,13 @@ export default async function FeesPage({ searchParams }: Props) {
   const [account, invoiceRows, paymentRows] = await Promise.all([
     prisma.studentFinanceAccount
       .findUnique({
-        where:  { studentId },
+        where:  { studentId: resolvedStudentId },
         select: { currentBalance: true, totalInvoiced: true, totalPaid: true },
       })
       .catch(() => null),
 
     prisma.invoice.findMany({
-      where:   { studentId, schoolId: parent.schoolId },
+      where:   { studentId: resolvedStudentId, schoolId: parent.schoolId },
       orderBy: { generatedAt: "desc" },
       take:    20,
       select: {
@@ -95,7 +113,7 @@ export default async function FeesPage({ searchParams }: Props) {
     }),
 
     prisma.payment.findMany({
-      where:   { studentId, schoolId: parent.schoolId },
+      where:   { studentId: resolvedStudentId, schoolId: parent.schoolId },
       orderBy: { paidAt: "desc" },
       take:    20,
       select: {
