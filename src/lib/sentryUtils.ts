@@ -49,7 +49,10 @@ export function scrubSensitiveFields(event: SentryEvent): SentryEvent | null {
       event.request.data = scrubObject(event.request.data);
     }
     if (event.request.cookies) {
-      event.request.cookies = "[Filtered]";
+      // cookies is Record<string, string> — replace each value with [Filtered]
+      event.request.cookies = Object.fromEntries(
+        Object.keys(event.request.cookies).map((k) => [k, "[Filtered]"])
+      );
     }
   }
   if (event.user) {
