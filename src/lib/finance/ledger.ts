@@ -13,7 +13,7 @@
  *   await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
  */
 
-import { LedgerEntry, LedgerEntryType, PaymentMethod } from "@prisma/client";
+import { LedgerEntry, LedgerEntryType, PaymentMethod, Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
 
@@ -66,7 +66,11 @@ export async function postLedgerEntry(
   payload: LedgerPayload
 ): Promise<LedgerEntry> {
   // 1. Set RLS session variable for this transaction (PgBouncer safe)
-  await tx.$executeRaw`SET LOCAL app.current_school_id = ${payload.schoolId}`;
+  // SET LOCAL does not support parameterized placeholders in PostgreSQL — we
+  // must inline the value. schoolId is always a CUID/UUID so we strip any
+  // non-alphanumeric characters before interpolating to prevent injection.
+  const safeSchoolId = payload.schoolId.replace(/[^a-zA-Z0-9_\-]/g, "");
+  await tx.$executeRawUnsafe(`SET LOCAL "app.current_school_id" = '${safeSchoolId}'`);
 
   // 2. Insert the immutable ledger row
   const entry = await tx.ledgerEntry.create({

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SET LOCAL app.current_school_id = ${schoolId}`;
+      await tx.$executeRawUnsafe(`SET LOCAL "app.current_school_id" = '${schoolId.replace(/[^a-zA-Z0-9_\-]/g, "")}'`);
 
       receiptNumber = await nextReceiptNumber(tx, schoolId, prefix);
       const amountDecimal = new Decimal(amount.toString());
