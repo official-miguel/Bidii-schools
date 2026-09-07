@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS "LedgerEntry_schoolId_studentId_entryType_isVoided_id
 
 -- Separate index for the common "all entries for a student" pattern used by
 -- the balance sheet and statement routes.
-CREATE INDEX IF NOT EXISTS "LedgerEntry_schoolId_studentId_postedAt_idx"
+CREATE INDEX IF NOT EXISTS "LedgerEntry_schoolId_studentId_postedAt_desc_idx"
   ON "LedgerEntry"("schoolId", "studentId", "postedAt" DESC);
 
 -- ── Student admissionNumber lookup ───────────────────────────────────────────
