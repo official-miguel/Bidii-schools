@@ -130,6 +130,10 @@ model School {
   /// Fees & Ledger module
   financeSettings          FinanceSettings?
   mpesaPaybills            SchoolMpesaPaybill[]
+  stkPushRequests          StkPushRequest[]
+  /// Stable UUID token used as the URL path for the Daraja STK Push callback.
+  /// Generated on first use; avoids exposing schoolId in the callback URL.
+  stkCallbackToken         String?              @unique @default(cuid())
   financialTermNames       FinancialTermName[]
   feeStructures            FeeStructure[]
   expenseCategories        ExpenseCategory[]
@@ -613,6 +617,7 @@ model Student {
   expenseAttachments       StudentExpenseAttachment[]
   debtorFlags              DebtorFlag[]
   financeNotifications     FinanceNotification[]
+  stkPushRequests          StkPushRequest[]
   diaryRecipients          DiaryRecipient[]
   /// Parent portal back-relation
   parentLinks              ParentStudent[]
@@ -3509,6 +3514,16 @@ enum MpesaQueueStatus {
   REJECTED
 }
 
+/// Lifecycle of a parent-initiated Daraja STK Push request.
+enum StkPushStatus {
+  /// Sent to Daraja, awaiting the async callback
+  PENDING
+  /// Callback received — payment auto-credited
+  COMPLETED
+  /// Daraja returned a non-zero ResultCode (user cancelled, insufficient funds, timeout)
+  FAILED
+}
+
 /// Types of fee-related notification events stored in the audit / notification log.
 enum NotificationType {
   SETUP_REQUIRED
@@ -3904,6 +3919,37 @@ model MpesaReconciliationQueue {
 
   @@index([schoolId, status])
   @@index([schoolId, paidAt])
+}
+
+/// Tracks every Daraja STK Push request initiated by a parent from the
+/// parent portal. Matched to the callback by CheckoutRequestID so the
+/// callback handler can resolve the studentId without parsing the phone
+/// number (which Daraja may normalise differently than what we stored).
+model StkPushRequest {
+  id                 String            @id @default(cuid())
+  schoolId           String
+  studentId          String
+  parentId           String
+  /// Daraja CheckoutRequestID — used to match the async callback
+  checkoutRequestId  String            @unique
+  /// Daraja MerchantRequestID — stored for audit
+  merchantRequestId  String
+  amount             Int
+  /// Phone in E.164 format without leading +, e.g. 254712345678
+  phone              String
+  status             StkPushStatus     @default(PENDING)
+  /// Set on successful callback — the M-Pesa receipt number
+  mpesaReceiptNumber String?
+  /// Set on FAILED status — Daraja ResultDesc
+  failureReason      String?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, status])
+  @@index([schoolId, studentId])
 }
 
 /// Tracks students whose balance falls below the school's configured

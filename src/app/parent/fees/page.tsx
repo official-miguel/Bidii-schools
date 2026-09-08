@@ -1,8 +1,10 @@
-/**
+﻿/**
  * /parent/fees
  *
  * Server component. Displays a parent's child fee balance, invoices, and
- * payment history fetched directly from Prisma.
+ * payment history fetched directly from Prisma. Also renders the
+ * MpesaPayButton when the school has the MPESA_DARAJA integration configured
+ * and at least one active paybill.
  *
  * Ownership check on ?child= param — if the param is missing and the parent
  * has exactly one linked child, we auto-select that child via a redirect so
@@ -11,7 +13,7 @@
  * to the first owned child (multiple children) or shows the selector card
  * (no children linked).
  *
- * Requirements: 7.1, 7.2, 7.3
+ * Requirements: 7.1, 7.2, 7.3, 7.4
  */
 
 import { redirect } from "next/navigation";
@@ -21,6 +23,7 @@ import { prisma } from "@/lib/prisma";
 import FeesBalanceCard from "@/components/parent/FeesBalanceCard";
 import InvoiceList from "@/components/parent/InvoiceList";
 import PaymentHistory from "@/components/parent/PaymentHistory";
+import MpesaPayButton from "@/components/parent/MpesaPayButton";
 
 export const dynamic = "force-dynamic";
 
@@ -67,17 +70,17 @@ export default async function FeesPage({ searchParams }: Props) {
     // Truly no linked children
     return (
       <div className="space-y-4">
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Fees</h1>
-        <div className="rounded-xl border border-line bg-card p-8 text-center dark:bg-dark-surface dark:border-dark-border">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Fees</h1>
+        <div className="rounded-xl border border-line bg-card p-8 text-center">
           <div className="flex justify-center mb-3">
             <div className="w-12 h-12 rounded-xl bg-slate/10 flex items-center justify-center">
-              <CreditCard className="h-6 w-6 text-slate dark:text-dark-muted" />
+              <CreditCard className="h-6 w-6 text-slate" />
             </div>
           </div>
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">
+          <p className="text-sm font-semibold text-foreground">
             No linked children
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-1">
+          <p className="text-xs text-slate mt-1">
             Contact your school administrator to link your child to this account.
           </p>
         </div>
@@ -88,15 +91,15 @@ export default async function FeesPage({ searchParams }: Props) {
   // Reassign for the rest of the function
   const resolvedStudentId = validStudentId;
 
-  // 3. Fetch student name
+  // 3. Fetch student name + admission number
   const student = await prisma.student.findUnique({
     where:  { id: resolvedStudentId },
-    select: { fullName: true },
+    select: { fullName: true, admissionNumber: true },
   });
   if (!student) redirect("/parent");
 
-  // 4. Fetch fees data in parallel
-  const [account, invoiceRows, paymentRows] = await Promise.all([
+  // 4. Fetch fees data + M-Pesa config in parallel
+  const [account, invoiceRows, paymentRows, activePaybill, darajaIntegration] = await Promise.all([
     prisma.studentFinanceAccount
       .findUnique({
         where:  { studentId: resolvedStudentId },
@@ -129,6 +132,21 @@ export default async function FeesPage({ searchParams }: Props) {
         paidAt:        true,
       },
     }),
+
+    // Active paybill — used to show the paybill number in the pay modal
+    prisma.schoolMpesaPaybill.findFirst({
+      where:   { schoolId: parent.schoolId, isActive: true },
+      orderBy: { createdAt: "asc" },
+      select:  { paybillNumber: true },
+    }).catch(() => null),
+
+    // Check MPESA_DARAJA integration is configured for this school
+    prisma.schoolIntegration.findUnique({
+      where: {
+        schoolId_provider: { schoolId: parent.schoolId, provider: "MPESA_DARAJA" },
+      },
+      select: { isActive: true },
+    }).catch(() => null),
   ]);
 
   // 5. Serialise Decimal values for the client components
@@ -163,10 +181,21 @@ export default async function FeesPage({ searchParams }: Props) {
     paidAt:        p.paidAt.toISOString(),
   }));
 
+  // M-Pesa pay button is shown only when the school has a configured,
+  // active Daraja integration AND at least one active paybill.
+  const mpesaEnabled = !!(darajaIntegration?.isActive && activePaybill);
+  const paybillNumber = activePaybill?.paybillNumber ?? null;
+
+  // Suggest the outstanding amount (balance is negative = owes money)
+  const suggestedAmount =
+    currentBalance !== null && currentBalance < 0
+      ? Math.abs(currentBalance)
+      : null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+      <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
         Fees — {student.fullName}
       </h1>
 
@@ -177,9 +206,38 @@ export default async function FeesPage({ searchParams }: Props) {
         totalPaid={totalPaid}
       />
 
+      {/* M-Pesa pay button — only shown when school has Daraja configured */}
+      {mpesaEnabled && (
+        <section>
+          <h2 className="text-base font-semibold text-foreground mb-3">
+            Make a Payment
+          </h2>
+          <div className="rounded-xl border border-line bg-card px-5 py-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Pay via M-Pesa
+              </p>
+              <p className="text-xs text-slate mt-0.5">
+                {paybillNumber
+                  ? `Paybill ${paybillNumber} · `
+                  : ""}
+                Enter an amount and your Safaricom number to receive a PIN prompt on your phone.
+              </p>
+            </div>
+            <MpesaPayButton
+              studentId={resolvedStudentId}
+              studentName={student.fullName}
+              admissionNumber={student.admissionNumber}
+              paybillNumber={paybillNumber}
+              suggestedAmount={suggestedAmount}
+            />
+          </div>
+        </section>
+      )}
+
       {/* Invoices */}
       <section>
-        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-3">
           Invoices
         </h2>
         <InvoiceList invoices={invoices} />
@@ -187,7 +245,7 @@ export default async function FeesPage({ searchParams }: Props) {
 
       {/* Payment history */}
       <section>
-        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-3">
           Payment History
         </h2>
         <PaymentHistory payments={payments} />
