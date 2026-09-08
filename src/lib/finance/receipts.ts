@@ -41,7 +41,9 @@ export async function nextReceiptNumber(
   // Acquire a transaction-scoped advisory lock keyed on the school's ID hash.
   // This serialises receipt number generation for this school — any concurrent
   // transaction trying the same lock waits until this one commits or rolls back.
-  await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
+  // $executeRaw is used (not $queryRaw) because pg_advisory_xact_lock returns
+  // void and Prisma cannot deserialize a void result set.
+  await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
 
   // Find the highest existing receipt number for this school.
   // Order by receiptNumber desc (not paidAt) — payments posted at the same
@@ -85,7 +87,7 @@ export async function nextInvoiceNumber(
   schoolId: string,
   prefix: string
 ): Promise<string> {
-  await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
+  await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${schoolId}::text))`);
 
   const last = await tx.invoice.findFirst({
     where:   { schoolId },
