@@ -40,7 +40,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const parsed = resolveSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
 
-  let { studentId, termId } = parsed.data as { studentId?: string; termId?: string };
+  let { studentId } = parsed.data as { studentId?: string; termId?: string };
+  const { termId }  = parsed.data as { studentId?: string; termId?: string };
 
   // ── Auto-match: if no studentId was provided, try to find the student
   // from the rawAccountNumber (exact → normalised → fuzzy). This handles
