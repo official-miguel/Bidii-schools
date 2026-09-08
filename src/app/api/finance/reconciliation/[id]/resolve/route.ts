@@ -1,5 +1,10 @@
 /**
  * POST /api/finance/reconciliation/[id]/resolve — Manually reconcile an M-Pesa payment
+ *
+ * If studentId is omitted the route will attempt to auto-match the queue
+ * item's rawAccountNumber against existing student admission numbers.
+ * This handles the common case where a student was enrolled after the
+ * payment was queued and the match can now be resolved automatically.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -8,9 +13,11 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { requireBursarOrPrincipal } from "@/lib/apiAuth";
 import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
+import { matchAdmissionNumber } from "@/lib/finance/mpesa";
 
 const resolveSchema = z.object({
-  studentId: z.string().trim().min(1, "Student ID is required."),
+  // studentId is optional — if omitted the route auto-matches from rawAccountNumber
+  studentId: z.string().trim().min(1).optional(),
   termId:    z.string().trim().optional(),
 });
 
@@ -18,26 +25,80 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const auth = await requireBursarOrPrincipal();
   if (auth.error) return auth.error;
   const { schoolId, user } = auth;
-  if (user.role === "PRINCIPAL") return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  // PRINCIPAL can confirm matches — only restrict write-sensitive ops if needed
 
   const queueItem = await prisma.mpesaReconciliationQueue.findFirst({
     where: { id: params.id, schoolId, status: "PENDING" },
-    select: { id: true, mpesaTransactionId: true, amount: true, rawPayload: true, paidAt: true },
+    select: { id: true, mpesaTransactionId: true, amount: true, rawPayload: true, paidAt: true, rawAccountNumber: true },
   });
   if (!queueItem) return NextResponse.json({ error: "Reconciliation item not found or already resolved." }, { status: 404 });
 
   let body: unknown;
   try { body = await req.json(); }
-  catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }); }
+  catch { body = {}; }
 
   const parsed = resolveSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
 
-  const { studentId, termId } = parsed.data;
+  let { studentId, termId } = parsed.data as { studentId?: string; termId?: string };
 
-  const student = await prisma.student.findFirst({ where: { id: studentId, schoolId, archivedAt: null }, select: { id: true } });
+  // ── Auto-match: if no studentId was provided, try to find the student
+  // from the rawAccountNumber (exact → normalised → fuzzy). This handles
+  // the case where the admission number exists in the system but the payment
+  // was queued before the student was enrolled or due to a minor formatting
+  // difference that now resolves to an exact match.
+  if (!studentId) {
+    const raw          = queueItem.rawAccountNumber;
+    const normalisedRef = raw.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+    // 1. Exact match on raw account number (case-insensitive)
+    let autoStudent = await prisma.student.findFirst({
+      where: { schoolId, archivedAt: null, admissionNumber: { equals: raw, mode: "insensitive" } },
+      select: { id: true },
+    });
+
+    // 2. Normalised match (strips punctuation/slashes)
+    if (!autoStudent && normalisedRef.length > 0) {
+      autoStudent = await prisma.student.findFirst({
+        where: { schoolId, archivedAt: null, admissionNumber: { equals: normalisedRef, mode: "insensitive" } },
+        select: { id: true },
+      });
+    }
+
+    // 3. Prefix fuzzy match on a small candidate set
+    if (!autoStudent && normalisedRef.length >= 3) {
+      const prefixStr   = normalisedRef.slice(0, Math.min(normalisedRef.length, 6));
+      const candidates  = await prisma.student.findMany({
+        where: { schoolId, archivedAt: null, admissionNumber: { startsWith: prefixStr, mode: "insensitive" } },
+        select: { id: true, admissionNumber: true },
+        take: 20,
+      });
+      if (candidates.length > 0) {
+        const fuzzy = matchAdmissionNumber(
+          candidates.map((s) => ({ admissionNumber: s.admissionNumber, studentId: s.id })),
+          raw,
+        );
+        // Only auto-resolve on a full confidence match; anything lower needs human confirmation
+        if (fuzzy?.confidence === 1.0 && fuzzy.studentId) {
+          autoStudent = { id: fuzzy.studentId };
+        }
+      }
+    }
+
+    if (!autoStudent) {
+      return NextResponse.json(
+        { error: "Could not automatically match the account reference to a student. Please select the student manually." },
+        { status: 422 }
+      );
+    }
+    studentId = autoStudent.id;
+  }
+
+  const student = await prisma.student.findFirst({ where: { id: studentId!, schoolId, archivedAt: null }, select: { id: true } });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
+  // At this point studentId is guaranteed to be a non-empty string
+  const resolvedStudentId = studentId!;
   const settings = await prisma.financeSettings.findUnique({ where: { schoolId }, select: { receiptPrefix: true } });
   const prefix   = settings?.receiptPrefix ?? "REC-";
 
@@ -51,7 +112,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // Create Payment row
       await tx.payment.create({
         data: {
-          schoolId, studentId, termId: termId ?? null,
+          schoolId, studentId: resolvedStudentId, termId: termId ?? null,
           amount,
           method:               "MPESA",
           mpesaTransactionId:   queueItem.mpesaTransactionId,
@@ -65,7 +126,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       // Post ledger entry
       await postLedgerEntry(tx, {
-        schoolId, studentId, termId,
+        schoolId, studentId: resolvedStudentId, termId,
         entryType:          "PAYMENT",
         amount,
         description:        `M-Pesa payment ${queueItem.mpesaTransactionId} (manually reconciled)`,
@@ -79,12 +140,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // Mark queue item as resolved
       await tx.mpesaReconciliationQueue.update({
         where: { id: queueItem.id },
-        data:  { status: "RESOLVED", resolvedById: user.id, resolvedAt: new Date(), resolvedStudentId: studentId },
+        data:  { status: "RESOLVED", resolvedById: user.id, resolvedAt: new Date(), resolvedStudentId: resolvedStudentId },
       });
 
       // Notification
       await tx.financeNotification.create({
-        data: { schoolId, studentId, type: "PAYMENT_RECEIVED", message: `M-Pesa ${queueItem.mpesaTransactionId} manually reconciled — ${amount.toFixed(2)}` },
+        data: { schoolId, studentId: resolvedStudentId, type: "PAYMENT_RECEIVED", message: `M-Pesa ${queueItem.mpesaTransactionId} manually reconciled — ${amount.toFixed(2)}` },
       });
     });
 

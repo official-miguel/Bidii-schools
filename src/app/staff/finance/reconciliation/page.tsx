@@ -130,6 +130,7 @@ function ReconcileItem({
     else if (e.key === "Escape") setOpen(false);
   }
 
+  // Confirm with a manually selected student
   async function confirm() {
     if (!selected) return;
     setConfirming(true);
@@ -152,11 +153,33 @@ function ReconcileItem({
     }
   }
 
+  // Auto-match using the account reference — the API will look up the student by admission number
+  async function autoMatch() {
+    setConfirming(true);
+    try {
+      const res = await fetch(`/api/finance/reconciliation/${item.id}/resolve`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        onError(data.error ?? "Auto-match failed. Please select the student manually.");
+      } else {
+        onResolved(item.id, item.mpesaTransactionId);
+      }
+    } catch {
+      onError("An unexpected error occurred.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
   return (
-    <div className="bg-white border border-line rounded-xl p-5 dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-line rounded-xl p-5">
       {/* Transaction details */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="font-mono text-sm font-semibold text-ink dark:text-dark-text">
+        <span className="font-mono text-sm font-semibold text-foreground">
           {item.mpesaTransactionId}
         </span>
         <Badge variant="warn">Unmatched</Badge>
@@ -164,22 +187,22 @@ function ReconcileItem({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1 text-sm mb-4">
         <div>
-          <p className="text-xs text-slate dark:text-dark-muted">Amount</p>
+          <p className="text-xs text-slate">Amount</p>
           <p className="font-semibold text-success">{formatKES(item.amount)}</p>
         </div>
         <div>
-          <p className="text-xs text-slate dark:text-dark-muted">Account reference</p>
-          <p className="font-mono text-ink dark:text-dark-text">{item.rawAccountNumber}</p>
+          <p className="text-xs text-slate">Account reference</p>
+          <p className="font-mono text-foreground">{item.rawAccountNumber}</p>
         </div>
         <div>
-          <p className="text-xs text-slate dark:text-dark-muted">Paid at</p>
-          <p className="text-ink dark:text-dark-text">{formatDate(item.paidAt)}</p>
+          <p className="text-xs text-slate">Paid at</p>
+          <p className="text-foreground">{formatDate(item.paidAt)}</p>
         </div>
       </div>
 
       {/* Match section */}
-      <div className="border-t border-line dark:border-dark-border pt-4">
-        <p className="text-xs font-medium text-slate dark:text-dark-muted mb-2">
+      <div className="border-t border-line pt-4">
+        <p className="text-xs font-medium text-slate mb-2">
           Match to student
         </p>
 
@@ -190,10 +213,10 @@ function ReconcileItem({
               <User className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text leading-tight">
+              <p className="text-sm font-semibold text-foreground leading-tight">
                 {selected.fullName}
               </p>
-              <p className="text-xs font-mono text-slate dark:text-dark-muted">
+              <p className="text-xs font-mono text-slate">
                 {selected.admissionNumber}
                 {selected.schoolClass.name ? ` · ${selected.schoolClass.name}` : ""}
               </p>
@@ -214,7 +237,7 @@ function ReconcileItem({
           /* Search input */
           <div className="relative mb-3">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate dark:text-dark-muted"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate"
               aria-hidden="true"
             />
             <input
@@ -226,17 +249,16 @@ function ReconcileItem({
               onFocus={() => { if (results.length) setOpen(true); }}
               onBlur={() => setTimeout(() => setOpen(false), 150)}
               placeholder="Type student name or admission number…"
-              className="w-full rounded-lg border border-line bg-paper pl-9 pr-9 py-2 text-sm text-ink
+              className="w-full rounded-lg border border-line bg-background pl-9 pr-9 py-2 text-sm text-foreground
                          placeholder:text-slate outline-none transition-colors
-                         focus:border-teal/50 focus:ring-2 focus:ring-teal/20
-                         dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                         focus:border-teal/50 focus:ring-2 focus:ring-teal/20"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2">
               {searching
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal" />
                 : query
                   ? <button type="button" tabIndex={-1} onClick={() => setQuery("")}>
-                      <X className="h-3.5 w-3.5 text-slate hover:text-ink" />
+                      <X className="h-3.5 w-3.5 text-slate hover:text-foreground" />
                     </button>
                   : null}
             </span>
@@ -246,11 +268,11 @@ function ReconcileItem({
               <ul
                 ref={listRef}
                 role="listbox"
-                className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-line bg-white shadow-xl overflow-auto dark:bg-dark-surface dark:border-dark-border"
+                className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-line bg-card shadow-xl overflow-auto"
                 style={{ maxHeight: "240px" }}
               >
                 {results.length === 0 ? (
-                  <li className="px-4 py-3 text-xs text-slate dark:text-dark-muted text-center">
+                  <li className="px-4 py-3 text-xs text-slate text-center">
                     No students found
                   </li>
                 ) : results.map((s, idx) => (
@@ -261,15 +283,15 @@ function ReconcileItem({
                     onMouseDown={() => pick(s)}
                     onMouseEnter={() => setActiveIdx(idx)}
                     className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors
-                      ${idx < results.length - 1 ? "border-b border-line/60 dark:border-dark-border/60" : ""}
-                      ${idx === activeIdx ? "bg-teal/5" : "hover:bg-paper dark:hover:bg-dark-border/40"}`}
+                      ${idx < results.length - 1 ? "border-b border-line/60/60" : ""}
+                      ${idx === activeIdx ? "bg-teal/5" : "hover:bg-background/40"}`}
                   >
                     <div className="h-7 w-7 rounded-full bg-teal flex items-center justify-center shrink-0 text-[10px] font-bold text-white">
                       {s.fullName.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-ink dark:text-dark-text truncate">{s.fullName}</p>
-                      <p className="text-[10px] font-mono text-slate dark:text-dark-muted">
+                      <p className="text-xs font-semibold text-foreground truncate">{s.fullName}</p>
+                      <p className="text-[10px] font-mono text-slate">
                         {s.admissionNumber} · {s.schoolClass.name}
                       </p>
                     </div>
@@ -280,19 +302,38 @@ function ReconcileItem({
           </div>
         )}
 
-        {/* Confirm button */}
-        <button
-          type="button"
-          onClick={confirm}
-          disabled={!selected || confirming}
-          className="inline-flex items-center gap-2 rounded-lg bg-teal px-4 py-2 text-sm font-medium text-white
-                     hover:bg-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {confirming
-            ? <Loader2 className="h-4 w-4 animate-spin" />
-            : <CheckCircle2 className="h-4 w-4" />}
-          {confirming ? "Confirming…" : "Confirm match"}
-        </button>
+        {/* Confirm / auto-match buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={!selected || confirming}
+            className="inline-flex items-center gap-2 rounded-lg bg-teal px-4 py-2 text-sm font-medium text-white
+                       hover:bg-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {confirming
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <CheckCircle2 className="h-4 w-4" />}
+            {confirming ? "Confirming…" : "Confirm match"}
+          </button>
+
+          {/* Auto-match: try to resolve using the raw account reference */}
+          {!selected && (
+            <button
+              type="button"
+              onClick={autoMatch}
+              disabled={confirming}
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-background px-4 py-2 text-sm
+                         font-medium text-foreground hover:bg-background/80 disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-colors"
+            >
+              {confirming
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <GitMerge className="h-4 w-4" />}
+              {confirming ? "Matching…" : "Auto-match by admission no."}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
