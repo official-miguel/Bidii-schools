@@ -1,5 +1,3 @@
-import { cn } from '@/lib/utils';
-
 interface LogoProps {
   className?: string;
   height?: number;
@@ -15,6 +13,7 @@ interface LogoProps {
  * missing (Req 11.6).
  */
 export function Logo({ className, height = 32, width, alt = 'Bidii' }: LogoProps) {
+  const base = className ? ` ${className}` : '';
   return (
     <>
       {/* Light-mode logo — hidden in dark mode */}
@@ -23,7 +22,7 @@ export function Logo({ className, height = 32, width, alt = 'Bidii' }: LogoProps
         alt={alt}
         height={height}
         width={width}
-        className={cn('block dark:hidden', className)}
+        className={`block dark:hidden${base}`}
       />
       {/* Dark-mode logo — hidden in light mode */}
       <img
@@ -31,7 +30,7 @@ export function Logo({ className, height = 32, width, alt = 'Bidii' }: LogoProps
         alt={alt}
         height={height}
         width={width}
-        className={cn('hidden dark:block', className)}
+        className={`hidden dark:block${base}`}
         onError={(e) => {
           // Req 11.6: fall back to default logo if dark variant asset is missing
           console.error('[Theme] Dark-safe logo not found; falling back to default');
