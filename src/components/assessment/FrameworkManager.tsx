@@ -54,11 +54,11 @@ const FRAMEWORK_TYPE_COLORS: Record<FrameworkType, string> = {
 const btnPrimary =
   "inline-flex items-center gap-1.5 rounded-md bg-royal px-3 py-1.5 text-sm font-medium text-white hover:bg-royal-dark transition-colors disabled:opacity-50";
 const btnSecondary =
-  "inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink hover:bg-royal-50 transition-colors disabled:opacity-50";
+  "inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-royal-50 transition-colors disabled:opacity-50";
 const btnDanger =
   "inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50";
 const inputCls =
-  "w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-royal/30";
+  "w-full rounded-md border border-border bg-card px-3 py-2 text-sm placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-royal/30";
 const labelCls = "block text-xs font-medium text-slate mb-1";
 
 // ── FrameworkManager ───────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ export default function FrameworkManager() {
     <div className="space-y-4">
       {/* Framework list */}
       {frameworks.length === 0 && !showCreate && (
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           No assessment frameworks yet. Create one to get started.
         </div>
       )}
@@ -216,7 +216,7 @@ export default function FrameworkManager() {
       {frameworks.map((fw) => (
         <div
           key={fw.id}
-          className="rounded-xl border border-line bg-white overflow-hidden"
+          className="rounded-xl border border-border bg-card overflow-hidden"
         >
           {/* Framework header row */}
           <div className="flex items-center gap-3 px-5 py-4">
@@ -226,7 +226,7 @@ export default function FrameworkManager() {
               {FRAMEWORK_TYPE_LABELS[fw.type]}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-ink truncate">
+              <p className="font-medium text-foreground truncate">
                 {fw.label}
                 <span className="ml-2 text-xs text-slate font-normal">
                   {fw.academicYear}
@@ -276,7 +276,7 @@ export default function FrameworkManager() {
 
           {/* Expanded: period management */}
           {expandedId === fw.id && (
-            <div className="border-t border-line bg-paper/40 px-5 py-4">
+            <div className="border-t border-border bg-background/40 px-5 py-4">
               <PeriodManager framework={fw} />
             </div>
           )}
@@ -287,9 +287,9 @@ export default function FrameworkManager() {
       {showCreate ? (
         <form
           onSubmit={handleCreate}
-          className="rounded-xl border border-line bg-white px-5 py-5 space-y-4"
+          className="rounded-xl border border-border bg-card px-5 py-5 space-y-4"
         >
-          <p className="font-medium text-ink text-sm">New Assessment Framework</p>
+          <p className="font-medium text-foreground text-sm">New Assessment Framework</p>
           {createError && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
               {createError}
@@ -502,10 +502,10 @@ function PeriodManager({ framework }: { framework: Framework }) {
       )}
 
       {periods.length > 0 && (
-        <div className="rounded-lg border border-line bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line bg-paper text-left text-xs text-slate">
+              <tr className="border-b border-border bg-background text-left text-xs text-slate">
                 <th className="px-4 py-2 font-medium">Period</th>
                 {is844 && <th className="px-4 py-2 font-medium">Term</th>}
                 <th className="px-4 py-2 font-medium">Year</th>
@@ -519,9 +519,9 @@ function PeriodManager({ framework }: { framework: Framework }) {
               {periods.map((p) => (
                 <tr
                   key={p.id}
-                  className="border-b border-line last:border-0 hover:bg-paper/40"
+                  className="border-b border-border last:border-0 hover:bg-background/40"
                 >
-                  <td className="px-4 py-2.5 font-medium text-ink">{p.name}</td>
+                  <td className="px-4 py-2.5 font-medium text-foreground">{p.name}</td>
                   {is844 && (
                     <td className="px-4 py-2.5 text-slate">
                       {p.term ? `Term ${p.term}` : "—"}
@@ -576,9 +576,9 @@ function PeriodManager({ framework }: { framework: Framework }) {
       {showAdd ? (
         <form
           onSubmit={handleAddPeriod}
-          className="rounded-lg border border-line bg-white px-4 py-4 space-y-3"
+          className="rounded-lg border border-border bg-card px-4 py-4 space-y-3"
         >
-          <p className="text-sm font-medium text-ink">New Period</p>
+          <p className="text-sm font-medium text-foreground">New Period</p>
           {saveError && (
             <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
               {saveError}

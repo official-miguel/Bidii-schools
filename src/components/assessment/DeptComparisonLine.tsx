@@ -58,19 +58,19 @@ function BarTooltip({
   if (d.mean === null) return null;
   const isActive = d.deptId === activeDeptId;
   return (
-    <div className="bg-white border border-line rounded-lg shadow-md px-3 py-2 text-xs">
-      <p className={`font-semibold mb-0.5 ${isActive ? "text-teal" : "text-ink"}`}>
+    <div className="bg-card border border-border rounded-lg shadow-md px-3 py-2 text-xs">
+      <p className={`font-semibold mb-0.5 ${isActive ? "text-teal" : "text-foreground"}`}>
         {d.name}
       </p>
       <p className="text-slate">
         Mean:{" "}
-        <span className="font-semibold text-ink tabular-nums">
+        <span className="font-semibold text-foreground tabular-nums">
           {d.mean.toFixed(2)} pts
         </span>
       </p>
       <p className="text-slate">
         Grade:{" "}
-        <span className="font-semibold text-ink">{gradeLabel(d.mean)}</span>
+        <span className="font-semibold text-foreground">{gradeLabel(d.mean)}</span>
       </p>
     </div>
   );
@@ -102,7 +102,7 @@ export default function DeptComparisonLine({ data, activePeriodId, activeDeptId 
 
   if (!hasData) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
         No data for this period yet.
       </div>
     );
@@ -115,15 +115,23 @@ export default function DeptComparisonLine({ data, activePeriodId, activeDeptId 
       ? Math.round((withData.reduce((s, d) => s + d.mean, 0) / withData.length) * 100) / 100
       : null;
 
+  // Read theme-aware grid color from CSS variable
+  const gridColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e5e7eb'
+    : '#e5e7eb';
+  const tickColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#94a3b8'
+    : '#94a3b8';
+
   return (
     <div>
       <p className="text-xs text-slate mb-3">
         Mean grade points per department —{" "}
-        <span className="font-medium text-ink">{periodLabel}</span>.
+        <span className="font-medium text-foreground">{periodLabel}</span>.
         {schoolMean !== null && (
           <>
             {" "}School avg:{" "}
-            <span className="font-medium text-ink">
+            <span className="font-medium text-foreground">
               {schoolMean.toFixed(2)} ({gradeLabel(schoolMean)})
             </span>
             .
@@ -137,12 +145,13 @@ export default function DeptComparisonLine({ data, activePeriodId, activeDeptId 
           margin={{ top: 16, right: 8, bottom: 40, left: 0 }}
           barCategoryGap="28%"
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+          {/* chart series — intentional */}
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
 
           {/* Department names — rotated so even long names fit */}
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 11, fill: "#667085" }}
+            tick={{ fontSize: 11, fill: tickColor /* chart series — intentional */ }}
             tickLine={false}
             angle={-35}
             textAnchor="end"
@@ -155,7 +164,7 @@ export default function DeptComparisonLine({ data, activePeriodId, activeDeptId 
             domain={[0, 12]}
             ticks={[0, 2, 4, 6, 8, 10, 12]}
             tickFormatter={(v) => (v === 0 ? "" : `${v}`)}
-            tick={{ fontSize: 11, fill: "#667085" }}
+            tick={{ fontSize: 11, fill: tickColor /* chart series — intentional */ }}
             tickLine={false}
             axisLine={false}
             width={28}
@@ -167,14 +176,14 @@ export default function DeptComparisonLine({ data, activePeriodId, activeDeptId 
           {schoolMean !== null && (
             <ReferenceLine
               y={schoolMean}
-              stroke="#667085"
+              stroke="#667085" /* chart series — intentional */
               strokeDasharray="5 3"
               strokeWidth={1.5}
               label={{
                 value: `Avg ${schoolMean.toFixed(1)}`,
                 position: "insideTopRight",
                 fontSize: 10,
-                fill: "#667085",
+                fill: "#667085", // chart series — intentional
               }}
             />
           )}

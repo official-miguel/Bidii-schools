@@ -95,7 +95,7 @@ export default function FinanceStudentSearch() {
       {/* ── Pill input ── */}
       <div className="relative flex items-center">
         <Search
-          className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-slate dark:text-dark-muted shrink-0"
+          className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-slate shrink-0"
           aria-hidden="true"
         />
         <input
@@ -110,11 +110,9 @@ export default function FinanceStudentSearch() {
           aria-label="Search students"
           aria-autocomplete="list"
           aria-expanded={open}
-          className="h-9 w-56 rounded-lg border border-line bg-paper pl-8 pr-8 text-sm text-ink
+          className="h-9 w-56 rounded-lg border border-border bg-background pl-8 pr-8 text-sm text-foreground
                      placeholder:text-slate outline-none transition-colors
-                     focus:border-teal/50 focus:ring-2 focus:ring-teal/20
-                     dark:bg-dark-surface dark:border-dark-border dark:text-dark-text
-                     dark:placeholder:text-dark-muted dark:focus:border-teal/40"
+                     focus:border-teal/50 focus:ring-2 focus:ring-teal/20 dark:focus:border-teal/40"
         />
         <span className="absolute right-2.5 flex items-center">
           {loading ? (
@@ -125,7 +123,7 @@ export default function FinanceStudentSearch() {
               tabIndex={-1}
               onClick={clear}
               aria-label="Clear search"
-              className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors"
+              className="text-slate hover:text-foreground transition-colors"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -140,12 +138,11 @@ export default function FinanceStudentSearch() {
           role="listbox"
           aria-label="Student results"
           className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-xl overflow-hidden
-                     bg-white border border-line shadow-xl
-                     dark:bg-dark-surface dark:border-dark-border"
+                     bg-card border border-border shadow-xl"
           style={{ maxHeight: "320px", overflowY: "auto" }}
         >
           {results.length === 0 ? (
-            <li className="px-4 py-3 text-xs text-slate dark:text-dark-muted text-center">
+            <li className="px-4 py-3 text-xs text-slate text-center">
               No students found
             </li>
           ) : (
@@ -157,8 +154,8 @@ export default function FinanceStudentSearch() {
                 onMouseDown={() => navigate(s)}
                 onMouseEnter={() => setActiveIdx(idx)}
                 className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors
-                  ${idx < results.length - 1 ? "border-b border-line/60 dark:border-dark-border/60" : ""}
-                  ${idx === activeIdx ? "bg-teal/5 dark:bg-teal/10" : "hover:bg-paper dark:hover:bg-dark-border/40"}`}
+                  ${idx < results.length - 1 ? "border-b border-border/60/60" : ""}
+                  ${idx === activeIdx ? "bg-teal/5" : "hover:bg-background/40"}`}
               >
                 {/* Initials avatar */}
                 <div
@@ -169,10 +166,10 @@ export default function FinanceStudentSearch() {
                   {s.fullName.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-ink dark:text-dark-text truncate leading-tight">
+                  <p className="text-xs font-semibold text-foreground truncate leading-tight">
                     {s.fullName}
                   </p>
-                  <p className="text-[10px] text-slate dark:text-dark-muted font-mono leading-tight">
+                  <p className="text-[10px] text-slate font-mono leading-tight">
                     {s.admissionNumber} · {s.schoolClass.name}
                   </p>
                 </div>

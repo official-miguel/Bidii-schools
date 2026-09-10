@@ -5,7 +5,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing, Colors } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { Avatar, Badge } from '@/components/ui';
 import { StudentHit } from '@/services/api';
 import { formatCurrency, cardStatusLabel } from '@/lib/utils';
@@ -24,6 +25,7 @@ export function StudentListItem({
   style,
   showChevron = true,
 }: StudentListItemProps) {
+  const { colors } = useTheme();
   const cardStatus = student.libraryCard?.status || 'UNKNOWN';
   const fineBalance = student.libraryCard?.fineBalance || 0;
   const photoId = student.files?.[0]?.id;
@@ -37,9 +39,9 @@ export function StudentListItem({
           flexDirection: 'row',
           alignItems: 'center',
           gap: Spacing[3],
-          backgroundColor: Colors.card,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: Colors.line,
+          borderColor: colors.border,
           borderRadius: Radius.button,
           padding: Spacing[3],
         },
@@ -55,7 +57,7 @@ export function StudentListItem({
           style={{
             fontSize: Typography.fontSize.sm,
             fontWeight: Typography.fontWeight.semibold,
-            color: Colors.ink,
+            color: colors.foreground,
           }}
           numberOfLines={1}
         >
@@ -65,7 +67,7 @@ export function StudentListItem({
         <Text
           style={{
             fontSize: Typography.fontSize.xs,
-            color: Colors.slateText,
+            color: colors.mutedForeground,
           }}
         >
           {student.admissionNumber} • {student.schoolClass.name}
@@ -79,14 +81,14 @@ export function StudentListItem({
               paddingHorizontal: Spacing[2],
               paddingVertical: 1,
               borderRadius: Radius.full,
-              backgroundColor: CardStatusColors[cardStatus]?.bg || Colors.line,
+              backgroundColor: CardStatusColors[cardStatus]?.bg || colors.muted,
             }}
           >
             <Text
               style={{
                 fontSize: Typography.fontSize.xs,
                 fontWeight: Typography.fontWeight.semibold,
-                color: CardStatusColors[cardStatus]?.text || Colors.slateText,
+                color: CardStatusColors[cardStatus]?.text || colors.mutedForeground,
               }}
             >
               {cardStatusLabel(cardStatus)}
@@ -100,14 +102,14 @@ export function StudentListItem({
                 paddingHorizontal: Spacing[2],
                 paddingVertical: 1,
                 borderRadius: Radius.full,
-                backgroundColor: Colors.dangerBg,
+                backgroundColor: colors.destructive + '15',
               }}
             >
               <Text
                 style={{
                   fontSize: Typography.fontSize.xs,
                   fontWeight: Typography.fontWeight.semibold,
-                  color: Colors.danger,
+                  color: colors.destructive,
                 }}
               >
                 {formatCurrency(fineBalance)}
@@ -118,7 +120,7 @@ export function StudentListItem({
       </View>
 
       {/* Chevron */}
-      {showChevron && <ChevronRight size={18} color={Colors.muted} />}
+      {showChevron && <ChevronRight size={18} color={colors.mutedForeground} />}
     </TouchableOpacity>
   );
 }

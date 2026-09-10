@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import { Colors, Radius, Typography, Spacing, Shadows } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ModalProps {
@@ -42,6 +43,7 @@ export function Modal({
   dismissible = true,
 }: ModalProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const maxHeight = size === 'sm' ? '40%' : size === 'md' ? '65%' : '90%';
 
@@ -57,13 +59,13 @@ export function Modal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Backdrop */}
+        {/* Backdrop — always semi-transparent black for consistent depth cue */}
         <TouchableWithoutFeedback onPress={dismissible ? onClose : undefined}>
           <View
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: 'rgba(31,41,51,0.6)',
+              backgroundColor: 'rgba(0,0,0,0.5)',
             }}
           />
         </TouchableWithoutFeedback>
@@ -73,7 +75,7 @@ export function Modal({
           <View
             style={[
               {
-                backgroundColor: Colors.card,
+                backgroundColor: colors.card,
                 borderRadius: Radius.dialog,
                 maxHeight,
                 overflow: 'hidden',
@@ -92,14 +94,14 @@ export function Modal({
                 paddingTop: Spacing[5],
                 paddingBottom: Spacing[3],
                 borderBottomWidth: 1,
-                borderBottomColor: Colors.line,
+                borderBottomColor: colors.border,
               }}
             >
               <Text
                 style={{
                   fontSize: Typography.fontSize.base,
                   fontWeight: Typography.fontWeight.semibold,
-                  color: Colors.ink,
+                  color: colors.foreground,
                   flex: 1,
                 }}
               >
@@ -109,7 +111,7 @@ export function Modal({
                 onPress={onClose}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
               >
-                <X size={20} color={Colors.slateText} />
+                <X size={20} color={colors.mutedForeground} />
               </TouchableOpacity>
             </View>
 
@@ -131,7 +133,7 @@ export function Modal({
                   paddingBottom: Spacing[5] + insets.bottom,
                   paddingTop: Spacing[3],
                   borderTopWidth: 1,
-                  borderTopColor: Colors.line,
+                  borderTopColor: colors.border,
                 }}
               >
                 {footer}
@@ -169,7 +171,9 @@ export function ConfirmModal({
   variant = 'default',
   loading = false,
 }: ConfirmModalProps) {
-  const confirmBg = variant === 'danger' ? Colors.danger : Colors.teal;
+  const { colors } = useTheme();
+  // brand: teal / danger action buttons — intentional, contrast ≥ 4.5:1 for white text
+  const confirmBg = variant === 'danger' ? colors.destructive : colors.primary;
 
   return (
     <RNModal
@@ -183,7 +187,7 @@ export function ConfirmModal({
         <View
           style={{
             flex: 1,
-            backgroundColor: 'rgba(31,41,51,0.6)',
+            backgroundColor: 'rgba(0,0,0,0.5)',
             justifyContent: 'center',
             paddingHorizontal: Spacing[6],
           }}
@@ -191,7 +195,7 @@ export function ConfirmModal({
           <TouchableWithoutFeedback>
             <View
               style={{
-                backgroundColor: Colors.card,
+                backgroundColor: colors.card,
                 borderRadius: Radius.dialog,
                 padding: Spacing[5],
                 ...Shadows.xl,
@@ -201,7 +205,7 @@ export function ConfirmModal({
                 style={{
                   fontSize: Typography.fontSize.base,
                   fontWeight: Typography.fontWeight.semibold,
-                  color: Colors.ink,
+                  color: colors.foreground,
                   marginBottom: Spacing[2],
                 }}
               >
@@ -211,7 +215,7 @@ export function ConfirmModal({
               <Text
                 style={{
                   fontSize: Typography.fontSize.sm,
-                  color: Colors.slateText,
+                  color: colors.mutedForeground,
                   lineHeight: Typography.lineHeight.base,
                   marginBottom: Spacing[5],
                 }}
@@ -229,7 +233,7 @@ export function ConfirmModal({
                     paddingVertical: Spacing[2.5],
                     borderRadius: Radius.button,
                     borderWidth: 1,
-                    borderColor: Colors.line,
+                    borderColor: colors.border,
                     alignItems: 'center',
                   }}
                 >
@@ -237,7 +241,7 @@ export function ConfirmModal({
                     style={{
                       fontSize: Typography.fontSize.sm,
                       fontWeight: Typography.fontWeight.medium,
-                      color: Colors.ink,
+                      color: colors.foreground,
                     }}
                   >
                     {cancelLabel}
@@ -260,7 +264,7 @@ export function ConfirmModal({
                     style={{
                       fontSize: Typography.fontSize.sm,
                       fontWeight: Typography.fontWeight.semibold,
-                      color: Colors.white,
+                      color: colors.primaryForeground,
                     }}
                   >
                     {loading ? 'Please wait…' : confirmLabel}

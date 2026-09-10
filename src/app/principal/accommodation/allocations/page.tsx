@@ -86,7 +86,7 @@ const GENDER_LABEL: Record<string, string> = { BOYS_ONLY: "Boys", GIRLS_ONLY: "G
 function OccupancyBar({ pct }: { pct: number }) {
   const color = pct >= 100 ? "bg-danger" : pct >= 90 ? "bg-warn" : pct >= 70 ? "bg-amber-400" : "bg-teal";
   return (
-    <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+    <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
       <div className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
@@ -106,13 +106,13 @@ function DormCard({
       disabled={isFull}
       className={`w-full text-left rounded-xl border-2 p-3.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
         selected
-          ? "border-teal bg-teal/5 dark:bg-teal/10"
-          : "border-line hover:border-teal/40 dark:border-dark-border"
+          ? "border-teal bg-teal/5"
+          : "border-border hover:border-teal/40"
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <p className={`text-sm font-semibold truncate ${selected ? "text-teal" : "text-ink dark:text-dark-text"}`}>
+          <p className={`text-sm font-semibold truncate ${selected ? "text-teal" : "text-foreground"}`}>
             {dorm.name}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -120,21 +120,21 @@ function DormCard({
               {GENDER_LABEL[dorm.genderPolicy]}
             </span>
             {dorm.allocationPolicy === "RESTRICTED_BY_FORM" && dorm.permittedForms.length > 0 && (
-              <span className="text-[10px] text-slate dark:text-dark-muted">
+              <span className="text-[10px] text-slate">
                 F{dorm.permittedForms.join(",")}
               </span>
             )}
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className={`text-sm font-semibold tabular-nums ${isFull ? "text-danger" : "text-ink dark:text-dark-text"}`}>
+          <p className={`text-sm font-semibold tabular-nums ${isFull ? "text-danger" : "text-foreground"}`}>
             {dorm.availableCount}
           </p>
-          <p className="text-[10px] text-slate dark:text-dark-muted">free</p>
+          <p className="text-[10px] text-slate">free</p>
         </div>
       </div>
       <OccupancyBar pct={pct} />
-      <p className="text-[10px] text-slate mt-1 dark:text-dark-muted text-right tabular-nums">
+      <p className="text-[10px] text-slate mt-1 text-right tabular-nums">
         {dorm.occupiedCount}/{dorm.totalCapacity} · {pct}%
       </p>
     </button>
@@ -222,7 +222,7 @@ function AllocateModal({
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <p className="text-sm font-medium text-ink mb-2 dark:text-dark-text">Select dormitory</p>
+          <p className="text-sm font-medium text-foreground mb-2">Select dormitory</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
             {dorms.map((d) => (
               <DormCard key={d.id} dorm={d} selected={dormId === d.id}
@@ -326,31 +326,31 @@ function HistoryModal({ student, onClose }: { student: StudentRow; onClose: () =
   }, [student.id]);
   const statusColor = (s: string) => ({
     CURRENT: "text-success bg-success/10 border-success/20",
-    VACATED: "text-slate bg-slate-50 border-line dark:bg-dark-surface dark:border-dark-border",
+    VACATED: "text-slate bg-slate-50 border-border",
     TRANSFERRED: "text-teal bg-teal/8 border-teal/20",
   }[s] ?? "text-slate");
   return (
     <Modal title="Accommodation History" description={`${student.fullName} · ${student.admissionNumber}`}
       onClose={onClose} size="lg">
       {loading && <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-16 rounded-lg bg-line/40 animate-pulse" />)}</div>}
-      {!loading && records.length === 0 && <p className="text-slate text-sm py-6 text-center dark:text-dark-muted">No accommodation history found.</p>}
+      {!loading && records.length === 0 && <p className="text-slate text-sm py-6 text-center">No accommodation history found.</p>}
       {!loading && records.length > 0 && (
         <div className="space-y-3">
           {records.map((r) => (
-            <div key={r.id} className="rounded-lg border border-line dark:border-dark-border p-4">
+            <div key={r.id} className="rounded-lg border border-border p-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-ink dark:text-dark-text">{r.dorm.name}</p>
-                    {r.cubicle && <span className="text-xs text-slate dark:text-dark-muted">· {r.cubicle.name}</span>}
-                    {r.bed && <span className="text-xs text-slate dark:text-dark-muted">· {r.bed.label}{positionDisplay(r.sleepingPosition)}</span>}
+                    <p className="text-sm font-semibold text-foreground">{r.dorm.name}</p>
+                    {r.cubicle && <span className="text-xs text-slate">· {r.cubicle.name}</span>}
+                    {r.bed && <span className="text-xs text-slate">· {r.bed.label}{positionDisplay(r.sleepingPosition)}</span>}
                   </div>
-                  <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+                  <p className="text-xs text-slate mt-1">
                     Allocated {new Date(r.allocationDate).toLocaleDateString()}
                     {r.vacatedDate ? ` → vacated ${new Date(r.vacatedDate).toLocaleDateString()}` : ""}
                     {r.allocatedBy ? ` by ${r.allocatedBy.email}` : ""}
                   </p>
-                  {r.notes && <p className="text-xs text-slate mt-1 italic dark:text-dark-muted">{r.notes}</p>}
+                  {r.notes && <p className="text-xs text-slate mt-1 italic">{r.notes}</p>}
                 </div>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor(r.status)}`}>
                   {r.status.charAt(0) + r.status.slice(1).toLowerCase()}
@@ -427,10 +427,10 @@ function BulkAllocateModal({
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Mode tabs */}
-        <div className="flex rounded-lg border border-line overflow-hidden dark:border-dark-border">
+        <div className="flex rounded-lg border border-border overflow-hidden">
           {([["unallocated","Unallocated students"],["form","By form"],["class","By class"]] as [typeof mode, string][]).map(([m, label]) => (
             <button key={m} type="button" onClick={() => setMode(m)}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === m ? "bg-teal text-white" : "bg-white text-slate hover:bg-paper dark:bg-dark-surface dark:text-dark-muted"}`}>
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === m ? "bg-teal text-white" : "bg-card text-slate hover:bg-background"}`}>
               {label}
             </button>
           ))}
@@ -441,7 +441,7 @@ function BulkAllocateModal({
             <div className="flex flex-wrap gap-2 mt-1">
               {schoolForms.map((f) => (
                 <button key={f} type="button" onClick={() => setForms((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f])}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${forms.includes(f) ? "bg-teal text-white border-teal" : "border-line text-slate hover:border-teal/40 dark:border-dark-border"}`}>
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${forms.includes(f) ? "bg-teal text-white border-teal" : "border-border text-slate hover:border-teal/40"}`}>
                   Form {f}
                 </button>
               ))}
@@ -453,7 +453,7 @@ function BulkAllocateModal({
             <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
               {classes.map((c) => (
                 <button key={c.id} type="button" onClick={() => setClassIds((prev) => prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id])}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all text-left ${classIds.includes(c.id) ? "bg-teal text-white border-teal" : "border-line text-ink hover:border-teal/40 dark:border-dark-border dark:text-dark-text"}`}>
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all text-left ${classIds.includes(c.id) ? "bg-teal text-white border-teal" : "border-border text-foreground hover:border-teal/40"}`}>
                   {c.name}
                 </button>
               ))}
@@ -462,7 +462,7 @@ function BulkAllocateModal({
         )}
         {/* Dorm selection */}
         <div>
-          <p className="text-sm font-medium text-ink mb-2 dark:text-dark-text">Destination dormitory</p>
+          <p className="text-sm font-medium text-foreground mb-2">Destination dormitory</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {dorms.filter((d) => d.availableCount > 0).map((d) => (
               <DormCard key={d.id} dorm={d} selected={dormId === d.id} onSelect={() => setDormId(d.id)} />
@@ -479,18 +479,18 @@ function BulkAllocateModal({
         </FormField>
         {/* Preview results */}
         {preview !== null && (
-          <div className="rounded-lg border border-teal/20 bg-teal/5 dark:bg-teal/10 p-3">
+          <div className="rounded-lg border border-teal/20 bg-teal/5 p-3">
             <p className="text-sm font-semibold text-teal mb-2">{preview.length} students will be allocated</p>
             {preview.length > 0 && (
               <div className="max-h-36 overflow-y-auto space-y-1">
                 {preview.slice(0, 20).map((p) => (
                   <div key={p.studentId} className="flex items-center gap-2 text-xs">
                     <Check className="h-3 w-3 text-teal shrink-0" />
-                    <span className="text-ink dark:text-dark-text">{p.studentName}</span>
-                    <span className="text-slate dark:text-dark-muted">· {p.className}</span>
+                    <span className="text-foreground">{p.studentName}</span>
+                    <span className="text-slate">· {p.className}</span>
                   </div>
                 ))}
-                {preview.length > 20 && <p className="text-xs text-slate dark:text-dark-muted">…and {preview.length - 20} more</p>}
+                {preview.length > 20 && <p className="text-xs text-slate">…and {preview.length - 20} more</p>}
               </div>
             )}
           </div>
@@ -563,37 +563,37 @@ function AutoAllocateModal({
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Strategy */}
         <div>
-          <p className="text-sm font-medium text-ink mb-2 dark:text-dark-text">Distribution strategy</p>
+          <p className="text-sm font-medium text-foreground mb-2">Distribution strategy</p>
           <div className="grid grid-cols-2 gap-3">
             {([["DISTRIBUTE_EVENLY","Distribute evenly","Spread students across all dorms, keeping occupancy balanced."],
               ["FILL_FIRST","Fill first","Fill each dorm to capacity before moving to the next."]] as [typeof strategy, string, string][]).map(([v, label, desc]) => (
               <button key={v} type="button" onClick={() => setStrategy(v)}
-                className={`text-left rounded-xl border-2 p-3 transition-all ${strategy === v ? "border-teal bg-teal/5 dark:bg-teal/10" : "border-line hover:border-teal/40 dark:border-dark-border"}`}>
-                <p className={`text-sm font-semibold ${strategy === v ? "text-teal" : "text-ink dark:text-dark-text"}`}>{label}</p>
-                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{desc}</p>
+                className={`text-left rounded-xl border-2 p-3 transition-all ${strategy === v ? "border-teal bg-teal/5" : "border-border hover:border-teal/40"}`}>
+                <p className={`text-sm font-semibold ${strategy === v ? "text-teal" : "text-foreground"}`}>{label}</p>
+                <p className="text-xs text-slate mt-0.5">{desc}</p>
               </button>
             ))}
           </div>
         </div>
         {/* Scope */}
-        <label className="flex items-center gap-3 cursor-pointer py-2 border-b border-line dark:border-dark-border">
+        <label className="flex items-center gap-3 cursor-pointer py-2 border-b border-border">
           <input type="checkbox" checked={unallocatedOnly} onChange={(e) => setUnallocatedOnly(e.target.checked)}
-            className="h-4 w-4 rounded border-line text-teal focus:ring-teal/30" />
+            className="h-4 w-4 rounded border-border text-teal focus:ring-teal/30" />
           <div>
-            <p className="text-sm font-medium text-ink dark:text-dark-text">Unallocated students only</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Skip students who already have a current allocation.</p>
+            <p className="text-sm font-medium text-foreground">Unallocated students only</p>
+            <p className="text-xs text-slate">Skip students who already have a current allocation.</p>
           </div>
         </label>
         {/* Dorm filter */}
         <div>
-          <p className="text-sm font-medium text-ink mb-1 dark:text-dark-text">
+          <p className="text-sm font-medium text-foreground mb-1">
             Dormitories to use <span className="text-slate font-normal">(leave blank for all active)</span>
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto">
             {activeDorms.map((d) => (
               <button key={d.id} type="button"
                 onClick={() => setSelectedDormIds((prev) => prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id])}
-                className={`px-2.5 py-2 rounded-lg text-xs font-medium border transition-all text-left ${selectedDormIds.includes(d.id) ? "bg-teal text-white border-teal" : "border-line text-ink hover:border-teal/40 dark:border-dark-border dark:text-dark-text"}`}>
+                className={`px-2.5 py-2 rounded-lg text-xs font-medium border transition-all text-left ${selectedDormIds.includes(d.id) ? "bg-teal text-white border-teal" : "border-border text-foreground hover:border-teal/40"}`}>
                 {d.name} <span className="opacity-70">({d.availableCount} free)</span>
               </button>
             ))}
@@ -604,7 +604,7 @@ function AutoAllocateModal({
         </FormField>
         {/* Dry run result */}
         {dryResult && (
-          <div className="rounded-lg border border-teal/20 bg-teal/5 dark:bg-teal/10 p-3 space-y-2">
+          <div className="rounded-lg border border-teal/20 bg-teal/5 p-3 space-y-2">
             <div className="flex items-center gap-4">
               <span className="text-sm font-semibold text-teal">{dryResult.toAllocate} will be allocated</span>
               {dryResult.unplaceable > 0 && (
@@ -615,11 +615,11 @@ function AutoAllocateModal({
               {dryResult.plan.slice(0, 15).map((p, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs">
                   <ArrowRight className="h-3 w-3 text-teal shrink-0" />
-                  <span className="text-ink dark:text-dark-text truncate">{p.studentName}</span>
-                  <span className="text-slate dark:text-dark-muted shrink-0">→ {p.dormName}</span>
+                  <span className="text-foreground truncate">{p.studentName}</span>
+                  <span className="text-slate shrink-0">→ {p.dormName}</span>
                 </div>
               ))}
-              {dryResult.plan.length > 15 && <p className="text-xs text-slate dark:text-dark-muted">…and {dryResult.plan.length - 15} more</p>}
+              {dryResult.plan.length > 15 && <p className="text-xs text-slate">…and {dryResult.plan.length - 15} more</p>}
             </div>
           </div>
         )}
@@ -805,11 +805,11 @@ export default function AllocationsPage() {
             { label: "Unallocated", value: unallocatedCount, icon: UserMinus, color: unallocatedCount > 0 ? "text-warn" : "text-slate", bg: unallocatedCount > 0 ? "bg-warn/10" : "bg-slate/10" },
             { label: "Dorms", value: dorms.length, icon: Building2, color: "text-teal", bg: "bg-teal/10" },
           ].map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="rounded-xl border border-line bg-card p-4 dark:bg-dark-surface dark:border-dark-border">
+            <div key={label} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`text-xl font-semibold tabular-nums ${color}`}>{value}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{label}</p>
+                  <p className="text-xs text-slate mt-0.5">{label}</p>
                 </div>
                 <div className={`rounded-lg p-2 ${bg}`}>
                   <Icon className={`h-5 w-5 ${color}`} />
@@ -824,15 +824,15 @@ export default function AllocationsPage() {
       <WorkspaceToolbar>
         <WorkspaceToolbar.Search value={search} onChange={setSearch} placeholder="Search students by name or admission number…" />
         <WorkspaceToolbar.Actions>
-          <div className="flex rounded-lg border border-line overflow-hidden dark:border-dark-border">
+          <div className="flex rounded-lg border border-border overflow-hidden">
             {(["all","allocated","unallocated"] as const).map((f) => (
               <button key={f} type="button" onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors capitalize ${filter === f ? "bg-teal text-white" : "bg-white text-slate hover:bg-paper dark:bg-dark-surface dark:text-dark-muted"}`}>
+                className={`px-3 py-1.5 text-xs font-medium transition-colors capitalize ${filter === f ? "bg-teal text-white" : "bg-card text-slate hover:bg-background"}`}>
                 {f}
               </button>
             ))}
           </div>
-          <select className="text-xs border border-line rounded-lg px-2 py-1.5 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+          <select className="text-xs border border-border rounded-lg px-2 py-1.5 bg-card"
             value={formFilter} onChange={(e) => setFormFilter(e.target.value)}>
             <option value="">All forms</option>
             {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => <option key={f} value={String(f)}>Form {f}</option>)}
@@ -853,17 +853,17 @@ export default function AllocationsPage() {
       {/* Loading skeleton */}
       {loading && (
         <div className="space-y-2">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-14 rounded-lg bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+          {[...Array(6)].map((_, i) => <div key={i} className="h-14 rounded-lg bg-line/40/40 animate-pulse" />)}
         </div>
       )}
 
       {/* Empty state */}
       {!loading && filteredStudents.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="rounded-full bg-slate-100 dark:bg-dark-surface p-4">
+          <div className="rounded-full bg-slate-100 p-4">
             <UserCheck className="h-8 w-8 text-slate" />
           </div>
-          <p className="text-ink font-medium dark:text-dark-text">
+          <p className="text-foreground font-medium">
             {search ? `No students match "${search}"` : "No students found"}
           </p>
           {!search && filter === "unallocated" && (
@@ -876,15 +876,15 @@ export default function AllocationsPage() {
 
       {/* Table view */}
       {!loading && filteredStudents.length > 0 && viewMode === "table" && (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead>
-                <tr className="border-b border-line bg-slate-50/80 dark:bg-dark-border/30 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80/30 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-4 py-3 w-9">
                     <input type="checkbox" checked={selected.size === filteredStudents.length && filteredStudents.length > 0}
                       onChange={(e) => e.target.checked ? selectAll() : clearSelected()}
-                      className="h-4 w-4 rounded border-line text-teal" />
+                      className="h-4 w-4 rounded border-border text-teal" />
                   </th>
                   <th className="px-4 py-3">Student</th>
                   <th className="px-4 py-3 w-[90px]">Form</th>
@@ -892,40 +892,40 @@ export default function AllocationsPage() {
                   <th className="px-4 py-3 w-[180px] text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60 dark:divide-dark-border/60">
+              <tbody className="divide-y divide-border/60 /60">
                 {filteredStudents.map((s) => (
-                  <tr key={s.id} className={`hover:bg-slate-50/50 transition-colors dark:hover:bg-dark-border/20 ${selected.has(s.id) ? "bg-teal/5 dark:bg-teal/10" : ""}`}>
+                  <tr key={s.id} className={`hover:bg-slate-50/50 transition-colors/20 ${selected.has(s.id) ? "bg-teal/5" : ""}`}>
                     <td className="px-4 py-3">
                       <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)}
-                        className="h-4 w-4 rounded border-line text-teal" />
+                        className="h-4 w-4 rounded border-border text-teal" />
                     </td>
                     <td className="px-4 py-3">
                       <Link href={`/principal/students/${s.id}`}
-                        className="font-medium text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                        className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                         {s.fullName}
                       </Link>
-                      <p className="text-xs text-slate dark:text-dark-muted">{s.admissionNumber} · {s.className}</p>
+                      <p className="text-xs text-slate">{s.admissionNumber} · {s.className}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate dark:text-dark-muted">Form {s.form}</td>
+                    <td className="px-4 py-3 text-sm text-slate">Form {s.form}</td>
                     <td className="px-4 py-3">
                       {s.currentAllocation ? (
                         <div>
                           <div className="flex items-center gap-1.5">
                             <BedDouble className="h-3.5 w-3.5 text-teal shrink-0" />
                             <Link href={`/principal/accommodation/dormitories/${s.currentAllocation.dormId}`}
-                              className="text-sm font-medium text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                              className="text-sm font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                               {s.currentAllocation.dorm.name}
                             </Link>
                             {s.currentAllocation.cubicle && (
-                              <span className="text-xs text-slate dark:text-dark-muted">· {s.currentAllocation.cubicle.name}</span>
+                              <span className="text-xs text-slate">· {s.currentAllocation.cubicle.name}</span>
                             )}
                             {s.currentAllocation.bed && (
-                              <span className="text-xs text-slate dark:text-dark-muted">
+                              <span className="text-xs text-slate">
                                 · {s.currentAllocation.bed.label}{positionDisplay(s.currentAllocation.sleepingPosition)}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">
+                          <p className="text-xs text-slate mt-0.5">
                             Since {new Date(s.currentAllocation.allocationDate).toLocaleDateString()}
                           </p>
                         </div>
@@ -973,16 +973,16 @@ export default function AllocationsPage() {
       {!loading && filteredStudents.length > 0 && viewMode === "list" && (
         <div className="space-y-2">
           {filteredStudents.map((s) => (
-            <div key={s.id} className={`rounded-xl border border-line bg-card p-4 flex items-center gap-4 dark:bg-dark-surface dark:border-dark-border hover:border-teal/30 transition-colors ${selected.has(s.id) ? "bg-teal/5 border-teal/30 dark:bg-teal/10" : ""}`}>
+            <div key={s.id} className={`rounded-xl border border-border bg-card p-4 flex items-center gap-4 hover:border-teal/30 transition-colors ${selected.has(s.id) ? "bg-teal/5 border-teal/30" : ""}`}>
               <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)}
-                className="h-4 w-4 rounded border-line text-teal shrink-0" />
+                className="h-4 w-4 rounded border-border text-teal shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link href={`/principal/students/${s.id}`}
-                    className="text-sm font-semibold text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                    className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {s.fullName}
                   </Link>
-                  <span className="text-xs text-slate dark:text-dark-muted">{s.admissionNumber} · {s.className}</span>
+                  <span className="text-xs text-slate">{s.admissionNumber} · {s.className}</span>
                 </div>
                 {s.currentAllocation ? (
                   <p className="text-xs text-teal mt-0.5">
@@ -994,7 +994,7 @@ export default function AllocationsPage() {
                     {s.currentAllocation.cubicle ? ` · ${s.currentAllocation.cubicle.name}` : ""}
                   </p>
                 ) : (
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">Not allocated</p>
+                  <p className="text-xs text-slate mt-0.5">Not allocated</p>
                 )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">

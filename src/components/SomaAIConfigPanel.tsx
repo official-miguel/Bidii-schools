@@ -24,10 +24,10 @@ import { GEMINI_MODELS, DEFAULT_AI_CONFIG, type AiConfig, type AiUsage } from "@
 
 // Shared UI helpers (same as the rest of Settings)
 const inputClass =
-  "block w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink " +
+  "block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground " +
   "placeholder:text-slate/50 focus:border-teal/60 focus:outline-none focus:ring-1 focus:ring-teal/20 " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:placeholder:text-dark-muted/50";
-const labelClass = "block text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide mb-1.5";
+  "";
+const labelClass = "block text-xs font-semibold text-slate uppercase tracking-wide mb-1.5";
 
 interface ConfigState {
   configured: boolean;
@@ -146,7 +146,7 @@ export default function SomaAIConfigPanel() {
     return (
       <div className="space-y-4 max-w-3xl animate-pulse">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-28 rounded-xl bg-line dark:bg-dark-border" />
+          <div key={i} className="h-28 rounded-xl bg-line" />
         ))}
       </div>
     );
@@ -185,21 +185,21 @@ export default function SomaAIConfigPanel() {
       </div>
 
       {/* ── API Key section ────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border overflow-hidden">
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
         <button
           type="button"
           onClick={() => setKeySection((v) => !v)}
-          className="w-full flex items-center justify-between px-5 py-4 hover:bg-paper dark:hover:bg-dark-border/50 transition-colors"
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-background/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
               <Key className="h-4.5 w-4.5 text-teal" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 {state?.configured ? "Update API Key" : "Add API Key"}
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 {state?.configured
                   ? `Current key: ···${state.keyPreview} — click to update`
                   : "Your Gemini API key is encrypted at rest"}
@@ -210,7 +210,7 @@ export default function SomaAIConfigPanel() {
         </button>
 
         {keySection && (
-          <div className="px-5 pb-5 border-t border-line dark:border-dark-border">
+          <div className="px-5 pb-5 border-t border-border">
             <div className="mt-4">
               <label className={labelClass}>Gemini API Key</label>
               <div className="relative">
@@ -226,17 +226,17 @@ export default function SomaAIConfigPanel() {
                 <button
                   type="button"
                   onClick={() => setShowKey((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate hover:text-ink transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate hover:text-foreground transition-colors"
                   aria-label={showKey ? "Hide key" : "Show key"}
                 >
                   {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-1.5 text-xs text-slate dark:text-dark-muted flex items-center gap-1">
+              <p className="mt-1.5 text-xs text-slate flex items-center gap-1">
                 <Info className="h-3 w-3 shrink-0" />
                 Keys are AES-256 encrypted before storage. The raw key is never returned to the browser.
               </p>
-              <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+              <p className="mt-1 text-xs text-slate">
                 Get your key from{" "}
                 <a
                   href="https://aistudio.google.com/app/apikey"
@@ -253,14 +253,14 @@ export default function SomaAIConfigPanel() {
       </div>
 
       {/* ── Model Selection ────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border p-5">
+      <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
             <Cpu className="h-4.5 w-4.5 text-teal" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">AI Model</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Choose which Gemini model powers Soma AI</p>
+            <p className="text-sm font-semibold text-foreground">AI Model</p>
+            <p className="text-xs text-slate">Choose which Gemini model powers Soma AI</p>
           </div>
         </div>
 
@@ -270,8 +270,8 @@ export default function SomaAIConfigPanel() {
               key={m.id}
               className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                 model === m.id
-                  ? "border-teal bg-teal-50 dark:bg-teal/10 dark:border-teal/40"
-                  : "border-line bg-paper dark:border-dark-border dark:bg-dark-bg hover:border-teal/30"
+                  ? "border-teal bg-teal-50 dark:border-teal/40"
+                  : "border-border bg-background hover:border-teal/30"
               }`}
             >
               <input
@@ -284,7 +284,7 @@ export default function SomaAIConfigPanel() {
               />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-sm font-medium text-ink dark:text-dark-text">
+                  <span className="text-sm font-medium text-foreground">
                     {m.label}
                   </span>
                   {m.recommended && (
@@ -298,7 +298,7 @@ export default function SomaAIConfigPanel() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate dark:text-dark-muted mt-0.5 leading-snug">
+                <p className="text-xs text-slate mt-0.5 leading-snug">
                   {m.description}
                 </p>
               </div>
@@ -308,14 +308,14 @@ export default function SomaAIConfigPanel() {
       </div>
 
       {/* ── Generation Parameters ──────────────────────────────────────── */}
-      <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border p-5">
+      <div className="rounded-xl bg-card border border-border p-5">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
             <Zap className="h-4.5 w-4.5 text-teal" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Generation Parameters</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Fine-tune how the AI generates responses</p>
+            <p className="text-sm font-semibold text-foreground">Generation Parameters</p>
+            <p className="text-xs text-slate">Fine-tune how the AI generates responses</p>
           </div>
         </div>
 
@@ -337,7 +337,7 @@ export default function SomaAIConfigPanel() {
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
               className="w-full h-2 rounded-full accent-teal cursor-pointer"
             />
-            <div className="flex justify-between mt-1 text-[11px] text-slate dark:text-dark-muted">
+            <div className="flex justify-between mt-1 text-[11px] text-slate">
               <span>0 — Precise & consistent</span>
               <span>1 — Creative & varied</span>
             </div>
@@ -360,7 +360,7 @@ export default function SomaAIConfigPanel() {
               onChange={(e) => setMaxOutputTokens(parseInt(e.target.value, 10))}
               className="w-full h-2 rounded-full accent-teal cursor-pointer"
             />
-            <div className="flex justify-between mt-1 text-[11px] text-slate dark:text-dark-muted">
+            <div className="flex justify-between mt-1 text-[11px] text-slate">
               <span>256 — Short answers</span>
               <span>8,192 — Long reports</span>
             </div>
@@ -369,22 +369,22 @@ export default function SomaAIConfigPanel() {
       </div>
 
       {/* ── Behaviour ─────────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border p-5 space-y-4">
+      <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
             <Sparkles className="h-4.5 w-4.5 text-teal" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Behaviour</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Control availability and performance</p>
+            <p className="text-sm font-semibold text-foreground">Behaviour</p>
+            <p className="text-xs text-slate">Control availability and performance</p>
           </div>
         </div>
 
         {/* Enable/disable AI */}
-        <div className="flex items-center justify-between py-3 border-t border-line dark:border-dark-border">
+        <div className="flex items-center justify-between py-3 border-t border-border">
           <div>
-            <p className="text-sm font-medium text-ink dark:text-dark-text">Enable Soma AI</p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+            <p className="text-sm font-medium text-foreground">Enable Soma AI</p>
+            <p className="text-xs text-slate mt-0.5">
               When disabled, the assistant shows a maintenance notice to all users
             </p>
           </div>
@@ -401,10 +401,10 @@ export default function SomaAIConfigPanel() {
         </div>
 
         {/* Response cache */}
-        <div className="flex items-center justify-between py-3 border-t border-line dark:border-dark-border">
+        <div className="flex items-center justify-between py-3 border-t border-border">
           <div>
-            <p className="text-sm font-medium text-ink dark:text-dark-text">Response caching</p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+            <p className="text-sm font-medium text-foreground">Response caching</p>
+            <p className="text-xs text-slate mt-0.5">
               Cache identical prompts to reduce API spend and improve speed
             </p>
           </div>
@@ -436,7 +436,7 @@ export default function SomaAIConfigPanel() {
               onChange={(e) => setCacheTtlMinutes(parseInt(e.target.value, 10))}
               className="w-full h-2 rounded-full accent-teal cursor-pointer"
             />
-            <div className="flex justify-between mt-1 text-[11px] text-slate dark:text-dark-muted">
+            <div className="flex justify-between mt-1 text-[11px] text-slate">
               <span>1 min</span>
               <span>60 min</span>
             </div>
@@ -446,22 +446,22 @@ export default function SomaAIConfigPanel() {
 
       {/* ── Connection Test ────────────────────────────────────────────── */}
       {state?.configured && (
-        <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border p-5">
+        <div className="rounded-xl bg-card border border-border p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
                 <Activity className="h-4.5 w-4.5 text-teal" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">Connection Test</p>
-                <p className="text-xs text-slate dark:text-dark-muted">Verify the key works with the selected model</p>
+                <p className="text-sm font-semibold text-foreground">Connection Test</p>
+                <p className="text-xs text-slate">Verify the key works with the selected model</p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleTest}
               disabled={testing}
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:border-teal/30 hover:bg-teal-50 disabled:opacity-50 transition-colors dark:border-dark-border dark:text-dark-muted dark:hover:text-dark-text dark:hover:bg-dark-border"
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:border-teal/30 hover:bg-teal-50 disabled:opacity-50 transition-colors"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${testing ? "animate-spin" : ""}`} />
               {testing ? "Testing…" : "Test connection"}
@@ -496,37 +496,37 @@ export default function SomaAIConfigPanel() {
 
       {/* ── Usage Stats ───────────────────────────────────────────────── */}
       {state?.configured && (
-        <div className="rounded-xl bg-white border border-line dark:bg-dark-surface dark:border-dark-border p-5">
+        <div className="rounded-xl bg-card border border-border p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal/10 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center">
               <Activity className="h-4.5 w-4.5 text-teal" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">Usage</p>
-              <p className="text-xs text-slate dark:text-dark-muted">Gemini API requests from Soma AI</p>
+              <p className="text-sm font-semibold text-foreground">Usage</p>
+              <p className="text-xs text-slate">Gemini API requests from Soma AI</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg bg-paper dark:bg-dark-bg border border-line dark:border-dark-border p-4">
-              <p className="text-2xl font-bold text-ink dark:text-dark-text tabular-nums">
+            <div className="rounded-lg bg-background border border-border p-4">
+              <p className="text-2xl font-bold text-foreground tabular-nums">
                 {(state.usage.totalRequests ?? 0).toLocaleString()}
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-1">Total AI requests</p>
+              <p className="text-xs text-slate mt-1">Total AI requests</p>
             </div>
-            <div className="rounded-lg bg-paper dark:bg-dark-bg border border-line dark:border-dark-border p-4">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+            <div className="rounded-lg bg-background border border-border p-4">
+              <p className="text-sm font-semibold text-foreground">
                 {state.usage.lastUsedAt
                   ? new Date(state.usage.lastUsedAt).toLocaleDateString("en-KE", {
                       day: "numeric", month: "short", year: "numeric",
                     })
                   : "Never"}
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-1">Last used</p>
+              <p className="text-xs text-slate mt-1">Last used</p>
             </div>
           </div>
 
-          <p className="mt-3 text-xs text-slate dark:text-dark-muted flex items-center gap-1">
+          <p className="mt-3 text-xs text-slate flex items-center gap-1">
             <Info className="h-3 w-3 shrink-0" />
             Direct database answers (student counts, attendance lists, etc.) don&apos;t consume API requests.
           </p>
@@ -558,7 +558,7 @@ export default function SomaAIConfigPanel() {
           {saving ? "Saving…" : "Save configuration"}
         </button>
         {state?.configured && (
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             Changes take effect immediately for all users.
           </p>
         )}

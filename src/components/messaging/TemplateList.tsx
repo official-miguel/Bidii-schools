@@ -51,7 +51,7 @@ export default function TemplateList({ canManage, onUse }: Props) {
       {/* Create form */}
       {showCreate && canManage && (
         <div className={`${royalCardClass} p-5 mb-4`}>
-          <h3 className="text-sm font-semibold text-ink mb-4">New template</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">New template</h3>
           <TemplateEditor
             onSaved={() => { setShowCreate(false); load(); }}
             onCancel={() => setShowCreate(false)}
@@ -63,7 +63,7 @@ export default function TemplateList({ canManage, onUse }: Props) {
       {/* Edit form */}
       {editing && canManage && (
         <div className={`${royalCardClass} p-5 mb-4`}>
-          <h3 className="text-sm font-semibold text-ink mb-4">Edit template</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Edit template</h3>
           <TemplateEditor
             initial={editing}
             onSaved={() => { setEditing(null); load(); }}
@@ -76,25 +76,25 @@ export default function TemplateList({ canManage, onUse }: Props) {
       {loading ? (
         <div className="space-y-2">{[...Array(4)].map((_,i) => <div key={i} className="h-16 rounded-lg bg-line/40 animate-pulse"/>)}</div>
       ) : templates.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line px-4 py-12 text-center">
-          <p className="text-sm font-medium text-ink mb-1">No templates yet</p>
+        <div className="rounded-lg border border-dashed border-border px-4 py-12 text-center">
+          <p className="text-sm font-medium text-foreground mb-1">No templates yet</p>
           <p className="text-xs text-slate">Save a fee reminder, meeting notice, or any reusable message here.</p>
         </div>
       ) : (
         <div className={`${royalCardClass} overflow-hidden`}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line text-left">
+              <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 font-medium text-slate">Name</th>
                 <th className="px-4 py-3 font-medium text-slate hidden md:table-cell">Preview</th>
                 <th className="px-4 py-3"/>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-border">
               {templates.map((t) => (
                 <tr key={t.id} className="hover:bg-royal-50/40 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-ink">{t.name}</p>
+                    <p className="font-medium text-foreground">{t.name}</p>
                     {t.category && (
                       <span className="inline-block mt-0.5 rounded-full bg-royal/10 text-royal text-xs px-2 py-0.5">{t.category}</span>
                     )}

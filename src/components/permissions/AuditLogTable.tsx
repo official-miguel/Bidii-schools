@@ -36,18 +36,17 @@ export default function AuditLogTable({ entries }: { entries: AuditEntry[] }) {
   }
 
   return (
-    <div className="bg-card border border-line rounded-xl overflow-hidden shadow-xs
-                    dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line dark:border-dark-border bg-paper dark:bg-dark-bg">
-              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted w-6" />
-              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">Action</th>
-              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">Performed by</th>
-              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted hidden md:table-cell">Target</th>
-              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted hidden lg:table-cell">Module</th>
-              <th className="text-right px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">When</th>
+            <tr className="border-b border-border bg-background">
+              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider w-6" />
+              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider">Action</th>
+              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider">Performed by</th>
+              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider hidden md:table-cell">Target</th>
+              <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider hidden lg:table-cell">Module</th>
+              <th className="text-right px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-wider">When</th>
             </tr>
           </thead>
           <tbody>
@@ -56,14 +55,14 @@ export default function AuditLogTable({ entries }: { entries: AuditEntry[] }) {
                 <tr
                   key={entry.id}
                   onClick={() => entry.changes && toggle(entry.id)}
-                  className={`border-b border-line/60 dark:border-dark-border/60 transition-colors
+                  className={`border-b border-border/60/60 transition-colors
                     ${entry.changes ? "cursor-pointer hover:bg-teal-50/30 dark:hover:bg-teal/5" : ""}`}
                 >
                   <td className="px-2 py-3 text-center">
                     {entry.changes && (
                       expanded.has(entry.id)
-                        ? <ChevronDown className="h-3.5 w-3.5 text-slate dark:text-dark-muted" />
-                        : <ChevronRight className="h-3.5 w-3.5 text-slate dark:text-dark-muted" />
+                        ? <ChevronDown className="h-3.5 w-3.5 text-slate" />
+                        : <ChevronRight className="h-3.5 w-3.5 text-slate" />
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -71,23 +70,23 @@ export default function AuditLogTable({ entries }: { entries: AuditEntry[] }) {
                       {entry.action.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-ink dark:text-dark-text text-xs">{entry.performedBy}</td>
-                  <td className="px-4 py-3 text-slate dark:text-dark-muted text-xs hidden md:table-cell">
+                  <td className="px-4 py-3 text-foreground text-xs">{entry.performedBy}</td>
+                  <td className="px-4 py-3 text-slate text-xs hidden md:table-cell">
                     {entry.targetUser ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate dark:text-dark-muted text-xs hidden lg:table-cell">
+                  <td className="px-4 py-3 text-slate text-xs hidden lg:table-cell">
                     {entry.module ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate dark:text-dark-muted text-xs text-right whitespace-nowrap">
+                  <td className="px-4 py-3 text-slate text-xs text-right whitespace-nowrap">
                     {new Date(entry.createdAt).toLocaleString("en-KE", {
                       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                     })}
                   </td>
                 </tr>
                 {expanded.has(entry.id) && entry.changes && (
-                  <tr key={entry.id + "-exp"} className="bg-paper dark:bg-dark-bg">
+                  <tr key={entry.id + "-exp"} className="bg-background">
                     <td colSpan={6} className="px-6 py-3">
-                      <pre className="text-[11px] text-slate dark:text-dark-muted overflow-x-auto whitespace-pre-wrap">
+                      <pre className="text-[11px] text-slate overflow-x-auto whitespace-pre-wrap">
                         {JSON.stringify(entry.changes, null, 2)}
                       </pre>
                     </td>

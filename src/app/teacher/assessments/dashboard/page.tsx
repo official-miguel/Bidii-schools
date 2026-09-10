@@ -138,10 +138,10 @@ export default async function TeacherDashboardPage() {
     return (
       <div className="space-y-3">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">In-depth Analysis</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
           <p className="text-sm text-slate mt-0.5">Analytics for your assigned classes and subjects.</p>
         </div>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           No class assignments found. Contact the principal to be assigned to classes.
         </div>
       </div>
@@ -151,7 +151,7 @@ export default async function TeacherDashboardPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">In-depth Analysis</h1>
+        <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
         <p className="text-sm text-slate mt-0.5">
           {isWideAccess
             ? "School-wide assessment analytics."

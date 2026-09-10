@@ -69,10 +69,10 @@ function formatKES(s: string) {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
-const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1";
+  "";
+const labelCls = "block text-sm font-medium text-foreground mb-1";
 
 // ── Attach to Students Modal ───────────────────────────────────────────────
 
@@ -266,17 +266,17 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg rounded-2xl bg-card shadow-xl border border-border animate-scale-in flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">Attach to students</h2>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+            <h2 className="text-base font-semibold text-foreground">Attach to students</h2>
+            <p className="text-xs text-slate mt-0.5">
               {item.name} — {formatKES(item.currentPrice)}
             </p>
           </div>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -298,7 +298,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
               </span>
             </div>
             {result.errors.length > 0 && (
-              <ul className="mt-2 space-y-0.5 text-xs text-slate dark:text-dark-muted">
+              <ul className="mt-2 space-y-0.5 text-xs text-slate">
                 {result.errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
             )}
@@ -310,7 +310,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           <div className="relative">
             {searching
               ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin pointer-events-none" />
-              : <Search  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+              : <Search  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" />
             }
             <input
               type="text"
@@ -323,14 +323,14 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
             />
           </div>
           {!initialising && !search && (
-            <p className="text-xs text-slate dark:text-dark-muted mt-1.5">
+            <p className="text-xs text-slate mt-1.5">
               Type a name or admission number to search this school&apos;s students.
             </p>
           )}
 
           {/* Custom amount toggle */}
           {!initialising && (
-            <div className="mt-3 rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border px-3 py-2.5">
+            <div className="mt-3 rounded-lg border border-border bg-background px-3 py-2.5">
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -339,11 +339,11 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
                     setUseCustomAmount(e.target.checked);
                     if (!e.target.checked) setCustomAmountStr("");
                   }}
-                  className="h-4 w-4 rounded border-line accent-teal"
+                  className="h-4 w-4 rounded border-border accent-teal"
                 />
-                <span className="text-sm text-ink dark:text-dark-text">
+                <span className="text-sm text-foreground">
                   Use custom charge amount
-                  <span className="ml-2 text-xs text-slate dark:text-dark-muted font-normal">
+                  <span className="ml-2 text-xs text-slate font-normal">
                     (default: {formatKES(item.currentPrice)})
                   </span>
                 </span>
@@ -360,7 +360,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
                     className={inputCls}
                     autoFocus
                   />
-                  <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+                  <p className="mt-1 text-xs text-slate">
                     This amount will be charged to every selected student instead of the standard price.
                   </p>
                 </div>
@@ -372,12 +372,12 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
         {/* Select all visible */}
         {!initialising && availableInResults.length > 0 && (
           <div className="px-5 pt-3 shrink-0">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm text-ink dark:text-dark-text">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm text-foreground">
               <input
                 type="checkbox"
                 checked={allResultsSelected}
                 onChange={toggleAllResults}
-                className="h-4 w-4 rounded border-line accent-teal"
+                className="h-4 w-4 rounded border-border accent-teal"
               />
               {allResultsSelected
                 ? "Deselect all visible"
@@ -394,12 +394,12 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
             <p className="text-sm text-danger py-4 text-center">{fetchErr}</p>
           ) : !search.trim() ? (
             attachedStudents.length === 0 ? (
-              <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
+              <p className="text-sm text-slate py-6 text-center">
                 No students attached yet. Search above to attach students.
               </p>
             ) : (
               <div className="space-y-1">
-                <p className="text-xs font-medium text-slate dark:text-dark-muted px-1 pb-1">
+                <p className="text-xs font-medium text-slate px-1 pb-1">
                   Already attached ({attachedStudents.length})
                 </p>
                 {attachedStudents.map(s => (
@@ -413,8 +413,8 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
-                      <p className="text-xs text-slate dark:text-dark-muted">
+                      <p className="text-sm font-medium text-foreground truncate">{s.fullName}</p>
+                      <p className="text-xs text-slate">
                         <span className="font-mono">{s.admissionNumber}</span>
                         {s.className !== "—" && <span> · {s.className}</span>}
                         <span className="ml-2 text-teal font-medium">Attached</span>
@@ -427,7 +427,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
           ) : searching && results.length === 0 ? (
             <div className="flex justify-center py-8"><Spinner size="md" /></div>
           ) : results.length === 0 ? (
-            <p className="text-sm text-slate dark:text-dark-muted py-6 text-center">
+            <p className="text-sm text-slate py-6 text-center">
               No students found for &ldquo;{search}&rdquo;.
             </p>
           ) : (
@@ -439,7 +439,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
                     ? "opacity-50 cursor-not-allowed"
                     : selectedMap.has(s.id)
                       ? "bg-teal/5 border border-teal/20 cursor-pointer"
-                      : "hover:bg-paper dark:hover:bg-dark-border/20 cursor-pointer"
+                      : "hover:bg-background/20 cursor-pointer"
                 }`}
               >
                 <input
@@ -447,11 +447,11 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
                   checked={selectedMap.has(s.id) || s.alreadyAttached}
                   disabled={s.alreadyAttached}
                   onChange={() => toggle(s)}
-                  className="h-4 w-4 rounded border-line accent-teal shrink-0"
+                  className="h-4 w-4 rounded border-border accent-teal shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted">
+                  <p className="text-sm font-medium text-foreground truncate">{s.fullName}</p>
+                  <p className="text-xs text-slate">
                     <span className="font-mono">{s.admissionNumber}</span>
                     {s.className !== "—" && <span> · {s.className}</span>}
                     {s.alreadyAttached && (
@@ -494,8 +494,8 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
         )}
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-line dark:border-dark-border shrink-0 flex items-center justify-between gap-3">
-          <p className="text-xs text-slate dark:text-dark-muted">
+        <div className="px-5 py-4 border-t border-border shrink-0 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate">
             {selectedCount > 0
               ? `${selectedCount} student${selectedCount !== 1 ? "s" : ""} selected`
               : "No students selected"}
@@ -504,7 +504,7 @@ function AttachToStudentsModal({ item, onClose }: AttachModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+              className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background"
             >
               {result ? "Close" : "Cancel"}
             </button>
@@ -566,10 +566,10 @@ function CategoryModal({ onClose, onSaved }: CategoryModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">Add expense category</h2>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted"><X className="h-5 w-5" /></button>
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">Add expense category</h2>
+          <button onClick={onClose} className="text-slate hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
         <form onSubmit={submit} className="px-5 py-4 space-y-4">
           {error && <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{error}</p>}
@@ -582,7 +582,7 @@ function CategoryModal({ onClose, onSaved }: CategoryModalProps) {
             <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className={inputCls} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background">Cancel</button>
             <button type="submit" disabled={saving} className={primaryButtonClass}>{saving ? "Saving…" : "Add category"}</button>
           </div>
         </form>
@@ -644,15 +644,15 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               {isEdit ? "Edit item" : "Add expense item"}
             </h2>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{categoryName}</p>
+            <p className="text-xs text-slate mt-0.5">{categoryName}</p>
           </div>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="text-slate hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
         <form onSubmit={submit} className="px-5 py-4 space-y-4">
           {error && <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{error}</p>}
@@ -680,12 +680,12 @@ function ItemModal({ categoryId, categoryName, existing, onClose, onSaved }: Ite
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
-            <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+            <p className="text-xs text-slate mt-1">
               Leave as &ldquo;All terms&rdquo; to invoice this expense every term, or pick a specific term.
             </p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background">Cancel</button>
             <button type="submit" disabled={saving} className={primaryButtonClass}>{saving ? "Saving…" : isEdit ? "Save changes" : "Add item"}</button>
           </div>
         </form>
@@ -742,7 +742,7 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
           <button
             type="button"
             onClick={toggle}
-            className="flex items-center gap-2 font-semibold text-ink dark:text-dark-text hover:text-teal transition-colors"
+            className="flex items-center gap-2 font-semibold text-foreground hover:text-teal transition-colors"
           >
             {open
               ? <ChevronDown className="h-4 w-4 text-teal shrink-0" />
@@ -751,10 +751,10 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
             {category.name}
           </button>
           {category.description && (
-            <p className="text-xs text-slate ml-6 mt-0.5 dark:text-dark-muted">{category.description}</p>
+            <p className="text-xs text-slate ml-6 mt-0.5">{category.description}</p>
           )}
         </td>
-        <td className={`${premiumTdClass} text-slate text-sm dark:text-dark-muted`}>
+        <td className={`${premiumTdClass} text-slate text-sm`}>
           {category._count.items} {category._count.items === 1 ? "item" : "items"}
         </td>
         <td className={premiumTdClass}>
@@ -779,23 +779,23 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
           </tr>
         ) : items.length === 0 ? (
           <tr>
-            <td colSpan={3} className={`${premiumTdClass} pl-10 text-slate text-sm dark:text-dark-muted italic`}>
+            <td colSpan={3} className={`${premiumTdClass} pl-10 text-slate text-sm italic`}>
               No items yet — click &ldquo;Add item&rdquo; to add one.
             </td>
           </tr>
         ) : (
           items.map(item => (
-            <tr key={item.id} className="border-b border-line/50 dark:border-dark-border/50 bg-paper/40 dark:bg-dark-bg/30">
+            <tr key={item.id} className="border-b border-border/50/50 bg-background/40/30">
               <td className={`${premiumTdClass} pl-10`}>
                 <Link
                   href={`/staff/finance/expenses/${item.id}`}
-                  className={`text-sm font-medium hover:text-teal transition-colors ${!item.isActive ? "line-through opacity-50 text-slate" : "text-ink dark:text-dark-text"}`}
+                  className={`text-sm font-medium hover:text-teal transition-colors ${!item.isActive ? "line-through opacity-50 text-slate" : "text-foreground"}`}
                 >
                   {item.name}
                 </Link>
                 <div className="flex items-center gap-2 mt-0.5">
                   {item.description && (
-                    <p className="text-xs text-slate dark:text-dark-muted">{item.description}</p>
+                    <p className="text-xs text-slate">{item.description}</p>
                   )}
                   {item.termName && (
                     <span className="text-[10px] font-medium bg-teal/10 text-teal px-1.5 py-0.5 rounded">
@@ -803,11 +803,11 @@ function CategoryRow({ category, onAddItem }: CategoryRowProps) {
                     </span>
                   )}
                   {!item.termName && (
-                    <span className="text-[10px] text-slate dark:text-dark-muted">All terms</span>
+                    <span className="text-[10px] text-slate">All terms</span>
                   )}
                 </div>
               </td>
-              <td className={`${premiumTdClass} tabular-nums font-semibold text-ink dark:text-dark-text`}>
+              <td className={`${premiumTdClass} tabular-nums font-semibold text-foreground`}>
                 {formatKES(item.currentPrice)}
               </td>
               <td className={premiumTdClass}>

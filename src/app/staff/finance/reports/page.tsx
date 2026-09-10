@@ -5,7 +5,7 @@ import {
   BarChart2, TrendingUp, TrendingDown, Users, AlertTriangle,
   RefreshCw, Calendar,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts";
 import {
   PageHeader, Spinner, EmptyState, ErrorBanner,
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
@@ -58,6 +58,20 @@ export default function ReportsPage() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
 
+  // Read CSS variable values for dark-mode-aware chart chrome (Req 5.1, 12.2)
+  const tooltipBg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#FFFFFF'
+    : '#FFFFFF';
+  const tooltipFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card-foreground').trim() || '#1F2933'
+    : '#1F2933';
+  const gridColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#E8EDF2')
+    : '#E8EDF2';
+  const tickColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#667085')
+    : '#667085';
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -105,11 +119,11 @@ export default function ReportsPage() {
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-line mb-6 dark:border-dark-border">
+      <div className="flex gap-0 border-b border-border mb-6">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t.id ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink dark:text-dark-muted"
+              tab === t.id ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"
             }`}>
             {t.icon}{t.label}
           </button>
@@ -127,7 +141,7 @@ export default function ReportsPage() {
             { label: "Active debtors",    value: String(summary.debtorCount),         icon: <AlertTriangle className="h-5 w-5" />, highlight: summary.debtorCount > 0 },
           ].map(c => (
             <div key={c.label} className={`rounded-xl border p-5 flex gap-4 items-start ${
-              c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-white border-line dark:bg-dark-surface dark:border-dark-border"
+              c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-card border-border"
             }`}>
               <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
                 c.highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
@@ -135,8 +149,8 @@ export default function ReportsPage() {
               <div className="min-w-0 overflow-hidden">
                 <p className={`font-semibold tabular-nums leading-tight break-words ${
                   c.value.length > 14 ? "text-base" : c.value.length > 10 ? "text-lg" : "text-2xl"
-                } ${c.highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}>{c.value}</p>
-                <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{c.label}</p>
+                } ${c.highlight ? "text-danger" : "text-foreground"}`}>{c.value}</p>
+                <p className="text-slate text-sm mt-1.5">{c.label}</p>
                 {"sub" in c && c.sub && <p className="text-slate/60 text-xs mt-0.5">{c.sub}</p>}
               </div>
             </div>
@@ -164,10 +178,10 @@ export default function ReportsPage() {
                   {aging.map(row => (
                     <tr key={row.studentId} className={premiumTrClass}>
                       <td className={premiumTdClass}>
-                        <p className="font-medium text-ink dark:text-dark-text">{row.fullName}</p>
-                        <p className="text-xs font-mono text-slate dark:text-dark-muted">{row.admissionNumber}</p>
+                        <p className="font-medium text-foreground">{row.fullName}</p>
+                        <p className="text-xs font-mono text-slate">{row.admissionNumber}</p>
                       </td>
-                      <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{row.className ?? "—"}</td>
+                      <td className={`${premiumTdClass} text-slate`}>{row.className ?? "—"}</td>
                       <td className={`${premiumTdClass} text-right tabular-nums`}>{formatKES(row.totalInvoiced)}</td>
                       <td className={`${premiumTdClass} text-right tabular-nums text-success`}>{formatKES(row.totalPaid)}</td>
                       <td className={`${premiumTdClass} text-right tabular-nums text-danger font-semibold`}>{formatKES(row.balance)}</td>
@@ -190,17 +204,22 @@ export default function ReportsPage() {
         volume.length === 0 ? (
           <EmptyState message="No payment data for the selected period." icon={<Calendar className="h-6 w-6" />} />
         ) : (
-          <div className="bg-white border border-line rounded-xl p-6 dark:bg-dark-surface dark:border-dark-border">
-            <h3 className="text-sm font-semibold text-ink mb-4 dark:text-dark-text">Daily payment volume (last 30 days)</h3>
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Daily payment volume (last 30 days)</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={volume} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: tickColor }} tickFormatter={d => d.slice(5)} />
+                <YAxis tick={{ fontSize: 11, fill: tickColor }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
                 <Tooltip
                   formatter={(v: number) => [`KES ${v.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`, "Amount"]}
                   labelFormatter={l => `Date: ${l}`}
+                  contentStyle={{ background: tooltipBg, border: '1px solid var(--color-border)' }}
+                  labelStyle={{ color: tooltipFg }}
+                  itemStyle={{ color: tooltipFg }}
                 />
                 <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                  {/* chart series — intentional */}
                   {volume.map((_, i) => <Cell key={i} fill="#0d9488" />)}
                 </Bar>
               </BarChart>
@@ -211,13 +230,18 @@ export default function ReportsPage() {
         classes.length === 0 ? (
           <EmptyState message="No class collection data available." icon={<Users className="h-6 w-6" />} />
         ) : (
-          <div className="bg-white border border-line rounded-xl p-6 dark:bg-dark-surface dark:border-dark-border">
-            <h3 className="text-sm font-semibold text-ink mb-4 dark:text-dark-text">Collection rate by class (%)</h3>
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Collection rate by class (%)</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={classes} layout="vertical" margin={{ top: 4, right: 16, left: 70, bottom: 4 }}>
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
-                <YAxis type="category" dataKey="className" tick={{ fontSize: 11 }} width={64} />
-                <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, "Collection rate"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: tickColor }} tickFormatter={v => `${v}%`} />
+                <YAxis type="category" dataKey="className" tick={{ fontSize: 11, fill: tickColor }} width={64} />
+                <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, "Collection rate"]}
+                  contentStyle={{ background: tooltipBg, border: '1px solid var(--color-border)' }}
+                  labelStyle={{ color: tooltipFg }}
+                  itemStyle={{ color: tooltipFg }}
+                />
                 <Bar dataKey="collectionRate" radius={[0, 4, 4, 0]}>
                   {classes.map((c, i) => (
                     <Cell key={i} fill={c.collectionRate >= 80 ? "#16a34a" : c.collectionRate >= 50 ? "#d97706" : "#dc2626"} />

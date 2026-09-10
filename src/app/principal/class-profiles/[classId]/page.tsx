@@ -107,7 +107,7 @@ function TypeToggle({
         className={`text-xs font-medium rounded-l-md border px-2.5 py-1.5 transition-colors ${
           value === "CORE"
             ? "bg-teal text-white border-teal"
-            : "bg-white text-slate border-line hover:bg-slate-50"
+            : "bg-card text-slate border-border hover:bg-slate-50"
         }`}
       >
         Core
@@ -118,7 +118,7 @@ function TypeToggle({
         className={`text-xs font-medium rounded-r-md border-t border-b border-r px-2.5 py-1.5 transition-colors ${
           value === "ELECTIVE"
             ? "bg-amber-500 text-white border-amber-500"
-            : "bg-white text-slate border-line hover:bg-slate-50"
+            : "bg-card text-slate border-border hover:bg-slate-50"
         }`}
       >
         Elective
@@ -190,7 +190,7 @@ function ElectiveGroupsClassView({
       {/* Section title */}
       <div className="flex items-center gap-2">
         <Layers className="h-4 w-4 text-violet-500" />
-        <span className="text-sm font-semibold text-ink">Elective Groups</span>
+        <span className="text-sm font-semibold text-foreground">Elective Groups</span>
         <Chip variant="purple" size="xs">{groups.length}</Chip>
         <Link
           href="/principal/timetable/requirements"
@@ -217,14 +217,14 @@ function ElectiveGroupsClassView({
         return (
           <div
             key={group.id}
-            className="rounded-xl border border-violet-200 bg-white overflow-hidden shadow-xs"
+            className="rounded-xl border border-violet-200 bg-card overflow-hidden shadow-xs"
           >
             {/* Group header */}
             <div className="flex items-center gap-2.5 px-4 py-3 bg-violet-50/60 border-b border-violet-100">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 shrink-0">
                 <Layers className="h-3.5 w-3.5 text-violet-600" />
               </div>
-              <span className="text-sm font-semibold text-ink flex-1">{group.name}</span>
+              <span className="text-sm font-semibold text-foreground flex-1">{group.name}</span>
               <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium border border-violet-200">
                 {group.lessonsPerWeek} lessons/wk
               </span>
@@ -280,7 +280,7 @@ function ElectiveGroupsClassView({
                     {/* Subject name */}
                     <div className="flex items-center gap-2 mb-2.5">
                       <BookOpen className="h-3.5 w-3.5 text-slate/40 shrink-0" />
-                      <span className="text-sm font-medium text-ink flex-1">
+                      <span className="text-sm font-medium text-foreground flex-1">
                         {member.subject.name}
                       </span>
                       <span className="text-[10px] font-mono text-slate bg-slate-100 px-1.5 py-0.5 rounded">
@@ -296,10 +296,10 @@ function ElectiveGroupsClassView({
                       {subjectPairings.map((t) => (
                         <div
                           key={t.id}
-                          className="flex items-center gap-2 bg-white border border-line rounded-lg px-3 py-1.5 group"
+                          className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 group"
                         >
                           <User className="h-3 w-3 text-teal shrink-0" />
-                          <span className="text-xs text-ink flex-1">{t.teacher.fullName}</span>
+                          <span className="text-xs text-foreground flex-1">{t.teacher.fullName}</span>
                           <button
                             type="button"
                             disabled={isMutating}
@@ -329,8 +329,8 @@ function ElectiveGroupsClassView({
                             isPicking
                               ? "bg-violet-100 border-violet-400 text-violet-800"
                               : allTeachers.length === 0
-                              ? "bg-white border-line text-slate/40 cursor-not-allowed"
-                              : "bg-white border-violet-300 text-violet-700 hover:bg-violet-50 hover:border-violet-400"
+                              ? "bg-card border-border text-slate/40 cursor-not-allowed"
+                              : "bg-card border-violet-300 text-violet-700 hover:bg-violet-50 hover:border-violet-400"
                           }
                           disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
@@ -343,8 +343,8 @@ function ElectiveGroupsClassView({
                       </button>
 
                       {isPicking && (
-                        <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-lg w-64 overflow-hidden">
-                          <div className="p-2 border-b border-line">
+                        <div className="absolute left-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-lg w-64 overflow-hidden">
+                          <div className="p-2 border-b border-border">
                             <input
                               autoFocus
                               type="text"
@@ -354,7 +354,7 @@ function ElectiveGroupsClassView({
                               className={`${inputClass} text-xs py-1 w-full`}
                             />
                           </div>
-                          <div className="max-h-48 overflow-y-auto divide-y divide-line">
+                          <div className="max-h-48 overflow-y-auto divide-y divide-border">
                             {filtered.length === 0 ? (
                               <p className="px-3 py-3 text-xs text-slate/60 text-center">
                                 {pickerQuery ? "No matches" : "All teachers already assigned"}
@@ -371,7 +371,7 @@ function ElectiveGroupsClassView({
                                   className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-violet-50 transition-colors"
                                 >
                                   <User className="h-3 w-3 text-slate/40 shrink-0" />
-                                  <span className="text-xs text-ink flex-1">{t.fullName}</span>
+                                  <span className="text-xs text-foreground flex-1">{t.fullName}</span>
                                   {linkedIds.has(t.id) && (
                                     <span className="text-[10px] text-teal font-medium shrink-0">
                                       linked
@@ -634,12 +634,12 @@ export default function ClassProfilePage({
           />
 
           {/* ── Ungrouped subjects section ──────────────────────────── */}
-          <div className="bg-white border border-line rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             {/* Section header */}
-            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-slate/50" />
-                <span className="text-sm font-semibold text-ink">Subjects</span>
+                <span className="text-sm font-semibold text-foreground">Subjects</span>
                 <Chip variant="default" size="xs">{coreCount} core</Chip>
                 {electiveCount > 0 && (
                   <Chip variant="warn" size="xs">{electiveCount} elective</Chip>
@@ -652,7 +652,7 @@ export default function ClassProfilePage({
                   <select
                     value={filterDept}
                     onChange={(e) => setFilterDept(e.target.value)}
-                    className="text-xs border border-line rounded-lg px-2 py-1.5 bg-white text-ink focus:outline-none focus:border-teal"
+                    className="text-xs border border-border rounded-lg px-2 py-1.5 bg-card text-foreground focus:outline-none focus:border-teal"
                   >
                     <option value="">All departments</option>
                     {departments.map((d) => (
@@ -663,7 +663,7 @@ export default function ClassProfilePage({
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as "" | "CORE" | "ELECTIVE")}
-                  className="text-xs border border-line rounded-lg px-2 py-1.5 bg-white text-ink focus:outline-none focus:border-teal"
+                  className="text-xs border border-border rounded-lg px-2 py-1.5 bg-card text-foreground focus:outline-none focus:border-teal"
                 >
                   <option value="">All types</option>
                   <option value="CORE">Core</option>
@@ -683,19 +683,19 @@ export default function ClassProfilePage({
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="border-b border-line bg-paper/60">
+                <thead className="border-b border-border bg-background/60">
                   <tr>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide">Subject</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide hidden sm:table-cell">Department</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide">Type</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-border">
                   {visibleSubjects.map((s) => (
-                    <tr key={s.id} className="hover:bg-paper/50 transition-colors">
+                    <tr key={s.id} className="hover:bg-background/50 transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-ink">{s.name}</span>
+                          <span className="font-medium text-foreground">{s.name}</span>
                           <span className="text-[10px] font-mono text-slate/60 bg-slate-100 px-1.5 py-0.5 rounded hidden xs:inline">
                             {s.code}
                           </span>
@@ -719,7 +719,7 @@ export default function ClassProfilePage({
             )}
 
             {dirty && (
-              <div className="px-5 py-3 border-t border-line bg-paper/40 flex justify-end">
+              <div className="px-5 py-3 border-t border-border bg-background/40 flex justify-end">
                 <button
                   type="button"
                   className={primaryButtonClass}

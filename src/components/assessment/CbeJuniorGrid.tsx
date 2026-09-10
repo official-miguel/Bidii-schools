@@ -117,8 +117,8 @@ function ConfirmBar({
   danger?:       boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-md bg-paper border border-line px-3 py-2 text-sm">
-      <span className="text-ink flex-1">{message}</span>
+    <div className="flex items-center gap-3 rounded-md bg-background border border-border px-3 py-2 text-sm">
+      <span className="text-foreground flex-1">{message}</span>
       <button
         type="button"
         onClick={onCancel}
@@ -165,7 +165,7 @@ function LevelBtn({
       className={`w-10 h-8 rounded text-xs font-semibold border transition-colors
         ${active
           ? `${bg} ${text} ${border}`
-          : "bg-white text-slate border-line hover:border-slate"
+          : "bg-card text-slate border-border hover:border-slate"
         }
         disabled:opacity-50 disabled:cursor-not-allowed`}
     >
@@ -605,7 +605,7 @@ export default function CbeJuniorGrid({
       {saveErr && <ErrorBanner message={saveErr} />}
 
       {loading && (
-        <div className="overflow-x-auto rounded-lg border border-line">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="min-w-full text-sm" aria-busy="true" aria-label="Loading…">
             <tbody>
               {Array.from({ length: 8 }).map((_, i) => (
@@ -640,7 +640,7 @@ export default function CbeJuniorGrid({
 
       {/* Batch bar */}
       {!readOnly && rows && rows.length > 0 && !pendingAction && (
-        <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-paper rounded-lg border border-line">
+        <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-background rounded-lg border border-border">
           <span className="text-xs text-slate mr-1">Mark all as:</span>
           {ALL_LEVELS.map((l) => {
             const { bg, text, border } = levelColour(l);
@@ -660,7 +660,7 @@ export default function CbeJuniorGrid({
             type="button"
             disabled={isBusy}
             onClick={() => setPendingAction({ kind: "clearAll" })}
-            className="ml-auto rounded px-2.5 py-1 text-xs font-medium border border-line text-slate hover:bg-white disabled:opacity-40"
+            className="ml-auto rounded px-2.5 py-1 text-xs font-medium border border-border text-slate hover:bg-card disabled:opacity-40"
           >
             Clear all
           </button>
@@ -673,10 +673,10 @@ export default function CbeJuniorGrid({
 
       {!loading && rows && rows.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-lg border border-line">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-paper text-xs text-slate text-left">
+                <tr className="border-b border-border bg-background text-xs text-slate text-left">
                   <th className="px-3 py-2 font-medium w-28">Adm. No.</th>
                   <th className="px-3 py-2 font-medium">Student</th>
                   {ALL_LEVELS.map((l) => (
@@ -692,10 +692,10 @@ export default function CbeJuniorGrid({
                   return (
                     <tr
                       key={row.student.id}
-                      className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-paper/40"} ${st.error ? "bg-danger-bg/20" : ""}`}
+                      className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-card" : "bg-background/40"} ${st.error ? "bg-danger-bg/20" : ""}`}
                     >
                       <td className="px-3 py-2 text-slate tabular-nums">{row.student.admissionNumber}</td>
-                      <td className="px-3 py-2 font-medium text-ink">
+                      <td className="px-3 py-2 font-medium text-foreground">
                         {row.student.fullName}
                         {st.error && (
                           <span className="ml-2 text-xs text-danger" title={st.error}>⚠</span>
@@ -731,7 +731,7 @@ export default function CbeJuniorGrid({
                                 type="text"
                                 defaultValue={st.comment ?? ""}
                                 placeholder="Add comment…"
-                                className="w-40 rounded border border-line px-2 py-1 text-xs text-ink focus:border-royal focus:outline-none"
+                                className="w-40 rounded border border-border px-2 py-1 text-xs text-foreground focus:border-royal focus:outline-none"
                                 onBlur={(e) => {
                                   const val = e.target.value.trim();
                                   handleCommentSave(row.student.id, val);

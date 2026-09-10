@@ -1,0 +1,553 @@
+{
+  "pbtResults": {
+    "8.3 Write property-based test — Property 2: Token schema completeness": {
+      "status": "passed",
+      "lastRunTimestamp": 1789044380770
+    },
+    "8.4 Write property-based test — Property 3: getColors scheme routing": {
+      "status": "passed",
+      "lastRunTimestamp": 1789044400642
+    },
+    "8.5 Write property-based test — Property 1: WCAG AA contrast compliance": {
+      "status": "passed",
+      "lastRunTimestamp": 1789044412803
+    },
+    "8.8 Write property-based test — Property 4: useTheme reference stability": {
+      "status": "passed",
+      "lastRunTimestamp": 1789044424347
+    }
+  },
+  "executionHistory": {
+    "1.1 Update `src/app/globals.css` with all 16 semantic token CSS custom properties": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777059877
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777095667
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777625009
+      }
+    ],
+    "1.2 Update `tailwind.config.js` with semantic token color utilities and confirm `darkMode: 'class'`": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777059998
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777096352
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777625894
+      }
+    ],
+    "2.1 Update `src/components/ThemeProvider.tsx` — system-only theme resolution": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777060294
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777634923
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017042230
+      }
+    ],
+    "2.2 Update `ThemeScript` (exported from `ThemeProvider.tsx`) — localStorage-free inline script": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777063077
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777635502
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017042771
+      }
+    ],
+    "2.3 Update `src/app/layout.tsx` — hydration mismatch suppression": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777063311
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777636486
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017043449
+      }
+    ],
+    "3. Checkpoint — Web infrastructure passing": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777063865
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017069203
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017165557
+      }
+    ],
+    "4.1 Audit and replace `bg-white` across all `src/` component files": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777064042
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017171399
+      },
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023091847
+      }
+    ],
+    "4.2 Audit and replace light-only text color classes across all `src/` component files": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777064712
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017172239
+      },
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023092859
+      }
+    ],
+    "4.3 Audit and replace light-only background muted classes across all `src/` component files": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777065015
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017172874
+      },
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023093379
+      }
+    ],
+    "4.4 Audit and replace light-only border classes across all `src/` component files": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777065282
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017173494
+      },
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023093896
+      }
+    ],
+    "4.5 Migrate SVG icon `fill`/`stroke` hardcoded color attributes to `currentColor`": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777065674
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017176571
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037899456
+      }
+    ],
+    "4.6 Replace inline `style` prop `color`/`backgroundColor` hardcoded values with Tailwind semantic utilities": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777065974
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017176847
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037899617
+      }
+    ],
+    "5. Checkpoint — Hardcoded color elimination complete": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777066227
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037927033
+      }
+    ],
+    "6.1 Theme Recharts chart components (bar, line, pie charts)": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777066914
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037981018
+      }
+    ],
+    "6.2 Theme timetable grid component": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777067059
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037982793
+      }
+    ],
+    "6.3 Theme modal and dialog overlay components": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777067293
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037983073
+      }
+    ],
+    "6.4 Theme toast and snackbar notification components": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777067739
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037983582
+      }
+    ],
+    "6.5 Theme PDF preview component wrapper": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777068027
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037983807
+      }
+    ],
+    "6.6 Create `src/components/Logo.tsx` with dark/light logo variant swap": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777068315
+      },
+      {
+        "executionId": "5c626c79-5b56-4fe9-a522-705f95dbd4e7",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789040878602
+      }
+    ],
+    "7. Checkpoint — Web third-party theming complete": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777070581
+      }
+    ],
+    "8.1 Update `mobile/app.json` — native UI chrome automatic theming": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777071043
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777097375
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777626922
+      }
+    ],
+    "8.2 Create `mobile/constants/colors.ts` — typed color token file": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777071322
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777097984
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777627640
+      }
+    ],
+    "8.6 Create `mobile/lib/ThemeContext.tsx` — ThemeProvider and useTheme hook": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777071763
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017045744
+      }
+    ],
+    "8.9 Update `mobile/app/_layout.tsx` — wrap navigation tree with ThemeProvider": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777072035
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017176980
+      },
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023098714
+      }
+    ],
+    "8.10 Update `mobile/tailwind.config.js` — dark mode media and semantic token utilities": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777072293
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777637641
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017046302
+      }
+    ],
+    "8.11 Create or update `mobile/global.css` — dark mode CSS variable declarations": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777072763
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777638267
+      },
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017046950
+      }
+    ],
+    "9. Checkpoint — Mobile infrastructure passing": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777073032
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037941723
+      }
+    ],
+    "10.1 Audit and replace hardcoded colors in `StyleSheet.create()` calls": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777073631
+      }
+    ],
+    "10.2 Audit and replace hardcoded colors in inline `style` props": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777073890
+      }
+    ],
+    "10.3 Add missing `dark:` variant pairs to all NativeWind `className` props": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777074132
+      }
+    ],
+    "10.4 Update modal components — themed card background": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777074365
+      }
+    ],
+    "10.5 Update bottom sheet components — themed surface background": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777074738
+      }
+    ],
+    "10.6 Create `mobile/components/Logo.tsx` — dark/light logo asset swap": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777075041
+      }
+    ],
+    "11. Checkpoint — Mobile hardcoded color elimination complete": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777075312
+      }
+    ],
+    "12.1 Create shared `CHART_SERIES` constant": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777075660
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777098498
+      },
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777628513
+      }
+    ],
+    "12.2 Export dark-safe logo assets": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777075935
+      }
+    ],
+    "12.3 Add axe-core Playwright contrast audit tests": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777076194
+      }
+    ],
+    "12.4 Create `dark-mode-readme.md` documenting semantic tokens and usage patterns": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777076487
+      },
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037947296
+      }
+    ],
+    "13. Final checkpoint — All parts complete": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777077039
+      }
+    ],
+    "1. Web — Semantic token CSS infrastructure": [
+      {
+        "executionId": "ba56ccdc-8faa-4d73-a8d3-818af33a0120",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1788777626388
+      }
+    ],
+    "2. Web — ThemeProvider and ThemeScript": [
+      {
+        "executionId": "8d49623e-2697-47ce-a05f-9a1865830687",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789017043570
+      }
+    ],
+    "8. Mobile — Core theme infrastructure": [
+      {
+        "executionId": "e5085ac0-867b-4a47-b558-2c6d0c4cd761",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789023099202
+      }
+    ],
+    "4. Web — Hardcoded color elimination": [
+      {
+        "executionId": "841c4736-1481-48f6-9824-0291a8cdde54",
+        "chatSessionId": "sess_ad605eeb-06be-4446-abe5-42a3bc05a32f",
+        "timestamp": 1789037936993
+      }
+    ]
+  }
+}

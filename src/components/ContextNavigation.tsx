@@ -56,7 +56,7 @@ export default function ContextNavigation({ items, variant = "tabs" }: Props) {
                 text-sm font-medium transition-colors duration-100
                 ${active
                   ? "bg-teal text-white shadow-sm"
-                  : "bg-paper border border-line text-slate hover:border-teal/40 hover:text-teal hover:bg-teal-50 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/30 dark:hover:text-teal"
+                  : "bg-background border border-border text-slate hover:border-teal/40 hover:text-teal hover:bg-teal-50 dark:hover:border-teal/30 dark:hover:text-teal"
                 }
               `}
             >
@@ -72,7 +72,7 @@ export default function ContextNavigation({ items, variant = "tabs" }: Props) {
                     ml-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px]
                     font-semibold flex items-center justify-center leading-none
                     ${active
-                      ? "bg-white/25 text-white"
+                      ? "bg-card/25 text-white"
                       : "bg-teal/10 text-teal dark:bg-teal/20"
                     }
                   `}
@@ -107,7 +107,7 @@ export default function ContextNavigation({ items, variant = "tabs" }: Props) {
               focus-visible:ring-teal/20 focus-visible:ring-offset-0
               ${active
                 ? "border-teal text-teal"
-                : "border-transparent text-slate hover:text-ink hover:border-line dark:text-dark-muted dark:hover:text-dark-text dark:hover:border-dark-border"
+                : "border-transparent text-slate hover:text-foreground hover:border-border"
               }
             `}
           >
@@ -124,7 +124,7 @@ export default function ContextNavigation({ items, variant = "tabs" }: Props) {
                   font-semibold flex items-center justify-center leading-none
                   ${active
                     ? "bg-teal/10 text-teal"
-                    : "bg-line text-slate dark:bg-dark-border dark:text-dark-muted"
+                    : "bg-line text-slate"
                   }
                 `}
               >

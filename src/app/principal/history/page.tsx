@@ -50,7 +50,7 @@ function TabBar({
     <div
       role="tablist"
       aria-label="History sections"
-      className="flex gap-0 overflow-x-auto scrollbar-none border-b border-line -mb-px"
+      className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border -mb-px"
     >
       {TABS.map(({ id, label, Icon }) => {
         const isActive = active === id;
@@ -68,7 +68,7 @@ function TabBar({
               focus-visible:ring-teal/20 focus-visible:ring-offset-0
               ${isActive
                 ? "border-teal text-teal"
-                : "border-transparent text-slate hover:text-ink hover:border-line"
+                : "border-transparent text-slate hover:text-foreground hover:border-border"
               }
             `}
           >
@@ -170,9 +170,9 @@ export default function HistoryPage() {
     <Suspense
       fallback={
         <div className="space-y-4 animate-pulse">
-          <div className="h-8 bg-paper rounded-lg w-32 border border-line" />
-          <div className="h-4 bg-paper rounded w-96 border border-line" />
-          <div className="h-48 bg-paper rounded-xl border border-line" />
+          <div className="h-8 bg-background rounded-lg w-32 border border-border" />
+          <div className="h-4 bg-background rounded w-96 border border-border" />
+          <div className="h-48 bg-background rounded-xl border border-border" />
         </div>
       }
     >

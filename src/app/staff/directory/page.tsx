@@ -56,18 +56,18 @@ export default async function StaffDirectoryPage() {
     <div>
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Staff</h1>
-        <p className="text-sm text-slate mt-1 dark:text-dark-muted">
+        <h1 className="text-2xl font-semibold text-foreground">Staff</h1>
+        <p className="text-sm text-slate mt-1">
           {teachers.length} staff member{teachers.length !== 1 ? "s" : ""} registered
           {nonTeachingStaff.length > 0 && ` · ${nonTeachingStaff.length} non-teaching`}
         </p>
       </div>
 
       {teachers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line px-6 py-14 text-center dark:border-dark-border">
-          <Users className="h-10 w-10 text-slate mx-auto mb-3 dark:text-dark-muted" aria-hidden="true" />
-          <p className="text-base font-medium text-ink mb-1 dark:text-dark-text">No staff registered yet</p>
-          <p className="text-sm text-slate dark:text-dark-muted">Ask the principal to register staff members.</p>
+        <div className="rounded-xl border border-dashed border-border px-6 py-14 text-center">
+          <Users className="h-10 w-10 text-slate mx-auto mb-3" aria-hidden="true" />
+          <p className="text-base font-medium text-foreground mb-1">No staff registered yet</p>
+          <p className="text-sm text-slate">Ask the principal to register staff members.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -76,16 +76,15 @@ export default async function StaffDirectoryPage() {
             {stats.map(({ label, value, Icon }) => (
               <div
                 key={label}
-                className="bg-card border border-line rounded-xl p-4 shadow-sm
-                           dark:bg-dark-surface dark:border-dark-border"
+                className="bg-card border border-border rounded-xl p-4 shadow-sm"
               >
                 <div className="flex items-center gap-2.5 mb-1">
                   <div className="h-8 w-8 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </div>
-                  <span className="text-2xl font-semibold text-ink dark:text-dark-text">{value}</span>
+                  <span className="text-2xl font-semibold text-foreground">{value}</span>
                 </div>
-                <p className="text-xs text-slate dark:text-dark-muted">{label}</p>
+                <p className="text-xs text-slate">{label}</p>
               </div>
             ))}
           </div>
@@ -98,9 +97,9 @@ export default async function StaffDirectoryPage() {
             .filter((g) => g.list.length > 0)
             .map((group) => (
               <div key={group.title}>
-                <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">
+                <h2 className="text-base font-semibold text-foreground mb-3">
                   {group.title}
-                  <span className="ml-2 text-sm font-normal text-slate dark:text-dark-muted">
+                  <span className="ml-2 text-sm font-normal text-slate">
                     ({group.list.length})
                   </span>
                 </h2>
@@ -108,18 +107,17 @@ export default async function StaffDirectoryPage() {
                   {group.list.map((t) => (
                     <div
                       key={t.id}
-                      className="bg-card border border-line rounded-xl p-4 shadow-sm
-                                 hover:border-teal/40 hover:shadow-md transition-all duration-150
-                                 dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+                      className="bg-card border border-border rounded-xl p-4 shadow-sm
+                                 hover:border-teal/40 hover:shadow-md transition-all duration-150 dark:hover:border-teal/30"
                     >
                       {/* Avatar + name */}
                       <div className="flex items-start gap-3">
                         <Avatar name={t.fullName} size="sm" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-ink truncate dark:text-dark-text">
+                          <p className="text-sm font-semibold text-foreground truncate">
                             {t.fullName}
                           </p>
-                          <p className="text-xs text-slate font-mono dark:text-dark-muted">
+                          <p className="text-xs text-slate font-mono">
                             #{t.staffId}
                           </p>
                         </div>
@@ -135,19 +133,19 @@ export default async function StaffDirectoryPage() {
                       {/* Details */}
                       <div className="mt-3 space-y-1.5">
                         {t.primaryDepartment && (
-                          <p className="text-xs text-slate flex items-center gap-1.5 dark:text-dark-muted">
+                          <p className="text-xs text-slate flex items-center gap-1.5">
                             <Building2 className="h-3 w-3 shrink-0 text-slate/60" aria-hidden="true" />
                             {t.primaryDepartment.name}
                           </p>
                         )}
                         {t.classTeacherOf && (
-                          <p className="text-xs text-slate flex items-center gap-1.5 dark:text-dark-muted">
+                          <p className="text-xs text-slate flex items-center gap-1.5">
                             <ClipboardList className="h-3 w-3 shrink-0 text-slate/60" aria-hidden="true" />
                             Class teacher — {t.classTeacherOf.name}
                           </p>
                         )}
                         {t.email && (
-                          <p className="text-xs text-slate flex items-center gap-1.5 truncate dark:text-dark-muted">
+                          <p className="text-xs text-slate flex items-center gap-1.5 truncate">
                             <Mail className="h-3 w-3 shrink-0 text-slate/60" aria-hidden="true" />
                             <a
                               href={`mailto:${t.email}`}
@@ -158,7 +156,7 @@ export default async function StaffDirectoryPage() {
                           </p>
                         )}
                         {t.phone && (
-                          <p className="text-xs text-slate flex items-center gap-1.5 dark:text-dark-muted">
+                          <p className="text-xs text-slate flex items-center gap-1.5">
                             <Phone className="h-3 w-3 shrink-0 text-slate/60" aria-hidden="true" />
                             <a
                               href={`tel:${t.phone}`}
@@ -185,21 +183,20 @@ export default async function StaffDirectoryPage() {
           {/* Department breakdown */}
           {deptEntries.length > 1 && (
             <div>
-              <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">
+              <h2 className="text-base font-semibold text-foreground mb-3">
                 By Department
               </h2>
-              <div className="bg-card border border-line rounded-xl overflow-hidden shadow-sm
-                              dark:bg-dark-surface dark:border-dark-border">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-line bg-paper/60 dark:border-dark-border dark:bg-dark-bg/40">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">
+                    <tr className="border-b border-border bg-background/60/40">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                         Department
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                         Staff
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide hidden sm:table-cell dark:text-dark-muted">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide hidden sm:table-cell">
                         Members
                       </th>
                     </tr>
@@ -208,11 +205,11 @@ export default async function StaffDirectoryPage() {
                     {deptEntries.map(([dept, members]) => (
                       <tr
                         key={dept}
-                        className="border-b border-line last:border-0 hover:bg-paper/50 transition-colors dark:border-dark-border dark:hover:bg-dark-border/30"
+                        className="border-b border-border last:border-0 hover:bg-background/50 transition-colors/30"
                       >
-                        <td className="px-4 py-3 font-medium text-ink dark:text-dark-text">{dept}</td>
-                        <td className="px-4 py-3 text-slate dark:text-dark-muted">{members.length}</td>
-                        <td className="px-4 py-3 text-slate text-xs hidden sm:table-cell dark:text-dark-muted">
+                        <td className="px-4 py-3 font-medium text-foreground">{dept}</td>
+                        <td className="px-4 py-3 text-slate">{members.length}</td>
+                        <td className="px-4 py-3 text-slate text-xs hidden sm:table-cell">
                           {members.slice(0, 4).map((m) => m.fullName.split(" ")[0]).join(", ")}
                           {members.length > 4 && ` +${members.length - 4} more`}
                         </td>

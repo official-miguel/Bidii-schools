@@ -25,7 +25,7 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
 
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
         No subject data available yet.
       </div>
     );
@@ -44,6 +44,14 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
     }
   }
 
+  // Read theme-aware grid color from CSS variable
+  const gridColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e5e7eb'
+    : '#e5e7eb';
+  const tickColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#667085')
+    : '#667085';
+
   return (
     <div>
       <p className="text-xs text-slate mb-3">
@@ -55,13 +63,14 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
           layout="vertical"
           margin={{ top: 4, right: 40, bottom: 0, left: 8 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-          <XAxis type="number" domain={[0, 12]} tick={{ fontSize: 11 }} />
+          {/* chart series — intentional */}
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+          <XAxis type="number" domain={[0, 12]} tick={{ fontSize: 11, fill: tickColor }} />
           <YAxis
             type="category"
             dataKey="name"
             width={120}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: tickColor }}
           />
           <Tooltip
             formatter={(value: number) => [

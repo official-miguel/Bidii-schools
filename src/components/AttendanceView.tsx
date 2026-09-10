@@ -275,7 +275,7 @@ export default function AttendanceView({
         {lockClass ? (
           <div>
             <p className={labelClass}>Date</p>
-            <p className="text-sm font-medium text-ink dark:text-dark-text py-1.5">
+            <p className="text-sm font-medium text-foreground py-1.5">
               {todayLabel}
             </p>
           </div>
@@ -329,11 +329,11 @@ export default function AttendanceView({
         <EmptyState message="No students in this class yet." />
       ) : (
         <>
-          <div className="bg-white dark:bg-dark-surface border border-line dark:border-dark-border rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[480px]">
                 <thead className="sticky top-0 z-10">
-                  <tr className="border-b border-line dark:border-dark-border bg-slate-50/80 dark:bg-dark-border/40 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                  <tr className="border-b border-border bg-slate-50/80/40 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                     <th className="px-5 py-3.5 w-[130px]">Adm. No.</th>
                     <th className="px-5 py-3.5">Name</th>
                     <th className="px-5 py-3.5 w-[140px]">Present</th>
@@ -343,19 +343,19 @@ export default function AttendanceView({
                   {rows.map((r) => (
                     <tr
                       key={r.studentId}
-                      className={`border-b border-line dark:border-dark-border last:border-0 cursor-pointer transition-colors ${
+                      className={`border-b border-border last:border-0 cursor-pointer transition-colors ${
                         r.present
-                          ? "hover:bg-slate-50/50 dark:hover:bg-dark-border/20"
+                          ? "hover:bg-slate-50/50/20"
                           : "bg-danger-bg/20 hover:bg-danger-bg/30 dark:bg-danger/5 dark:hover:bg-danger/10"
                       }`}
                       onClick={() => setPresent(r.studentId, !r.present)}
                     >
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-mono text-slate bg-slate-50 dark:bg-dark-border border border-line dark:border-dark-border rounded px-1.5 py-0.5">
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
                           {r.admissionNumber}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-ink dark:text-dark-text">{r.fullName}</td>
+                      <td className="px-5 py-3.5 font-medium text-foreground">{r.fullName}</td>
                       <td className="px-5 py-3.5">
                         <label
                           className="inline-flex items-center gap-2 text-sm cursor-pointer"
@@ -363,7 +363,7 @@ export default function AttendanceView({
                         >
                           <input
                             type="checkbox"
-                            className="h-5 w-5 accent-teal cursor-pointer rounded border-line"
+                            className="h-5 w-5 accent-teal cursor-pointer rounded border-border"
                             checked={r.present}
                             onChange={(e) => setPresent(r.studentId, e.target.checked)}
                           />
@@ -380,13 +380,13 @@ export default function AttendanceView({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-line dark:border-dark-border">
+          <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
             <p className="text-sm">
               <span className="text-success font-semibold">{presentCount} present</span>
               {" · "}
               <span className="text-danger font-semibold">{absentCount} absent</span>
               {" · "}
-              <span className="text-slate dark:text-dark-muted">{rows.length} students</span>
+              <span className="text-slate">{rows.length} students</span>
             </p>
             <button className={primaryButtonClass} disabled={saving} onClick={handleSave}>
               {saving

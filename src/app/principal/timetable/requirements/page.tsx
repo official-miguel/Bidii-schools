@@ -565,7 +565,7 @@ export default function RequirementsPage() {
         <PageHeader title="Timetable" description="Set lesson requirements." />
         <div className="mt-4 space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-14 bg-white border border-line rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-card border border-border rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -591,14 +591,14 @@ export default function RequirementsPage() {
         )}
 
         {/* ── Tab switcher ─────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-paper border border-line rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-background border border-border rounded-xl p-1 w-fit">
           <button
             type="button"
             onClick={() => setActiveTab("classes")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
               ${activeTab === "classes"
-                ? "bg-white text-ink shadow-sm border border-line"
-                : "text-slate hover:text-ink"}`}>
+                ? "bg-card text-foreground shadow-sm border border-border"
+                : "text-slate hover:text-foreground"}`}>
             <BookOpen className="h-4 w-4" />
             Class Requirements
           </button>
@@ -607,8 +607,8 @@ export default function RequirementsPage() {
             onClick={() => setActiveTab("teachers")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
               ${activeTab === "teachers"
-                ? "bg-white text-ink shadow-sm border border-line"
-                : "text-slate hover:text-ink"}`}>
+                ? "bg-card text-foreground shadow-sm border border-border"
+                : "text-slate hover:text-foreground"}`}>
             <GraduationCap className="h-4 w-4" />
             Teacher Requirements
           </button>
@@ -632,10 +632,10 @@ export default function RequirementsPage() {
                   : <><Wand2 className="h-4 w-4" />Auto-populate from subjects</>}
               </button>
             </div>
-            <div className="rounded-lg border border-line bg-paper px-4 py-2.5 flex gap-2 text-xs text-slate">
+            <div className="rounded-lg border border-border bg-background px-4 py-2.5 flex gap-2 text-xs text-slate">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate/60" />
               <span>
-                <strong className="text-ink">Auto-populate</strong> sets the lesson frequency for subjects that already have a
+                <strong className="text-foreground">Auto-populate</strong> sets the lesson frequency for subjects that already have a
                 teacher assigned to each class. It distributes the available weekly slots (lesson columns × operating days)
                 evenly across those teacher-assigned subjects so the totals fill the timetable.
                 Double-lesson subjects receive twice the allocation. Subjects without a teacher are not touched.
@@ -644,7 +644,7 @@ export default function RequirementsPage() {
             </div>
 
             {classes.length === 0 ? (
-              <div className="rounded-xl border border-line bg-white p-8 text-center">
+              <div className="rounded-xl border border-border bg-card p-8 text-center">
                 <BookOpen className="h-10 w-10 text-slate/30 mx-auto mb-3" />
                 <p className="text-sm text-slate">No classes found. Register classes first.</p>
               </div>
@@ -652,8 +652,8 @@ export default function RequirementsPage() {
               <div className="grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-5 items-start">
 
                 {/* Sidebar */}
-                <div className="bg-white border border-line rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-line">
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border">
                     <button
                       type="button"
                       onClick={openAllClasses}
@@ -671,7 +671,7 @@ export default function RequirementsPage() {
                       )}
                     </button>
                   </div>
-                  <div className="divide-y divide-line">
+                  <div className="divide-y divide-border">
                     {Array.from(classesByForm.entries()).map(([form, formClasses]) => {
                       const formKey    = `form-${form}`;
                       const formActive = selection === formKey;
@@ -679,7 +679,7 @@ export default function RequirementsPage() {
                         <div key={form}>
                           <button type="button" onClick={() => openForm(form)}
                             className={`w-full flex items-center gap-2 px-4 py-2.5 text-left transition-colors group
-                              ${formActive ? "bg-teal/10 border-l-2 border-teal" : "bg-paper hover:bg-teal/5 border-l-2 border-transparent"}`}>
+                              ${formActive ? "bg-teal/10 border-l-2 border-teal" : "bg-background hover:bg-teal/5 border-l-2 border-transparent"}`}>
                             <Users className={`h-3.5 w-3.5 shrink-0 ${formActive ? "text-teal" : "text-slate group-hover:text-teal"}`} />
                             <span className={`text-xs font-semibold uppercase tracking-wide flex-1 ${formActive ? "text-teal" : "text-slate group-hover:text-teal"}`}>
                               {formGroupLabel(form)}
@@ -693,7 +693,7 @@ export default function RequirementsPage() {
                             return (
                               <button key={cls.id} type="button" onClick={() => openStream(cls.id)}
                                 className={`w-full flex items-center gap-2 px-4 pl-8 py-2.5 text-sm transition-colors group
-                                  ${active ? "bg-teal/10 text-teal font-medium border-l-2 border-teal" : "text-ink hover:bg-teal/5 border-l-2 border-transparent"}`}>
+                                  ${active ? "bg-teal/10 text-teal font-medium border-l-2 border-teal" : "text-foreground hover:bg-teal/5 border-l-2 border-transparent"}`}>
                                 <User className={`h-3 w-3 shrink-0 ${active ? "text-teal" : "text-slate/60 group-hover:text-teal"}`} />
                                 <span className="flex-1 truncate">{cls.name}</span>
                                 {cls.stream && <span className="text-[10px] text-slate/50 shrink-0">{cls.stream}</span>}
@@ -707,7 +707,7 @@ export default function RequirementsPage() {
                 </div>
 
                 {/* Right panel */}
-                <div className="bg-white border border-line rounded-xl overflow-hidden">
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
                   {!selection ? (
                     <div className="px-6 py-16 text-center">
                       <BookOpen className="h-10 w-10 text-slate/25 mx-auto mb-3" />
@@ -720,7 +720,7 @@ export default function RequirementsPage() {
                   ) : (
                     <>
                       {/* Panel header */}
-                      <div className="flex items-center justify-between px-5 py-4 border-b border-line cursor-pointer"
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-border cursor-pointer"
                         onClick={() => setExpanded((e) => !e)}>
                         <div className="flex items-start gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5
@@ -728,7 +728,7 @@ export default function RequirementsPage() {
                             {selectionAll ? <BookOpen className="h-4 w-4" /> : selectionForm != null ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
                           </div>
                           <div className="min-w-0">
-                            <h2 className="text-sm font-semibold text-ink truncate">{selectionTitle}</h2>
+                            <h2 className="text-sm font-semibold text-foreground truncate">{selectionTitle}</h2>
                             <p className="text-xs text-slate mt-0.5">
                               {selectionAll
                                 ? `Applies to all ${classes.length} classes in the school`
@@ -807,9 +807,9 @@ export default function RequirementsPage() {
                           />
 
                           {subjectRows.length > 0 && (
-                            <div className="px-5 py-4 border-t border-line flex items-center justify-between gap-3 flex-wrap">
+                            <div className="px-5 py-4 border-t border-border flex items-center justify-between gap-3 flex-wrap">
                               <div className="text-xs text-slate">
-                                Total: <strong className="text-ink">{totalRequired} lessons/week</strong>
+                                Total: <strong className="text-foreground">{totalRequired} lessons/week</strong>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button type="button" onClick={() => setSelection(null)}
@@ -895,7 +895,7 @@ function TeacherRequirementsTab({
     return (
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-16 bg-white border border-line rounded-xl animate-pulse" />
+          <div key={i} className="h-16 bg-card border border-border rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -903,7 +903,7 @@ function TeacherRequirementsTab({
 
   if (teachers.length === 0) {
     return (
-      <div className="rounded-xl border border-line bg-white p-10 text-center">
+      <div className="rounded-xl border border-border bg-card p-10 text-center">
         <GraduationCap className="h-10 w-10 text-slate/25 mx-auto mb-3" />
         <p className="text-sm text-slate font-medium">No teachers found</p>
         <p className="text-xs text-slate/60 mt-1">Register staff members first, then set their load constraints here.</p>
@@ -917,7 +917,7 @@ function TeacherRequirementsTab({
   return (
     <div className="space-y-4">
       {/* Info callout */}
-      <div className="rounded-lg border border-line bg-paper px-4 py-2.5 flex gap-2 text-xs text-slate">
+      <div className="rounded-lg border border-border bg-background px-4 py-2.5 flex gap-2 text-xs text-slate">
         <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate/60" />
         <span>
           Set a minimum and/or maximum number of lessons per teacher per day.
@@ -945,9 +945,9 @@ function TeacherRequirementsTab({
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-line rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {/* Column header */}
-        <div className="grid grid-cols-[1fr_repeat(2,_120px)_80px] gap-2 px-5 py-2.5 bg-paper border-b border-line">
+        <div className="grid grid-cols-[1fr_repeat(2,_120px)_80px] gap-2 px-5 py-2.5 bg-background border-b border-border">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Teacher</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Min / day</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Max / day</span>
@@ -957,7 +957,7 @@ function TeacherRequirementsTab({
         {filtered.length === 0 ? (
           <div className="px-5 py-8 text-center text-sm text-slate">No teachers match &quot;{search}&quot;</div>
         ) : (
-          <div className="divide-y divide-line">
+          <div className="divide-y divide-border">
             {filtered.map((teacher) => {
               const d         = drafts[teacher.id] ?? { minLessonsPerDay: null, maxLessonsPerDay: null };
               const isSaving  = savingTeacher === teacher.id;
@@ -970,7 +970,7 @@ function TeacherRequirementsTab({
                   className="grid grid-cols-[1fr_repeat(2,_120px)_80px] gap-2 px-5 py-3 items-center">
                   {/* Teacher info */}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{teacher.fullName}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{teacher.fullName}</p>
                     <p className="text-[11px] text-slate/60 truncate">
                       {teacher.staffId}{teacher.designation ? ` · ${teacher.designation}` : ""}
                     </p>
@@ -1001,10 +1001,10 @@ function TeacherRequirementsTab({
                       title={hasChanges ? "Save changes" : "No changes"}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors
                         ${isSaving
-                          ? "bg-paper text-slate border-line cursor-wait"
+                          ? "bg-background text-slate border-border cursor-wait"
                           : hasChanges
                             ? "bg-teal text-white border-teal hover:bg-teal/90"
-                            : "bg-paper text-slate/40 border-line cursor-default"}`}>
+                            : "bg-background text-slate/40 border-border cursor-default"}`}>
                       {isSaving
                         ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                         : <Save className="h-3.5 w-3.5" />}
@@ -1096,11 +1096,11 @@ function ElectiveGroupsSection({
   const [pickerQuery, setPickerQuery] = useState("");
 
   return (
-    <div className="border-b border-line">
-      <div className="flex items-center justify-between px-5 py-3 bg-paper border-b border-line">
+    <div className="border-b border-border">
+      <div className="flex items-center justify-between px-5 py-3 bg-background border-b border-border">
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-violet-500" />
-          <span className="text-xs font-semibold text-ink">Elective Groups</span>
+          <span className="text-xs font-semibold text-foreground">Elective Groups</span>
           {groups.length > 0 && (
             <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full font-medium">
               {groups.length}
@@ -1135,7 +1135,7 @@ function ElectiveGroupsSection({
                       className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
                         allClassesCreateForm === f
                           ? "bg-violet-600 text-white border-violet-600"
-                          : "bg-white text-slate border-line hover:border-violet-400 hover:text-violet-700"
+                          : "bg-card text-slate border-border hover:border-violet-400 hover:text-violet-700"
                       }`}>
                       Form {f}
                     </button>
@@ -1179,7 +1179,7 @@ function ElectiveGroupsSection({
               ) : (
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <Layers className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-                  <span className="text-sm font-semibold text-ink flex-1">{group.name}</span>
+                  <span className="text-sm font-semibold text-foreground flex-1">{group.name}</span>
                   {group.scopeStreams.length > 0 && (
                     <span className="text-[10px] text-slate/60 shrink-0 hidden sm:inline">
                       {group.scopeStreams.join(", ")}
@@ -1207,7 +1207,7 @@ function ElectiveGroupsSection({
                     )}
                     {group.members.map((m) => (
                       <span key={m.id}
-                        className="inline-flex items-center gap-1 bg-white border border-violet-200 text-violet-800 text-[11px] font-medium px-2 py-0.5 rounded-full">
+                        className="inline-flex items-center gap-1 bg-card border border-violet-200 text-violet-800 text-[11px] font-medium px-2 py-0.5 rounded-full">
                         {m.subject.name}
                         <button type="button" onClick={() => onRemoveSubject(group.id, m.subjectId)}
                           className="ml-0.5 hover:text-red-500 transition-colors">
@@ -1223,21 +1223,21 @@ function ElectiveGroupsSection({
                       className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors
                         ${pickerGroupId === group.id
                           ? "bg-violet-100 border-violet-400 text-violet-800"
-                          : "bg-white border-violet-300 text-violet-700 hover:bg-violet-50 hover:border-violet-400"
+                          : "bg-card border-violet-300 text-violet-700 hover:bg-violet-50 hover:border-violet-400"
                         }`}>
                       <Plus className="h-3.5 w-3.5" />
                       Add subject
                     </button>
 
                     {pickerGroupId === group.id && (
-                      <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-lg w-64 overflow-hidden">
-                        <div className="p-2 border-b border-line">
+                      <div className="absolute left-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-lg w-64 overflow-hidden">
+                        <div className="p-2 border-b border-border">
                           <input autoFocus type="text" placeholder="Search elective subjects…"
                             value={pickerQuery}
                             onChange={(e) => setPickerQuery(e.target.value)}
                             className={`${inputClass} text-xs py-1.5 w-full`} />
                         </div>
-                        <div className="max-h-48 overflow-y-auto divide-y divide-line">
+                        <div className="max-h-48 overflow-y-auto divide-y divide-border">
                           {filtered.length === 0 ? (
                             <p className="px-3 py-3 text-xs text-slate/60 text-center">
                               {available.length === 0
@@ -1249,7 +1249,7 @@ function ElectiveGroupsSection({
                               <button key={s.id} type="button"
                                 onClick={() => onAddSubject(group.id, s.id)}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-violet-50 transition-colors">
-                                <span className="text-xs font-medium text-ink flex-1">{s.name}</span>
+                                <span className="text-xs font-medium text-foreground flex-1">{s.name}</span>
                                 <span className="text-[10px] text-slate font-mono bg-line px-1.5 py-0.5 rounded">{s.code}</span>
                               </button>
                             ))
@@ -1299,7 +1299,7 @@ function GroupEditCard({
   }
 
   return (
-    <div className="rounded-xl border border-violet-300 bg-white p-3 space-y-3">
+    <div className="rounded-xl border border-violet-300 bg-card p-3 space-y-3">
       <p className="text-xs font-semibold text-violet-700">{isNew ? "New elective group" : "Edit group"}</p>
       <div className="flex gap-2 items-end">
         <div className="flex-1">
@@ -1345,7 +1345,7 @@ function GroupEditCard({
                   className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                     active
                       ? "bg-violet-600 text-white border-violet-600"
-                      : "bg-white text-slate border-line hover:border-violet-400 hover:text-violet-700"
+                      : "bg-card text-slate border-border hover:border-violet-400 hover:text-violet-700"
                   }`}>
                   {s}
                 </button>
@@ -1390,8 +1390,8 @@ function RequirementsTable({
   }, [groups]);
 
   return (
-    <div className="divide-y divide-line">
-      <div className="grid grid-cols-[1fr_72px_80px_110px_110px] gap-2 px-5 py-2 bg-paper">
+    <div className="divide-y divide-border">
+      <div className="grid grid-cols-[1fr_72px_80px_110px_110px] gap-2 px-5 py-2 bg-background">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Subject</span>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Code</span>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate text-center">Default</span>
@@ -1407,7 +1407,7 @@ function RequirementsTable({
         if (absorbed) {
           return (
             <div key={row.subjectId}
-              className="grid grid-cols-[1fr_72px_80px_110px_110px] gap-2 px-5 py-2.5 items-center opacity-50 bg-paper/50">
+              className="grid grid-cols-[1fr_72px_80px_110px_110px] gap-2 px-5 py-2.5 items-center opacity-50 bg-background/50">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm text-slate font-medium truncate">{row.subjectName}</span>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-medium shrink-0 border border-violet-200">
@@ -1434,7 +1434,7 @@ function RequirementsTable({
         return (
           <div key={row.subjectId}
             className="grid grid-cols-[1fr_72px_80px_110px_110px] gap-2 px-5 py-2.5 items-center">
-            <span className="text-sm text-ink font-medium truncate">{row.subjectName}</span>
+            <span className="text-sm text-foreground font-medium truncate">{row.subjectName}</span>
             <span className="text-xs text-slate text-center font-mono">{row.subjectCode}</span>
             <span className="text-center">
               {row.defaultDouble

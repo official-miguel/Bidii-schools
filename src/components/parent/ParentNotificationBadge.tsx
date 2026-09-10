@@ -60,7 +60,7 @@ export default function ParentNotificationBadge({ role, onClick, isOpen = false 
   const iconBtn =
     "flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100 " +
     "text-slate hover:bg-teal-50 hover:text-teal " +
-    "dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text";
+    "";
 
   return (
     <button

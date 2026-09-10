@@ -158,7 +158,7 @@ export default async function TeacherMarksheetPage({
     const fallbackPeriodId = searchParams.periodId ?? fallbackPeriods.find((p) => p.isCurrent)?.id ?? fallbackPeriods[0]?.id ?? "";
     return (
       <MarksheetPageClient periods={fallbackPeriods} activePeriodId={fallbackPeriodId} isGridMode={true}>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           You have no class assignments yet. Contact the principal to be assigned to
           classes and subjects.
         </div>
@@ -201,7 +201,7 @@ export default async function TeacherMarksheetPage({
       <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
         <div className="space-y-4">
           <div>
-            <h1 className="font-display text-xl font-semibold text-ink">Mark Sheets</h1>
+            <h1 className="font-display text-xl font-semibold text-foreground">Mark Sheets</h1>
             <p className="text-sm text-slate mt-0.5">
               {canEdit
                 ? hasLearningAreas
@@ -252,7 +252,7 @@ export default async function TeacherMarksheetPage({
   if (viewableSubjects.length === 0) {
     return (
       <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           You don&apos;t have access to any subject marksheets yet. Contact the principal
           to be assigned a subject role.
         </div>
@@ -264,10 +264,10 @@ export default async function TeacherMarksheetPage({
     <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
       <div className="space-y-4">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink dark:text-dark-text">
+          <h1 className="font-display text-xl font-semibold text-foreground">
             {selectedClass?.name ?? "Mark Sheet"}
           </h1>
-          <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">
+          <p className="text-sm text-slate mt-0.5">
             {editAllowed
               ? "Enter and update scores for your assigned subjects."
               : "View-only — you don't have edit access for this subject."}

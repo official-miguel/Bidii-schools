@@ -69,7 +69,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
   const maxPapers = Math.max(...subjects.map((s) => s.papers.length), 0);
 
   return (
-    <div className="report-card-page bg-white p-8 text-sm text-ink font-sans">
+    <div className="report-card-page bg-card p-8 text-sm text-foreground font-sans">
       {/* ---- Header ---- */}
       <div className="text-center mb-6 border-b-2 border-ink pb-4">
         {/* Logo placeholder */}
@@ -117,9 +117,9 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
       </div>
 
       {/* ---- Subject table ---- */}
-      <table className="w-full text-xs border border-line mb-6">
+      <table className="w-full text-xs border border-border mb-6">
         <thead>
-          <tr className="bg-paper border-b border-line text-left">
+          <tr className="bg-background border-b border-border text-left">
             <th className="px-3 py-2 font-semibold">Subject</th>
             {maxPapers === 0 && (
               <th className="px-3 py-2 font-semibold text-center">Score</th>
@@ -139,7 +139,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
           {subjects.map((sr, i) => (
             <tr
               key={sr.subject.id}
-              className={`border-b border-line ${i % 2 === 0 ? "bg-white" : "bg-paper/40"}`}
+              className={`border-b border-border ${i % 2 === 0 ? "bg-card" : "bg-background/40"}`}
             >
               <td className="px-3 py-1.5 font-medium">
                 {sr.subject.name}
@@ -205,7 +205,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
 
         {/* ---- Summary row ---- */}
         <tfoot>
-          <tr className="border-t-2 border-ink bg-paper font-semibold">
+          <tr className="border-t-2 border-ink bg-background font-semibold">
             <td
               className="px-3 py-2 text-xs uppercase tracking-wide"
               colSpan={maxPapers > 0 ? maxPapers + 1 : 2}
@@ -236,7 +236,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
             Class Position:
           </span>{" "}
           {summary.position !== null ? (
-            <span className="font-bold text-base text-ink">
+            <span className="font-bold text-base text-foreground">
               {summary.position}
               <span className="text-sm font-normal text-slate">
                 {" "}/ {summary.classSize}
@@ -251,7 +251,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
             Mean Grade:
           </span>{" "}
           {summary.meanGrade ? (
-            <span className="font-bold text-base text-ink">{summary.meanGrade}</span>
+            <span className="font-bold text-base text-foreground">{summary.meanGrade}</span>
           ) : (
             <Dash />
           )}
@@ -261,7 +261,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
             Mean Points:
           </span>{" "}
           {summary.meanPoints !== null ? (
-            <span className="font-bold text-base text-ink">
+            <span className="font-bold text-base text-foreground">
               {summary.meanPoints.toFixed(2)}
             </span>
           ) : (
@@ -271,7 +271,7 @@ export default function ReportCard({ data }: { data: ReportCardData }) {
       </div>
 
       {/* ---- Class teacher signature line ---- */}
-      <div className="flex justify-between items-end mt-8 pt-4 border-t border-line text-xs text-slate">
+      <div className="flex justify-between items-end mt-8 pt-4 border-t border-border text-xs text-slate">
         <div>
           <div className="border-b border-slate w-40 mb-1" />
           <span>Class Teacher Signature</span>

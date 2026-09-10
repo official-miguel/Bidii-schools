@@ -87,12 +87,12 @@ export default async function ParentResultsPage({ searchParams }: Props) {
     return (
       <div className="space-y-4">
         <PageHeader studentName={student?.fullName} />
-        <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
           <p className="text-3xl mb-3">📊</p>
-          <p className="text-sm font-medium text-ink dark:text-dark-text">
+          <p className="text-sm font-medium text-foreground">
             No results yet
           </p>
-          <p className="text-sm text-slate dark:text-dark-muted mt-1">
+          <p className="text-sm text-slate mt-1">
             Results and report cards will appear here once assessments are recorded.
           </p>
         </div>
@@ -161,12 +161,12 @@ export default async function ParentResultsPage({ searchParams }: Props) {
       <PageHeader studentName={student?.fullName} />
 
       {!hasAnyResults ? (
-        <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
           <p className="text-3xl mb-3">📊</p>
-          <p className="text-sm font-medium text-ink dark:text-dark-text">
+          <p className="text-sm font-medium text-foreground">
             No results yet
           </p>
-          <p className="text-sm text-slate dark:text-dark-muted mt-1">
+          <p className="text-sm text-slate mt-1">
             Results and report cards will appear here once assessments are recorded.
           </p>
         </div>
@@ -190,7 +190,7 @@ export default async function ParentResultsPage({ searchParams }: Props) {
 function PageHeader({ studentName }: { studentName?: string | null }) {
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+      <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
         Academic Results{studentName ? ` — ${studentName}` : ""}
       </h1>
     </div>
@@ -199,12 +199,12 @@ function PageHeader({ studentName }: { studentName?: string | null }) {
 
 function EmptyState() {
   return (
-    <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-8 text-center">
       <p className="text-3xl mb-3">📊</p>
-      <p className="text-sm font-medium text-ink dark:text-dark-text">
+      <p className="text-sm font-medium text-foreground">
         No results yet
       </p>
-      <p className="text-sm text-slate dark:text-dark-muted mt-1">
+      <p className="text-sm text-slate mt-1">
         Results and report cards will appear here once assessments are recorded.
       </p>
     </div>

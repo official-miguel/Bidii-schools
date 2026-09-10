@@ -47,12 +47,11 @@ export default function FavoritesBar({ role: _role }: FavoritesBarProps) {
     <div
       aria-label="Favorites"
       className="flex items-center gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none
-                 bg-paper border-b border-line
-                 dark:bg-dark-bg dark:border-dark-border"
+                 bg-background border-b border-border"
     >
       <Star className="h-3.5 w-3.5 text-amber-400 shrink-0" strokeWidth={2.5} />
       <span className="text-[11px] font-semibold text-slate uppercase tracking-wider
-                       mr-1 shrink-0 dark:text-dark-muted">
+                       mr-1 shrink-0">
         Pinned
       </span>
 
@@ -68,9 +67,9 @@ export default function FavoritesBar({ role: _role }: FavoritesBarProps) {
               type="button"
               onClick={() => navigate(fav)}
               className="flex items-center gap-1.5 h-7 pl-2.5 pr-1.5 rounded-l-lg
-                         border border-r-0 border-line text-xs font-medium
+                         border border-r-0 border-border text-xs font-medium
                          text-slate hover:text-teal hover:border-teal/40 hover:bg-teal-50
-                         transition-colors dark:border-dark-border dark:text-dark-muted
+                         transition-colors
                          dark:hover:text-teal dark:hover:bg-teal-900/10"
             >
               <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
@@ -81,9 +80,9 @@ export default function FavoritesBar({ role: _role }: FavoritesBarProps) {
               onClick={() => useProductivityStore.getState().removeFavorite(fav.id)}
               aria-label={`Unpin ${fav.label}`}
               className="h-7 w-6 flex items-center justify-center rounded-r-lg
-                         border border-line text-slate/40 opacity-0 group-hover:opacity-100
+                         border border-border text-slate/40 opacity-0 group-hover:opacity-100
                          hover:bg-danger/10 hover:text-danger hover:border-danger/30
-                         transition-all dark:border-dark-border dark:text-dark-muted/40"
+                         transition-all/40"
             >
               <X className="h-3 w-3" />
             </button>
@@ -121,7 +120,7 @@ export function FavoriteToggleButton({ item, size = "md" }: ToggleProps) {
       className={`flex items-center justify-center ${cls} transition-colors
                   ${pinned
                     ? "text-amber-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/10"
-                    : "text-slate/50 hover:text-amber-400 hover:bg-amber-50 dark:text-dark-muted/40 dark:hover:bg-amber-900/10"
+                    : "text-slate/50 hover:text-amber-400 hover:bg-amber-50/40 dark:hover:bg-amber-900/10"
                   }`}
     >
       {pinned ? (

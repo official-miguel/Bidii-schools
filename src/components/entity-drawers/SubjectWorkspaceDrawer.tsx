@@ -112,10 +112,10 @@ export default function SubjectWorkspaceDrawer({
         <div className="space-y-5">
 
           {/* ── Overview ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-base font-semibold text-ink">{subject.name}</h2>
+                <h2 className="text-base font-semibold text-foreground">{subject.name}</h2>
                 <p className="text-sm text-slate mt-0.5 font-mono">{subject.code}</p>
               </div>
               <Chip variant={subject.type === "CORE" ? "success" : "warn"} size="sm">
@@ -138,7 +138,7 @@ export default function SubjectWorkspaceDrawer({
                     <ExternalLink className="h-3 w-3" />
                   </button>
                 ) : (
-                  <p className="text-ink flex items-center gap-1">
+                  <p className="text-foreground flex items-center gap-1">
                     <Building2 className="h-3.5 w-3.5 text-slate" />
                     {subject.department.name}
                   </p>
@@ -147,7 +147,7 @@ export default function SubjectWorkspaceDrawer({
 
               <div>
                 <p className="text-xs text-slate mb-0.5">Assigned teachers</p>
-                <p className="text-ink font-medium">{subject._count.teacherSubjects}</p>
+                <p className="text-foreground font-medium">{subject._count.teacherSubjects}</p>
               </div>
 
               <div>
@@ -163,7 +163,7 @@ export default function SubjectWorkspaceDrawer({
                 <p className="text-xs text-slate mb-0.5">Periods / week</p>
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-slate" />
-                  <span className="text-ink">{subject.lessonsPerWeek}</span>
+                  <span className="text-foreground">{subject.lessonsPerWeek}</span>
                   {subject.doubleLesson && (
                     <Chip variant="info" size="xs">double</Chip>
                   )}
@@ -180,7 +180,7 @@ export default function SubjectWorkspaceDrawer({
           </div>
 
           {/* ── Teachers ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <SectionTitle>
               <BookOpen className="h-3.5 w-3.5" />
               Assigned teachers ({subject._count.teacherSubjects})
@@ -192,7 +192,7 @@ export default function SubjectWorkspaceDrawer({
                 {subject.teacherSubjects.map(({ teacher }) => (
                   <div
                     key={teacher.id}
-                    className="flex items-center gap-3 py-1.5 border-b border-line last:border-0"
+                    className="flex items-center gap-3 py-1.5 border-b border-border last:border-0"
                   >
                     <Avatar name={teacher.fullName} size="sm" />
                     <div className="flex-1 min-w-0">
@@ -206,7 +206,7 @@ export default function SubjectWorkspaceDrawer({
                           <ExternalLink className="h-3 w-3" />
                         </button>
                       ) : (
-                        <p className="text-sm font-medium text-ink">{teacher.fullName}</p>
+                        <p className="text-sm font-medium text-foreground">{teacher.fullName}</p>
                       )}
                       <p className="text-xs text-slate font-mono">{teacher.staffId}</p>
                     </div>
@@ -217,7 +217,7 @@ export default function SubjectWorkspaceDrawer({
           </div>
 
           {/* ── Quick links ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <SectionTitle>Quick links</SectionTitle>
             <div className="space-y-2">
               <a href={`${basePath}/subjects`} className="flex items-center gap-2 text-sm text-teal hover:underline">

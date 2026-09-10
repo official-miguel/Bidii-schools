@@ -80,8 +80,8 @@ function AssignmentCard({ card }: { card: TeacherClassCard }) {
   const statusColour = done
     ? "border-green-300 bg-green-50/40"
     : missing > 0
-    ? "border-line bg-white"
-    : "border-line bg-white";
+    ? "border-border bg-card"
+    : "border-border bg-card";
 
   return (
     <Link
@@ -99,7 +99,7 @@ function AssignmentCard({ card }: { card: TeacherClassCard }) {
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold text-ink text-sm leading-tight truncate">
+            <p className="font-semibold text-foreground text-sm leading-tight truncate">
               {card.className}
             </p>
             <p className="text-xs text-slate truncate mt-0.5">
@@ -263,7 +263,7 @@ export default function TeacherHome() {
           accent={
             pending > 0
               ? "bg-amber-50 border-amber-200 text-amber-900"
-              : "bg-paper border-line text-slate"
+              : "bg-background border-border text-slate"
           }
           sub={pending > 0 ? "need mark entry" : "All done!"}
         />
@@ -274,7 +274,7 @@ export default function TeacherHome() {
           accent={
             totalMissing > 0
               ? "bg-red-50 border-red-200 text-red-900"
-              : "bg-paper border-line text-slate"
+              : "bg-background border-border text-slate"
           }
           sub={`across ${totalStudents} enrolled`}
         />

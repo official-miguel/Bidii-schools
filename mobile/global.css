@@ -1,3 +1,47 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Semantic color tokens ─────────────────────────────────────────────────
+   Light-mode values — used by NativeWind CSS variable utilities.
+   Dark-mode values are overridden in the @media block below.
+────────────────────────────────────────────────────────────────────────── */
+:root {
+  --color-background:             #FAFBFC;
+  --color-foreground:             #1F2933;
+  --color-card:                   #FFFFFF;
+  --color-card-foreground:        #1F2933;
+  --color-border:                 #E8EDF2;
+  --color-input:                  #FAFBFC;
+  --color-muted:                  #F4F6F8;
+  --color-muted-foreground:       #667085;
+  --color-primary:                #2C7F7E;
+  --color-primary-foreground:     #FFFFFF;
+  --color-destructive:            #C62828;
+  --color-destructive-foreground: #FFFFFF;
+  --color-success:                #ECFDF3;
+  --color-success-foreground:     #0D4D2D;
+  --color-warn:                   #FFFAEB;
+  --color-warn-foreground:        #7A3D00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background:             #0D1B2A;
+    --color-foreground:             #E8EDF2;
+    --color-card:                   #162233;
+    --color-card-foreground:        #E8EDF2;
+    --color-border:                 #1E3347;
+    --color-input:                  #162233;
+    --color-muted:                  #1E3347;
+    --color-muted-foreground:       #8FA3B8;
+    --color-primary:                #2C7F7E;
+    --color-primary-foreground:     #FFFFFF;
+    --color-destructive:            #C62828;
+    --color-destructive-foreground: #FFFFFF;
+    --color-success:                #0F2B1A;
+    --color-success-foreground:     #6EE7B7;
+    --color-warn:                   #2D1A00;
+    --color-warn-foreground:        #FCD34D;
+  }
+}

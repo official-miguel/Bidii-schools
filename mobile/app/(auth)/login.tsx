@@ -24,7 +24,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Eye, EyeOff, School, CheckCircle } from "lucide-react-native";
 import { useAuth } from "@/lib/auth";
-import { Colors } from "@/constants";
+import { useTheme } from "@/lib/ThemeContext";
 
 // ── Shared ─────────────────────────────────────────────────────────────────
 
@@ -35,6 +35,7 @@ const inputBase =
 
 function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const { login, isLoading, error, clearError } = useAuth();
+  const { colors } = useTheme();
 
   const [identifier,  setIdentifier]  = useState("");
   const [password,    setPassword]    = useState("");
@@ -89,7 +90,7 @@ function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         <TextInput
           className={inputBase}
           placeholder="you@school.com or 07xxxxxxxx"
-          placeholderTextColor={Colors.muted}
+          placeholderTextColor={colors.mutedForeground}
           value={identifier}
           onChangeText={setIdentifier}
           autoCapitalize="none"
@@ -107,7 +108,7 @@ function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
           <TextInput
             className={`${inputBase} pr-12`}
             placeholder="Your password"
-            placeholderTextColor={Colors.muted}
+            placeholderTextColor={colors.mutedForeground}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPwd}
@@ -123,8 +124,8 @@ function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             activeOpacity={0.7}
           >
             {showPwd
-              ? <EyeOff size={18} color={Colors.muted} />
-              : <Eye    size={18} color={Colors.muted} />}
+              ? <EyeOff size={18} color={colors.mutedForeground} />
+              : <Eye    size={18} color={colors.mutedForeground} />}
           </TouchableOpacity>
         </View>
         <Text className="text-slate/70 text-xs mt-1.5">
@@ -137,11 +138,11 @@ function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
         <View className="mb-3">
           <Text className="text-slate text-sm font-medium mb-2">School username</Text>
           <View className="flex-row items-center gap-2">
-            <School size={16} color={Colors.muted} />
+            <School size={16} color={colors.mutedForeground} />
             <TextInput
               className={`${inputBase} flex-1`}
               placeholder="e.g. kianyaga"
-              placeholderTextColor={Colors.muted}
+              placeholderTextColor={colors.mutedForeground}
               value={schoolSlug}
               onChangeText={setSchoolSlug}
               autoCapitalize="none"
@@ -173,6 +174,7 @@ function LoginStep({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
 function SetPasswordStep({ onDone }: { onDone: () => void }) {
   const { setPassword, isLoading, error, clearError } = useAuth();
+  const { colors } = useTheme();
 
   const [newPwd,     setNewPwd]     = useState("");
   const [confirm,    setConfirm]    = useState("");
@@ -234,7 +236,7 @@ function SetPasswordStep({ onDone }: { onDone: () => void }) {
           <TextInput
             className={`${inputBase} pr-12`}
             placeholder="Choose a strong password"
-            placeholderTextColor={Colors.muted}
+            placeholderTextColor={colors.mutedForeground}
             value={newPwd}
             onChangeText={(v) => { setNewPwd(v); setLocalError(null); }}
             secureTextEntry={!showNew}
@@ -243,7 +245,7 @@ function SetPasswordStep({ onDone }: { onDone: () => void }) {
             editable={!isLoading}
           />
           <TouchableOpacity onPress={() => setShowNew((v) => !v)} className="absolute right-3 top-3.5" activeOpacity={0.7}>
-            {showNew ? <EyeOff size={18} color={Colors.muted} /> : <Eye size={18} color={Colors.muted} />}
+            {showNew ? <EyeOff size={18} color={colors.mutedForeground} /> : <Eye size={18} color={colors.mutedForeground} />}
           </TouchableOpacity>
         </View>
         {/* Requirements */}
@@ -264,7 +266,7 @@ function SetPasswordStep({ onDone }: { onDone: () => void }) {
           <TextInput
             className={`${inputBase} pr-12`}
             placeholder="Re-enter your new password"
-            placeholderTextColor={Colors.muted}
+            placeholderTextColor={colors.mutedForeground}
             value={confirm}
             onChangeText={(v) => { setConfirm(v); setLocalError(null); }}
             secureTextEntry={!showCfm}
@@ -274,7 +276,7 @@ function SetPasswordStep({ onDone }: { onDone: () => void }) {
             onSubmitEditing={handleSet}
           />
           <TouchableOpacity onPress={() => setShowCfm((v) => !v)} className="absolute right-3 top-3.5" activeOpacity={0.7}>
-            {showCfm ? <EyeOff size={18} color={Colors.muted} /> : <Eye size={18} color={Colors.muted} />}
+            {showCfm ? <EyeOff size={18} color={colors.mutedForeground} /> : <Eye size={18} color={colors.mutedForeground} />}
           </TouchableOpacity>
         </View>
         {confirm.length > 0 && (
@@ -336,7 +338,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Card */}
-          <View className="bg-white rounded-2xl p-6 shadow-lg">
+          <View className="bg-card dark:bg-[#162233] rounded-2xl p-6 shadow-lg">
             {step === "login" ? (
               <LoginStep onLoginSuccess={handleLoginDone} />
             ) : (

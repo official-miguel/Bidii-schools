@@ -29,20 +29,19 @@ export default function PeopleTiles({ tiles }: { tiles: Tile[] }) {
         {tiles.map((tile) => (
           <div
             key={tile.id}
-            className={`relative bg-white border rounded-xl p-5 flex flex-col gap-3 transition-all duration-150
-              dark:bg-dark-surface dark:border-dark-border
+            className={`relative bg-card border rounded-xl p-5 flex flex-col gap-3 transition-all duration-150
               ${tile.isClassTeacher
-                ? "border-teal/30 bg-teal/5 dark:bg-teal/10"
-                : "border-line hover:border-teal/40 hover:shadow-sm"}`}
+                ? "border-teal/30 bg-teal/5"
+                : "border-border hover:border-teal/40 hover:shadow-sm"}`}
           >
             <div className="flex items-start gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0
-                ${tile.isClassTeacher ? "bg-teal/20 text-teal" : "bg-paper text-slate dark:bg-dark-border"}`}>
+                ${tile.isClassTeacher ? "bg-teal/20 text-teal" : "bg-background text-slate"}`}>
                 <Users className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">{tile.title}</p>
-                <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{tile.subTitle}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{tile.title}</p>
+                <p className="text-xs text-slate mt-0.5">{tile.subTitle}</p>
                 {tile.isClassTeacher && (
                   <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal/20 text-teal">
                     Class Teacher
@@ -53,9 +52,8 @@ export default function PeopleTiles({ tiles }: { tiles: Tile[] }) {
             <div className="flex gap-2 mt-auto pt-1">
               <Link
                 href={`/teacher/people/${tile.id}?classId=${tile.classId}${tile.subjectId ? `&subjectId=${tile.subjectId}` : ""}${tile.isClassTeacher ? "&isClassTeacher=1" : ""}&title=${encodeURIComponent(tile.title)}&sub=${encodeURIComponent(tile.subTitle)}`}
-                className="flex-1 text-center text-xs font-medium px-3 py-2 rounded-lg border border-line
-                           text-slate hover:border-teal hover:text-teal transition-colors
-                           dark:border-dark-border dark:text-dark-muted dark:hover:border-teal dark:hover:text-teal"
+                className="flex-1 text-center text-xs font-medium px-3 py-2 rounded-lg border border-border
+                           text-slate hover:border-teal hover:text-teal transition-colors dark:hover:border-teal dark:hover:text-teal"
               >
                 View students
               </Link>
@@ -142,14 +140,14 @@ function AddStudentsModal({ tile, onClose }: { tile: Tile; onClose: () => void }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Add Students to Elective</h2>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5 truncate">{tile.title}</p>
+            <h2 className="text-sm font-semibold text-foreground">Add Students to Elective</h2>
+            <p className="text-xs text-slate mt-0.5 truncate">{tile.title}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate hover:text-ink transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -178,8 +176,8 @@ function AddStudentsModal({ tile, onClose }: { tile: Tile; onClose: () => void }
               {students.map((s) => (
                 <label
                   key={s.id}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-line cursor-pointer
-                             hover:border-teal/40 transition-colors dark:border-dark-border"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer
+                             hover:border-teal/40 transition-colors"
                 >
                   <span className="text-teal shrink-0">
                     {selected.has(s.id)
@@ -193,7 +191,7 @@ function AddStudentsModal({ tile, onClose }: { tile: Tile; onClose: () => void }
                     onChange={() => toggle(s.id)}
                   />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink dark:text-dark-text">{s.fullName}</p>
+                    <p className="text-sm font-medium text-foreground">{s.fullName}</p>
                     <p className="text-xs text-slate font-mono">{s.admissionNumber}</p>
                   </div>
                 </label>
@@ -204,12 +202,12 @@ function AddStudentsModal({ tile, onClose }: { tile: Tile; onClose: () => void }
 
         {/* Footer */}
         {!success && students.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-4 border-t border-line dark:border-dark-border">
+          <div className="flex items-center justify-between px-5 py-4 border-t border-border">
             <span className="text-xs text-slate">{selected.size} selected</span>
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg border border-line text-sm text-slate hover:text-ink transition-colors"
+                className="px-4 py-2 rounded-lg border border-border text-sm text-slate hover:text-foreground transition-colors"
               >
                 Cancel
               </button>

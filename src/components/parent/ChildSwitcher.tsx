@@ -20,8 +20,8 @@ export default function ChildSwitcher() {
   if (children.length <= 1) return null;
 
   return (
-    <div className="px-3 py-2 border-b border-border dark:border-dark-border">
-      <p className="text-xs font-medium text-slate dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+    <div className="px-3 py-2 border-b border-border">
+      <p className="text-xs font-medium text-slate mb-1.5 uppercase tracking-wide">
         My Children
       </p>
 
@@ -37,12 +37,12 @@ export default function ChildSwitcher() {
                 ${
                   isActive
                     ? "bg-teal/10 text-teal font-medium"
-                    : "hover:bg-paper dark:hover:bg-dark-surface text-ink dark:text-dark-text"
+                    : "hover:bg-background text-foreground"
                 }
               `}
             >
               <span className="block truncate">{child.fullName}</span>
-              <span className="block text-xs text-slate dark:text-dark-muted truncate">
+              <span className="block text-xs text-slate truncate">
                 {child.className}
               </span>
             </button>

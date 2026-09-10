@@ -142,17 +142,17 @@ export default function ClassProfilesPage() {
             <Link
               key={group.form}
               href={`/principal/class-profiles/form/${group.form}`}
-              className="group block bg-white border border-line rounded-xl overflow-hidden
+              className="group block bg-card border border-border rounded-xl overflow-hidden
                          hover:border-teal/50 hover:shadow-sm transition-all duration-150"
             >
               {/* Form header row */}
-              <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-line bg-slate-50/60">
+              <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border bg-slate-50/60">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal/10 text-teal text-sm font-bold shrink-0">
                     {group.form}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink group-hover:text-teal transition-colors">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors">
                       Form {group.form}
                     </p>
                     <p className="text-xs text-slate mt-0.5">
@@ -185,7 +185,7 @@ export default function ClassProfilesPage() {
                     key={cls.id}
                     href={`/principal/class-profiles/${cls.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1 hover:border-teal/50 hover:bg-teal/5 transition-all group/cls"
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 hover:border-teal/50 hover:bg-teal/5 transition-all group/cls"
                   >
                     <FrameworkBadge type={cls.frameworkType} />
                     <span className="text-xs text-slate group-hover/cls:text-teal transition-colors">

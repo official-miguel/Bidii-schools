@@ -20,10 +20,10 @@ export default function TopBar({
   roleLabel,
 }: TopBarProps) {
   return (
-    <div className="w-full flex items-center justify-between gap-4 px-6 py-3 bg-white border-b border-line sticky top-0 z-30">
+    <div className="w-full flex items-center justify-between gap-4 px-6 py-3 bg-card border-b border-border sticky top-0 z-30">
       {/* Left: module name + active period */}
       <div className="flex items-center gap-3 min-w-0">
-        <span className="font-display font-semibold text-ink text-sm truncate">
+        <span className="font-display font-semibold text-foreground text-sm truncate">
           {moduleName}
         </span>
         {periodLabel && (
@@ -41,7 +41,7 @@ export default function TopBar({
         <span className="text-xs text-slate hidden sm:block truncate max-w-[160px]">
           {userName}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-line text-ink font-medium whitespace-nowrap">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-line text-foreground font-medium whitespace-nowrap">
           {roleLabel}
         </span>
       </div>

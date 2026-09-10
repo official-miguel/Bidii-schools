@@ -10,7 +10,7 @@ interface DeptHeatmapProps {
 export default function DeptHeatmap({ cells }: DeptHeatmapProps) {
   if (cells.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
         No heatmap data available yet.
       </div>
     );
@@ -53,7 +53,7 @@ export default function DeptHeatmap({ cells }: DeptHeatmapProps) {
           <tbody>
             {classIds.map((cid) => (
               <tr key={cid}>
-                <td className="px-2 py-1 font-medium text-ink whitespace-nowrap">
+                <td className="px-2 py-1 font-medium text-foreground whitespace-nowrap">
                   {classNames.get(cid)}
                 </td>
                 {subjectIds.map((sid) => {

@@ -1,4 +1,4 @@
-import { Users, GraduationCap, BookOpen, AlertTriangle, Clock, CheckCircle } from "lucide-react";
+﻿import { Users, GraduationCap, BookOpen, AlertTriangle, Clock, CheckCircle } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
 
@@ -44,7 +44,7 @@ export default function SchoolOverviewSection({
         <span className="h-1 w-5 rounded-full bg-teal shrink-0" aria-hidden="true" />
         <h2
           id="school-overview-heading"
-          className="text-sm font-semibold text-slate uppercase tracking-wide dark:text-dark-muted"
+          className="text-sm font-semibold text-slate uppercase tracking-wide"
         >
           {isDeputy ? "School Overview" : "Principal Overview"}
         </h2>

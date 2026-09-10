@@ -97,10 +97,10 @@ export default async function CbeReportCardsPage({
             </Link>
           </div>
 
-          <div className="bg-white border border-line rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-paper text-left text-xs text-slate">
+                <tr className="border-b border-border bg-background text-left text-xs text-slate">
                   <th className="px-4 py-3 font-medium">Adm. No.</th>
                   <th className="px-4 py-3 font-medium">Student</th>
                   <th className="px-4 py-3 font-medium text-right">Action</th>
@@ -108,9 +108,9 @@ export default async function CbeReportCardsPage({
               </thead>
               <tbody>
                 {students.map((s) => (
-                  <tr key={s.id} className="border-b border-line last:border-0 hover:bg-paper/40">
+                  <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background/40">
                     <td className="px-4 py-3 text-slate tabular-nums">{s.admissionNumber}</td>
-                    <td className="px-4 py-3 font-medium text-ink">{s.fullName}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{s.fullName}</td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/assessments/report-card/print?periodId=${periodId}&studentId=${s.id}&framework=CBE`}

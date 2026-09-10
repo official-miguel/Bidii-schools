@@ -80,15 +80,15 @@ export default function SlideOver({
           ref={panelRef}
           className={`relative w-screen ${sizeClasses[size]} drawer-panel`}
         >
-          <div className="flex h-full flex-col bg-card border-l border-line shadow-2xl">
+          <div className="flex h-full flex-col bg-card border-l border-border shadow-2xl">
 
             {/* ── Sticky header ── */}
-            <div className="shrink-0 border-b border-line bg-paper px-6 py-5">
+            <div className="shrink-0 border-b border-border bg-background px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2
                     id="slide-over-title"
-                    className="text-base font-semibold text-ink tracking-tight"
+                    className="text-base font-semibold text-foreground tracking-tight"
                   >
                     {title}
                   </h2>
@@ -101,7 +101,7 @@ export default function SlideOver({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate hover:text-ink hover:bg-line transition-colors shrink-0 -mt-0.5 -mr-1"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate hover:text-foreground hover:bg-line transition-colors shrink-0 -mt-0.5 -mr-1"
                   aria-label="Close panel"
                 >
                   <X className="h-4 w-4" />
@@ -116,7 +116,7 @@ export default function SlideOver({
 
             {/* ── Sticky footer ── */}
             {footer && (
-              <div className="shrink-0 border-t border-line bg-paper px-6 py-4">
+              <div className="shrink-0 border-t border-border bg-background px-6 py-4">
                 {footer}
               </div>
             )}
@@ -173,7 +173,7 @@ function SlideOverField({ label, value, className = "" }: FieldProps) {
       <dt className="text-xs font-medium text-slate uppercase tracking-wide">
         {label}
       </dt>
-      <dd className="text-sm text-ink">{value || <span className="text-slate/50">—</span>}</dd>
+      <dd className="text-sm text-foreground">{value || <span className="text-slate/50">—</span>}</dd>
     </div>
   );
 }

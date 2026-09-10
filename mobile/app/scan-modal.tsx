@@ -20,15 +20,17 @@ import {
   CameraView, useCameraPermissions, BarcodeScanningResult,
 } from 'expo-camera';
 import { X, Keyboard, Flashlight, FlashlightOff, Camera } from 'lucide-react-native';
-import { Colors, Spacing, Typography, Radius, SCAN_COOLDOWN_MS } from '@/constants';
+import { Spacing, Typography, Radius, SCAN_COOLDOWN_MS } from '@/constants';
 import { parseQRCode } from '@/lib/utils';
 import { api } from '@/services/api';
+import { useTheme } from '@/lib/ThemeContext';
 
 type ScanMode = 'camera' | 'manual';
 
 export default function ScanModal() {
   const router  = useRouter();
   const params  = useLocalSearchParams<{ returnTo?: string; context?: string }>();
+  const { colors } = useTheme();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [mode,       setMode]       = useState<ScanMode>('camera');
@@ -102,7 +104,7 @@ export default function ScanModal() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
@@ -110,24 +112,24 @@ export default function ScanModal() {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         backgroundColor: 'rgba(0,0,0,0.5)',
       }}>
-        <Text style={{ color: Colors.white, fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold }}>
+        <Text style={{ color: '#FFFFFF', fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold }}>
           Scan QR Code
         </Text>
         <View style={{ flexDirection: 'row', gap: Spacing[3] }}>
           {mode === 'camera' && (
             <TouchableOpacity onPress={() => setTorchOn(v => !v)} hitSlop={{ top:8,right:8,bottom:8,left:8 }}>
               {torchOn
-                ? <FlashlightOff size={22} color={Colors.white} />
-                : <Flashlight size={22} color={Colors.white} />}
+                ? <FlashlightOff size={22} color="#FFFFFF" />
+                : <Flashlight size={22} color="#FFFFFF" />}
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => setMode(m => m === 'camera' ? 'manual' : 'camera')} hitSlop={{ top:8,right:8,bottom:8,left:8 }}>
             {mode === 'camera'
-              ? <Keyboard size={22} color={Colors.white} />
-              : <Camera size={22} color={Colors.white} />}
+              ? <Keyboard size={22} color="#FFFFFF" />
+              : <Camera size={22} color="#FFFFFF" />}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:8,right:8,bottom:8,left:8 }}>
-            <X size={22} color={Colors.white} />
+            <X size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -137,18 +139,18 @@ export default function ScanModal() {
         <>
           {!permission?.granted ? (
             <View style={{ flex:1, alignItems:'center', justifyContent:'center', gap: Spacing[4], padding: Spacing[6] }}>
-              <Camera size={48} color={Colors.muted} />
-              <Text style={{ color: Colors.white, textAlign:'center', fontSize: Typography.fontSize.sm }}>
+              <Camera size={48} color={colors.mutedForeground} />
+              <Text style={{ color: '#FFFFFF', textAlign:'center', fontSize: Typography.fontSize.sm }}>
                 Camera permission is required to scan QR codes.
               </Text>
               <TouchableOpacity
                 onPress={requestPermission}
-                style={{ backgroundColor: Colors.teal, paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], borderRadius: Radius.button }}
+                style={{ backgroundColor: colors.primary, paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], borderRadius: Radius.button }}
               >
-                <Text style={{ color: Colors.white, fontWeight: Typography.fontWeight.semibold }}>Grant Permission</Text>
+                <Text style={{ color: '#FFFFFF', fontWeight: Typography.fontWeight.semibold }}>Grant Permission</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMode('manual')}>
-                <Text style={{ color: Colors.teal, fontSize: Typography.fontSize.sm }}>Use manual entry instead</Text>
+                <Text style={{ color: colors.primary, fontSize: Typography.fontSize.sm }}>Use manual entry instead</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -169,7 +171,7 @@ export default function ScanModal() {
                       [corner.includes('t') ? 'top' : 'bottom']: 0,
                       [corner.includes('l') ? 'left' : 'right']: 0,
                       width: 40, height: 40,
-                      borderColor: Colors.teal,
+                      borderColor: colors.primary,
                       borderTopWidth:    corner.includes('t') ? 3 : 0,
                       borderBottomWidth: corner.includes('b') ? 3 : 0,
                       borderLeftWidth:   corner.includes('l') ? 3 : 0,
@@ -181,8 +183,8 @@ export default function ScanModal() {
                 {/* Instruction / feedback */}
                 <View style={{ marginTop: Spacing[6], backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: Radius.button, paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] }}>
                   {processing
-                    ? <ActivityIndicator size="small" color={Colors.teal} />
-                    : <Text style={{ color: Colors.white, fontSize: Typography.fontSize.sm, textAlign:'center' }}>
+                    ? <ActivityIndicator size="small" color={colors.primary} />
+                    : <Text style={{ color: '#FFFFFF', fontSize: Typography.fontSize.sm, textAlign:'center' }}>
                         {feedback || 'Point camera at a Bidii QR code'}
                       </Text>
                   }
@@ -197,34 +199,34 @@ export default function ScanModal() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex:1, justifyContent:'center', padding: Spacing[6] }}
         >
-          <Text style={{ color: Colors.white, fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, marginBottom: Spacing[4] }}>
+          <Text style={{ color: '#FFFFFF', fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, marginBottom: Spacing[4] }}>
             Manual Entry
           </Text>
           <TextInput
             value={manualVal}
             onChangeText={setManualVal}
             placeholder="Book accession number (e.g. ACC-00145)"
-            placeholderTextColor={Colors.muted}
+            placeholderTextColor={colors.mutedForeground}
             autoFocus
             returnKeyType="go"
             onSubmitEditing={handleManualSubmit}
             style={{
-              backgroundColor: Colors.card, borderRadius: Radius.button,
+              backgroundColor: colors.card, borderRadius: Radius.button,
               paddingHorizontal: Spacing[4], paddingVertical: Spacing[3],
-              fontSize: Typography.fontSize.base, color: Colors.ink,
+              fontSize: Typography.fontSize.base, color: colors.foreground,
             }}
           />
           <TouchableOpacity
             onPress={handleManualSubmit}
             disabled={!manualVal.trim() || processing}
             style={{
-              marginTop: Spacing[4], backgroundColor: manualVal.trim() ? Colors.teal : Colors.slateText,
+              marginTop: Spacing[4], backgroundColor: manualVal.trim() ? colors.primary : colors.mutedForeground,
               borderRadius: Radius.button, paddingVertical: Spacing[3.5], alignItems:'center',
             }}
           >
             {processing
-              ? <ActivityIndicator size="small" color={Colors.white} />
-              : <Text style={{ color: Colors.white, fontWeight: Typography.fontWeight.semibold }}>Submit</Text>
+              ? <ActivityIndicator size="small" color="#FFFFFF" />
+              : <Text style={{ color: '#FFFFFF', fontWeight: Typography.fontWeight.semibold }}>Submit</Text>
             }
           </TouchableOpacity>
         </KeyboardAvoidingView>

@@ -37,11 +37,11 @@ export default async function TeacherSubjectsPage() {
       {subjects.length === 0 ? (
         <EmptyState message="No subjects have been set up yet." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Subject</th>
                   <th className="px-5 py-3.5 w-[80px] hidden sm:table-cell">Code</th>
                   <th className="px-5 py-3.5 w-[100px]">Type</th>
@@ -54,14 +54,14 @@ export default async function TeacherSubjectsPage() {
                 {subjects.map((s) => (
                   <tr
                     key={s.id}
-                    className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors"
+                    className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors"
                   >
                     {/* Subject name */}
                     <td className="px-5 py-3.5">
-                      <span className="font-semibold text-ink">{s.name}</span>
+                      <span className="font-semibold text-foreground">{s.name}</span>
                       {/* Mobile: code + forms inline */}
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5 sm:hidden">
-                        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1 py-0.5">
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1 py-0.5">
                           {s.code}
                         </span>
                         {(s.applicableForms as number[]).sort((a, b) => a - b).map((f) => (
@@ -72,7 +72,7 @@ export default async function TeacherSubjectsPage() {
 
                     {/* Code */}
                     <td className="px-5 py-3.5 hidden sm:table-cell">
-                      <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+                      <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
                         {s.code}
                       </span>
                     </td>

@@ -48,7 +48,7 @@ const STATUS_COLOR: Record<InspStatus, string> = {
   SCHEDULED:   "text-teal bg-teal/10 border-teal/20",
   IN_PROGRESS: "text-warn bg-warn/10 border-warn/20",
   COMPLETED:   "text-success bg-success/10 border-success/20",
-  CANCELLED:   "text-slate bg-slate/10 border-line dark:border-dark-border",
+  CANCELLED:   "text-slate bg-slate/10 border-border",
 };
 
 const DEFAULT_CATEGORIES = [
@@ -66,7 +66,7 @@ function RatingSelector({ value, onChange }: { value: Rating; onChange: (r: Rati
     <div className="flex flex-wrap gap-1.5">
       {options.map((r) => (
         <button key={r} type="button" onClick={() => onChange(r)}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${value === r ? RATING_COLOR[r] : "border-line text-slate hover:border-teal/30 dark:border-dark-border dark:text-dark-muted"}`}>
+          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${value === r ? RATING_COLOR[r] : "border-border text-slate hover:border-teal/30"}`}>
           {labels[r]}
         </button>
       ))}
@@ -142,10 +142,10 @@ function InspectionFormModal({ dorms, editing, onClose, onSaved }: {
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
       {/* Tabs */}
-      <div className="flex border-b border-line dark:border-dark-border mb-4 -mx-1">
+      <div className="flex border-b border-border mb-4 -mx-1">
         {(["checklist","details"] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${tab === t ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink dark:text-dark-muted"}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${tab === t ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"}`}>
             {t === "checklist" ? "Inspection Checklist" : "Details & Summary"}
           </button>
         ))}
@@ -198,22 +198,22 @@ function InspectionFormModal({ dorms, editing, onClose, onSaved }: {
           <div className="space-y-4">
             {!dormId && <div className="rounded-lg bg-warn/10 border border-warn/20 px-3 py-2.5 text-sm text-warn">Select a dormitory in the Details tab first.</div>}
             {Object.entries(grouped).map(([cat, catItems]) => (
-              <div key={cat} className="rounded-xl border border-line dark:border-dark-border overflow-hidden">
-                <div className="bg-slate-50/80 dark:bg-dark-border/30 px-4 py-2.5">
-                  <p className="text-xs font-semibold text-ink dark:text-dark-text uppercase tracking-wide">{cat}</p>
+              <div key={cat} className="rounded-xl border border-border overflow-hidden">
+                <div className="bg-slate-50/80/30 px-4 py-2.5">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">{cat}</p>
                 </div>
-                <div className="divide-y divide-line/50 dark:divide-dark-border/50">
+                <div className="divide-y divide-border/50 /50">
                   {catItems.map(({ _idx, ...it }) => (
                     <div key={_idx} className="px-4 py-3">
                       <div className="flex items-start justify-between gap-3 mb-2">
-                        <p className="text-sm text-ink dark:text-dark-text">{it.item}</p>
+                        <p className="text-sm text-foreground">{it.item}</p>
                         <input type="number" min="0" max="100" placeholder="Score"
-                          className="w-16 text-xs border border-line rounded-md px-2 py-1 text-center dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                          className="w-16 text-xs border border-border rounded-md px-2 py-1 text-center"
                           value={items[_idx].score ?? ""} onChange={(e) => updateItem(_idx, { score: e.target.value ? parseInt(e.target.value) : null })} />
                       </div>
                       <RatingSelector value={items[_idx].rating} onChange={(r) => updateItem(_idx, { rating: r })} />
                       <input type="text" placeholder="Notes (optional)"
-                        className="mt-2 w-full text-xs border border-line/50 rounded-md px-2.5 py-1.5 dark:bg-dark-surface dark:border-dark-border/50 dark:text-dark-text"
+                        className="mt-2 w-full text-xs border border-border/50 rounded-md px-2.5 py-1.5/50"
                         value={items[_idx].notes ?? ""} onChange={(e) => updateItem(_idx, { notes: e.target.value || null })} />
                     </div>
                   ))}
@@ -224,7 +224,7 @@ function InspectionFormModal({ dorms, editing, onClose, onSaved }: {
         )}
 
         {/* Form actions — inside the form so they work on mobile */}
-        <div className="flex gap-3 justify-end pt-4 mt-2 border-t border-line dark:border-dark-border">
+        <div className="flex gap-3 justify-end pt-4 mt-2 border-t border-border">
           <button type="button" onClick={onClose} className={secondaryButtonClass}>Cancel</button>
           <button type="submit" disabled={saving || !dormId}
             className={`${primaryButtonClass} disabled:opacity-40`}>
@@ -247,12 +247,12 @@ function InspectionCard({
   }, {} as Record<string, InspectionItem[]>);
 
   return (
-    <div className="rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">{inspection.dorm.name}</p>
+              <p className="text-sm font-semibold text-foreground">{inspection.dorm.name}</p>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_COLOR[inspection.status]}`}>
                 {inspection.status.replace("_", " ")}
               </span>
@@ -262,18 +262,18 @@ function InspectionCard({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate dark:text-dark-muted flex-wrap">
+            <div className="flex items-center gap-3 text-xs text-slate flex-wrap">
               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(inspection.inspectionDate).toLocaleDateString()}</span>
               {inspection.inspectedBy && <span>by {inspection.inspectedBy.email}</span>}
               {inspection.overallScore !== null && (
-                <span className="font-semibold text-ink dark:text-dark-text">{Math.round(inspection.overallScore)}/100</span>
+                <span className="font-semibold text-foreground">{Math.round(inspection.overallScore)}/100</span>
               )}
               {inspection.nextInspectionDate && (
                 <span className="text-teal">Next: {new Date(inspection.nextInspectionDate).toLocaleDateString()}</span>
               )}
             </div>
             {inspection.notes && (
-              <p className="text-xs text-slate dark:text-dark-muted mt-1.5 italic line-clamp-2">{inspection.notes}</p>
+              <p className="text-xs text-slate mt-1.5 italic line-clamp-2">{inspection.notes}</p>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -296,16 +296,16 @@ function InspectionCard({
       </div>
 
       {expanded && (
-        <div className="border-t border-line dark:border-dark-border bg-paper/50 dark:bg-dark-bg/30 p-4 space-y-4">
+        <div className="border-t border-border bg-background/50/30 p-4 space-y-4">
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
-              <p className="text-xs font-semibold text-ink dark:text-dark-text uppercase tracking-wide mb-2">{cat}</p>
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">{cat}</p>
               <div className="space-y-1.5">
                 {items.map((it, i) => (
                   <div key={i} className="flex items-center justify-between gap-3 text-xs">
-                    <span className="text-ink dark:text-dark-text">{it.item}</span>
+                    <span className="text-foreground">{it.item}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      {it.score !== null && <span className="tabular-nums text-slate dark:text-dark-muted">{it.score}/100</span>}
+                      {it.score !== null && <span className="tabular-nums text-slate">{it.score}/100</span>}
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold border ${RATING_COLOR[it.rating]}`}>
                         {it.rating.replace("_", " ")}
                       </span>
@@ -317,8 +317,8 @@ function InspectionCard({
           ))}
           {inspection.recommendations && (
             <div>
-              <p className="text-xs font-semibold text-ink dark:text-dark-text mb-1">Recommendations</p>
-              <p className="text-xs text-slate dark:text-dark-muted">{inspection.recommendations}</p>
+              <p className="text-xs font-semibold text-foreground mb-1">Recommendations</p>
+              <p className="text-xs text-slate">{inspection.recommendations}</p>
             </div>
           )}
         </div>
@@ -408,11 +408,11 @@ export default function InspectionsPage() {
             { label: "Scheduled",         value: scheduledCount,     icon: Calendar,      color: scheduledCount > 0 ? "text-teal" : "text-slate", bg: "bg-teal/10" },
             { label: "Avg. score",        value: avgScore !== null ? `${avgScore}/100` : "—", icon: Star, color: avgScore !== null && avgScore >= 70 ? "text-success" : "text-warn", bg: "bg-amber-100 dark:bg-amber-900/20" },
           ].map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="rounded-xl border border-line bg-card p-4 dark:bg-dark-surface dark:border-dark-border">
+            <div key={label} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`text-xl font-semibold tabular-nums ${color}`}>{value}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{label}</p>
+                  <p className="text-xs text-slate mt-0.5">{label}</p>
                 </div>
                 <div className={`rounded-lg p-2 ${bg}`}><Icon className={`h-5 w-5 ${color}`} /></div>
               </div>
@@ -425,12 +425,12 @@ export default function InspectionsPage() {
         <WorkspaceToolbar.Search value={search} onChange={setSearch} placeholder="Filter by dorm name…" />
         <WorkspaceToolbar.Actions>
           <select value={dormFilter} onChange={(e) => setDormFilter(e.target.value)}
-            className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+            className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card">
             <option value="">All dorms</option>
             {dorms.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
           <select value={statusFilter} onChange={(e) => setStatus(e.target.value)}
-            className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+            className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card">
             <option value="">All statuses</option>
             <option value="SCHEDULED">Scheduled</option>
             <option value="IN_PROGRESS">In Progress</option>
@@ -443,17 +443,17 @@ export default function InspectionsPage() {
 
       {loading && (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-line/40/40 animate-pulse" />)}
         </div>
       )}
 
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="rounded-full bg-slate-100 dark:bg-dark-surface p-4">
+          <div className="rounded-full bg-slate-100 p-4">
             <ClipboardList className="h-8 w-8 text-slate" />
           </div>
-          <p className="text-ink font-medium dark:text-dark-text">No inspections yet</p>
-          <p className="text-slate text-sm max-w-sm dark:text-dark-muted">
+          <p className="text-foreground font-medium">No inspections yet</p>
+          <p className="text-slate text-sm max-w-sm">
             Schedule regular inspections to track dorm cleanliness, safety, and order.
           </p>
           <button onClick={() => setShowForm(true)} className={primaryButtonClass}>

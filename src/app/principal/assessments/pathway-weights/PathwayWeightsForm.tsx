@@ -85,10 +85,10 @@ export default function PathwayWeightsForm({
       {error  && <ErrorBanner message={error} />}
       {saved  && <div className="mb-4 rounded-md bg-success-bg text-success text-sm px-3 py-2">Weights saved.</div>}
 
-      <div className="bg-white border border-line rounded-xl overflow-hidden mb-6">
+      <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line bg-paper text-xs text-slate text-left">
+            <tr className="border-b border-border bg-background text-xs text-slate text-left">
               <th className="px-4 py-3 font-medium">Subject</th>
               <th className="px-4 py-3 font-medium text-center">SBA weight</th>
               <th className="px-4 py-3 font-medium text-center">SBA max marks</th>
@@ -99,8 +99,8 @@ export default function PathwayWeightsForm({
           </thead>
           <tbody>
             {weights.map((w, i) => (
-              <tr key={w.subject.id} className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-paper/40"}`}>
-                <td className="px-4 py-3 font-medium text-ink">
+              <tr key={w.subject.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-card" : "bg-background/40"}`}>
+                <td className="px-4 py-3 font-medium text-foreground">
                   {w.subject.name}
                   <span className="ml-1 text-slate text-xs">({w.subject.code})</span>
                   {w.isDefault && <span className="ml-2 text-xs text-slate italic">default</span>}

@@ -182,8 +182,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-line rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-ink mb-4">{title}</h3>
+    <div className="bg-card border border-border rounded-xl p-5">
+      <h3 className="text-sm font-semibold text-foreground mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -192,7 +192,7 @@ function Section({
 // ---------------------------------------------------------------------------
 // Heat colour keyed on KCSE points (1–12 scale).
 function heatColourPts(pts: number | null): string {
-  if (pts === null) return "bg-paper text-slate";
+  if (pts === null) return "bg-background text-slate";
   if (pts >= 9)  return "bg-green-100 text-green-800";  // B and above
   if (pts >= 7)  return "bg-blue-100 text-blue-800";    // C+ / B-
   if (pts >= 5)  return "bg-amber-100 text-amber-800";  // C / C-
@@ -371,6 +371,14 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodId, classId, subjectId, form]);
 
+  // Read theme-aware grid color from CSS variable
+  const gridColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e5e7eb'
+    : '#e5e7eb';
+  const tickColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#94a3b8'
+    : '#94a3b8';
+
   return (
     <div>
       {/* ---- Filter bar — hidden when drilling from a tile ---- */}
@@ -391,7 +399,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
       {loading && !data && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div key={i} className="bg-card border border-border rounded-xl p-5 space-y-3">
               <div className="h-4 w-32 rounded bg-line animate-pulse" />
               <div className="h-24 rounded-lg bg-line animate-pulse" />
               <div className="h-3 w-48 rounded bg-line animate-pulse" />
@@ -432,13 +440,13 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 );
               })()}
               <div className="flex flex-col gap-1.5">
-                <p className="text-sm text-ink">
+                <p className="text-sm text-foreground">
                   <span className="font-semibold tabular-nums">
                     {data.summary.overallMeanPoints?.toFixed(2) ?? "—"}
                   </span>{" "}
                   <span className="text-slate">mean points</span>
                 </p>
-                <p className="text-sm text-ink">
+                <p className="text-sm text-foreground">
                   <span className="font-semibold tabular-nums">{totalStudents}</span>{" "}
                   <span className="text-slate">students assessed</span>
                 </p>
@@ -469,7 +477,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
 
           {/* ---- Grade drill-down — full width so left-column cards never shift ---- */}
           {selectedGrade && (
-            <div className="md:col-span-2 bg-white border border-royal/30 rounded-xl p-5">
+            <div className="md:col-span-2 bg-card border border-royal/30 rounded-xl p-5">
               {(() => {
                 const { bg, text } = gradeColour(selectedGrade);
                 return (
@@ -478,7 +486,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                       <span className={`inline-flex items-center justify-center rounded-lg w-8 h-8 text-sm font-bold ${bg} ${text}`}>
                         {selectedGrade}
                       </span>
-                      <span className="text-sm font-semibold text-ink">
+                      <span className="text-sm font-semibold text-foreground">
                         Grade {selectedGrade} students
                       </span>
                       {!drillLoading && (
@@ -493,7 +501,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     <button
                       type="button"
                       onClick={() => { setSelectedGrade(null); setDrillStudents([]); }}
-                      className="text-xs text-slate hover:text-ink transition-colors px-2 py-1 rounded hover:bg-paper"
+                      className="text-xs text-slate hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-background"
                     >
                       ✕ Close
                     </button>
@@ -513,7 +521,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-line text-slate text-left">
+                      <tr className="border-b border-border text-slate text-left">
                         <th className="pb-1.5 font-medium">Adm. No.</th>
                         <th className="pb-1.5 font-medium">Name</th>
                         <th className="pb-1.5 font-medium">Class</th>
@@ -522,11 +530,11 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     </thead>
                     <tbody>
                       {drillStudents.map((s) => (
-                        <tr key={s.admissionNumber} className="border-b border-line last:border-0">
+                        <tr key={s.admissionNumber} className="border-b border-border last:border-0">
                           <td className="py-1.5 pr-2 tabular-nums text-slate">{s.admissionNumber}</td>
-                          <td className="py-1.5 pr-2 font-medium text-ink">{s.fullName}</td>
+                          <td className="py-1.5 pr-2 font-medium text-foreground">{s.fullName}</td>
                           <td className="py-1.5 pr-2 text-slate">{s.className}</td>
-                          <td className="py-1.5 tabular-nums text-ink text-right">{s.meanPoints.toFixed(2)}</td>
+                          <td className="py-1.5 tabular-nums text-foreground text-right">{s.meanPoints.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -565,9 +573,9 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 420 }}>
                   <table className="text-xs w-full border-collapse">
                     <thead className="sticky top-0 z-30">
-                      <tr className="border-b-2 border-line text-slate text-left bg-white">
-                        <th className="pb-2 font-medium pr-1 text-center sticky left-0 z-20 bg-white" style={{ minWidth: 24 }}>#</th>
-                        <th className="pb-2 font-medium pr-4 whitespace-nowrap sticky z-20 bg-white shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]" style={{ left: 24, minWidth: 140 }}>
+                      <tr className="border-b-2 border-border text-slate text-left bg-card">
+                        <th className="pb-2 font-medium pr-1 text-center sticky left-0 z-20 bg-card" style={{ minWidth: 24 }}>#</th>
+                        <th className="pb-2 font-medium pr-4 whitespace-nowrap sticky z-20 bg-card shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]" style={{ left: 24, minWidth: 140 }}>
                           Student
                         </th>
                         {scorecard.multiClass && (
@@ -578,22 +586,22 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                             {s.code || s.name.slice(0, 6)}
                           </th>
                         ))}
-                        <th className="pb-2 font-medium text-center px-1 border-l border-line whitespace-nowrap">Mean pts</th>
+                        <th className="pb-2 font-medium text-center px-1 border-l border-border whitespace-nowrap">Mean pts</th>
                         <th className="pb-2 font-medium text-center px-1 whitespace-nowrap">Grade</th>
                       </tr>
                     </thead>
                     <tbody>
                       {scorecard.rows.map((row, idx) => {
-                        const { bg, text } = row.meanGrade ? gradeColour(row.meanGrade) : { bg: "bg-paper", text: "text-slate" };
+                        const { bg, text } = row.meanGrade ? gradeColour(row.meanGrade) : { bg: "bg-background", text: "text-slate" };
                         const isFlagged = scorecard.meanFlagThreshold !== null
                           && row.meanPoints !== null
                           && row.meanPoints < scorecard.meanFlagThreshold;
                         return (
-                          <tr key={row.admissionNumber} className={`border-b border-line last:border-0 group ${isFlagged ? "bg-red-50 hover:bg-red-100" : "hover:bg-slate-50"}`}>
-                            <td className={`py-1 pr-1 text-center tabular-nums sticky left-0 z-10 ${isFlagged ? "bg-red-50 group-hover:bg-red-100 text-red-500" : "bg-white group-hover:bg-slate-50 text-slate"}`} style={{ minWidth: 24 }}>
+                          <tr key={row.admissionNumber} className={`border-b border-border last:border-0 group ${isFlagged ? "bg-red-50 hover:bg-red-100" : "hover:bg-slate-50"}`}>
+                            <td className={`py-1 pr-1 text-center tabular-nums sticky left-0 z-10 ${isFlagged ? "bg-red-50 group-hover:bg-red-100 text-red-500" : "bg-card group-hover:bg-slate-50 text-slate"}`} style={{ minWidth: 24 }}>
                               {idx + 1}
                             </td>
-                            <td className={`py-1 pr-4 font-medium whitespace-nowrap sticky z-10 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${isFlagged ? "bg-red-50 group-hover:bg-red-100 text-red-700" : "bg-white group-hover:bg-slate-50 text-ink"}`} style={{ left: 24, minWidth: 140 }}>
+                            <td className={`py-1 pr-4 font-medium whitespace-nowrap sticky z-10 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${isFlagged ? "bg-red-50 group-hover:bg-red-100 text-red-700" : "bg-card group-hover:bg-slate-50 text-foreground"}`} style={{ left: 24, minWidth: 140 }}>
                               <span className="flex items-center gap-1">
                                 {isFlagged && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />}
                                 {row.fullName}
@@ -607,7 +615,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                               <td key={scorecard.subjects[si].id} className="py-1 px-1 text-center">
                                 {cell.pct !== null ? (
                                   <div className="flex flex-col items-center leading-tight">
-                                    <span className="tabular-nums text-ink font-medium">{cell.pct.toFixed(0)}%</span>
+                                    <span className="tabular-nums text-foreground font-medium">{cell.pct.toFixed(0)}%</span>
                                     <span className={`text-[10px] font-semibold ${cell.grade ? gradeColour(cell.grade).text : "text-slate"}`}>
                                       {cell.grade ?? "—"}
                                     </span>
@@ -617,7 +625,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                                 )}
                               </td>
                             ))}
-                            <td className={`py-1 px-1 text-center tabular-nums font-semibold border-l border-line ${isFlagged ? "text-red-600" : "text-ink"}`}>
+                            <td className={`py-1 px-1 text-center tabular-nums font-semibold border-l border-border ${isFlagged ? "text-red-600" : "text-foreground"}`}>
                               {row.meanPoints !== null ? row.meanPoints.toFixed(2) : "—"}
                             </td>
                             <td className="py-1 px-1 text-center">
@@ -655,7 +663,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-line text-slate text-left">
+                      <tr className="border-b border-border text-slate text-left">
                         <th className="pb-2 font-medium">Class</th>
                         <th className="pb-2 font-medium text-center">Students</th>
                         <th className="pb-2 font-medium text-center">Mean pts</th>
@@ -666,12 +674,12 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     </thead>
                     <tbody>
                       {sortedClassComparison.map((cc) => {
-                          const { bg, text } = cc.meanGrade ? gradeColour(cc.meanGrade) : { bg: "bg-paper", text: "text-slate" };
+                          const { bg, text } = cc.meanGrade ? gradeColour(cc.meanGrade) : { bg: "bg-background", text: "text-slate" };
                           return (
-                            <tr key={cc.schoolClass.id} className="border-b border-line last:border-0">
-                              <td className="py-1.5 pr-2 font-medium text-ink">{cc.schoolClass.name}</td>
+                            <tr key={cc.schoolClass.id} className="border-b border-border last:border-0">
+                              <td className="py-1.5 pr-2 font-medium text-foreground">{cc.schoolClass.name}</td>
                               <td className="py-1.5 text-center text-slate">{cc.studentCount}</td>
-                              <td className="py-1.5 text-center tabular-nums text-ink">{cc.meanPoints?.toFixed(2) ?? "—"}</td>
+                              <td className="py-1.5 text-center tabular-nums text-foreground">{cc.meanPoints?.toFixed(2) ?? "—"}</td>
                               <td className="py-1.5 text-center">
                                 <span className={`inline-block rounded px-1 py-0.5 text-[11px] font-semibold ${bg} ${text}`}>{cc.meanGrade ?? "—"}</span>
                               </td>
@@ -699,7 +707,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                       {sp.meanPoints !== null ? sp.meanPoints.toFixed(2) : "—"}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-ink truncate">{sp.subject.name}</p>
+                      <p className="text-xs font-medium text-foreground truncate">{sp.subject.name}</p>
                       <HBar value={sp.meanPoints !== null ? Math.round(sp.meanPoints * 100) / 100 : 0} max={12} colour="bg-royal" />
                     </div>
                   </div>
@@ -728,7 +736,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 {currentEntry && (
                   <p className="text-xs text-slate mb-3">
                     Current selection:{" "}
-                    <span className="font-semibold text-ink">
+                    <span className="font-semibold text-foreground">
                       {currentEntry.label}
                     </span>
                     {currentEntry.mean !== null && (
@@ -750,17 +758,18 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     data={lineData}
                     margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    {/* chart series — intentional */}
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                     <XAxis
                       dataKey="label"
-                      tick={{ fontSize: 10, fill: "#64748b" }}
+                      tick={{ fontSize: 10, fill: tickColor /* chart series — intentional */ }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
                       domain={[1, 12]}
                       ticks={[1, 3, 5, 7, 9, 11, 12]}
-                      tick={{ fontSize: 10, fill: "#64748b" }}
+                      tick={{ fontSize: 10, fill: tickColor /* chart series — intentional */ }}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v: number) => GRADE_LABELS[v] ? `${v} (${GRADE_LABELS[v]})` : String(v)}
@@ -772,8 +781,8 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                         const d = payload[0].payload as typeof lineData[number];
                         if (d.mean === null) return null;
                         return (
-                          <div className="bg-white border border-line rounded-lg shadow-md px-3 py-2 text-xs">
-                            <p className="font-semibold text-ink mb-0.5">{d.label}</p>
+                          <div className="bg-card border border-border rounded-lg shadow-md px-3 py-2 text-xs">
+                            <p className="font-semibold text-foreground mb-0.5">{d.label}</p>
                             <p className="text-slate">
                               Mean:{" "}
                               <span className="font-semibold text-royal tabular-nums">
@@ -783,7 +792,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                             {GRADE_LABELS[Math.round(d.mean)] && (
                               <p className="text-slate">
                                 Grade:{" "}
-                                <span className="font-semibold text-ink">
+                                <span className="font-semibold text-foreground">
                                   {GRADE_LABELS[Math.round(d.mean)]}
                                 </span>
                               </p>
@@ -801,11 +810,12 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     {currentEntry && (
                       <ReferenceLine
                         x={currentEntry.label}
-                        stroke="#1d4ed8"
+                        stroke="#1d4ed8" /* chart series — intentional */
                         strokeDasharray="4 3"
                         strokeWidth={1.5}
                       />
                     )}
+                    {/* chart series — intentional */}
                     <Line
                       type="monotone"
                       dataKey="mean"
@@ -814,8 +824,8 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                       dot={(props) => {
                         const entry = props.payload as typeof lineData[number];
                         const r = entry.isCurrent ? 5 : 3;
-                        const fill = entry.isCurrent ? "#1d4ed8" : "#fff";
-                        const stroke = "#1d4ed8";
+                        const fill = entry.isCurrent ? "#1d4ed8" : "#fff"; // chart series — intentional
+                        const stroke = "#1d4ed8"; // chart series — intentional
                         return (
                           <circle
                             key={props.key}
@@ -828,7 +838,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                           />
                         );
                       }}
-                      activeDot={{ r: 6, fill: "#1d4ed8" }}
+                      activeDot={{ r: 6, fill: "#1d4ed8" /* chart series — intentional */ }}
                       connectNulls
                     />
                   </LineChart>
@@ -845,7 +855,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                 <div className="overflow-x-auto">
                   <table className="text-xs w-full">
                     <thead>
-                      <tr className="border-b border-line text-slate text-left">
+                      <tr className="border-b border-border text-slate text-left">
                         <th className="pb-2 font-medium pr-3">Subject</th>
                         {data.subjectClassHeatmap[0].classes.map((c) => (
                           <th
@@ -856,7 +866,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                           </th>
                         ))}
                         {data.subjectClassHeatmap[0].totalMeanPoints !== null && (
-                          <th className="pb-2 font-medium text-center px-1 border-l border-line text-slate">
+                          <th className="pb-2 font-medium text-center px-1 border-l border-border text-slate">
                             Total
                           </th>
                         )}
@@ -866,9 +876,9 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                       {data.subjectClassHeatmap.map((row) => (
                         <tr
                           key={row.subjectId}
-                          className="border-b border-line last:border-0"
+                          className="border-b border-border last:border-0"
                         >
-                          <td className="py-1 pr-3 font-medium text-ink whitespace-nowrap">
+                          <td className="py-1 pr-3 font-medium text-foreground whitespace-nowrap">
                             {row.subjectName}
                           </td>
                           {row.classes.map((c) => (
@@ -881,7 +891,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                             </td>
                           ))}
                           {row.totalMeanPoints !== null && (
-                            <td className="py-1 px-1 text-center border-l border-line">
+                            <td className="py-1 px-1 text-center border-l border-border">
                               <span
                                 className={`inline-block rounded px-1.5 py-0.5 tabular-nums font-medium ${heatColourPts(row.totalMeanPoints)}`}
                               >
@@ -895,8 +905,8 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                     {/* ---- Mean points footer row ---- */}
                     {data.heatmapClassSummary?.length > 0 && (
                       <tfoot>
-                        <tr className="border-t-2 border-line bg-paper">
-                          <td className="py-2 pr-3 text-xs font-semibold text-ink whitespace-nowrap">
+                        <tr className="border-t-2 border-border bg-background">
+                          <td className="py-2 pr-3 text-xs font-semibold text-foreground whitespace-nowrap">
                             Mean points
                           </td>
                           {data.heatmapClassSummary.map((c) => (
@@ -909,7 +919,7 @@ export default function DashboardCharts({ classes, subjects, defaultClassId, def
                             </td>
                           ))}
                           {data.heatmapTotalSummary && (
-                            <td className="py-2 px-1 text-center border-l border-line">
+                            <td className="py-2 px-1 text-center border-l border-border">
                               <span
                                 className={`inline-block rounded px-1.5 py-0.5 tabular-nums font-bold text-xs ${heatColourPts(data.heatmapTotalSummary.meanPoints)}`}
                               >

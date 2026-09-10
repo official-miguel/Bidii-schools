@@ -23,7 +23,7 @@ import {
 type ClassLite = { id: string; name: string; form: number; stream?: string | null };
 
 const selectClass =
-  "rounded-md border border-line bg-white px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20";
+  "rounded-md border border-border bg-card px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20";
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -59,7 +59,7 @@ const TabBtn = memo(function TabBtn({
       role="tab"
       aria-selected={active}
       className={`px-3.5 py-1.5 text-sm rounded-md transition-colors ${
-        active ? "bg-teal text-white" : "text-slate hover:text-ink"
+        active ? "bg-teal text-white" : "text-slate hover:text-foreground"
       }`}
       onClick={() => onSelect(t)}
     >
@@ -289,19 +289,19 @@ export default function RecordsDashboard({
       </div>
 
       {/* Search + filters */}
-      <div className="bg-card border border-line rounded-xl p-3 mb-5 space-y-2.5">
+      <div className="bg-card border border-border rounded-xl p-3 mb-5 space-y-2.5">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate text-sm" aria-hidden>🔍</span>
             <input
-              className="w-full rounded-md border border-line bg-white pl-9 pr-3 py-2 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+              className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
               placeholder="Search students, admission numbers, incidents, achievements, AI summaries…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search records"
             />
           </div>
-          <div className="flex gap-1 border border-line rounded-lg p-1 bg-paper w-fit" role="tablist">
+          <div className="flex gap-1 border border-border rounded-lg p-1 bg-background w-fit" role="tablist">
             {canViewDiscipline && (
               <TabBtn t="discipline" label="Discipline" count={filteredRecords.length} activeTab={tab} onSelect={handleSetTab} />
             )}
@@ -387,13 +387,13 @@ export default function RecordsDashboard({
                   <li key={r.id}>
                     <button
                       type="button"
-                      className="w-full text-left bg-card border border-line rounded-xl px-4 py-3 hover:border-royal/40 hover:shadow-sm transition-all flex items-start gap-3"
+                      className="w-full text-left bg-card border border-border rounded-xl px-4 py-3 hover:border-royal/40 hover:shadow-sm transition-all flex items-start gap-3"
                       onClick={() => setWorkspaceStudent(r.student)}
                     >
                       <span className="text-lg mt-0.5" aria-hidden>{offenceIcon(r.offence + " " + (r.aiSummary || ""))}</span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-ink">{r.offence}</span>
+                          <span className="text-sm font-medium text-foreground">{r.offence}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status] || ""}`}>
                             {STATUS_LABELS[r.status] || r.status}
                           </span>
@@ -402,7 +402,7 @@ export default function RecordsDashboard({
                         {r.aiSummary && <span className="block text-xs text-royal mt-0.5">✨ {r.aiSummary}</span>}
                         <span className="flex items-center gap-1.5 mt-1.5">
                           <Avatar name={r.student.fullName} size="sm" />
-                          <span className="text-xs text-ink">{r.student.fullName}</span>
+                          <span className="text-xs text-foreground">{r.student.fullName}</span>
                           <span className="text-xs text-slate font-mono">{r.student.admissionNumber}</span>
                           {r.student.schoolClass && <span className="text-xs text-slate">· {r.student.schoolClass.name}</span>}
                         </span>
@@ -428,7 +428,7 @@ export default function RecordsDashboard({
               {filteredAchievements.map((a) => {
                 const meta = CATEGORY_META[a.category] || CATEGORY_META.OTHER;
                 return (
-                  <li key={a.id} className="bg-card border border-line rounded-xl p-4 hover:shadow-sm transition-shadow flex flex-col">
+                  <li key={a.id} className="bg-card border border-border rounded-xl p-4 hover:shadow-sm transition-shadow flex flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${meta.chip}`}>
                         {meta.emoji} {meta.label}
@@ -443,7 +443,7 @@ export default function RecordsDashboard({
                         </button>
                       )}
                     </div>
-                    <p className="text-sm font-medium text-ink mt-2">{a.title}</p>
+                    <p className="text-sm font-medium text-foreground mt-2">{a.title}</p>
                     {a.aiSummary && <p className="text-xs text-royal mt-1">✨ {a.aiSummary}</p>}
                     <p className="text-xs text-slate mt-1">
                       {fmtDate(a.achievementDate)}
@@ -477,8 +477,8 @@ export default function RecordsDashboard({
         </div>
 
         {/* Recent activity */}
-        <aside className="bg-card border border-line rounded-xl p-4 hidden lg:block">
-          <h2 className="text-sm font-medium text-ink mb-3">Recent activity</h2>
+        <aside className="bg-card border border-border rounded-xl p-4 hidden lg:block">
+          <h2 className="text-sm font-medium text-foreground mb-3">Recent activity</h2>
           {loading ? (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -493,12 +493,12 @@ export default function RecordsDashboard({
                 <li key={item.id}>
                   <button
                     type="button"
-                    className="w-full text-left flex items-start gap-2 hover:bg-paper rounded-md px-1.5 py-1 transition-colors"
+                    className="w-full text-left flex items-start gap-2 hover:bg-background rounded-md px-1.5 py-1 transition-colors"
                     onClick={() => setWorkspaceStudent(item.student)}
                   >
                     <span className="text-sm" aria-hidden>{item.icon}</span>
                     <span className="min-w-0">
-                      <span className="block text-xs text-ink truncate">{item.text}</span>
+                      <span className="block text-xs text-foreground truncate">{item.text}</span>
                       <span className="block text-[11px] text-slate">{fmtDate(item.date)}</span>
                     </span>
                   </button>
@@ -545,7 +545,7 @@ export default function RecordsDashboard({
 
 function EmptyBlock({ emoji, text, action }: { emoji: string; text: string; action?: { label: string; onClick: () => void } }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-card px-4 py-14 text-center">
+    <div className="rounded-xl border border-dashed border-border bg-card px-4 py-14 text-center">
       <p className="text-4xl mb-2" aria-hidden>{emoji}</p>
       <p className="text-sm text-slate">{text}</p>
       {action && (

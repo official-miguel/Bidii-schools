@@ -28,8 +28,8 @@ export default function TeacherStudentLifePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink mb-1 dark:text-dark-text">Student Life</h1>
-      <p className="text-slate text-sm mb-8 dark:text-dark-muted">
+      <h1 className="text-2xl font-semibold text-foreground mb-1">Student Life</h1>
+      <p className="text-slate text-sm mb-8">
         Access student records and boarding accommodation.
       </p>
 
@@ -38,9 +38,9 @@ export default function TeacherStudentLifePage() {
           <Link
             key={href}
             href={href}
-            className="group flex flex-col gap-4 rounded-2xl border border-line bg-white p-6
+            className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-6
                        shadow-sm transition-shadow hover:shadow-md
-                       dark:bg-dark-card dark:border-dark-border"
+                      "
           >
             {/* Icon bubble */}
             <div
@@ -55,11 +55,10 @@ export default function TeacherStudentLifePage() {
 
             {/* Text */}
             <div>
-              <p className="font-semibold text-ink group-hover:text-teal transition-colors
-                            dark:text-dark-text dark:group-hover:text-teal">
+              <p className="font-semibold text-foreground group-hover:text-teal transition-colors dark:group-hover:text-teal">
                 {title}
               </p>
-              <p className="mt-1 text-sm text-slate leading-snug dark:text-dark-muted">
+              <p className="mt-1 text-sm text-slate leading-snug">
                 {description}
               </p>
             </div>

@@ -107,7 +107,7 @@ export default function AttendanceAnalytics({ classIds }: AttendanceAnalyticsPro
               className={`px-3 py-1.5 rounded-md text-sm border ${
                 tab === t.key
                   ? "bg-teal text-white border-teal"
-                  : "bg-card text-slate border-line hover:text-ink"
+                  : "bg-card text-slate border-border hover:text-foreground"
               }`}
             >
               {t.label}
@@ -123,11 +123,11 @@ export default function AttendanceAnalytics({ classIds }: AttendanceAnalyticsPro
       ) : data.recorded === 0 ? (
         <EmptyState message="No attendance recorded in this period yet." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">{tab === "byStudent" ? "Student" : tab === "byStream" ? "Class" : "Form"}</th>
                   {metaHeader && <th className="px-5 py-3.5">{metaHeader}</th>}
                   <th className="px-5 py-3.5 w-[90px]">Present</th>
@@ -137,8 +137,8 @@ export default function AttendanceAnalytics({ classIds }: AttendanceAnalyticsPro
               </thead>
               <tbody>
                 {rows.map((b) => (
-                  <tr key={b.key} className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-ink">{b.label}</td>
+                  <tr key={b.key} className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-3.5 font-medium text-foreground">{b.label}</td>
                     {metaHeader && <td className="px-5 py-3.5 text-slate">{b.meta ?? "—"}</td>}
                     <td className="px-5 py-3.5 text-success font-semibold tabular-nums">{b.present}</td>
                     <td className="px-5 py-3.5 text-danger font-semibold tabular-nums">{b.absent}</td>

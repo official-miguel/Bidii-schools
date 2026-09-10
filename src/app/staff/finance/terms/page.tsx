@@ -46,9 +46,9 @@ function InvoicingResultPanel({ result, termName, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-lg rounded-2xl bg-card shadow-xl border border-border animate-scale-in max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             {result.fatalError ? (
               <AlertTriangle className="h-5 w-5 text-danger" />
@@ -57,11 +57,11 @@ function InvoicingResultPanel({ result, termName, onClose }: {
             ) : (
               <CheckCircle2 className="h-5 w-5 text-success" />
             )}
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               {termName} — Term created
             </h2>
           </div>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -78,20 +78,20 @@ function InvoicingResultPanel({ result, termName, onClose }: {
             <div className="grid grid-cols-4 gap-3">
               {[
                 { label: "Invoiced",        value: result.succeeded,           color: "text-success" },
-                { label: "Carried forward", value: result.carriedForward ?? 0, color: result.carriedForward ? "text-warn" : "text-slate dark:text-dark-muted" },
-                { label: "Skipped",         value: result.skipped,             color: "text-slate dark:text-dark-muted" },
-                { label: "Errors",          value: result.errors.length,       color: result.errors.length > 0 ? "text-danger" : "text-slate dark:text-dark-muted" },
+                { label: "Carried forward", value: result.carriedForward ?? 0, color: result.carriedForward ? "text-warn" : "text-slate" },
+                { label: "Skipped",         value: result.skipped,             color: "text-slate" },
+                { label: "Errors",          value: result.errors.length,       color: result.errors.length > 0 ? "text-danger" : "text-slate" },
               ].map(s => (
-                <div key={s.label} className="rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-border/20 p-3 text-center">
+                <div key={s.label} className="rounded-xl border border-border bg-background/20 p-3 text-center">
                   <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{s.label}</p>
+                  <p className="text-xs text-slate mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
           )}
 
           {(result.carriedForward ?? 0) > 0 && (
-            <p className="text-xs text-slate dark:text-dark-muted bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border">
+            <p className="text-xs text-slate bg-background border border-border rounded-lg px-3 py-2/20">
               {result.carriedForward} student{result.carriedForward !== 1 ? "s" : ""} had an unpaid balance from a previous term. Their opening balance has been recorded on this term&apos;s ledger.
             </p>
           )}
@@ -101,16 +101,16 @@ function InvoicingResultPanel({ result, termName, onClose }: {
             <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warn shrink-0" />
-                <p className="text-sm font-medium text-ink dark:text-dark-text">
+                <p className="text-sm font-medium text-foreground">
                   {result.classesWithoutFees.length} class{result.classesWithoutFees.length !== 1 ? "es" : ""} without a fee structure
                 </p>
               </div>
-              <p className="text-xs text-slate dark:text-dark-muted">
+              <p className="text-xs text-slate">
                 Students in these classes were not invoiced. Set up fee structures for them and re-run invoicing.
               </p>
               <ul className="space-y-1 mt-2">
                 {result.classesWithoutFees.map(c => (
-                  <li key={`${c.form}:${c.stream ?? ""}`} className="flex items-center gap-2 text-sm text-ink dark:text-dark-text">
+                  <li key={`${c.form}:${c.stream ?? ""}`} className="flex items-center gap-2 text-sm text-foreground">
                     <Users className="h-3.5 w-3.5 text-warn shrink-0" />
                     {c.className}
                   </li>
@@ -133,7 +133,7 @@ function InvoicingResultPanel({ result, termName, onClose }: {
               </p>
               <ul className="space-y-1 max-h-32 overflow-y-auto">
                 {result.errors.map(e => (
-                  <li key={e.studentId} className="text-xs text-slate dark:text-dark-muted">
+                  <li key={e.studentId} className="text-xs text-slate">
                     <span className="font-mono">{e.admissionNumber}</span> — {e.reason}
                   </li>
                 ))}
@@ -142,13 +142,13 @@ function InvoicingResultPanel({ result, termName, onClose }: {
           )}
 
           {!result.fatalError && result.succeeded > 0 && result.classesWithoutFees.length === 0 && result.errors.length === 0 && (
-            <p className="text-sm text-slate dark:text-dark-muted">
+            <p className="text-sm text-slate">
               All students have been invoiced successfully for this term.
             </p>
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-line dark:border-dark-border shrink-0">
+        <div className="px-5 py-4 border-t border-border shrink-0">
           <button onClick={onClose} className={primaryButtonClass}>
             Done
           </button>
@@ -184,10 +184,10 @@ function DeleteConfirmModal({ term, onClose, onDeleted }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">Delete term?</h2>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">Delete term?</h2>
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -195,17 +195,17 @@ function DeleteConfirmModal({ term, onClose, onDeleted }: {
           {error && (
             <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{error}</p>
           )}
-          <p className="text-sm text-ink dark:text-dark-text">
+          <p className="text-sm text-foreground">
             You are about to permanently delete <span className="font-semibold">{term.termName?.name ?? term.name} ({term.academicYear})</span>.
           </p>
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             This will also delete all invoices, ledger entries, and payments linked to this term. Student balances will be reversed accordingly. <span className="font-medium text-danger">This cannot be undone.</span>
           </p>
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+              className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background"
             >
               Cancel
             </button>
@@ -234,11 +234,11 @@ interface ModalProps {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "";
 
-const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1";
+const labelCls = "block text-sm font-medium text-foreground mb-1";
 
 function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
   const isEdit   = !!existing;
@@ -295,12 +295,12 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+      <div className="w-full max-w-md rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">
             {isEdit ? "Edit term" : "Add term"}
           </h2>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text">
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -315,7 +315,7 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
           <div>
             <label className={labelCls}>Term</label>
             {termNames.length === 0 ? (
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <p className="text-sm text-slate">
                 No term names configured yet. Go to{" "}
                 <a href="/staff/finance/settings" className="text-teal underline">Finance Settings</a>
                 {" "}and create financial academic terms first.
@@ -337,7 +337,7 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
               className={inputCls}
               required
             />
-            <p className="text-xs text-slate mt-1 dark:text-dark-muted">The calendar year this term runs in, e.g. 2025.</p>
+            <p className="text-xs text-slate mt-1">The calendar year this term runs in, e.g. 2025.</p>
           </div>
 
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -345,27 +345,27 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
               type="checkbox"
               checked={isActive}
               onChange={e => setIsActive(e.target.checked)}
-              className="h-4 w-4 rounded border-line accent-teal"
+              className="h-4 w-4 rounded border-border accent-teal"
             />
-            <span className="text-sm text-ink dark:text-dark-text">Set as current term (mark as active)</span>
+            <span className="text-sm text-foreground">Set as current term (mark as active)</span>
           </label>
-          <p className="text-xs text-slate -mt-2 dark:text-dark-muted">
+          <p className="text-xs text-slate -mt-2">
             Only one term should be active at a time. Activating this term will indicate the current billing period.
           </p>
 
           {!isEdit && (
             <>
-              <div className="border-t border-line dark:border-dark-border pt-3">
+              <div className="border-t border-border pt-3">
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={useCsvInvoice}
                     onChange={e => setUseCsvInvoice(e.target.checked)}
-                    className="h-4 w-4 rounded border-line accent-teal mt-0.5"
+                    className="h-4 w-4 rounded border-border accent-teal mt-0.5"
                   />
-                  <span className="text-sm text-ink dark:text-dark-text font-medium">Use CSV invoice (no fee structure required)</span>
+                  <span className="text-sm text-foreground font-medium">Use CSV invoice (no fee structure required)</span>
                 </label>
-                <p className="text-xs text-slate mt-1 pl-6.5 dark:text-dark-muted">
+                <p className="text-xs text-slate mt-1 pl-6.5">
                   Enable this when invoice amounts come from an external CSV file rather than the system fee structures. The term will be created without running automatic batch invoicing — you can then import student invoice amounts via <strong>Finance &gt; Imports</strong>.
                 </p>
               </div>
@@ -375,7 +375,7 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
                   CSV invoice mode — no fee structures needed. The term will be created immediately without invoicing students. Import balances afterwards via the Opening Balance import.
                 </p>
               ) : (
-                <p className="text-xs text-slate bg-paper border border-line rounded-lg px-3 py-2 dark:bg-dark-border/20 dark:border-dark-border dark:text-dark-muted">
+                <p className="text-xs text-slate bg-background border border-border rounded-lg px-3 py-2/20">
                   When you add this term, all students will be automatically invoiced based on their class fee structures. All classes must have a fee structure configured before a term can be created.
                 </p>
               )}
@@ -384,7 +384,7 @@ function TermModal({ existing, termNames, onClose, onSaved }: ModalProps) {
 
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted">
+              className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background">
               Cancel
             </button>
             <button type="submit" disabled={saving || termNames.length === 0} className={primaryButtonClass}>
@@ -464,7 +464,7 @@ export default function TermsPage() {
       />
 
       {termNames.length === 0 && !loading && (
-        <div className="mb-5 rounded-xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm text-ink dark:text-dark-text">
+        <div className="mb-5 rounded-xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm text-foreground">
           <span className="font-medium">Setup required:</span> No financial term names found. Go to{" "}
           <a href="/staff/finance/settings" className="text-teal underline font-medium">Finance Settings</a>
           {" "}to create term names (e.g. &quot;Term 1&quot;, &quot;Term 2&quot;) before adding terms here.
@@ -501,9 +501,9 @@ export default function TermsPage() {
                 {terms.map((t) => (
                   <tr key={t.id} className={premiumTrClass}>
                     <td className={premiumTdClass}>
-                      <p className="font-medium text-ink dark:text-dark-text">{t.termName?.name ?? t.name}</p>
+                      <p className="font-medium text-foreground">{t.termName?.name ?? t.name}</p>
                     </td>
-                    <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{t.academicYear}</td>
+                    <td className={`${premiumTdClass} text-slate`}>{t.academicYear}</td>
                     <td className={premiumTdClass}>
                       <div className="flex items-center gap-2">
                         <Badge variant={t.isActive ? "success" : "default"}>

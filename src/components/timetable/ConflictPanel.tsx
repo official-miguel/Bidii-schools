@@ -173,17 +173,17 @@ export default function ConflictPanel({
     <div
       role="complementary"
       aria-label="Conflict panel"
-      className="flex flex-col bg-white border border-line rounded-xl shadow-lg
+      className="flex flex-col bg-card border border-border rounded-xl shadow-lg
                  w-full sm:w-80 max-h-[calc(100vh-8rem)] overflow-hidden"
     >
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {isClean
             ? <CheckCircle2 className="h-4 w-4 text-success shrink-0" aria-hidden />
             : <AlertCircle  className="h-4 w-4 text-danger  shrink-0" aria-hidden />
           }
-          <p className="text-sm font-semibold text-ink">Timetable Health</p>
+          <p className="text-sm font-semibold text-foreground">Timetable Health</p>
           {!isClean && (
             <span className="inline-flex items-center gap-1.5 flex-wrap">
               {summary.totalErrors > 0 && (
@@ -204,7 +204,7 @@ export default function ConflictPanel({
         <button
           onClick={onClose}
           aria-label="Close conflict panel"
-          className="p-1.5 rounded-lg text-slate hover:text-ink hover:bg-paper transition-colors shrink-0"
+          className="p-1.5 rounded-lg text-slate hover:text-foreground hover:bg-background transition-colors shrink-0"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -294,7 +294,7 @@ export default function ConflictPanel({
 
       {/* ── Footer — Auto Fix ────────────────────────────────────────────── */}
       {errors.length > 0 && (
-        <div className="shrink-0 border-t border-line px-3 py-3 space-y-2">
+        <div className="shrink-0 border-t border-border px-3 py-3 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate">
             <button onClick={selectAll} className="hover:text-teal transition-colors">
               Select all errors
@@ -348,7 +348,7 @@ function WarningGroup({
       >
         <Icon className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${color}`} aria-hidden />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-ink leading-snug">{heading}</p>
+          <p className="text-xs font-semibold text-foreground leading-snug">{heading}</p>
           <p className="text-[10px] text-slate mt-0.5 leading-snug">{explanation}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
@@ -373,7 +373,7 @@ function WarningGroup({
               <div key={i} className="flex items-start gap-2 px-3 py-2">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-warn shrink-0" aria-hidden />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-ink leading-snug">{conflict.message}</p>
+                  <p className="text-[11px] text-foreground leading-snug">{conflict.message}</p>
                   <p className="text-[10px] text-teal mt-0.5 leading-snug">{conflict.action}</p>
                 </div>
                 <button
@@ -422,7 +422,7 @@ function ConflictEntry({
     <div
       className={`flex items-start gap-2 p-2.5 rounded-lg border mb-1.5 transition-colors
         ${checked
-          ? "bg-teal-50 border-teal/30"
+          ? "bg-teal-50 dark:bg-teal-950/60 border-teal/30"
           : "bg-danger/4 border-danger/20"
         }`}
     >
@@ -432,7 +432,7 @@ function ConflictEntry({
         checked={checked}
         onChange={onToggle}
         aria-label={`Select: ${conflict.message}`}
-        className="mt-0.5 h-3.5 w-3.5 rounded border-line shrink-0 cursor-pointer accent-teal"
+        className="mt-0.5 h-3.5 w-3.5 rounded border-border shrink-0 cursor-pointer accent-teal"
       />
 
       {/* Type icon */}
@@ -443,7 +443,7 @@ function ConflictEntry({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-ink leading-tight">{conflict.message}</p>
+        <p className="text-xs font-medium text-foreground leading-tight">{conflict.message}</p>
         <p className="text-[10px] text-teal mt-0.5 leading-snug">{conflict.action}</p>
       </div>
 

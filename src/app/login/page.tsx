@@ -14,24 +14,24 @@
 
 import { useState, useEffect, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { Logo } from "@/components/Logo";
 import { Mail, Lock, School, Eye, EyeOff, Loader2 } from "lucide-react";
 
 const inputCls =
-  "w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-3 text-sm text-ink " +
+  "w-full rounded-xl border border-border bg-background pl-10 pr-4 py-3 text-sm text-foreground " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 " +
   "hover:border-slate/40 transition-colors " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text " +
-  "dark:placeholder:text-dark-muted/50";
+  " " +
+  "";
 
 const inputClsRight =
-  "w-full rounded-xl border border-line bg-paper pl-10 pr-10 py-3 text-sm text-ink " +
+  "w-full rounded-xl border border-border bg-background pl-10 pr-10 py-3 text-sm text-foreground " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 " +
   "hover:border-slate/40 transition-colors " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text " +
-  "dark:placeholder:text-dark-muted/50";
+  " " +
+  "";
 
 function LoginForm() {
   const _router = useRouter();
@@ -129,15 +129,15 @@ function LoginForm() {
       <div className="w-full max-w-sm relative z-10">
         {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
-          <div className="rounded-2xl bg-teal/10 dark:bg-white/10 ring-1 ring-teal/20 dark:ring-white/20 p-4 mb-5 shadow-md">
-            <Image src="/logo.png" alt="Bidii" width={72} height={72} className="object-contain" priority />
+          <div className="rounded-2xl bg-teal/10 dark:bg-card/10 ring-1 ring-teal/20 dark:ring-white/20 p-4 mb-5 shadow-md">
+            <Logo height={72} width={72} alt="Bidii" className="object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-ink dark:text-white tracking-tight">Welcome back</h1>
+          <h1 className="text-2xl font-bold text-foreground dark:text-white tracking-tight">Welcome back</h1>
           <p className="text-slate dark:text-white/50 text-sm mt-1">Sign in to your school account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-[#162233] rounded-2xl overflow-hidden shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
+        <div className="bg-card dark:bg-[#162233] rounded-2xl overflow-hidden shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
           <div className="h-0.5" style={{ background: "linear-gradient(90deg, #2C7F7E, #3A9998, #2C7F7E)" }} />
           <div className="p-7">
 
@@ -157,11 +157,11 @@ function LoginForm() {
 
               {/* Email / Phone */}
               <div>
-                <label htmlFor="identifier" className="block text-sm font-medium text-ink dark:text-dark-text mb-1.5">
+                <label htmlFor="identifier" className="block text-sm font-medium text-foreground mb-1.5">
                   Email or phone number
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden="true" />
                   <input
                     id="identifier"
                     type="text"
@@ -177,11 +177,11 @@ function LoginForm() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-ink dark:text-dark-text mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden="true" />
                   <input
                     id="password"
                     type={showPwd ? "text" : "password"}
@@ -195,14 +195,14 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPwd((v) => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate dark:text-dark-muted hover:text-ink dark:hover:text-dark-text transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate hover:text-foreground transition-colors"
                     aria-label={showPwd ? "Hide password" : "Show password"}
                     tabIndex={-1}
                   >
                     {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-1.5 text-xs text-slate dark:text-dark-muted">
+                <p className="mt-1.5 text-xs text-slate">
                   Staff: first login password is your school username.
                 </p>
               </div>
@@ -210,11 +210,11 @@ function LoginForm() {
               {/* School username — only shown when same email exists at multiple schools */}
               {needsSlug && (
                 <div>
-                  <label htmlFor="schoolSlug" className="block text-sm font-medium text-ink dark:text-dark-text mb-1.5">
+                  <label htmlFor="schoolSlug" className="block text-sm font-medium text-foreground mb-1.5">
                     School username
                   </label>
                   <div className="relative">
-                    <School className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
+                    <School className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden="true" />
                     <input
                       id="schoolSlug"
                       type="text"
@@ -226,7 +226,7 @@ function LoginForm() {
                       className={inputCls}
                     />
                   </div>
-                  <p className="mt-1.5 text-xs text-slate dark:text-dark-muted">
+                  <p className="mt-1.5 text-xs text-slate">
                     Your school username was shared by your administrator.
                   </p>
                 </div>

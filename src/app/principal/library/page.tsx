@@ -46,15 +46,15 @@ function StatCard({
     <div className={`rounded-xl border p-5 flex gap-4 items-start ${
       highlight
         ? "border-danger/30 bg-danger-bg/40 dark:bg-danger/10"
-        : "bg-white border-line dark:bg-dark-surface dark:border-dark-border"
+        : "bg-card border-border"
     }`}>
       <div className={`flex items-center justify-center h-10 w-10 rounded-lg shrink-0 ${
         highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
       }`}>{icon}</div>
       <div>
-        <p className={`text-2xl font-semibold leading-none ${highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}>{value}</p>
-        <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{label}</p>
-        {sub && <p className="text-slate/60 text-xs mt-0.5 dark:text-dark-muted/60">{sub}</p>}
+        <p className={`text-2xl font-semibold leading-none ${highlight ? "text-danger" : "text-foreground"}`}>{value}</p>
+        <p className="text-slate text-sm mt-1.5">{label}</p>
+        {sub && <p className="text-slate/60 text-xs mt-0.5/60">{sub}</p>}
       </div>
     </div>
   );
@@ -96,7 +96,7 @@ export default function PrincipalLibraryPage() {
         description="School-wide library statistics, catalogue health, and outstanding fines."
         action={
           <Link href="/principal/settings?tab=library"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white text-sm font-medium px-4 py-2.5 text-ink hover:bg-paper hover:border-slate-light transition-all duration-100 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border">
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-medium px-4 py-2.5 text-foreground hover:bg-background hover:border-slate-light transition-all duration-100">
             <Settings className="h-4 w-4" /> Library settings
           </Link>
         }
@@ -128,11 +128,11 @@ export default function PrincipalLibraryPage() {
           { href: "/staff/library/analytics/reports",   icon: <DollarSign className="h-5 w-5" />, label: "Reports & Export",       desc: "Monthly/termly reports, CSV, print" },
         ].map(a => (
           <Link key={a.href} href={a.href}
-            className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">
+            className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-teal/40 hover:shadow-sm transition-all">
             <div className="h-9 w-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">{a.icon}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">{a.label}</p>
-              <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{a.desc}</p>
+              <p className="text-sm font-semibold text-foreground">{a.label}</p>
+              <p className="text-xs text-slate mt-0.5">{a.desc}</p>
             </div>
             <ArrowRight className="h-4 w-4 text-slate/40 mt-1 shrink-0" />
           </Link>
@@ -149,12 +149,12 @@ export default function PrincipalLibraryPage() {
 
       {!loading && filteredFines.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">Students with outstanding fines</h2>
-          <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+          <h2 className="text-base font-semibold text-foreground mb-3">Students with outstanding fines</h2>
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[500px]">
                 <thead>
-                  <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:bg-dark-border/30">
+                  <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide/30">
                     <th className="px-5 py-3.5">Student</th>
                     <th className="px-5 py-3.5 w-[140px]">Admission</th>
                     <th className="px-5 py-3.5 w-[140px]">Class</th>
@@ -163,10 +163,10 @@ export default function PrincipalLibraryPage() {
                 </thead>
                 <tbody>
                   {filteredFines.map(f => (
-                    <tr key={f.id} className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors dark:hover:bg-dark-border/20">
-                      <td className="px-5 py-3.5 font-medium text-ink dark:text-dark-text">{f.student.fullName}</td>
+                    <tr key={f.id} className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors/20">
+                      <td className="px-5 py-3.5 font-medium text-foreground">{f.student.fullName}</td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">{f.student.admissionNumber}</span>
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">{f.student.admissionNumber}</span>
                       </td>
                       <td className="px-5 py-3.5 text-slate text-sm">{f.student.schoolClass.name}</td>
                       <td className="px-5 py-3.5 text-right">
@@ -186,12 +186,12 @@ export default function PrincipalLibraryPage() {
       {/* Recent borrows */}
       {!loading && summary && summary.recentBorrows.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">Recent borrow activity</h2>
-          <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+          <h2 className="text-base font-semibold text-foreground mb-3">Recent borrow activity</h2>
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
                 <thead>
-                  <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:bg-dark-border/30">
+                  <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide/30">
                     <th className="px-5 py-3.5">Student</th>
                     <th className="px-5 py-3.5">Book</th>
                     <th className="px-5 py-3.5 w-[130px]">Borrowed</th>
@@ -203,15 +203,15 @@ export default function PrincipalLibraryPage() {
                   {summary.recentBorrows.map(b => {
                     const overdue = isOverdue(b.dueAt, b.returnedAt);
                     return (
-                      <tr key={b.id} className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors dark:hover:bg-dark-border/20">
+                      <tr key={b.id} className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors/20">
                         <td className="px-5 py-3.5">
                           {b.student ? (
-                            <><p className="font-medium text-ink dark:text-dark-text">{b.student.fullName}</p>
+                            <><p className="font-medium text-foreground">{b.student.fullName}</p>
                             <p className="text-xs text-slate font-mono">{b.student.admissionNumber}</p></>
                           ) : <span className="text-slate text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3.5 max-w-[200px]">
-                          <p className="truncate text-ink dark:text-dark-text">{b.title}</p>
+                          <p className="truncate text-foreground">{b.title}</p>
                           {b.author && <p className="text-xs text-slate">{b.author}</p>}
                         </td>
                         <td className="px-5 py-3.5 text-slate text-xs">{fmt(b.borrowedAt)}</td>

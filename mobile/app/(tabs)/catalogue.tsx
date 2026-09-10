@@ -16,17 +16,19 @@ import {
   ErrorBanner, StatCard, Toast, useToast,
 } from '@/components/ui';
 import { api, type CatalogueRecord } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { isLibrarian, isPrincipal, useAuth } from '@/lib/auth';
 import { truncate, pluralize } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 const FORM_OPTIONS = [0, 1, 2, 3, 4, 5, 6];
 
 export default function CatalogueScreen() {
   const router   = useRouter();
   const insets   = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { toastProps, show: showToast } = useToast();
   const canManage = isLibrarian() || isPrincipal();
 
@@ -102,12 +104,12 @@ export default function CatalogueScreen() {
 
   const renderFooter = () => loadingMore ? (
     <View style={{ paddingVertical: Spacing[6], alignItems: 'center' }}>
-      <ActivityIndicator size="small" color={Colors.teal} />
+      <ActivityIndicator size="small" color={colors.primary} />
     </View>
   ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader
         title="Catalogue"
         subtitle={total > 0 ? `${total.toLocaleString()} titles` : 'Book titles & copies'}
@@ -118,21 +120,21 @@ export default function CatalogueScreen() {
                 onPress={() => router.push('/catalogue/import')}
                 style={{
                   width: 36, height: 36, borderRadius: Radius.button,
-                  backgroundColor: Colors.white + '20',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                <Upload size={18} color={Colors.white} />
+                <Upload size={18} color={'#FFFFFF'} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/catalogue/new')}
                 style={{
                   width: 36, height: 36, borderRadius: Radius.button,
-                  backgroundColor: Colors.white + '20',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
                   alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                <Plus size={18} color={Colors.white} />
+                <Plus size={18} color={'#FFFFFF'} />
               </TouchableOpacity>
             </View>
           ) : undefined
@@ -140,7 +142,7 @@ export default function CatalogueScreen() {
       />
 
       {/* Search + filter row */}
-      <View style={{ backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.line, padding: Spacing[4], gap: Spacing[3] }}>
+      <View style={{ backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, padding: Spacing[4], gap: Spacing[3] }}>
         <View style={{ flexDirection: 'row', gap: Spacing[2] }}>
           <SearchBar
             value={query}
@@ -152,13 +154,13 @@ export default function CatalogueScreen() {
             onPress={() => setShowFilters(v => !v)}
             style={{
               width: 44, height: 44, borderRadius: Radius.button,
-              backgroundColor: showFilters ? Colors.teal50 : Colors.card,
+              backgroundColor: showFilters ? colors.primary + '15' : colors.card,
               borderWidth: 1,
-              borderColor: showFilters ? Colors.teal : Colors.line,
+              borderColor: showFilters ? colors.primary : colors.border,
               alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <Filter size={18} color={showFilters ? Colors.teal : Colors.slateText} />
+            <Filter size={18} color={showFilters ? colors.primary : colors.mutedForeground} />
           </TouchableOpacity>
         </View>
 
@@ -170,11 +172,11 @@ export default function CatalogueScreen() {
               style={{
                 paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
                 borderRadius: Radius.full, borderWidth: 1,
-                borderColor: formFilter === null ? Colors.teal : Colors.line,
-                backgroundColor: formFilter === null ? Colors.teal50 : Colors.card,
+                borderColor: formFilter === null ? colors.primary : colors.border,
+                backgroundColor: formFilter === null ? colors.primary + '15' : colors.card,
               }}
             >
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: formFilter === null ? Colors.teal : Colors.slateText }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: formFilter === null ? colors.primary : colors.mutedForeground }}>
                 All
               </Text>
             </TouchableOpacity>
@@ -185,11 +187,11 @@ export default function CatalogueScreen() {
                 style={{
                   paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
                   borderRadius: Radius.full, borderWidth: 1,
-                  borderColor: formFilter === f ? Colors.teal : Colors.line,
-                  backgroundColor: formFilter === f ? Colors.teal50 : Colors.card,
+                  borderColor: formFilter === f ? colors.primary : colors.border,
+                  backgroundColor: formFilter === f ? colors.primary + '15' : colors.card,
                 }}
               >
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: formFilter === f ? Colors.teal : Colors.slateText }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: formFilter === f ? colors.primary : colors.mutedForeground }}>
                   Form {f}
                 </Text>
               </TouchableOpacity>
@@ -206,7 +208,7 @@ export default function CatalogueScreen() {
       {/* List */}
       {loading && !refreshing ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -219,7 +221,7 @@ export default function CatalogueScreen() {
             paddingBottom: insets.bottom + Spacing[8],
           }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
           }
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
@@ -234,7 +236,7 @@ export default function CatalogueScreen() {
                   ? 'Tap + to add your first book title or import from Excel/CSV'
                   : 'The catalogue is empty'
               }
-              icon={<BookOpen size={40} color={Colors.slateText} />}
+              icon={<BookOpen size={40} color={colors.mutedForeground} />}
               actionLabel={canManage ? 'Add First Title' : undefined}
               onAction={canManage ? () => router.push('/catalogue/new') : undefined}
             />
@@ -256,16 +258,16 @@ function CatalogueRow({
   item: CatalogueRecord;
   onPress: () => void;
 }) {
-  const availableColor = Colors.success;
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
       style={{
-        backgroundColor: Colors.card,
+        backgroundColor: colors.card,
         borderWidth: 1,
-        borderColor: Colors.line,
+        borderColor: colors.border,
         borderRadius: Radius.card,
         padding: Spacing[4],
         flexDirection: 'row',
@@ -277,25 +279,25 @@ function CatalogueRow({
       <View
         style={{
           width: 44, height: 44, borderRadius: Radius.sm,
-          backgroundColor: Colors.teal50,
+          backgroundColor: colors.primary + '15',
           alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        <BookOpen size={22} color={Colors.teal} />
+        <BookOpen size={22} color={colors.primary} />
       </View>
 
       {/* Details */}
       <View style={{ flex: 1, gap: Spacing[1] }}>
         <Text
-          style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }}
+          style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }}
           numberOfLines={2}
         >
           {item.title}
         </Text>
 
         <Text
-          style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}
+          style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}
           numberOfLines={1}
         >
           {[item.author && `by ${item.author}`, item.edition, item.subject]
@@ -312,9 +314,9 @@ function CatalogueRow({
           <View style={{
             paddingHorizontal: Spacing[2], paddingVertical: 1,
             borderRadius: Radius.full,
-            backgroundColor: Colors.teal50,
+            backgroundColor: colors.primary + '15',
           }}>
-            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.teal }}>
+            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.primary }}>
               {pluralize(item.totalCopies, 'copy', 'copies')}
             </Text>
           </View>

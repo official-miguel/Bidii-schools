@@ -14,9 +14,10 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenHeader, Input, Button, Card, ErrorBanner, Toast, useToast } from '@/components/ui';
 import { api, CreateCatalogueInput } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { syncService } from '@/services/sync';
 import { getErrorMessage } from '@/lib/utils';
+import { useTheme } from '@/lib/ThemeContext';
 
 const CATEGORIES = ['TEXTBOOK', 'REFERENCE', 'NOVEL', 'PERIODICAL', 'DICTIONARY', 'ATLAS', 'OTHER'];
 const FORMS      = [1, 2, 3, 4, 5, 6];
@@ -24,6 +25,7 @@ const FORMS      = [1, 2, 3, 4, 5, 6];
 export default function NewCatalogueScreen() {
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const router     = useRouter();
+  const { colors } = useTheme();
   const { toastProps, show: showToast } = useToast();
   const isEdit     = !!editId;
 
@@ -130,7 +132,7 @@ export default function NewCatalogueScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: Colors.paper }}
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
       <ScreenHeader
         title={isEdit ? 'Edit Book' : 'Add New Book'}
@@ -225,25 +227,25 @@ export default function NewCatalogueScreen() {
 
             {/* Form selector */}
             <View>
-              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.ink, marginBottom: Spacing[2] }}>
+              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: colors.foreground, marginBottom: Spacing[2] }}>
                 Form / Level
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] }}>
-                <TouchPill label="Any" active={form === null} onPress={() => setForm(null)} />
+                <TouchPill label="Any" active={form === null} onPress={() => setForm(null)} colors={colors} />
                 {FORMS.map(f => (
-                  <TouchPill key={f} label={`Form ${f}`} active={form === f} onPress={() => setForm(f)} />
+                  <TouchPill key={f} label={`Form ${f}`} active={form === f} onPress={() => setForm(f)} colors={colors} />
                 ))}
               </View>
             </View>
 
             {/* Category selector */}
             <View>
-              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.ink, marginBottom: Spacing[2] }}>
+              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: colors.foreground, marginBottom: Spacing[2] }}>
                 Category
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] }}>
                 {CATEGORIES.map(c => (
-                  <TouchPill key={c} label={c.charAt(0) + c.slice(1).toLowerCase()} active={category === c} onPress={() => setCategory(c)} />
+                  <TouchPill key={c} label={c.charAt(0) + c.slice(1).toLowerCase()} active={category === c} onPress={() => setCategory(c)} colors={colors} />
                 ))}
               </View>
             </View>
@@ -286,25 +288,28 @@ export default function NewCatalogueScreen() {
 }
 
 function SectionTitle({ children }: { children: string }) {
+  const { colors } = useTheme();
   return (
-    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
+    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
       {children}
     </Text>
   );
 }
 
-function TouchPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+import type { ColorTokens } from '@/constants';
+
+function TouchPill({ label, active, onPress, colors }: { label: string; active: boolean; onPress: () => void; colors: ColorTokens }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       style={{
         paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
         borderRadius: Radius.full, borderWidth: 1,
-        borderColor: active ? Colors.teal : Colors.line,
-        backgroundColor: active ? Colors.teal50 : Colors.card,
+        borderColor: active ? colors.primary : colors.border,
+        backgroundColor: active ? colors.primary + '15' : colors.card,
       }}
     >
-      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: active ? Colors.teal : Colors.slateText }}>
+      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: active ? colors.primary : colors.mutedForeground }}>
         {label}
       </Text>
     </TouchableOpacity>

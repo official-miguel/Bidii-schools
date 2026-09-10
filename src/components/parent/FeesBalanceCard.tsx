@@ -35,14 +35,14 @@ export default function FeesBalanceCard({
   const secondaryStats =
     totalInvoiced !== null || totalPaid !== null ? (
       <div className="mt-3 flex gap-6 text-xs">
-        <span className="text-slate dark:text-dark-muted">
-          <span className="font-semibold text-ink dark:text-dark-text">
+        <span className="text-slate">
+          <span className="font-semibold text-foreground">
             {totalInvoiced !== null ? formatKsh(totalInvoiced) : "—"}
           </span>{" "}
           invoiced
         </span>
-        <span className="text-slate dark:text-dark-muted">
-          <span className="font-semibold text-ink dark:text-dark-text">
+        <span className="text-slate">
+          <span className="font-semibold text-foreground">
             {totalPaid !== null ? formatKsh(totalPaid) : "—"}
           </span>{" "}
           paid
@@ -53,19 +53,19 @@ export default function FeesBalanceCard({
   // Null balance — account not set up
   if (currentBalance === null) {
     return (
-      <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-        <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-3">
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
           Current Balance
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-slate/10 flex items-center justify-center shrink-0">
-            <HelpCircle className="h-5 w-5 text-slate dark:text-dark-muted" />
+            <HelpCircle className="h-5 w-5 text-slate" />
           </div>
           <div>
-            <p className="text-lg font-semibold text-slate dark:text-dark-muted">
+            <p className="text-lg font-semibold text-slate">
               Balance information unavailable
             </p>
-            <p className="text-xs text-slate/70 dark:text-dark-muted/70">
+            <p className="text-xs text-slate/70/70">
               Finance account not yet set up for this student.
             </p>
           </div>

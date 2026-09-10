@@ -12,7 +12,8 @@ import {
   ViewStyle,
   TouchableOpacity,
 } from 'react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing, Colors } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -41,18 +42,19 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   ref
 ) {
   const [focused, setFocused] = useState(false);
+  const { colors } = useTheme();
 
   const borderColor = error
-    ? Colors.danger
+    ? colors.destructive
     : focused
-    ? Colors.teal
-    : Colors.line;
+    ? colors.primary
+    : colors.border;
 
   const ringColor = error
-    ? Colors.danger + '30'
+    ? colors.destructive + '30'
     : focused
-    ? Colors.teal + '25'
-    : Colors.transparent;
+    ? colors.primary + '25'
+    : 'transparent';
 
   return (
     <View style={containerStyle}>
@@ -62,13 +64,13 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           style={{
             fontSize: Typography.fontSize.sm,
             fontWeight: Typography.fontWeight.medium,
-            color: Colors.ink,
+            color: colors.foreground,
             marginBottom: Spacing[1.5],
           }}
         >
           {label}
           {required && (
-            <Text style={{ color: Colors.danger }}> *</Text>
+            <Text style={{ color: colors.destructive }}> *</Text>
           )}
         </Text>
       )}
@@ -81,7 +83,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           borderWidth: focused ? 1.5 : 1,
           borderColor,
           borderRadius: Radius.button,
-          backgroundColor: Colors.paper,
+          backgroundColor: colors.input,
           // Soft focus ring via shadow on iOS
           ...(focused && {
             shadowColor: ringColor,
@@ -108,12 +110,12 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
               paddingHorizontal: prefixIcon ? Spacing[2] : Spacing[3],
               paddingVertical: Spacing[2.5],
               fontSize: Typography.fontSize.sm,
-              color: Colors.ink,
+              color: colors.foreground,
               fontFamily: Typography.fontFamily.sans,
             },
             style,
           ]}
-          placeholderTextColor={Colors.muted}
+          placeholderTextColor={colors.placeholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           {...rest}
@@ -137,7 +139,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         <Text
           style={{
             fontSize: Typography.fontSize.xs,
-            color: Colors.danger,
+            color: colors.destructive,
             marginTop: Spacing[1],
           }}
         >
@@ -150,7 +152,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         <Text
           style={{
             fontSize: Typography.fontSize.xs,
-            color: Colors.slateText,
+            color: colors.mutedForeground,
             marginTop: Spacing[1],
           }}
         >

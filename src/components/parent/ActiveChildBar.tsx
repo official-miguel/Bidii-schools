@@ -21,11 +21,11 @@ export default function ActiveChildBar() {
 
   return (
     <span
-      className="hidden md:flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted
-                 bg-paper dark:bg-dark-surface border border-line dark:border-dark-border
+      className="hidden md:flex items-center gap-1.5 text-xs text-slate
+                 bg-background border border-border
                  rounded-full px-3 py-1 select-none"
     >
-      <span className="font-medium text-ink dark:text-dark-text">{child.fullName}</span>
+      <span className="font-medium text-foreground">{child.fullName}</span>
       <span aria-hidden="true">·</span>
       <span>{child.className}</span>
     </span>

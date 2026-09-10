@@ -86,7 +86,7 @@ export const CATEGORY_META: Record<string, { label: string; emoji: string; chip:
   LEADERSHIP: { label: "Leadership", emoji: "👑", chip: "bg-royal-50 text-royal border-blue-200" },
   ACADEMICS: { label: "Academic Excellence", emoji: "🎓", chip: "bg-success-bg text-success border-green-200" },
   INNOVATION: { label: "Innovation", emoji: "💻", chip: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-  OTHER: { label: "Other", emoji: "🎨", chip: "bg-paper text-slate border-line" },
+  OTHER: { label: "Other", emoji: "🎨", chip: "bg-background text-slate border-border" },
 };
 
 export const OFFENCE_ICONS: [RegExp, string][] = [
@@ -166,7 +166,7 @@ export function StatCard({
   loading?: boolean;
 }) {
   return (
-    <div className="bg-card border border-line rounded-xl p-4 shadow-[0_1px_2px_rgba(30,58,138,0.06)] flex items-center gap-3 min-w-0">
+    <div className="bg-card border border-border rounded-xl p-4 shadow-[0_1px_2px_rgba(30,58,138,0.06)] flex items-center gap-3 min-w-0">
       <span className="w-10 h-10 rounded-lg bg-royal-50 flex items-center justify-center text-lg shrink-0" aria-hidden>
         {icon}
       </span>
@@ -174,7 +174,7 @@ export function StatCard({
         {loading ? (
           <Skeleton className="h-7 w-12 mb-1" />
         ) : (
-          <p className="font-display text-2xl font-semibold text-ink leading-tight">{value}</p>
+          <p className="font-display text-2xl font-semibold text-foreground leading-tight">{value}</p>
         )}
         <p className="text-xs text-slate truncate">{label}</p>
       </div>

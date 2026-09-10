@@ -91,7 +91,7 @@ export default function StaffRankTable({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-slate">
+      <div className="rounded-xl border border-dashed border-border px-4 py-12 text-center text-sm text-slate">
         No ranking data for this period.
       </div>
     );
@@ -114,11 +114,11 @@ export default function StaffRankTable({
   }), [rows, sortKey, sortAsc]);
 
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+            <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
               <SortTh label="#"          k="rank"       sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} className="w-[80px]" />
               <th className="px-5 py-3.5 whitespace-nowrap">Teacher</th>
               <SortTh label="Subject"    k="subject"    sortKey={sortKey} sortAsc={sortAsc} onSort={handleSort} />
@@ -135,7 +135,7 @@ export default function StaffRankTable({
               return (
                 <tr
                   key={r.teacherId}
-                  className={`border-b border-line last:border-0 transition-colors ${
+                  className={`border-b border-border last:border-0 transition-colors ${
                     isHighlighted
                       ? "bg-teal-50/60 hover:bg-teal-50"
                       : "hover:bg-slate-50/50"
@@ -145,7 +145,7 @@ export default function StaffRankTable({
                     <RankCell rank={r.rank} />
                   </td>
                   <td className="px-5 py-3.5">
-                    <p className={`text-sm ${isHighlighted ? "font-semibold text-teal" : "font-medium text-ink"}`}>
+                    <p className={`text-sm ${isHighlighted ? "font-semibold text-teal" : "font-medium text-foreground"}`}>
                       {r.teacherName}
                       {isHighlighted && (
                         <Chip variant="teal" size="xs" className="ml-2">You</Chip>

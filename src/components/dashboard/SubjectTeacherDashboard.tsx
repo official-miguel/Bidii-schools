@@ -36,8 +36,8 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
   if (!teacher) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Welcome</h1>
-        <p className="text-slate dark:text-dark-muted text-sm">
+        <h1 className="text-2xl font-semibold text-foreground">Welcome</h1>
+        <p className="text-slate text-sm">
           Your account isn&apos;t linked to a staff record yet. Ask the principal to link you from the Staff panel.
         </p>
       </div>
@@ -72,10 +72,10 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-2xl font-semibold text-foreground">
           Welcome, {teacher.fullName}
         </h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+        <p className="text-slate text-sm mt-1">
           {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -89,8 +89,8 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
 
       {/* Today's lessons */}
       {teacher.timetableSlots.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">Today&apos;s lessons</p>
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <p className="text-sm font-semibold text-foreground mb-3">Today&apos;s lessons</p>
           <div className="space-y-2">
             {teacher.timetableSlots.map((slot) => (
               <div key={slot.id} className="flex items-center justify-between text-sm p-2.5 rounded-lg bg-teal-50 dark:bg-teal/5">
@@ -99,8 +99,8 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
                     P{slot.period}
                   </span>
                   <div>
-                    <p className="text-ink font-medium dark:text-dark-text">{slot.subject.name}</p>
-                    <p className="text-xs text-slate dark:text-dark-muted">
+                    <p className="text-foreground font-medium">{slot.subject.name}</p>
+                    <p className="text-xs text-slate">
                       {slot.schoolClass.name} · {slot.schoolClass._count.students} students
                       {slot.room ? ` · ${slot.room}` : ""}
                     </p>
@@ -117,24 +117,24 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
       )}
 
       {teacher.timetableSlots.length === 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm text-slate dark:text-dark-muted">No lessons scheduled for today.</p>
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <p className="text-sm text-slate">No lessons scheduled for today.</p>
           <Link href="/teacher/timetable" className="text-xs text-teal hover:underline mt-2 inline-block">View full timetable →</Link>
         </div>
       )}
 
       {/* Subjects list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">Your subjects</p>
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <p className="text-sm font-semibold text-foreground mb-3">Your subjects</p>
           {teacher.teacherSubjects.length === 0
-            ? <p className="text-sm text-slate dark:text-dark-muted">No subjects assigned yet.</p>
+            ? <p className="text-sm text-slate">No subjects assigned yet.</p>
             : (
               <ul className="space-y-1.5">
                 {teacher.teacherSubjects.map((ts) => (
-                  <li key={ts.subject.id} className="text-sm text-ink dark:text-dark-text">
+                  <li key={ts.subject.id} className="text-sm text-foreground">
                     {ts.subject.name}
-                    <span className="text-slate/60 dark:text-dark-muted/60 ml-1.5">({ts.subject.code})</span>
+                    <span className="text-slate/60/60 ml-1.5">({ts.subject.code})</span>
                   </li>
                 ))}
               </ul>
@@ -142,21 +142,21 @@ export default async function SubjectTeacherDashboard({ user }: Props) {
         </div>
 
         {/* Assessment deadlines */}
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Assessment deadlines</p>
+            <p className="text-sm font-semibold text-foreground">Assessment deadlines</p>
             <Link href="/teacher/assessments" className="text-xs text-teal hover:underline">Enter marks</Link>
           </div>
           {activePeriods.length === 0
-            ? <p className="text-sm text-slate dark:text-dark-muted">No active assessment periods.</p>
+            ? <p className="text-sm text-slate">No active assessment periods.</p>
             : (
               <ul className="space-y-2">
                 {activePeriods.map((ap) => (
                   <li key={ap.id} className="flex items-center justify-between text-sm">
-                    <span className="text-ink dark:text-dark-text truncate">{ap.name}</span>
+                    <span className="text-foreground truncate">{ap.name}</span>
                     {ap.closingDate
                       ? <CountdownTimer deadline={ap.closingDate.toISOString()} label="Due" />
-                      : <span className="text-xs text-slate dark:text-dark-muted">No deadline</span>
+                      : <span className="text-xs text-slate">No deadline</span>
                     }
                   </li>
                 ))}

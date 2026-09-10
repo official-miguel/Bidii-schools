@@ -59,10 +59,10 @@ export default function ParentHome() {
       {data.children.map((child) => (
         <div
           key={child.studentId}
-          className="bg-white border border-line rounded-xl p-5 shadow-sm flex flex-col gap-3"
+          className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col gap-3"
         >
           <div>
-            <p className="font-semibold text-ink text-base">{child.fullName}</p>
+            <p className="font-semibold text-foreground text-base">{child.fullName}</p>
             <p className="text-xs text-slate mt-0.5">
               {child.className} &middot; Adm. {child.admissionNumber}
             </p>
@@ -71,7 +71,7 @@ export default function ParentHome() {
           {child.periodName && (
             <p className="text-xs text-slate">
               Latest period:{" "}
-              <span className="font-medium text-ink">{child.periodName}</span>
+              <span className="font-medium text-foreground">{child.periodName}</span>
             </p>
           )}
 

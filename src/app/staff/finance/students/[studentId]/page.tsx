@@ -225,9 +225,9 @@ function SetupInvoicePanel({
   }
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
     "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-    "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+    "";
 
   // Items not yet selected (for the dropdown)
   const availableItems = expenseItems.filter(
@@ -238,14 +238,14 @@ function SetupInvoicePanel({
     <div className="rounded-xl border border-warn/40 bg-warn/5 p-5 mb-6 dark:bg-warn/10 dark:border-warn/20">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-warn" aria-hidden="true" />
           Set Up Fees Balance — {studentName}
         </h3>
         <button
           type="button"
           onClick={onClose}
-          className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors"
+          className="text-slate hover:text-foreground transition-colors"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -260,14 +260,14 @@ function SetupInvoicePanel({
 
       {step === "form" ? (
         <div className="space-y-4">
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             This student was added after batch invoicing ran. Set the basic fees and
             optionally attach expense items — each with a standard or custom charge.
           </p>
 
           {/* Term selector */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+            <label className="block text-xs font-medium text-slate mb-1.5">
               Term <span className="text-danger">*</span>
             </label>
             {loadingInit ? (
@@ -290,7 +290,7 @@ function SetupInvoicePanel({
 
           {/* Basic fees */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+            <label className="block text-xs font-medium text-slate mb-1.5">
               Basic fees amount (KES) <span className="text-danger">*</span>
             </label>
             <input
@@ -303,14 +303,14 @@ function SetupInvoicePanel({
               className={inputCls}
               autoFocus
             />
-            <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+            <p className="mt-1 text-xs text-slate">
               Base tuition / term fees. Can match or differ from what other students pay.
             </p>
           </div>
 
           {/* Expense items */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+            <label className="block text-xs font-medium text-slate mb-1.5">
               Expense items <span className="text-slate/50">(optional)</span>
             </label>
 
@@ -346,10 +346,10 @@ function SetupInvoicePanel({
                   return (
                     <div
                       key={e.itemId}
-                      className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border px-3 py-2.5"
+                      className="rounded-lg border border-border bg-card px-3 py-2.5"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                        <span className="text-sm font-medium text-foreground truncate">
                           {e.name}
                         </span>
                         <button
@@ -375,13 +375,13 @@ function SetupInvoicePanel({
                           <button
                             type="button"
                             onClick={() => setExpenseCustomPrice(e.itemId, "")}
-                            className="text-xs text-slate hover:text-ink whitespace-nowrap shrink-0 dark:text-dark-muted"
+                            className="text-xs text-slate hover:text-foreground whitespace-nowrap shrink-0"
                           >
                             Reset
                           </button>
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-slate dark:text-dark-muted">
+                      <p className="mt-1 text-xs text-slate">
                         {customSet
                           ? `Custom: KES ${effectiveAmt.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`
                           : `Using standard price: KES ${effectiveAmt.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`}
@@ -395,25 +395,25 @@ function SetupInvoicePanel({
 
           {/* Running total preview */}
           {totalNum > 0 && (
-            <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+            <div className="rounded-lg border border-border bg-card divide-y divide-border text-sm">
               {basicNum > 0 && (
                 <div className="flex justify-between px-4 py-2.5">
-                  <span className="text-slate dark:text-dark-muted">Basic fees</span>
-                  <span className="font-medium tabular-nums text-ink dark:text-dark-text">
+                  <span className="text-slate">Basic fees</span>
+                  <span className="font-medium tabular-nums text-foreground">
                     KES {basicNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               )}
               {selectedExpenses.map((e) => (
                 <div key={e.itemId} className="flex justify-between px-4 py-2.5">
-                  <span className="text-slate dark:text-dark-muted">{e.name}</span>
-                  <span className="font-medium tabular-nums text-ink dark:text-dark-text">
+                  <span className="text-slate">{e.name}</span>
+                  <span className="font-medium tabular-nums text-foreground">
                     KES {effectivePrice(e).toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}
-              <div className="flex justify-between px-4 py-2.5 bg-paper/60 dark:bg-dark-border/10">
-                <span className="font-semibold text-ink dark:text-dark-text">Total invoice</span>
+              <div className="flex justify-between px-4 py-2.5 bg-background/60/10">
+                <span className="font-semibold text-foreground">Total invoice</span>
                 <span className="font-bold tabular-nums text-danger">
                   KES {totalNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                 </span>
@@ -437,10 +437,10 @@ function SetupInvoicePanel({
           <div className="rounded-lg border border-warn/30 bg-warn-bg/60 px-4 py-3 flex gap-3 items-start">
             <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 Confirm fees balance setup
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 This will create a permanent invoice entry in the student&apos;s
                 ledger. The action <span className="font-semibold text-danger">cannot be undone</span>.
               </p>
@@ -448,7 +448,7 @@ function SetupInvoicePanel({
           </div>
 
           {/* Summary */}
-          <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+          <div className="rounded-lg border border-border bg-card divide-y divide-border text-sm">
             {[
               { label: "Student", value: studentName },
               { label: "Term",    value: selectedTerm ? `${selectedTerm.name} (${selectedTerm.academicYear})` : termId },
@@ -460,8 +460,8 @@ function SetupInvoicePanel({
               { label: "Total invoice", value: `KES ${totalNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
             ].map((row) => (
               <div key={row.label} className="flex justify-between px-4 py-2.5">
-                <span className="text-slate dark:text-dark-muted">{row.label}</span>
-                <span className={`font-medium text-ink dark:text-dark-text ${row.label === "Total invoice" ? "text-danger font-bold" : ""}`}>
+                <span className="text-slate">{row.label}</span>
+                <span className={`font-medium text-foreground ${row.label === "Total invoice" ? "text-danger font-bold" : ""}`}>
                   {row.value}
                 </span>
               </div>
@@ -486,7 +486,7 @@ function SetupInvoicePanel({
               type="button"
               onClick={() => setStep("form")}
               disabled={submitting}
-              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-slate hover:text-ink transition-colors dark:border-dark-border dark:text-dark-muted"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-slate hover:text-foreground transition-colors"
             >
               Go back
             </button>
@@ -552,20 +552,20 @@ function PostPaymentPanel({
   }
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
     "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-    "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+    "";
 
   return (
     <div className="rounded-xl border border-teal/30 bg-teal/5 p-5 mb-6 dark:bg-teal/10 dark:border-teal/20">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Banknote className="h-4 w-4 text-teal" aria-hidden="true" />
           Post Payment — {studentName}
         </h3>
         <button
           type="button" onClick={onClose}
-          className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors"
+          className="text-slate hover:text-foreground transition-colors"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -578,7 +578,7 @@ function PostPaymentPanel({
         <div className="space-y-3">
           {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+            <label className="block text-xs font-medium text-slate mb-1">
               Amount (KES) <span className="text-danger">*</span>
             </label>
             <input
@@ -593,7 +593,7 @@ function PostPaymentPanel({
 
           {/* Method */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+            <label className="block text-xs font-medium text-slate mb-1">
               Payment method
             </label>
             <div className="flex gap-2">
@@ -604,7 +604,7 @@ function PostPaymentPanel({
                   className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                     method === m.value
                       ? "bg-teal text-white border-teal"
-                      : "bg-white border-line text-slate hover:border-teal/40 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                      : "bg-card border-border text-slate hover:border-teal/40"
                   }`}
                 >
                   {m.label}
@@ -615,7 +615,7 @@ function PostPaymentPanel({
 
           {/* Reference (optional) */}
           <div>
-            <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+            <label className="block text-xs font-medium text-slate mb-1">
               Reference <span className="text-slate/50">(optional)</span>
             </label>
             <input
@@ -643,10 +643,10 @@ function PostPaymentPanel({
           <div className="rounded-lg border border-warn/30 bg-warn-bg/60 px-4 py-3 flex gap-3 items-start">
             <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 Are you sure you want to post this payment?
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 This action is <span className="font-semibold text-danger">irreversible</span>.
                 Once posted, the payment is permanently recorded in the student&apos;s ledger.
               </p>
@@ -654,7 +654,7 @@ function PostPaymentPanel({
           </div>
 
           {/* Summary */}
-          <div className="rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+          <div className="rounded-lg border border-border bg-card divide-y divide-border text-sm">
             {[
               { label: "Student",  value: studentName },
               { label: "Amount",   value: `KES ${amountNum.toLocaleString("en-KE", { minimumFractionDigits: 2 })}` },
@@ -662,8 +662,8 @@ function PostPaymentPanel({
               ...(reference.trim() ? [{ label: "Reference", value: reference.trim() }] : []),
             ].map(row => (
               <div key={row.label} className="flex justify-between px-4 py-2.5">
-                <span className="text-slate dark:text-dark-muted">{row.label}</span>
-                <span className="font-medium text-ink dark:text-dark-text">{row.value}</span>
+                <span className="text-slate">{row.label}</span>
+                <span className="font-medium text-foreground">{row.value}</span>
               </div>
             ))}
           </div>
@@ -682,7 +682,7 @@ function PostPaymentPanel({
               type="button"
               onClick={() => setStep("form")}
               disabled={submitting}
-              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-slate hover:text-ink transition-colors dark:border-dark-border dark:text-dark-muted"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-slate hover:text-foreground transition-colors"
             >
               Go back
             </button>
@@ -757,7 +757,7 @@ export default function StudentLedgerPage() {
     <div>
       <Link
         href="/staff/finance/students"
-        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-ink mb-4 transition-colors dark:text-dark-muted dark:hover:text-dark-text"
+        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-foreground mb-4 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Back to students
@@ -827,10 +827,10 @@ export default function StudentLedgerPage() {
         <div className="mb-5 rounded-xl border border-warn/40 bg-warn/5 px-4 py-3 flex items-start gap-3 dark:bg-warn/10 dark:border-warn/20">
           <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">
+            <p className="text-sm font-semibold text-foreground">
               Finance setup pending
             </p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+            <p className="text-xs text-slate mt-0.5">
               This student was added after batch invoicing ran. Use{" "}
               <button
                 type="button"
@@ -855,7 +855,7 @@ export default function StudentLedgerPage() {
             { label: "Invoices",        value: String(invoices.length),           icon: <FileText     className="h-5 w-5" />, highlight: false },
           ].map(c => (
             <div key={c.label} className={`rounded-xl border p-4 flex gap-3 items-start ${
-              c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-white border-line dark:bg-dark-surface dark:border-dark-border"
+              c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-card border-border"
             }`}>
               <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
                 c.highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
@@ -864,9 +864,9 @@ export default function StudentLedgerPage() {
               </div>
               <div>
                 <p className={`text-xl font-semibold tabular-nums leading-none ${
-                  c.highlight ? "text-danger" : "text-ink dark:text-dark-text"
+                  c.highlight ? "text-danger" : "text-foreground"
                 }`}>{c.value}</p>
-                <p className="text-xs text-slate mt-1 dark:text-dark-muted">{c.label}</p>
+                <p className="text-xs text-slate mt-1">{c.label}</p>
               </div>
             </div>
           ))}
@@ -874,11 +874,11 @@ export default function StudentLedgerPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-line mb-5 dark:border-dark-border">
+      <div className="flex gap-0 border-b border-border mb-5">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t.id ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+              tab === t.id ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"
             }`}>
             {t.icon}
             {t.label}
@@ -895,7 +895,7 @@ export default function StudentLedgerPage() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-12 rounded-xl border border-line bg-paper animate-pulse" />
+            <div key={i} className="h-12 rounded-xl border border-border bg-background animate-pulse" />
           ))}
         </div>
       ) : tab === "ledger" ? (
@@ -929,7 +929,7 @@ export default function StudentLedgerPage() {
                           className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""} ${hasBreakdown ? "cursor-pointer hover:bg-teal/5" : ""}`}
                           onClick={() => hasBreakdown && setExpandedEntryId(isExpanded ? null : e.id)}
                         >
-                          <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted whitespace-nowrap`}>{formatDate(e.postedAt)}</td>
+                          <td className={`${premiumTdClass} text-slate text-xs whitespace-nowrap`}>{formatDate(e.postedAt)}</td>
                           <td className={premiumTdClass}>
                             <div className="flex items-center gap-1.5">
                               {hasBreakdown && (isExpanded
@@ -939,37 +939,37 @@ export default function StudentLedgerPage() {
                             </div>
                             {e.isVoided && <span className="ml-1 text-xs text-slate">(voided)</span>}
                           </td>
-                          <td className={`${premiumTdClass} text-ink dark:text-dark-text max-w-[220px]`}>
+                          <td className={`${premiumTdClass} text-foreground max-w-[220px]`}>
                             <span className="truncate block">{e.description}</span>
                             {hasBreakdown && !isExpanded && (
-                              <span className="text-xs text-slate dark:text-dark-muted">
+                              <span className="text-xs text-slate">
                                 {lineItems.length} item{lineItems.length !== 1 ? "s" : ""} — click to expand
                               </span>
                             )}
                           </td>
-                          <td className={`${premiumTdClass} text-right tabular-nums font-medium text-ink dark:text-dark-text`}>{formatKES(e.amount)}</td>
+                          <td className={`${premiumTdClass} text-right tabular-nums font-medium text-foreground`}>{formatKES(e.amount)}</td>
                           <td className={`${premiumTdClass} text-right tabular-nums font-semibold ${rb < 0 ? "text-danger" : "text-success"}`}>{formatKES(e.runningBalance)}</td>
                         </tr>
 
                         {isExpanded && hasBreakdown && (
                           <>
                             {lineItems.map((li, idx) => (
-                              <tr key={`${e.id}-li-${idx}`} className="bg-paper/60 dark:bg-dark-border/10 border-b border-line/40 dark:border-dark-border/40">
-                                <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted`} />
+                              <tr key={`${e.id}-li-${idx}`} className="bg-background/60/10 border-b border-border/40/40">
+                                <td className={`${premiumTdClass} text-slate text-xs`} />
                                 <td className={premiumTdClass}>
                                   <span className={`text-xs rounded-full px-2 py-0.5 font-medium border ${
                                     li.type === "BASE_FEE" ? "bg-teal/5 text-teal border-teal/20" : "bg-warn/5 text-warn border-warn/20"
                                   }`}>{li.type === "BASE_FEE" ? "Base fee" : "Expense"}</span>
                                 </td>
-                                <td className={`${premiumTdClass} text-slate dark:text-dark-muted pl-8`}>{li.description}</td>
-                                <td className={`${premiumTdClass} text-right tabular-nums text-slate dark:text-dark-muted`}>{formatKES(String(li.amount))}</td>
+                                <td className={`${premiumTdClass} text-slate pl-8`}>{li.description}</td>
+                                <td className={`${premiumTdClass} text-right tabular-nums text-slate`}>{formatKES(String(li.amount))}</td>
                                 <td className={premiumTdClass} />
                               </tr>
                             ))}
-                            <tr className="bg-paper/80 dark:bg-dark-border/20 border-b-2 border-line dark:border-dark-border">
+                            <tr className="bg-background/80/20 border-b-2 border-border">
                               <td className={premiumTdClass} /><td className={premiumTdClass} />
-                              <td className={`${premiumTdClass} pl-8 text-xs font-semibold text-ink dark:text-dark-text`}>Total invoice</td>
-                              <td className={`${premiumTdClass} text-right tabular-nums font-bold text-ink dark:text-dark-text`}>{formatKES(e.amount)}</td>
+                              <td className={`${premiumTdClass} pl-8 text-xs font-semibold text-foreground`}>Total invoice</td>
+                              <td className={`${premiumTdClass} text-right tabular-nums font-bold text-foreground`}>{formatKES(e.amount)}</td>
                               <td className={premiumTdClass} />
                             </tr>
                           </>
@@ -1002,10 +1002,10 @@ export default function StudentLedgerPage() {
                 <tbody>
                   {payments.map(p => (
                     <tr key={p.id} className={premiumTrClass}>
-                      <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted`}>{formatDate(p.paidAt)}</td>
-                      <td className={premiumTdClass}><span className="font-mono text-xs text-ink dark:text-dark-text">{p.receiptNumber}</span></td>
-                      <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{p.method}</td>
-                      <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{p.term?.name ?? "—"}</td>
+                      <td className={`${premiumTdClass} text-slate text-xs`}>{formatDate(p.paidAt)}</td>
+                      <td className={premiumTdClass}><span className="font-mono text-xs text-foreground">{p.receiptNumber}</span></td>
+                      <td className={`${premiumTdClass} text-slate`}>{p.method}</td>
+                      <td className={`${premiumTdClass} text-slate`}>{p.term?.name ?? "—"}</td>
                       <td className={`${premiumTdClass} text-right tabular-nums font-semibold text-success`}>{formatKES(p.amount)}</td>
                       <td className={premiumTdClass}>
                         <Link href={`/api/finance/payments/${p.id}/receipt`} target="_blank"
@@ -1039,9 +1039,9 @@ export default function StudentLedgerPage() {
               <tbody>
                 {invoices.map(i => (
                   <tr key={i.id} className={premiumTrClass}>
-                    <td className={`${premiumTdClass} text-slate text-xs dark:text-dark-muted`}>{formatDate(i.generatedAt)}</td>
-                    <td className={premiumTdClass}><span className="font-mono text-xs text-ink dark:text-dark-text">{i.invoiceNumber}</span></td>
-                    <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{i.term?.name ?? "—"}</td>
+                    <td className={`${premiumTdClass} text-slate text-xs`}>{formatDate(i.generatedAt)}</td>
+                    <td className={premiumTdClass}><span className="font-mono text-xs text-foreground">{i.invoiceNumber}</span></td>
+                    <td className={`${premiumTdClass} text-slate`}>{i.term?.name ?? "—"}</td>
                     <td className={premiumTdClass}>
                       {i.isProrated ? <Badge variant="warn">Prorated</Badge> : <Badge variant="info">Standard</Badge>}
                     </td>

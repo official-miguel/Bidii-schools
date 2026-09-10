@@ -87,8 +87,8 @@ export default function DiaryEntryCard({ entry, variant }: DiaryEntryCardProps) 
   return (
     <Link
       href={`/teacher/diary/${entry.id}`}
-      className="block bg-card border border-line rounded-xl shadow-xs hover:shadow-sm hover:border-teal/30 
-                 transition-all group dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+      className="block bg-card border border-border rounded-xl shadow-xs hover:shadow-sm hover:border-teal/30 
+                 transition-all group dark:hover:border-teal/30"
     >
       <div className="p-4">
         {/* Top row: badge + due-soon pill + date */}
@@ -104,18 +104,18 @@ export default function DiaryEntryCard({ entry, variant }: DiaryEntryCardProps) 
               </span>
             )}
           </div>
-          <span className="text-[11px] text-slate dark:text-dark-muted shrink-0">
+          <span className="text-[11px] text-slate shrink-0">
             {formatPostedDate(entry.createdAt)}
           </span>
         </div>
 
         {/* Title */}
-        <p className="mt-2 font-semibold text-ink dark:text-dark-text text-sm leading-snug group-hover:text-teal transition-colors truncate">
+        <p className="mt-2 font-semibold text-foreground text-sm leading-snug group-hover:text-teal transition-colors truncate">
           {entry.title}
         </p>
 
         {/* Subject + Class */}
-        <p className="mt-0.5 text-xs text-slate dark:text-dark-muted truncate">
+        <p className="mt-0.5 text-xs text-slate truncate">
           {entry.subject.name}
           {classNames ? ` · ${classNames}` : ""}
         </p>
@@ -127,7 +127,7 @@ export default function DiaryEntryCard({ entry, variant }: DiaryEntryCardProps) 
               ? "text-danger"
               : new Date(entry.dueDate!).getTime() - Date.now() < 86400000 * 2
               ? "text-warn"
-              : "text-slate dark:text-dark-muted"
+              : "text-slate"
           }`}>
             {formatDueDate(entry.dueDate!)}
           </p>
@@ -137,14 +137,14 @@ export default function DiaryEntryCard({ entry, variant }: DiaryEntryCardProps) 
         {variant === "full" && total > 0 && (
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] text-slate dark:text-dark-muted">
+              <span className="text-[11px] text-slate">
                 {completed} of {total} completed
               </span>
-              <span className="text-[11px] font-medium text-slate dark:text-dark-muted">
+              <span className="text-[11px] font-medium text-slate">
                 {progress}%
               </span>
             </div>
-            <div className="h-1.5 bg-line dark:bg-dark-border rounded-full overflow-hidden">
+            <div className="h-1.5 bg-line rounded-full overflow-hidden">
               <div
                 className="h-full bg-teal rounded-full transition-all"
                 style={{ width: `${progress}%` }}

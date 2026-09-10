@@ -21,7 +21,7 @@ import {
 type ClassLite = { id: string; name: string; form: number; stream?: string | null };
 
 const selectClass =
-  "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20";
 
 const STATUS_ORDER: Record<string, number> = {
   OPEN: 0, UNDER_REVIEW: 1, ESCALATED: 2, RESOLVED: 3,
@@ -44,7 +44,7 @@ function EmptyBlock({
   action?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-card px-4 py-16 text-center">
+    <div className="rounded-xl border border-dashed border-border bg-card px-4 py-16 text-center">
       <ShieldAlert className="h-10 w-10 text-slate/30 mx-auto mb-3" aria-hidden />
       <p className="text-sm text-slate">{text}</p>
       {action && (
@@ -108,16 +108,16 @@ function CloseCaseModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-line overflow-hidden"
+        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-line">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center shrink-0">
               <CheckCircle2 className="h-4 w-4 text-success" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink">Close Case</p>
+              <p className="text-sm font-semibold text-foreground">Close Case</p>
               <p className="text-xs text-slate truncate max-w-[260px]">
                 {record.offence} — {record.student.fullName}
               </p>
@@ -126,7 +126,7 @@ function CloseCaseModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center h-7 w-7 rounded-lg text-slate hover:text-ink hover:bg-line transition-colors"
+            className="flex items-center justify-center h-7 w-7 rounded-lg text-slate hover:text-foreground hover:bg-line transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -142,7 +142,7 @@ function CloseCaseModal({
               onChange={(e) => setActionTaken(e.target.value)}
               rows={4}
               placeholder="Describe what action was taken to resolve this case…"
-              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink placeholder:text-slate/60 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 resize-none dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-slate/60 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 resize-none"
               autoFocus
             />
           </div>
@@ -161,7 +161,7 @@ function CloseCaseModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center rounded-lg border border-line text-sm font-medium px-4 py-2.5 text-ink hover:bg-paper transition-colors"
+              className="inline-flex items-center justify-center rounded-lg border border-border text-sm font-medium px-4 py-2.5 text-foreground hover:bg-background transition-colors"
             >
               Cancel
             </button>
@@ -204,7 +204,7 @@ const IncidentRow = memo(function IncidentRow({
 
   return (
     <li>
-      <div className="relative bg-card border border-line rounded-xl px-4 py-3.5 hover:border-teal/30 hover:shadow-sm transition-all flex items-start gap-3 group">
+      <div className="relative bg-card border border-border rounded-xl px-4 py-3.5 hover:border-teal/30 hover:shadow-sm transition-all flex items-start gap-3 group">
 
         {/* Entire-row link to case page (sits behind everything) */}
         {caseHref && (
@@ -222,7 +222,7 @@ const IncidentRow = memo(function IncidentRow({
         {/* Main info */}
         <div className="relative min-w-0 flex-1 z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-ink">{record.offence}</span>
+            <span className="text-sm font-semibold text-foreground">{record.offence}</span>
             <StatusPill status={record.status} />
             {record._count.files > 0 && (
               <span className="text-xs text-slate" title={`${record._count.files} attachment(s)`}>
@@ -247,7 +247,7 @@ const IncidentRow = memo(function IncidentRow({
               onClick={(e) => e.stopPropagation()}
             >
               <Avatar name={record.student.fullName} size="sm" />
-              <span className="text-xs font-medium text-ink">{record.student.fullName}</span>
+              <span className="text-xs font-medium text-foreground">{record.student.fullName}</span>
               <span className="text-xs text-slate font-mono">{record.student.admissionNumber}</span>
             </Link>
             {record.student.schoolClass && (
@@ -445,13 +445,13 @@ export default function DisciplineDashboard({
       </div>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────── */}
-      <div className="bg-card border border-line rounded-xl p-3 mb-5 space-y-3">
+      <div className="bg-card border border-border rounded-xl p-3 mb-5 space-y-3">
         <div className="flex gap-2">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden />
             <input
-              className="w-full rounded-lg border border-line bg-white pl-9 pr-3 py-2 text-sm text-ink placeholder:text-slate focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-slate focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
               placeholder="Search by student, admission no., offence, or AI summary…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -467,7 +467,7 @@ export default function DisciplineDashboard({
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
               showFilters || activeFilters
                 ? "border-teal bg-teal/5 text-teal"
-                : "border-line text-slate hover:text-ink hover:border-slate/40"
+                : "border-border text-slate hover:text-foreground hover:border-slate/40"
             }`}
           >
             <Filter className="h-4 w-4" aria-hidden />
@@ -495,7 +495,7 @@ export default function DisciplineDashboard({
 
         {/* Expandable filter row */}
         {showFilters && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line/60">
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
             <select
               className={selectClass}
               value={classId}

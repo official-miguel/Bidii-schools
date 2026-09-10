@@ -110,7 +110,7 @@ export const Modal = ({
     >
       <div
         ref={contentRef}
-        className={`relative z-50 w-full ${sizeClass[size]} rounded-2xl bg-card border border-line shadow-xl modal-content flex flex-col`}
+        className={`relative z-50 w-full ${sizeClass[size]} rounded-2xl bg-card border border-border shadow-xl modal-content flex flex-col`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "portal-modal-title" : undefined}
@@ -119,11 +119,11 @@ export const Modal = ({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-5 border-b border-line shrink-0">
+          <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-5 border-b border-border shrink-0">
             <div className="min-w-0">
               <h2
                 id="portal-modal-title"
-                className="text-base font-semibold text-ink leading-snug"
+                className="text-base font-semibold text-foreground leading-snug"
               >
                 {title}
               </h2>
@@ -135,7 +135,7 @@ export const Modal = ({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-ink hover:bg-paper transition-colors shrink-0 -mr-1 -mt-1"
+              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-foreground hover:bg-background transition-colors shrink-0 -mr-1 -mt-1"
             >
               <X className="h-4 w-4" />
             </button>
@@ -149,7 +149,7 @@ export const Modal = ({
 
         {/* Footer */}
         {footer && (
-          <div className="shrink-0 border-t border-line bg-paper px-6 py-4 rounded-b-2xl">
+          <div className="shrink-0 border-t border-border bg-background px-6 py-4 rounded-b-2xl">
             {footer}
           </div>
         )}
@@ -216,7 +216,7 @@ export const ConfirmModal = ({
 
         {/* Title + message */}
         <div>
-          <h3 className="text-base font-semibold text-ink">{title}</h3>
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
           <p className="mt-1.5 text-sm text-slate leading-relaxed max-w-xs">{message}</p>
         </div>
 

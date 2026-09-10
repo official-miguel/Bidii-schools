@@ -100,16 +100,16 @@ export default function SearchableSelect({
 
   // ── Trigger styles ──────────────────────────────────────────────────────────
   const triggerBase =
-    "w-full flex items-center justify-between gap-2 rounded-lg border bg-white " +
+    "w-full flex items-center justify-between gap-2 rounded-lg border bg-card " +
     "text-sm text-left transition-colors duration-100 " +
     "focus:outline-none focus:ring-2 focus:ring-teal/15 " +
     "hover:border-slate-light " +
-    "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-paper " +
-    "dark:bg-dark-surface dark:text-dark-text";
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-background " +
+    "";
 
   const triggerColor = open
     ? "border-teal ring-2 ring-teal/15"
-    : "border-line";
+    : "border-border";
 
   const triggerPad = size === "sm" ? "px-2.5 py-1.5" : "px-3.5 py-2.5";
 
@@ -124,12 +124,12 @@ export default function SearchableSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className={`flex-1 truncate ${selected ? "text-ink dark:text-dark-text" : "text-slate-light"}`}>
+        <span className={`flex-1 truncate ${selected ? "text-foreground" : "text-slate-light"}`}>
           {selected ? (
             <span className="flex items-center gap-1.5 min-w-0">
               <span className="truncate">{selected.label}</span>
               {selected.sub && (
-                <span className="text-xs text-slate shrink-0 dark:text-dark-muted">
+                <span className="text-xs text-slate shrink-0">
                   {selected.sub}
                 </span>
               )}
@@ -147,15 +147,15 @@ export default function SearchableSelect({
       {open && (
         <div
           className={
-            "absolute z-50 mt-1.5 w-full min-w-[220px] rounded-xl border border-line bg-white shadow-lg " +
-            "dark:bg-dark-surface dark:border-dark-border overflow-hidden " +
+            "absolute z-50 mt-1.5 w-full min-w-[220px] rounded-xl border border-border bg-card shadow-lg " +
+            " overflow-hidden " +
             "animate-in fade-in-0 zoom-in-95 duration-100"
           }
           role="listbox"
         >
           {/* Search bar */}
-          <div className="flex items-center gap-2 border-b border-line dark:border-dark-border px-3 py-2.5">
-            <Search className="h-3.5 w-3.5 text-slate shrink-0 dark:text-dark-muted" />
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+            <Search className="h-3.5 w-3.5 text-slate shrink-0" />
             <input
               ref={searchRef}
               type="text"
@@ -163,15 +163,15 @@ export default function SearchableSelect({
               onChange={(e) => setQuery(e.target.value)}
               placeholder={searchPlaceholder}
               className={
-                "flex-1 bg-transparent text-sm text-ink placeholder:text-slate-light " +
-                "focus:outline-none dark:text-dark-text dark:placeholder:text-dark-muted"
+                "flex-1 bg-transparent text-sm text-foreground placeholder:text-slate-light " +
+                "focus:outline-none"
               }
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="shrink-0 text-slate hover:text-ink transition-colors dark:text-dark-muted dark:hover:text-dark-text"
+                className="shrink-0 text-slate hover:text-foreground transition-colors"
                 aria-label="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
@@ -188,7 +188,7 @@ export default function SearchableSelect({
                 onClick={() => pick("")}
                 className={
                   "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-left " +
-                  "text-slate hover:bg-slate-50 dark:hover:bg-dark-border/40 dark:text-dark-muted transition-colors"
+                  "text-slate hover:bg-slate-50/40 transition-colors"
                 }
               >
                 <span className="h-4 w-4 shrink-0" />
@@ -197,7 +197,7 @@ export default function SearchableSelect({
             )}
 
             {filtered.length === 0 ? (
-              <p className="px-3.5 py-4 text-sm text-slate text-center dark:text-dark-muted">
+              <p className="px-3.5 py-4 text-sm text-slate text-center">
                 No results for &ldquo;{query}&rdquo;
               </p>
             ) : (
@@ -214,7 +214,7 @@ export default function SearchableSelect({
                       "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-left transition-colors " +
                       (isSelected
                         ? "bg-teal/8 dark:bg-teal/15"
-                        : "hover:bg-slate-50 dark:hover:bg-dark-border/40")
+                        : "hover:bg-slate-50/40")
                     }
                   >
                     {/* check mark column — always reserved so text stays aligned */}
@@ -225,13 +225,13 @@ export default function SearchableSelect({
                     <span className="flex-1 min-w-0">
                       <span
                         className={`block truncate ${
-                          isSelected ? "text-teal font-medium" : "text-ink dark:text-dark-text"
+                          isSelected ? "text-teal font-medium" : "text-foreground"
                         }`}
                       >
                         {opt.label}
                       </span>
                       {opt.sub && (
-                        <span className="block text-xs text-slate mt-0.5 truncate dark:text-dark-muted">
+                        <span className="block text-xs text-slate mt-0.5 truncate">
                           {opt.sub}
                         </span>
                       )}

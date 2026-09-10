@@ -150,12 +150,12 @@ export default function SlotEditModal({
             {slot ? (
               /* ── Edit mode: read-only teacher display ─────────────────── */
               <div className="mt-1">
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line bg-paper text-sm">
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border bg-background text-sm">
                   <Lock className="h-4 w-4 text-slate shrink-0" aria-hidden />
-                  <span className="flex-1 font-medium text-ink truncate">
+                  <span className="flex-1 font-medium text-foreground truncate">
                     {teachers.find((t) => t.id === teacherId)?.fullName ?? teacherId}
                   </span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate shrink-0">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
                     Pinned
                   </span>
                 </div>
@@ -188,12 +188,12 @@ export default function SlotEditModal({
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left
                           transition-colors text-sm
                           ${active
-                            ? "bg-teal/10 border-teal text-ink"
+                            ? "bg-teal/10 border-teal text-foreground"
                             : status === "busy"
-                              ? "bg-danger/5 border-danger/30 text-ink"
+                              ? "bg-danger/5 border-danger/30 text-foreground"
                               : status === "unavail"
-                                ? "bg-warn-bg border-warn/30 text-ink"
-                                : "bg-white border-line text-ink hover:border-teal/40"
+                                ? "bg-warn-bg border-warn/30 text-foreground"
+                                : "bg-card border-border text-foreground hover:border-teal/40"
                           }`}
                         aria-pressed={active}
                       >
@@ -256,7 +256,7 @@ export default function SlotEditModal({
             <ul className="space-y-1">
               {previewConflicts.map((c, i) => (
                 <li key={i} className={`text-xs leading-relaxed flex items-start gap-1.5
-                  ${c.severity === "error" ? "text-danger" : "text-ink/80"}`}>
+                  ${c.severity === "error" ? "text-danger" : "text-foreground/80"}`}>
                   {c.severity === "error"
                     ? <AlertCircle className="h-3 w-3 shrink-0 mt-0.5 text-danger" aria-hidden />
                     : <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5 text-warn" aria-hidden />

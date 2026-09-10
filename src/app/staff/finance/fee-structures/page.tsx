@@ -47,11 +47,11 @@ function classLabel(s: FeeStructure, classes: SchoolClass[]) {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "";
 
-const labelCls = "block text-sm font-medium text-ink dark:text-dark-text mb-1";
+const labelCls = "block text-sm font-medium text-foreground mb-1";
 
 // ── Delete Confirm Modal ───────────────────────────────────────────────────
 
@@ -82,10 +82,10 @@ function DeleteConfirmModal({ structure, classes, onClose, onDeleted }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">Delete fee structure?</h2>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted">
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">Delete fee structure?</h2>
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -93,19 +93,19 @@ function DeleteConfirmModal({ structure, classes, onClose, onDeleted }: {
           {error && (
             <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{error}</p>
           )}
-          <p className="text-sm text-ink dark:text-dark-text">
+          <p className="text-sm text-foreground">
             Delete the fee structure for <span className="font-semibold">{label}</span>
             {structure.stream && <span> ({structure.stream})</span>}
             {structure.termName && <span> — {structure.termName.name}</span>}?
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             This only removes the fee definition. It does not affect any invoices already generated.
           </p>
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+              className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background"
             >
               Cancel
             </button>
@@ -204,19 +204,19 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-dark-surface shadow-xl border border-line dark:border-dark-border animate-scale-in">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
+      <div className="w-full max-w-md rounded-2xl bg-card shadow-xl border border-border animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               {isEdit ? "Edit fee structure" : "Add fee structure"}
             </h2>
             {!isEdit && (
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 A stream-specific structure overrides the class default for students in that stream.
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text">
+          <button onClick={onClose} className="text-slate hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -232,7 +232,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
           <div>
             <label className={labelCls}>Class / Form</label>
             {uniqueForms.length === 0 ? (
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <p className="text-sm text-slate">
                 No classes found. Please create classes first.
               </p>
             ) : (
@@ -254,7 +254,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
               </select>
             )}
             {isEdit && (
-              <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+              <p className="text-xs text-slate mt-1">
                 Class cannot be changed on an existing structure. Delete and recreate if needed.
               </p>
             )}
@@ -287,7 +287,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
               />
             )}
             {isEdit && streamsForForm.length > 0 && (
-              <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+              <p className="text-xs text-slate mt-1">
                 Stream cannot be changed on an existing structure.
               </p>
             )}
@@ -297,7 +297,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
           <div>
             <label className={labelCls}>Term</label>
             {termNames.length === 0 ? (
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <p className="text-sm text-slate">
                 No term names configured yet. Go to{" "}
                 <a href="/staff/finance/settings" className="text-teal underline">Finance Settings</a>
                 {" "}to create term names first.
@@ -316,7 +316,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
               </select>
             )}
             {isEdit && (
-              <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+              <p className="text-xs text-slate mt-1">
                 Term cannot be changed on an existing structure.
               </p>
             )}
@@ -341,7 +341,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-line text-sm font-medium text-slate hover:text-ink hover:bg-paper dark:border-dark-border dark:text-dark-muted"
+              className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-slate hover:text-foreground hover:bg-background"
             >
               Cancel
             </button>
@@ -451,7 +451,7 @@ export default function FeeStructuresPage() {
                   <tr key={s.id} className={premiumTrClass}>
                     <td className={premiumTdClass}>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-ink dark:text-dark-text">
+                        <p className="font-medium text-foreground">
                           {classLabel(s, classes)}
                         </p>
                         {s.stream && (
@@ -461,13 +461,13 @@ export default function FeeStructuresPage() {
                         )}
                       </div>
                       {s.stream && (
-                        <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{s.stream}</p>
+                        <p className="text-xs text-slate mt-0.5">{s.stream}</p>
                       )}
                     </td>
-                    <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>
+                    <td className={`${premiumTdClass} text-slate`}>
                       {s.termName?.name ?? "All terms"}
                     </td>
-                    <td className={`${premiumTdClass} text-right tabular-nums font-semibold text-ink dark:text-dark-text`}>
+                    <td className={`${premiumTdClass} text-right tabular-nums font-semibold text-foreground`}>
                       {formatKES(s.amountPerTerm)}
                     </td>
                     <td className={premiumTdClass}>

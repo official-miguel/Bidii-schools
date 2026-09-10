@@ -28,8 +28,9 @@ import {
   ScreenHeader, Card, Button, ErrorBanner, Badge, Toast, useToast,
 } from '@/components/ui';
 import { api } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { truncate, getErrorMessage } from '@/lib/utils';
+import { useTheme } from '@/lib/ThemeContext';
 
 // ---------------------------------------------------------------------------
 // CSV parser
@@ -116,6 +117,7 @@ function validateRow(raw: Record<string, string>, index: number): PreviewRow {
 export default function BulkImportScreen() {
   const router = useRouter();
   const { toastProps, show: showToast } = useToast();
+  const { colors } = useTheme();
 
   const [fileName,  setFileName]  = useState('');
   const [preview,   setPreview]   = useState<PreviewRow[]>([]);
@@ -203,7 +205,7 @@ export default function BulkImportScreen() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Bulk Import" subtitle="CSV catalogue import" showBack />
 
       <ScrollView
@@ -211,18 +213,18 @@ export default function BulkImportScreen() {
       >
         {/* ── Column guide ──────────────────────────────────────── */}
         <Card>
-          <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.ink, marginBottom: Spacing[2] }}>
+          <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.foreground, marginBottom: Spacing[2] }}>
             Required CSV Columns
           </Text>
           <View style={{ gap: Spacing[1.5] }}>
-            <ColRow name="title"   required desc="Book title" />
-            <ColRow name="copies"  required desc="Number of physical copies to create" />
-            <ColRow name="author"  desc="Author name (optional)" />
-            <ColRow name="edition" desc="Edition, e.g. 3rd Edition (optional)" />
-            <ColRow name="level"   desc="Level label, e.g. Form 3 (optional)" />
-            <ColRow name="subject" desc="Subject area (optional)" />
+            <ColRow name="title"   required desc="Book title" colors={colors} />
+            <ColRow name="copies"  required desc="Number of physical copies to create" colors={colors} />
+            <ColRow name="author"  desc="Author name (optional)" colors={colors} />
+            <ColRow name="edition" desc="Edition, e.g. 3rd Edition (optional)" colors={colors} />
+            <ColRow name="level"   desc="Level label, e.g. Form 3 (optional)" colors={colors} />
+            <ColRow name="subject" desc="Subject area (optional)" colors={colors} />
           </View>
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted, marginTop: Spacing[3] }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginTop: Spacing[3] }}>
             First row must be the header row. Blank optional fields are stored as empty.
           </Text>
         </Card>
@@ -232,29 +234,29 @@ export default function BulkImportScreen() {
           onPress={handlePickFile}
           disabled={parsing || importing}
           style={{
-            borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.teal,
-            borderRadius: Radius.card, backgroundColor: Colors.teal50,
+            borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primary,
+            borderRadius: Radius.card, backgroundColor: colors.primary + '15',
             paddingVertical: Spacing[10], paddingHorizontal: Spacing[6],
             alignItems: 'center', gap: Spacing[3],
           }}
         >
           {parsing ? (
-            <ActivityIndicator size="large" color={Colors.teal} />
+            <ActivityIndicator size="large" color={colors.primary} />
           ) : (
             <>
-              <Upload size={32} color={Colors.teal} />
-              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.teal }}>
+              <Upload size={32} color={colors.primary} />
+              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.primary }}>
                 {fileName ? 'Change File' : 'Pick CSV File'}
               </Text>
               {fileName ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[1] }}>
-                  <FileText size={12} color={Colors.slateText} />
-                  <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>
+                  <FileText size={12} color={colors.mutedForeground} />
+                  <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
                     {truncate(fileName, 40)}
                   </Text>
                 </View>
               ) : (
-                <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
                   Tap to browse your files
                 </Text>
               )}
@@ -270,32 +272,32 @@ export default function BulkImportScreen() {
         {result && (
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], marginBottom: Spacing[3] }}>
-              <CheckCircle2 size={20} color={Colors.success} />
-              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }}>
+              <CheckCircle2 size={20} color={colors.successForeground} />
+              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }}>
                 Import Complete
               </Text>
             </View>
 
             <View style={{ gap: Spacing[2] }}>
-              <StatLine label="Books created or matched" value={result.imported} />
-              <StatLine label="Physical copies added" value={result.copiesAdded} color={Colors.teal} />
+              <StatLine label="Books created or matched" value={result.imported} colors={colors} />
+              <StatLine label="Physical copies added" value={result.copiesAdded} color={colors.primary} colors={colors} />
               {result.skipped > 0 && (
-                <StatLine label="Rows skipped (errors)" value={result.skipped} color={Colors.danger} />
+                <StatLine label="Rows skipped (errors)" value={result.skipped} color={colors.destructive} colors={colors} />
               )}
             </View>
 
             {result.errors.length > 0 && (
               <View style={{ marginTop: Spacing[3] }}>
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.danger, marginBottom: Spacing[2] }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.destructive, marginBottom: Spacing[2] }}>
                   {result.errors.length} row error{result.errors.length !== 1 ? 's' : ''}:
                 </Text>
                 {result.errors.slice(0, 5).map((e, i) => (
-                  <Text key={i} style={{ fontSize: Typography.fontSize.xs, color: Colors.danger }}>
+                  <Text key={i} style={{ fontSize: Typography.fontSize.xs, color: colors.destructive }}>
                     • Row {e.row}: {e.error}
                   </Text>
                 ))}
                 {result.errors.length > 5 && (
-                  <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted }}>
+                  <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
                     + {result.errors.length - 5} more
                   </Text>
                 )}
@@ -330,11 +332,12 @@ export default function BulkImportScreen() {
                   key={idx}
                   row={row}
                   isLast={idx === Math.min(preview.length, 20) - 1}
+                  colors={colors}
                 />
               ))}
               {preview.length > 20 && (
                 <View style={{ padding: Spacing[3], alignItems: 'center' }}>
-                  <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted }}>
+                  <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
                     + {preview.length - 20} more rows
                   </Text>
                 </View>
@@ -352,7 +355,7 @@ export default function BulkImportScreen() {
               />
             )}
             {invalidRows.length > 0 && (
-              <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted, textAlign: 'center' }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, textAlign: 'center' }}>
                 {invalidRows.length} invalid row{invalidRows.length !== 1 ? 's' : ''} will be skipped
               </Text>
             )}
@@ -367,49 +370,51 @@ export default function BulkImportScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ColRow({ name, required, desc }: { name: string; required?: boolean; desc: string }) {
+import type { ColorTokens } from '@/constants';
+
+function ColRow({ name, required, desc, colors }: { name: string; required?: boolean; desc: string; colors: ColorTokens }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: Spacing[2] }}>
       <Text style={{
         fontSize: Typography.fontSize.xs, fontFamily: 'monospace',
-        color: required ? Colors.teal : Colors.ink,
+        color: required ? colors.primary : colors.foreground,
         fontWeight: required ? Typography.fontWeight.bold : Typography.fontWeight.normal,
         minWidth: 64,
       }}>
         {name}{required ? '*' : ''}
       </Text>
-      <Text style={{ flex: 1, fontSize: Typography.fontSize.xs, color: Colors.slateText }}>
+      <Text style={{ flex: 1, fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
         {desc}
       </Text>
     </View>
   );
 }
 
-function PreviewRowItem({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
+function PreviewRowItem({ row, isLast, colors }: { row: PreviewRow; isLast: boolean; colors: ColorTokens }) {
   const hasError = !row.row || !!row.error;
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'flex-start', gap: Spacing[3],
       padding: Spacing[3],
       borderBottomWidth: isLast ? 0 : 1,
-      borderBottomColor: Colors.line,
-      backgroundColor: hasError ? Colors.dangerBg : 'transparent',
+      borderBottomColor: colors.border,
+      backgroundColor: hasError ? colors.destructive + '15' : 'transparent',
     }}>
       {hasError
-        ? <AlertCircle  size={16} color={Colors.danger} style={{ marginTop: 2 }} />
-        : <CheckCircle2 size={16} color={Colors.success} style={{ marginTop: 2 }} />
+        ? <AlertCircle  size={16} color={colors.destructive} style={{ marginTop: 2 }} />
+        : <CheckCircle2 size={16} color={colors.successForeground} style={{ marginTop: 2 }} />
       }
       <View style={{ flex: 1 }}>
         <Text style={{
           fontSize: Typography.fontSize.sm,
           fontWeight: Typography.fontWeight.medium,
-          color: hasError ? Colors.danger : Colors.ink,
+          color: hasError ? colors.destructive : colors.foreground,
         }} numberOfLines={1}>
           Row {row.index}: {row.row?.title || row.raw['title'] || '(empty)'}
         </Text>
 
         {row.row && (
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
             {[
               row.row.author  && `by ${row.row.author}`,
               row.row.edition && row.row.edition,
@@ -420,7 +425,7 @@ function PreviewRowItem({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
         )}
 
         {row.error && (
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.danger, marginTop: 2 }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.destructive, marginTop: 2 }}>
             {row.error}
           </Text>
         )}
@@ -429,11 +434,11 @@ function PreviewRowItem({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
   );
 }
 
-function StatLine({ label, value, color = Colors.ink }: { label: string; value: number; color?: string }) {
+function StatLine({ label, value, color, colors }: { label: string; value: number; color?: string; colors: ColorTokens }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text style={{ fontSize: Typography.fontSize.sm, color: Colors.slateText }}>{label}</Text>
-      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.bold, color }}>{value}</Text>
+      <Text style={{ fontSize: Typography.fontSize.sm, color: colors.mutedForeground }}>{label}</Text>
+      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.bold, color: color ?? colors.foreground }}>{value}</Text>
     </View>
   );
 }

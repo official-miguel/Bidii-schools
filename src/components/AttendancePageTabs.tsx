@@ -19,7 +19,7 @@ export default function AttendancePageTabs({
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-line dark:border-dark-border">
+      <div className="flex gap-1 border-b border-border">
         {isClassTeacher && (
           <button
             type="button"
@@ -28,7 +28,7 @@ export default function AttendancePageTabs({
               ${
                 tab === "submit"
                   ? "border-teal text-teal"
-                  : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                  : "border-transparent text-slate hover:text-foreground"
               }`}
           >
             Submit
@@ -41,7 +41,7 @@ export default function AttendancePageTabs({
             ${
               tab === "view"
                 ? "border-teal text-teal"
-                : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                : "border-transparent text-slate hover:text-foreground"
             }`}
         >
           View
@@ -51,9 +51,9 @@ export default function AttendancePageTabs({
       {/* Tab content */}
       {tab === "submit" && isClassTeacher && classTeacherOf && (
         <div>
-          <p className="text-sm text-slate mb-4 dark:text-dark-muted">
+          <p className="text-sm text-slate mb-4">
             Taking attendance for{" "}
-            <span className="font-semibold text-ink dark:text-dark-text">
+            <span className="font-semibold text-foreground">
               {classTeacherOf.name}
             </span>
             .

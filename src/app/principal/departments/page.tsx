@@ -259,11 +259,11 @@ export default function DepartmentsPage() {
       ) : departments.length === 0 ? (
         <EmptyState message="No departments yet. Add your first one to start building the subject list." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Department</th>
                   <th className="px-5 py-3.5">Head of department</th>
                   <th className="px-5 py-3.5 w-[100px]">Subjects</th>
@@ -275,10 +275,10 @@ export default function DepartmentsPage() {
                 {(departments ?? [])
                   .filter(d => !search || d.name.toLowerCase().includes(search.toLowerCase()))
                   .map((d) => (
-                  <tr key={d.id} className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openDeptDrawer(d.id)}>
+                  <tr key={d.id} className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openDeptDrawer(d.id)}>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-ink group-hover:text-teal transition-colors">{d.name}</span>
+                        <span className="font-semibold text-foreground group-hover:text-teal transition-colors">{d.name}</span>
                         <ExternalLink className="h-3.5 w-3.5 text-slate/30 group-hover:text-teal transition-colors shrink-0" />
                       </div>
                     </td>
@@ -379,18 +379,18 @@ export default function DepartmentsPage() {
             {editing && (
               <div>
                 <label className={labelClass}>Subjects in this department</label>
-                <div className="rounded-lg border border-line bg-paper overflow-hidden">
+                <div className="rounded-lg border border-border bg-background overflow-hidden">
                   {/* Current subjects list */}
                   {deptSubjects.length === 0 ? (
                     <p className="px-3 py-2.5 text-sm text-slate italic">No subjects assigned yet.</p>
                   ) : (
-                    <ul className="divide-y divide-line max-h-44 overflow-y-auto">
+                    <ul className="divide-y divide-border max-h-44 overflow-y-auto">
                       {deptSubjects.map((s) => (
                         <li key={s.id} className="flex items-center gap-2 px-3 py-2">
-                          <span className="font-mono text-xs bg-white border border-line rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
+                          <span className="font-mono text-xs bg-card border border-border rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
                             {s.code}
                           </span>
-                          <span className="flex-1 text-sm text-ink truncate">{s.name}</span>
+                          <span className="flex-1 text-sm text-foreground truncate">{s.name}</span>
                           <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
                             {s.type === "CORE" ? "Core" : "Elective"}
                           </Chip>
@@ -399,7 +399,7 @@ export default function DepartmentsPage() {
                             title="Move to another department"
                             disabled={subjectSaving === s.id}
                             onClick={() => moveSubjectOut(s)}
-                            className="p-1 rounded hover:bg-white text-slate hover:text-danger transition-colors disabled:opacity-40"
+                            className="p-1 rounded hover:bg-card text-slate hover:text-danger transition-colors disabled:opacity-40"
                           >
                             {subjectSaving === s.id ? <Spinner size="sm" /> : <X className="h-3.5 w-3.5" />}
                           </button>
@@ -409,7 +409,7 @@ export default function DepartmentsPage() {
                   )}
 
                   {/* Add subject picker */}
-                  <div className="border-t border-line">
+                  <div className="border-t border-border">
                     {subjectPickerOpen ? (
                       <div className="p-2 space-y-1.5">
                         <input
@@ -417,9 +417,9 @@ export default function DepartmentsPage() {
                           value={subjectSearch}
                           onChange={(e) => setSubjectSearch(e.target.value)}
                           placeholder="Search by name, code or current dept…"
-                          className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-line bg-white outline-none focus:border-teal"
+                          className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-border bg-card outline-none focus:border-teal"
                         />
-                        <ul className="max-h-44 overflow-y-auto divide-y divide-line rounded-lg border border-line bg-white">
+                        <ul className="max-h-44 overflow-y-auto divide-y divide-border rounded-lg border border-border bg-card">
                           {availableSubjects
                             .filter((s) =>
                               s.name.toLowerCase().includes(subjectSearch.toLowerCase()) ||
@@ -432,13 +432,13 @@ export default function DepartmentsPage() {
                                   type="button"
                                   disabled={subjectSaving === s.id}
                                   onClick={() => addSubjectToDept(s)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-paper transition-colors disabled:opacity-50"
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-background transition-colors disabled:opacity-50"
                                 >
-                                  <span className="font-mono text-xs bg-paper border border-line rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
+                                  <span className="font-mono text-xs bg-background border border-border rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
                                     {s.code}
                                   </span>
                                   <div className="flex-1 min-w-0">
-                                    <span className="block font-medium text-ink truncate">{s.name}</span>
+                                    <span className="block font-medium text-foreground truncate">{s.name}</span>
                                     <span className="block text-xs text-slate truncate">Currently: {s.department.name}</span>
                                   </div>
                                   <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
@@ -463,7 +463,7 @@ export default function DepartmentsPage() {
                         <button
                           type="button"
                           onClick={() => { setSubjectPickerOpen(false); setSubjectSearch(""); }}
-                          className="text-xs text-slate hover:text-ink"
+                          className="text-xs text-slate hover:text-foreground"
                         >
                           Close
                         </button>
@@ -472,7 +472,7 @@ export default function DepartmentsPage() {
                       <button
                         type="button"
                         onClick={() => setSubjectPickerOpen(true)}
-                        className="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-teal hover:bg-white transition-colors"
+                        className="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-teal hover:bg-card transition-colors"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Add subject to this department

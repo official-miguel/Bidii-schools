@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AchievementList — renders parent-visible achievement cards.
  * Each card shows title, category badge, date, award level, and description.
  * Gold/yellow accent styling per design spec.
@@ -42,8 +42,8 @@ export default function AchievementList({ achievements }: AchievementListProps) 
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="text-4xl mb-3">🏆</div>
-        <p className="text-base font-semibold text-ink dark:text-dark-text">No achievements yet.</p>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1 max-w-xs">
+        <p className="text-base font-semibold text-foreground">No achievements yet.</p>
+        <p className="text-sm text-slate mt-1 max-w-xs">
           Achievements and recognition will appear here once recorded by the school.
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function AchievementList({ achievements }: AchievementListProps) 
             <div className="flex items-start gap-3 min-w-0">
               <div className="mt-0.5 shrink-0 text-xl leading-none">🏆</div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {item.title}
                 </p>
                 {item.awardLevel && (
@@ -72,7 +72,7 @@ export default function AchievementList({ achievements }: AchievementListProps) 
                   </p>
                 )}
                 {item.description && (
-                  <p className="text-sm text-slate dark:text-dark-muted mt-1 line-clamp-2">
+                  <p className="text-sm text-slate mt-1 line-clamp-2">
                     {item.description}
                   </p>
                 )}
@@ -87,7 +87,7 @@ export default function AchievementList({ achievements }: AchievementListProps) 
           </div>
 
           {/* Date footer */}
-          <p className="mt-3 text-xs text-slate dark:text-dark-muted">
+          <p className="mt-3 text-xs text-slate">
             {formatDate(item.achievementDate)}
           </p>
         </div>

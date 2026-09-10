@@ -52,7 +52,7 @@ function StatusBadge({ status }: { status: string }) {
     SUSPENDED:   "bg-danger-bg text-danger border-danger/20",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[status] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[status] ?? "bg-slate-100 text-slate border-border"}`}>
       {status}
     </span>
   );
@@ -60,14 +60,14 @@ function StatusBadge({ status }: { status: string }) {
 
 function PlanBadge({ tier }: { tier: string }) {
   const map: Record<string, string> = {
-    FREE:         "bg-slate-100 text-slate border-line",
+    FREE:         "bg-slate-100 text-slate border-border",
     STARTER:      "bg-teal-50 text-teal border-teal/20",
     GROWTH:       "bg-info-bg text-info border-info/20",
     PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
     ENTERPRISE:   "bg-danger-bg text-danger border-danger/20",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-border"}`}>
       {tier}
     </span>
   );
@@ -100,7 +100,7 @@ function RowActions({
         type="button"
         onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
         className="flex items-center justify-center h-8 w-8 rounded-lg text-slate
-                   hover:bg-slate-100 dark:hover:bg-dark-border transition-colors"
+                   hover:bg-slate-100 transition-colors"
         aria-label="Row actions"
       >
         <MoreVertical className="h-4 w-4" aria-hidden />
@@ -113,8 +113,8 @@ function RowActions({
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-line
-                          bg-white dark:bg-dark-surface dark:border-dark-border shadow-md overflow-hidden">
+          <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-border
+                          bg-card shadow-md overflow-hidden">
             {status === "SUSPENDED" ? (
               <button
                 type="button"
@@ -202,7 +202,7 @@ export default function SchoolsPage() {
   }
 
   const totalPages = Math.ceil(total / 50);
-  const th = "px-5 py-3.5 text-left text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide select-none";
+  const th = "px-5 py-3.5 text-left text-xs font-semibold text-slate uppercase tracking-wide select-none";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -227,16 +227,16 @@ export default function SchoolsPage() {
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="Search schools…"
-            className="w-full rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                       pl-10 pr-4 py-2.5 text-sm text-ink dark:text-dark-text placeholder:text-slate-light
+            className="w-full rounded-xl border border-border bg-card
+                       pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-slate-light
                        focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs"
           />
         </div>
         <select
           value={statusFilter}
           onChange={e => setStatus(e.target.value)}
-          className="rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                     px-3.5 py-2.5 text-sm text-ink dark:text-dark-text
+          className="rounded-xl border border-border bg-card
+                     px-3.5 py-2.5 text-sm text-foreground
                      focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs"
         >
           <option value="">All statuses</option>
@@ -258,8 +258,7 @@ export default function SchoolsPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : schools.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line
-                        dark:border-dark-border py-16 text-slate dark:text-dark-muted gap-3">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-slate gap-3">
           <Building2 className="h-8 w-8 opacity-40" aria-hidden />
           <p className="text-sm">No schools found</p>
           <Link href="/super-admin/schools/new" className={primaryButtonClass}>
@@ -267,13 +266,13 @@ export default function SchoolsPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-border overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead className="bg-slate-50/80 dark:bg-dark-surface">
+            <table className="min-w-full divide-y divide-border ">
+              <thead className="bg-slate-50/80">
                 <tr>
                   <th
-                    className={`${th} cursor-pointer hover:text-ink dark:hover:text-dark-text`}
+                    className={`${th} cursor-pointer hover:text-foreground`}
                     onClick={() => toggleSort("name")}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -283,7 +282,7 @@ export default function SchoolsPage() {
                   <th className={th}>Plan</th>
                   <th className={th}>Status</th>
                   <th
-                    className={`${th} cursor-pointer hover:text-ink dark:hover:text-dark-text`}
+                    className={`${th} cursor-pointer hover:text-foreground`}
                     onClick={() => toggleSort("createdAt")}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -296,7 +295,7 @@ export default function SchoolsPage() {
                   <th className={`${th} w-12`}></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+              <tbody className="divide-y divide-border bg-card">
                 {schools.map(school => {
                   const meta = school.schoolMeta;
                   const usedBytes = school.storageUsages.reduce((a, u) => a + Number(u.sizeBytes), 0);
@@ -309,13 +308,13 @@ export default function SchoolsPage() {
                     <tr
                       key={school.id}
                       onClick={() => router.push(`/super-admin/schools/${school.id}`)}
-                      className={`cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30
+                      className={`cursor-pointer hover:bg-slate-50/50/30
                                   transition-colors ${busy ? "opacity-50 pointer-events-none" : ""}`}
                     >
                       <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-ink dark:text-dark-text">{school.name}</p>
+                        <p className="text-sm font-medium text-foreground">{school.name}</p>
                         {meta?.contactEmail && (
-                          <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{meta.contactEmail}</p>
+                          <p className="text-xs text-slate mt-0.5">{meta.contactEmail}</p>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
@@ -324,13 +323,13 @@ export default function SchoolsPage() {
                       <td className="px-5 py-3.5">
                         <StatusBadge status={meta?.status ?? "ONBOARDING"} />
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate dark:text-dark-muted whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-sm text-slate whitespace-nowrap">
                         {new Date(school.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell text-sm text-slate dark:text-dark-muted tabular-nums">
+                      <td className="px-5 py-3.5 hidden md:table-cell text-sm text-slate tabular-nums">
                         {school._count.students.toLocaleString()}
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell text-sm text-slate dark:text-dark-muted tabular-nums">
+                      <td className="px-5 py-3.5 hidden md:table-cell text-sm text-slate tabular-nums">
                         {school._count.teachers.toLocaleString()}
                       </td>
                       <td className="px-5 py-3.5 hidden lg:table-cell min-w-[120px]">
@@ -341,7 +340,7 @@ export default function SchoolsPage() {
                             size="sm"
                             variant={pct > 90 ? "danger" : pct > 70 ? "warn" : "teal"}
                           />
-                          <p className="text-[10px] text-slate dark:text-dark-muted tabular-nums">
+                          <p className="text-[10px] text-slate tabular-nums">
                             {usedGb.toFixed(1)} / {quotaGb} GB
                           </p>
                         </div>
@@ -361,7 +360,7 @@ export default function SchoolsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             Page {page} of {totalPages} · {total} schools
           </p>
           <div className="flex items-center gap-2">

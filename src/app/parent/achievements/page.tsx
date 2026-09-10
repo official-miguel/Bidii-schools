@@ -35,7 +35,7 @@ export default async function AchievementsPage({ searchParams }: Props) {
     if (!first) {
       return (
         <div className="space-y-4">
-          <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Achievements</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Achievements</h1>
           <div className="rounded-xl border border-warn/20 bg-warn-bg p-5">
             <p className="text-sm font-medium text-warn">
               No student linked to your account.
@@ -90,19 +90,19 @@ export default async function AchievementsPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+      <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
         Achievements — {childName}
       </h1>
 
       {/* Empty state or list */}
       {achievements.length === 0 ? (
-        <div className="rounded-xl border border-line bg-card p-10 flex flex-col items-center gap-3 text-center dark:bg-dark-surface dark:border-dark-border">
+        <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center gap-3 text-center">
           <div className="text-4xl">🏆</div>
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">
+            <p className="text-sm font-semibold text-foreground">
               No achievements yet
             </p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-1 max-w-xs">
+            <p className="text-xs text-slate mt-1 max-w-xs">
               Achievements and recognition will appear here.
             </p>
           </div>

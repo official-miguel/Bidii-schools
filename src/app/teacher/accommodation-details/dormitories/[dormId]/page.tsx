@@ -61,7 +61,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 function OccupancyBar({ pct }: { pct: number }) {
   const color = pct >= 100 ? "bg-danger" : pct >= 90 ? "bg-warn" : "bg-teal";
   return (
-    <div className="w-full h-2 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+    <div className="w-full h-2 rounded-full bg-line overflow-hidden">
       <div
         className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(pct, 100)}%` }}
@@ -81,12 +81,12 @@ function ReadOnlyBedCard({ bed }: { bed: BedDetail }) {
   };
 
   return (
-    <div className="rounded-lg border border-line dark:border-dark-border bg-card dark:bg-dark-surface p-3">
+    <div className="rounded-lg border border-border bg-card p-3">
       <div className="flex items-center justify-between mb-2 gap-1">
-        <span className="text-xs font-semibold text-ink dark:text-dark-text truncate">
+        <span className="text-xs font-semibold text-foreground truncate">
           {bed.label}
         </span>
-        <span className="text-[10px] uppercase tracking-wide text-slate dark:text-dark-muted font-medium">
+        <span className="text-[10px] uppercase tracking-wide text-slate font-medium">
           {bed.bedType === "DOUBLE_DECKER" ? "Bunk"
             : bed.bedType === "CUSTOM" ? "Custom"
             : "Single"}
@@ -102,25 +102,25 @@ function ReadOnlyBedCard({ bed }: { bed: BedDetail }) {
               className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs ${
                 pos.isOccupied
                   ? "bg-teal/8 border border-teal/20 dark:bg-teal/10"
-                  : "bg-slate-50 border border-line/50 dark:bg-dark-border/30 dark:border-dark-border/50"
+                  : "bg-slate-50 border border-border/50/30/50"
               }`}
             >
               <span
                 className={`font-medium shrink-0 ${
-                  pos.isOccupied ? "text-teal" : "text-slate dark:text-dark-muted"
+                  pos.isOccupied ? "text-teal" : "text-slate"
                 }`}
               >
                 {positionLabel(pos)}
               </span>
               {alloc ? (
-                <span className="text-ink truncate min-w-0 dark:text-dark-text">
+                <span className="text-foreground truncate min-w-0">
                   {alloc.student.fullName}
-                  <span className="text-slate ml-1 dark:text-dark-muted">
+                  <span className="text-slate ml-1">
                     · {alloc.student.schoolClass.name}
                   </span>
                 </span>
               ) : (
-                <span className="text-slate/60 dark:text-dark-muted/60">Available space</span>
+                <span className="text-slate/60">Available space</span>
               )}
             </div>
           );
@@ -160,17 +160,17 @@ function ReadOnlyCubicleSection({
     ? Math.round((cubicle._count.allocations / cubicle._count.sleepingPositions) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden">
+    <div className="rounded-xl border border-border overflow-hidden">
       <button
         onClick={fetchBeds}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-card dark:bg-dark-surface text-left hover:bg-paper/60 dark:hover:bg-dark-border/20 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 bg-card text-left hover:bg-background/60/20 transition-colors"
       >
         <div className="rounded-md bg-teal/10 p-1.5 shrink-0">
           <LayoutGrid className="h-3.5 w-3.5 text-teal" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">{cubicle.name}</p>
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-sm font-semibold text-foreground">{cubicle.name}</p>
+          <p className="text-xs text-slate">
             {cubicle._count.beds} bed{cubicle._count.beds !== 1 ? "s" : ""} ·{" "}
             {cubicle._count.allocations}/{cubicle._count.sleepingPositions} occupied
           </p>
@@ -178,7 +178,7 @@ function ReadOnlyCubicleSection({
         <div className="w-24 shrink-0">
           <div className="flex items-center gap-1.5">
             <OccupancyBar pct={pct} />
-            <span className="text-xs tabular-nums text-slate dark:text-dark-muted">{pct}%</span>
+            <span className="text-xs tabular-nums text-slate">{pct}%</span>
           </div>
         </div>
         {expanded
@@ -187,7 +187,7 @@ function ReadOnlyCubicleSection({
       </button>
 
       {expanded && (
-        <div className="border-t border-line dark:border-dark-border bg-paper/50 dark:bg-dark-bg/30 p-4">
+        <div className="border-t border-border bg-background/50/30 p-4">
           {loadingBeds && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[...Array(4)].map((_, i) => (
@@ -196,13 +196,13 @@ function ReadOnlyCubicleSection({
             </div>
           )}
           {!loadingBeds && beds.length === 0 && cubicle._count.beds > 0 && (
-            <p className="text-center text-sm text-slate dark:text-dark-muted py-6">
+            <p className="text-center text-sm text-slate py-6">
               {cubicle._count.beds} bed{cubicle._count.beds !== 1 ? "s" : ""} ·{" "}
               {cubicle._count.sleepingPositions} sleeping position{cubicle._count.sleepingPositions !== 1 ? "s" : ""}.
             </p>
           )}
           {!loadingBeds && beds.length === 0 && cubicle._count.beds === 0 && (
-            <p className="text-center text-sm text-slate dark:text-dark-muted py-6">
+            <p className="text-center text-sm text-slate py-6">
               No beds in this cubicle yet.
             </p>
           )}
@@ -272,29 +272,29 @@ export default function TeacherDormDetailPage() {
   return (
     <div>
       {/* Header card */}
-      <div className="rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border p-5 mb-6">
+      <div className="rounded-xl border border-border bg-card p-5 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="rounded-xl bg-teal/10 p-3 shrink-0 self-start">
             <BedDouble className="h-7 w-7 text-teal" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl font-semibold text-ink dark:text-dark-text">{dorm.name}</h1>
+              <h1 className="text-xl font-semibold text-foreground">{dorm.name}</h1>
               <span className={`text-xs font-medium ${statusMeta.color}`}>{statusMeta.label}</span>
-              <span className="text-xs text-slate border border-line rounded-full px-2 py-0.5 dark:border-dark-border dark:text-dark-muted">
+              <span className="text-xs text-slate border border-border rounded-full px-2 py-0.5">
                 {GENDER_LABEL[dorm.genderPolicy]}
               </span>
-              <span className="text-xs text-slate border border-line rounded-full px-2 py-0.5 dark:border-dark-border dark:text-dark-muted">
+              <span className="text-xs text-slate border border-border rounded-full px-2 py-0.5">
                 {isCubicleBased ? "Cubicle-based" : "Open hall"}
               </span>
             </div>
             {dorm.description && (
-              <p className="text-sm text-slate dark:text-dark-muted mb-2">{dorm.description}</p>
+              <p className="text-sm text-slate mb-2">{dorm.description}</p>
             )}
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate dark:text-dark-muted">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate">
               {dorm.boardingMaster && (
                 <span>
-                  <span className="font-medium text-ink dark:text-dark-text">
+                  <span className="font-medium text-foreground">
                     {dorm.boardingMaster.fullName}
                   </span>
                   {" · Boarding master"}
@@ -302,7 +302,7 @@ export default function TeacherDormDetailPage() {
               )}
               {dorm.dormCaptain && (
                 <span>
-                  <span className="font-medium text-ink dark:text-dark-text">
+                  <span className="font-medium text-foreground">
                     {dorm.dormCaptain.fullName}
                   </span>
                   {" · Dorm captain · "}
@@ -314,14 +314,14 @@ export default function TeacherDormDetailPage() {
           {/* Analytics shortcut */}
           <Link
             href={`/teacher/accommodation-details/analytics?dormId=${dorm.id}`}
-            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white text-slate text-sm font-medium px-4 py-2 hover:border-teal/40 hover:text-teal hover:bg-teal/5 transition-all shrink-0 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/30 dark:hover:text-teal"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card text-slate text-sm font-medium px-4 py-2 hover:border-teal/40 hover:text-teal hover:bg-teal/5 transition-all shrink-0 dark:hover:border-teal/30 dark:hover:text-teal"
           >
             <BarChart2 className="h-4 w-4" /> Analytics
           </Link>
         </div>
 
         {/* Occupancy summary */}
-        <div className="mt-4 pt-4 border-t border-line dark:border-dark-border grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Total capacity", value: displayCapacity },
             { label: "Occupied",       value: dorm._count.allocations, highlight: dorm._count.allocations === displayCapacity && displayCapacity > 0 },
@@ -329,10 +329,10 @@ export default function TeacherDormDetailPage() {
             { label: "Occupancy",      value: `${occupancyPct}%`,       highlight: occupancyPct >= 90 },
           ].map(({ label, value, highlight }) => (
             <div key={label}>
-              <p className={`text-xl font-semibold tabular-nums ${highlight ? "text-warn" : "text-ink dark:text-dark-text"}`}>
+              <p className={`text-xl font-semibold tabular-nums ${highlight ? "text-warn" : "text-foreground"}`}>
                 {value}
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted">{label}</p>
+              <p className="text-xs text-slate">{label}</p>
             </div>
           ))}
         </div>
@@ -345,18 +345,18 @@ export default function TeacherDormDetailPage() {
       {isCubicleBased ? (
         <>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               Cubicles{" "}
-              <span className="text-slate font-normal ml-1 text-sm dark:text-dark-muted">
+              <span className="text-slate font-normal ml-1 text-sm">
                 ({dorm.cubicles.length})
               </span>
             </h2>
           </div>
 
           {dorm.cubicles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-line dark:border-dark-border">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-border">
               <LayoutGrid className="h-8 w-8 text-slate/50" />
-              <p className="text-slate text-sm dark:text-dark-muted">
+              <p className="text-slate text-sm">
                 No cubicles configured for this dormitory yet.
               </p>
             </div>
@@ -371,18 +371,18 @@ export default function TeacherDormDetailPage() {
       ) : (
         <>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               Beds{" "}
-              <span className="text-slate font-normal ml-1 text-sm dark:text-dark-muted">
+              <span className="text-slate font-normal ml-1 text-sm">
                 ({beds.length})
               </span>
             </h2>
           </div>
 
           {beds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-line dark:border-dark-border">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-border">
               <BedDouble className="h-8 w-8 text-slate/50" />
-              <p className="text-slate text-sm dark:text-dark-muted">
+              <p className="text-slate text-sm">
                 No beds configured for this dormitory yet.
               </p>
             </div>

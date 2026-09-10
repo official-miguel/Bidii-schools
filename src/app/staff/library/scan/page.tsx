@@ -142,19 +142,19 @@ function StudentPhoto({ fileId, name, size = "md" }: { fileId?: string; name: st
 
   if (!fileId || imgFailed) {
     return (
-      <div className={`${sz} rounded-full bg-slate-100 border-2 border-slate-200 dark:bg-dark-border dark:border-dark-border flex flex-col items-center justify-center shrink-0`}>
-        <svg viewBox="0 0 40 40" fill="none" className={`${iconSz} text-slate-400 dark:text-dark-muted`} aria-hidden="true">
+      <div className={`${sz} rounded-full bg-slate-100 border-2 border-slate-200 flex flex-col items-center justify-center shrink-0`}>
+        <svg viewBox="0 0 40 40" fill="none" className={`${iconSz} text-slate-400`} aria-hidden="true">
           <circle cx="20" cy="14" r="7" fill="currentColor" opacity="0.5"/>
           <path d="M4 36c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="currentColor" opacity="0.3"/>
         </svg>
-        <span className="text-[9px] font-bold text-slate-400 dark:text-dark-muted -mt-0.5 leading-none">{initials}</span>
+        <span className="text-[9px] font-bold text-slate-400 -mt-0.5 leading-none">{initials}</span>
       </div>
     );
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`/api/students/files/${fileId}`} alt={name}
-      className={`${sz} rounded-full object-cover border-2 border-line shrink-0`}
+      className={`${sz} rounded-full object-cover border-2 border-border shrink-0`}
       onError={() => setImgFailed(true)}
     />
   );
@@ -633,12 +633,12 @@ export default function ScanModePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Scan Mode</h1>
+          <h1 className="text-xl font-bold text-foreground">Scan Mode</h1>
           <p className="text-sm text-slate mt-0.5">Fast circulation — borrow and return.</p>
         </div>
         <div className="flex items-center gap-2">
           {method !== "QR_CAMERA" && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-line rounded-lg px-3 py-1.5 bg-paper">
+            <span className="inline-flex items-center gap-1.5 text-xs text-slate border border-border rounded-lg px-3 py-1.5 bg-background">
               {methodIcon} {methodLabel}
             </span>
           )}
@@ -654,7 +654,7 @@ export default function ScanModePage() {
 
         {/* ── Left: Student identification ── */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-line bg-white p-5 dark:bg-dark-surface dark:border-dark-border">
+          <div className="rounded-xl border border-border bg-card p-5">
             <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">1</span>
               Identify Student
@@ -665,7 +665,7 @@ export default function ScanModePage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
                 <input
                   ref={studentRef}
-                  className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-3 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                  className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-3 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
                   placeholder="Admission number or name…"
                   value={studentInput}
                   onChange={e => onStudentInputChange(e.target.value)}
@@ -677,7 +677,7 @@ export default function ScanModePage() {
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal animate-spin" />
                 )}
                 {showStudentDrop && studentSuggestions.length > 0 && (
-                  <div ref={studentDropRef} className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-line bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border overflow-hidden">
+                  <div ref={studentDropRef} className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
                     {studentSuggestions.map(s => (
                       <button
                         key={s.id} type="button"
@@ -686,8 +686,8 @@ export default function ScanModePage() {
                       >
                         <StudentPhoto fileId={s.files?.[0]?.id} name={s.fullName} size="sm" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
-                          <p className="text-xs text-slate dark:text-dark-muted">{s.admissionNumber} · {s.schoolClass?.name}</p>
+                          <p className="text-sm font-medium text-foreground truncate">{s.fullName}</p>
+                          <p className="text-xs text-slate">{s.admissionNumber} · {s.schoolClass?.name}</p>
                         </div>
                       </button>
                     ))}
@@ -706,12 +706,12 @@ export default function ScanModePage() {
 
           {/* Student card */}
           {cardData && card && (
-            <div className={`rounded-xl border p-5 ${card.status === "SUSPENDED" ? "border-warn/40 bg-warn-bg/20" : card.fineBalance > 0 ? "border-danger/30 bg-danger-bg/20" : "border-teal/30 bg-teal-50/30"} dark:bg-dark-surface`}>
+            <div className={`rounded-xl border p-5 ${card.status === "SUSPENDED" ? "border-warn/40 bg-warn-bg/20" : card.fineBalance > 0 ? "border-danger/30 bg-danger-bg/20" : "border-teal/30 bg-teal-50/30"}`}>
               <div className="flex items-start gap-4">
                 <StudentPhoto fileId={cardData.student.files?.[0]?.id} name={cardData.student.fullName} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-ink dark:text-dark-text">{cardData.student.fullName}</p>
+                    <p className="font-bold text-foreground">{cardData.student.fullName}</p>
                     <Badge variant={cardStatusVariant(card.status)}>{card.status}</Badge>
                   </div>
                   <p className="text-sm text-slate font-mono">{cardData.student.admissionNumber}</p>
@@ -727,7 +727,7 @@ export default function ScanModePage() {
                 <div className="mt-4 space-y-1.5">
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide">Currently borrowed ({active.length})</p>
                   {active.map(b => (
-                    <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30 text-danger" : "border-line bg-white dark:bg-dark-surface dark:border-dark-border text-slate"}`}>
+                    <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30 text-danger" : "border-border bg-card text-slate"}`}>
                       <span className="font-medium truncate">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
                       <span className="shrink-0 ml-2">{isOverdue(b.dueAt, b.returnedAt) ? "OVERDUE" : `Due ${fmt(b.dueAt)}`}</span>
                     </div>
@@ -742,7 +742,7 @@ export default function ScanModePage() {
         <div className="space-y-4">
 
           {/* Book input */}
-          <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${phase === "book" ? "border-line opacity-100" : "border-line opacity-40 pointer-events-none"}`}>
+          <div className={`rounded-xl border bg-card p-5 transition-opacity ${phase === "book" ? "border-border opacity-100" : "border-border opacity-40 pointer-events-none"}`}>
 
             {/* Header: label + Scan Mode toggle */}
             <div className="flex items-center justify-between mb-3">
@@ -759,18 +759,18 @@ export default function ScanModePage() {
                   aria-pressed={scanModeOn}
                   className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none disabled:opacity-40 ${scanModeOn ? "bg-teal" : "bg-slate/30"}`}
                 >
-                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
+                  <span className={`inline-block h-5 w-5 rounded-full bg-card shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
                 </button>
               </div>
             </div>
 
             <form onSubmit={e => { e.preventDefault(); addBookToCart(bookInput); }}>
               {/* Input with QrCode icon */}
-              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-line"}`}>
+              <div className={`flex items-center rounded-lg border bg-card transition-colors ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-border"}`}>
                 <BookOpen className="ml-3 h-4 w-4 shrink-0 text-slate/50" />
                 <input
                   ref={bookRef}
-                  className="flex-1 bg-transparent px-2.5 py-3 text-sm text-ink placeholder:text-slate/50 focus:outline-none dark:text-dark-text"
+                  className="flex-1 bg-transparent px-2.5 py-3 text-sm text-foreground placeholder:text-slate/50 focus:outline-none"
                   placeholder={scanModeOn ? "Scanning — point camera at QR code…" : "Title, accession number or author…"}
                   value={bookInput}
                   onChange={e => onBookInputChange(e.target.value)}
@@ -824,7 +824,7 @@ export default function ScanModePage() {
 
               {/* Live dropdown */}
               {showBookDrop && bookSuggestions.length > 0 && (
-                <div ref={bookDropRef} className="relative mt-1 z-50 rounded-xl border border-line bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border overflow-hidden">
+                <div ref={bookDropRef} className="relative mt-1 z-50 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
                   {bookSuggestions.map(copy => (
                     <button
                       key={copy.id} type="button"
@@ -833,9 +833,9 @@ export default function ScanModePage() {
                     >
                       <BookCover title={copy.catalogue.title} subject={copy.catalogue.subject} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{copy.catalogue.title}</p>
-                        <p className="text-xs text-slate dark:text-dark-muted">{copy.accessionNumber} · {copy.status}</p>
-                        {copy.catalogue.author && <p className="text-xs text-slate/70 dark:text-dark-muted/70 truncate">{copy.catalogue.author}</p>}
+                        <p className="text-sm font-medium text-foreground truncate">{copy.catalogue.title}</p>
+                        <p className="text-xs text-slate">{copy.accessionNumber} · {copy.status}</p>
+                        {copy.catalogue.author && <p className="text-xs text-slate/70/70 truncate">{copy.catalogue.author}</p>}
                       </div>
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${copy.status === "AVAILABLE" ? "bg-success-bg text-success" : "bg-warn-bg text-warn"}`}>
                         {copy.status}
@@ -857,7 +857,7 @@ export default function ScanModePage() {
 
           {/* Cart */}
           {cartItems.length > 0 && (
-            <div className="rounded-xl border border-line bg-white p-5 dark:bg-dark-surface dark:border-dark-border space-y-3">
+            <div className="rounded-xl border border-border bg-card p-5 space-y-3">
               <p className="text-xs font-semibold text-slate uppercase tracking-wide">
                 Books ({cartItems.length})
               </p>
@@ -870,12 +870,12 @@ export default function ScanModePage() {
                       item.state === "done"       ? "border-success/30 bg-success-bg/20" :
                       item.state === "error"      ? "border-danger/30 bg-danger-bg/20"  :
                       item.state === "processing" ? "border-teal/30 bg-teal/5"          :
-                                                    "border-line bg-paper"
+                                                    "border-border bg-background"
                     }`}
                   >
                     <BookCover title={item.copy.catalogue.title} subject={item.copy.catalogue.subject} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{item.copy.catalogue.title}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{item.copy.catalogue.title}</p>
                       <p className="text-xs text-slate font-mono">{item.copy.accessionNumber}</p>
                       {/* Action badge */}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">

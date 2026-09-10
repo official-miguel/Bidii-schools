@@ -103,12 +103,12 @@ export default function TemplateEditor({ initial, groups = [], onSaved, onCancel
           <label className="block text-xs font-medium text-slate mb-1">Template name *</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Fee Reminder"
-            className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-royal focus:outline-none" />
+            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm focus:border-royal focus:outline-none" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate mb-1">Category</label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-royal focus:outline-none">
+            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm focus:border-royal focus:outline-none">
             <option value="">— None —</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -163,7 +163,7 @@ export default function TemplateEditor({ initial, groups = [], onSaved, onCancel
           onChange={(e) => setBody(e.target.value)}
           rows={6}
           placeholder="Type your template… Click a placeholder button above to insert it at the cursor."
-          className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-royal focus:outline-none resize-none"
+          className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-royal focus:outline-none resize-none"
         />
         <p className="text-xs text-slate mt-1">{body.length} characters</p>
       </div>
@@ -176,7 +176,7 @@ export default function TemplateEditor({ initial, groups = [], onSaved, onCancel
           {saving ? "Saving…" : initial ? "Update template" : "Create template"}
         </button>
         <button onClick={onCancel}
-          className="rounded-md border border-line text-sm font-medium px-4 py-2 text-ink hover:bg-paper transition-colors">
+          className="rounded-md border border-border text-sm font-medium px-4 py-2 text-foreground hover:bg-background transition-colors">
           Cancel
         </button>
       </div>

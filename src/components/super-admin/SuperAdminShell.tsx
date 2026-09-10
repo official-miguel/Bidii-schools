@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * SuperAdminShell
@@ -18,7 +18,7 @@ interface Props {
 
 export default function SuperAdminShell({ children, userEmail }: Props) {
   return (
-    <div className="min-h-screen bg-paper dark:bg-dark-bg">
+    <div className="min-h-screen bg-background">
       <SuperAdminSidebar />
       <SuperAdminTopBar userEmail={userEmail} />
       {/* md:pl-16 offsets the fixed 64px sidebar; pt-16 offsets the fixed 64px topbar */}

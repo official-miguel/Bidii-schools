@@ -153,10 +153,10 @@ export default function AchievementModal({
         {suggestion && (
           <div className="rounded-lg border border-royal/20 bg-royal-50/60 p-3 space-y-1.5">
             <p className="text-xs font-medium text-royal">✨ AI simplified — confirm or edit below</p>
-            <p className="text-sm text-ink">{suggestion.summary}</p>
+            <p className="text-sm text-foreground">{suggestion.summary}</p>
             <div className="flex flex-wrap gap-1.5 text-xs">
               {suggestion.keywords.map((k) => (
-                <span key={k} className="px-2 py-0.5 rounded-full bg-card border border-line text-slate">#{k}</span>
+                <span key={k} className="px-2 py-0.5 rounded-full bg-card border border-border text-slate">#{k}</span>
               ))}
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function AchievementModal({
           {selected.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {selected.map((s) => (
-                <span key={s.id} className="inline-flex items-center gap-1.5 bg-paper border border-line rounded-full pl-1 pr-2 py-0.5 text-sm text-ink">
+                <span key={s.id} className="inline-flex items-center gap-1.5 bg-background border border-border rounded-full pl-1 pr-2 py-0.5 text-sm text-foreground">
                   <Avatar name={s.fullName} size="sm" />
                   {s.fullName.split(" ")[0]}
                   <button
@@ -230,19 +230,19 @@ export default function AchievementModal({
               autoComplete="off"
             />
             {matches.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full bg-card border border-line rounded-lg shadow-lg overflow-hidden" role="listbox">
+              <ul className="absolute z-10 mt-1 w-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" role="listbox">
                 {matches.map((s) => (
                   <li key={s.id}>
                     <button
                       type="button"
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-paper focus:bg-paper outline-none"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-background focus:bg-background outline-none"
                       onClick={() => {
                         setSelectedIds((prev) => (prev.includes(s.id) ? prev : [...prev, s.id]));
                         setStudentQuery("");
                       }}
                     >
                       <Avatar name={s.fullName} size="sm" />
-                      <span className="text-ink">{s.fullName}</span>
+                      <span className="text-foreground">{s.fullName}</span>
                       <span className="text-xs text-slate font-mono ml-auto">{s.admissionNumber}</span>
                     </button>
                   </li>

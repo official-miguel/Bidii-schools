@@ -62,7 +62,7 @@ export default function ExamResultsProgress({ batchId, onDone }: Props) {
           { label: "Failed", value: progress.failed, colour: "text-danger" },
           { label: "Skipped (no contact)", value: progress.skipped.length, colour: "text-warn" },
         ].map((s) => (
-          <div key={s.label} className="rounded-lg border border-line bg-white p-3 text-center">
+          <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
             <p className={`text-xl font-semibold ${s.colour}`}>{s.value}</p>
             <p className="text-xs text-slate mt-0.5">{s.label}</p>
           </div>
@@ -82,12 +82,12 @@ export default function ExamResultsProgress({ batchId, onDone }: Props) {
       {progress.skipped.length > 0 && (
         <div>
           <p className="text-xs font-medium text-slate uppercase tracking-wide mb-2">Students skipped (no contact)</p>
-          <div className="max-h-40 overflow-y-auto rounded-lg border border-line">
+          <div className="max-h-40 overflow-y-auto rounded-lg border border-border">
             <table className="w-full text-xs">
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-border">
                 {progress.skipped.map((s, i) => (
                   <tr key={i} className="hover:bg-royal-50/20">
-                    <td className="px-3 py-2 text-ink">{s.name}</td>
+                    <td className="px-3 py-2 text-foreground">{s.name}</td>
                     <td className="px-3 py-2 text-slate">{s.reason}</td>
                   </tr>
                 ))}

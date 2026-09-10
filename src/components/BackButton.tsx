@@ -63,9 +63,9 @@ export default function BackButton() {
         transition-all duration-200
         ${scrolled
           ? /* scrolled — pill with frosted background */
-            "bg-white/90 dark:bg-dark-surface/90 border border-line dark:border-dark-border shadow-sm backdrop-blur-sm text-slate hover:text-teal hover:border-teal/40 hover:bg-teal-50 dark:text-dark-muted dark:hover:text-teal dark:hover:bg-teal/10"
+            "bg-card/90/90 border border-border shadow-sm backdrop-blur-sm text-slate hover:text-teal hover:border-teal/40 hover:bg-teal-50 dark:hover:text-teal dark:hover:bg-teal/10"
           : /* at top — ghost: visible but non-intrusive, won't cover text */
-            "bg-transparent border border-transparent text-slate/70 hover:text-teal dark:text-dark-muted dark:hover:text-teal"
+            "bg-transparent border border-transparent text-slate/70 hover:text-teal dark:hover:text-teal"
         }
       `}
     >

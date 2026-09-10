@@ -134,7 +134,7 @@ function StudentAvatar({
           src={photoUrl}
           alt={name}
           onError={() => setImgError(true)}
-          className="w-16 h-16 rounded-full object-cover border-2 border-line"
+          className="w-16 h-16 rounded-full object-cover border-2 border-border"
         />
       ) : (
         <div className={`w-16 h-16 ${color} rounded-full flex items-center justify-center font-display font-semibold text-2xl`}>
@@ -167,7 +167,7 @@ function StudentAvatar({
           onClick={handleRemove}
           title="Remove photo"
           aria-label="Remove student photo"
-          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-line
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-card border border-border
                      flex items-center justify-center shadow-sm
                      opacity-0 group-hover:opacity-100 transition-opacity
                      hover:bg-danger hover:border-danger hover:text-white text-slate"
@@ -197,7 +197,7 @@ function TodayBadge({ status }: { status: "PRESENT" | "ABSENT" | "NOT_RECORDED" 
     return <span className="inline-flex items-center gap-1 text-xs font-medium bg-success-bg text-success px-2 py-0.5 rounded-full">● Today: Present</span>;
   if (status === "ABSENT")
     return <span className="inline-flex items-center gap-1 text-xs font-medium bg-danger-bg text-danger px-2 py-0.5 rounded-full">● Today: Absent</span>;
-  return <span className="inline-flex items-center gap-1 text-xs font-medium bg-paper text-slate px-2 py-0.5 rounded-full border border-line">● Today: Not recorded</span>;
+  return <span className="inline-flex items-center gap-1 text-xs font-medium bg-background text-slate px-2 py-0.5 rounded-full border border-border">● Today: Not recorded</span>;
 }
 
 /** SVG spark-line between two exam points */
@@ -252,9 +252,9 @@ export default function StudentProfile({
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse max-w-2xl">
-        <div className="h-36 bg-paper rounded-xl border border-line" />
-        <div className="h-24 bg-paper rounded-xl border border-line" />
-        <div className="h-32 bg-paper rounded-xl border border-line" />
+        <div className="h-36 bg-background rounded-xl border border-border" />
+        <div className="h-24 bg-background rounded-xl border border-border" />
+        <div className="h-32 bg-background rounded-xl border border-border" />
       </div>
     );
   }
@@ -280,7 +280,7 @@ export default function StudentProfile({
     <div className="space-y-5 max-w-2xl">
 
       {/* ── Profile header card ────────────────────────────────────────── */}
-      <div className="bg-white border border-line rounded-xl p-5">
+      <div className="bg-card border border-border rounded-xl p-5">
 
         {/* Today badge */}
         <div className="flex justify-end mb-4">
@@ -296,7 +296,7 @@ export default function StudentProfile({
             onPhotoChange={setPhotoUrl}
           />
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl font-semibold text-ink leading-tight">{student.fullName}</h1>
+            <h1 className="font-display text-xl font-semibold text-foreground leading-tight">{student.fullName}</h1>
             <p className="text-sm text-slate mt-0.5">
               <span className="font-mono">{student.admissionNumber}</span>
               <span className="mx-1.5">·</span>
@@ -337,18 +337,18 @@ export default function StudentProfile({
         </div>
 
         {/* Bio grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 mt-4 pt-4 border-t border-line text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 mt-4 pt-4 border-t border-border text-sm">
           <div>
             <p className="text-xs text-slate mb-0.5">Date of birth</p>
-            <p className="text-ink">{student.dateOfBirth ?? "—"}</p>
+            <p className="text-foreground">{student.dateOfBirth ?? "—"}</p>
           </div>
           <div>
             <p className="text-xs text-slate mb-0.5">Enrolled</p>
-            <p className="text-ink">{fmtDate(student.enrolledAt)}</p>
+            <p className="text-foreground">{fmtDate(student.enrolledAt)}</p>
           </div>
           <div>
             <p className="text-xs text-slate mb-0.5">Parent / Guardian</p>
-            <p className="text-ink font-medium">{student.parentName || "—"}</p>
+            <p className="text-foreground font-medium">{student.parentName || "—"}</p>
           </div>
           <div>
             <p className="text-xs text-slate mb-0.5">Mobile number</p>
@@ -357,7 +357,7 @@ export default function StudentProfile({
                 {student.parentContact}
               </a>
             ) : (
-              <p className="text-ink">—</p>
+              <p className="text-foreground">—</p>
             )}
           </div>
           <div className="sm:col-span-2">
@@ -372,7 +372,7 @@ export default function StudentProfile({
                     className={`inline-block text-[11px] rounded px-1.5 py-0.5 font-medium border ${
                       s.isElective
                         ? "bg-amber-50 text-amber-700 border-amber-200"
-                        : "bg-paper text-ink border-line"
+                        : "bg-background text-foreground border-border"
                     }`}
                     title={s.isElective ? `${s.name} (elective)` : s.name}
                   >
@@ -389,9 +389,9 @@ export default function StudentProfile({
       </div>
 
       {/* ── Recent exam results ────────────────────────────────────────── */}
-      <div className={`bg-white border rounded-xl p-5 ${isAcademicFlagged ? "border-red-300" : "border-line"}`}>
+      <div className={`bg-card border rounded-xl p-5 ${isAcademicFlagged ? "border-red-300" : "border-border"}`}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-ink">Recent exam results</h2>
+          <h2 className="text-sm font-semibold text-foreground">Recent exam results</h2>
           <Link href={`${base}/assessments/report-cards?studentId=${student.id}`} className="text-xs text-royal hover:underline">
             View all →
           </Link>
@@ -413,13 +413,13 @@ export default function StudentProfile({
                 <Link
                   key={e.periodId}
                   href={`${base}/assessments/report-cards/${student.id}?periodId=${e.periodId}`}
-                  className="flex-1 min-w-[120px] rounded-lg border border-line bg-paper px-3 py-2.5 hover:border-royal/40 transition-colors group"
+                  className="flex-1 min-w-[120px] rounded-lg border border-border bg-background px-3 py-2.5 hover:border-royal/40 transition-colors group"
                 >
                   <p className="text-[11px] text-slate truncate">
                     {e.periodName} · {e.academicYear}{e.term ? ` T${e.term}` : ""}
                   </p>
                   <div className="flex items-end gap-2 mt-1">
-                    <span className="text-2xl font-display font-bold text-ink group-hover:text-royal transition-colors">
+                    <span className="text-2xl font-display font-bold text-foreground group-hover:text-royal transition-colors">
                       {e.meanGrade ?? "—"}
                     </span>
                     <div className="flex flex-col mb-0.5">
@@ -448,9 +448,9 @@ export default function StudentProfile({
 
       {/* ── Achievements ──────────────────────────────────────────────── */}
       {achievements.length > 0 && (
-        <div className="bg-white border border-line rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-ink">Achievements</h2>
+            <h2 className="text-sm font-semibold text-foreground">Achievements</h2>
             <Link href={`${base}/records?studentId=${student.id}`} className="text-xs text-royal hover:underline">
               View all →
             </Link>
@@ -462,15 +462,15 @@ export default function StudentProfile({
                 <Link
                   key={a.id}
                   href={`${base}/records?studentId=${student.id}`}
-                  className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 hover:border-royal/40 transition-colors"
+                  className="flex items-start gap-3 rounded-lg border border-border px-3 py-2.5 hover:border-royal/40 transition-colors"
                 >
                   <span className="text-lg leading-none mt-0.5 shrink-0">{meta.emoji}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink truncate">{a.title}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
                     <p className="text-xs text-slate">
                       <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium border ${meta.chip} mr-1.5`}>{meta.label}</span>
                       {fmtDate(a.achievementDate)}
-                      {a.awardLevel && <span className="ml-1 text-ink/70">· {a.awardLevel}</span>}
+                      {a.awardLevel && <span className="ml-1 text-foreground/70">· {a.awardLevel}</span>}
                     </p>
                     {a.aiSummary && <p className="text-[11px] text-royal mt-0.5">✨ {a.aiSummary}</p>}
                   </div>
@@ -483,9 +483,9 @@ export default function StudentProfile({
 
       {/* ── Discipline ────────────────────────────────────────────────── */}
       {discipline.length > 0 && (
-        <div className="bg-white border border-line rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-ink">Discipline</h2>
+            <h2 className="text-sm font-semibold text-foreground">Discipline</h2>
             <Link href={`${base}/records?studentId=${student.id}`} className="text-xs text-royal hover:underline">
               View all →
             </Link>
@@ -493,22 +493,22 @@ export default function StudentProfile({
           <div className="space-y-2">
             {discipline.slice(0, 4).map((d) => {
               const icon  = offenceIcon(d.offence);
-              const badge = STATUS_BADGE[d.status] ?? "bg-paper text-slate";
+              const badge = STATUS_BADGE[d.status] ?? "bg-background text-slate";
               const label = STATUS_LABELS[d.status] ?? d.status;
               return (
                 <Link
                   key={d.id}
                   href={`${base}/records?studentId=${student.id}&caseId=${d.id}`}
-                  className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 hover:border-royal/40 transition-colors"
+                  className="flex items-start gap-3 rounded-lg border border-border px-3 py-2.5 hover:border-royal/40 transition-colors"
                 >
                   <span className="text-lg leading-none mt-0.5 shrink-0">{icon}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-ink truncate">{d.offence}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{d.offence}</p>
                       <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-medium shrink-0 ${badge}`}>{label}</span>
                     </div>
                     <p className="text-xs text-slate mt-0.5">
-                      <span className="font-medium text-ink/70">Form {student.schoolClass.form}</span>
+                      <span className="font-medium text-foreground/70">Form {student.schoolClass.form}</span>
                       <span className="mx-1">·</span>
                       {fmtDate(d.dateOfOffence)}
                     </p>
@@ -525,9 +525,9 @@ export default function StudentProfile({
       <AccommodationProfileCard studentId={student.id} role={role} />
 
       {/* ── Attendance summary ────────────────────────────────────────── */}
-      <div className="bg-white border border-line rounded-xl p-5">
+      <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-ink">Attendance summary</h2>
+          <h2 className="text-sm font-semibold text-foreground">Attendance summary</h2>
           <Link href={`${base}/attendance?studentId=${student.id}`} className="text-xs text-royal hover:underline">
             View records →
           </Link>
@@ -537,12 +537,12 @@ export default function StudentProfile({
         ) : (
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: "Days recorded", value: String(attendance.total), cls: "text-ink" },
+              { label: "Days recorded", value: String(attendance.total), cls: "text-foreground" },
               { label: "Present",       value: String(attendance.present), cls: "text-success" },
               { label: "Absent",        value: String(attendance.absent),  cls: "text-danger" },
               { label: "Rate",          value: attendance.rate !== null ? `${attendance.rate}%` : "—", cls: attColour },
             ].map((c) => (
-              <div key={c.label} className="rounded-lg border border-line bg-paper px-3 py-2.5 text-center">
+              <div key={c.label} className="rounded-lg border border-border bg-background px-3 py-2.5 text-center">
                 <p className={`text-xl font-display font-semibold ${c.cls}`}>{c.value}</p>
                 <p className="text-slate text-[11px] mt-0.5">{c.label}</p>
               </div>

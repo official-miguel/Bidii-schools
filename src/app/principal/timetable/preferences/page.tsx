@@ -143,7 +143,7 @@ export default function PreferencesPage() {
         <PageHeader title="Timetable" description="Configure session preferences." />
         <div className="mt-4 space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-14 bg-white border border-line rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-card border border-border rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -192,9 +192,9 @@ export default function PreferencesPage() {
         )}
 
         {/* ── Preferences table ─────────────────────────────────── */}
-        <div className="bg-white border border-line rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-            <h2 className="text-sm font-semibold text-ink">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground">
               Session preferences
               {preferences.length > 0 && (
                 <span className="ml-2 text-xs font-medium text-slate bg-line px-2 py-0.5 rounded-full">
@@ -218,14 +218,14 @@ export default function PreferencesPage() {
             </div>
           ) : (
             <>
-              <div className="hidden sm:grid grid-cols-[1fr_140px_140px_40px] gap-3 px-5 py-2 bg-paper border-b border-line">
+              <div className="hidden sm:grid grid-cols-[1fr_140px_140px_40px] gap-3 px-5 py-2 bg-background border-b border-border">
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Subject code</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Session</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Constraint type</span>
                 <span />
               </div>
 
-              <div className="divide-y divide-line">
+              <div className="divide-y divide-border">
                 {preferences.map((pref, idx) => {
                   const meta = SESSION_META[pref.preferredSession];
                   const Icon = meta.Icon;
@@ -282,7 +282,7 @@ export default function PreferencesPage() {
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors
                             ${pref.isHard
                               ? "bg-danger/10 text-danger border-danger/20"
-                              : "bg-line text-slate border-line"
+                              : "bg-line text-slate border-border"
                             }`}
                         >
                           {pref.isHard ? "Hard (enforced)" : "Soft (preferred)"}
@@ -304,12 +304,12 @@ export default function PreferencesPage() {
             </>
           )}
 
-          <div className="px-5 py-4 border-t border-line flex items-center justify-between">
+          <div className="px-5 py-4 border-t border-border flex items-center justify-between">
             <div className="flex items-start gap-2 text-xs text-slate max-w-sm">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>
-                <strong className="text-ink">Hard</strong> constraints must be satisfied — the engine regenerates until they pass.{" "}
-                <strong className="text-ink">Soft</strong> preferences are respected when possible but won&apos;t block generation.
+                <strong className="text-foreground">Hard</strong> constraints must be satisfied — the engine regenerates until they pass.{" "}
+                <strong className="text-foreground">Soft</strong> preferences are respected when possible but won&apos;t block generation.
               </span>
             </div>
             <button

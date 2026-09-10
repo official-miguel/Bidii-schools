@@ -91,7 +91,7 @@ function CardHeader({
 
 function SignatureLines() {
   return (
-    <div className="flex justify-between items-end mt-8 pt-4 border-t border-line text-xs text-slate">
+    <div className="flex justify-between items-end mt-8 pt-4 border-t border-border text-xs text-slate">
       <div><div className="border-b border-slate w-40 mb-1" /><span>Class Teacher Signature</span></div>
       <div><div className="border-b border-slate w-40 mb-1" /><span>Principal Signature</span></div>
       <div><div className="border-b border-slate w-40 mb-1" /><span>Date</span></div>
@@ -108,7 +108,7 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
   const totalAssessed = data.assessedCount;
 
   return (
-    <div className="report-card-page bg-white p-8 text-sm text-ink font-sans">
+    <div className="report-card-page bg-card p-8 text-sm text-foreground font-sans">
       <CardHeader school={data.school} student={data.student} schoolClass={data.schoolClass} period={data.period} />
 
       {/* CBE framework notice */}
@@ -133,14 +133,14 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
       {data.learningAreas.map((la) => (
         <div key={la.learningArea.id} className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-display font-semibold text-sm uppercase tracking-wide text-ink">
+            <h3 className="font-display font-semibold text-sm uppercase tracking-wide text-foreground">
               {la.learningArea.name}
             </h3>
             <LvlBadge level={la.summaryLevel} />
           </div>
-          <table className="w-full text-xs border border-line">
+          <table className="w-full text-xs border border-border">
             <thead>
-              <tr className="bg-paper border-b border-line text-left">
+              <tr className="bg-background border-b border-border text-left">
                 <th className="px-3 py-2 font-semibold">Strand / Sub-strand</th>
                 <th className="px-3 py-2 font-semibold text-center w-20">Level</th>
                 <th className="px-3 py-2 font-semibold">Comment</th>
@@ -150,8 +150,8 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
               {la.strands.map((strand) => (
                 <>
                   {/* Strand header row */}
-                  <tr key={`strand-${strand.strand.id}`} className="bg-paper/60 border-b border-line">
-                    <td className="px-3 py-1.5 font-semibold text-ink" colSpan={2}>
+                  <tr key={`strand-${strand.strand.id}`} className="bg-background/60 border-b border-border">
+                    <td className="px-3 py-1.5 font-semibold text-foreground" colSpan={2}>
                       {strand.strand.name}
                     </td>
                     <td className="px-3 py-1.5 text-center">
@@ -162,9 +162,9 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
                   {strand.subStrands.map((ss, ssi) => (
                     <tr
                       key={ss.subStrand.id}
-                      className={`border-b border-line last:border-0 ${ssi % 2 === 0 ? "bg-white" : "bg-paper/30"}`}
+                      className={`border-b border-border last:border-0 ${ssi % 2 === 0 ? "bg-card" : "bg-background/30"}`}
                     >
-                      <td className="px-3 py-1.5 pl-6 text-ink">{ss.subStrand.name}</td>
+                      <td className="px-3 py-1.5 pl-6 text-foreground">{ss.subStrand.name}</td>
                       <td className="px-3 py-1.5 text-center"><LvlBadge level={ss.level} /></td>
                       <td className="px-3 py-1.5 text-slate italic">{ss.comment ?? ""}</td>
                     </tr>
@@ -177,7 +177,7 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
       ))}
 
       {/* Summary counts */}
-      <div className="mb-6 p-4 bg-paper rounded-lg border border-line">
+      <div className="mb-6 p-4 bg-background rounded-lg border border-border">
         <h3 className="font-semibold text-xs uppercase tracking-wide text-slate mb-3">
           Attainment summary ({totalAssessed} of {data.totalSubStrands} sub-strands assessed)
         </h3>
@@ -203,7 +203,7 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
           <h3 className="font-semibold text-xs uppercase tracking-wide text-amber-700 mb-2">
             Teacher narrative summary <span className="font-normal italic">(AI-drafted, editable)</span>
           </h3>
-          <p className="text-sm text-ink leading-relaxed whitespace-pre-line">{data.narrativeSummary}</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{data.narrativeSummary}</p>
         </div>
       )}
 
@@ -218,7 +218,7 @@ function JuniorCard({ data }: { data: JuniorReportCardData }) {
 
 function SeniorCard({ data }: { data: SeniorReportCardData }) {
   return (
-    <div className="report-card-page bg-white p-8 text-sm text-ink font-sans">
+    <div className="report-card-page bg-card p-8 text-sm text-foreground font-sans">
       <CardHeader school={data.school} student={data.student} schoolClass={data.schoolClass} period={data.period} />
 
       <div className="mb-5 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-xs px-3 py-2">
@@ -226,9 +226,9 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
         and external exam scores with configured weighting. No class ranking is produced.
       </div>
 
-      <table className="w-full text-xs border border-line mb-6">
+      <table className="w-full text-xs border border-border mb-6">
         <thead>
-          <tr className="bg-paper border-b border-line text-left">
+          <tr className="bg-background border-b border-border text-left">
             <th className="px-3 py-2 font-semibold">Subject</th>
             <th className="px-3 py-2 font-semibold text-center">SBA score</th>
             <th className="px-3 py-2 font-semibold text-center">Exam score</th>
@@ -238,8 +238,8 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
         </thead>
         <tbody>
           {data.subjects.map((sr, i) => (
-            <tr key={sr.subject.id} className={`border-b border-line ${i % 2 === 0 ? "bg-white" : "bg-paper/40"}`}>
-              <td className="px-3 py-1.5 font-medium text-ink">
+            <tr key={sr.subject.id} className={`border-b border-border ${i % 2 === 0 ? "bg-card" : "bg-background/40"}`}>
+              <td className="px-3 py-1.5 font-medium text-foreground">
                 {sr.subject.name}
                 <span className="ml-1 text-slate font-normal">({sr.subject.code})</span>
               </td>
@@ -263,7 +263,7 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-ink bg-paper font-semibold">
+          <tr className="border-t-2 border-ink bg-background font-semibold">
             <td className="px-3 py-2 text-xs uppercase tracking-wide" colSpan={3}>
               Overall pathway performance
             </td>
@@ -290,7 +290,7 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
           <h3 className="font-semibold text-xs uppercase tracking-wide text-amber-700 mb-2">
             Teacher narrative summary <span className="font-normal italic">(AI-drafted, editable)</span>
           </h3>
-          <p className="text-sm text-ink leading-relaxed whitespace-pre-line">{data.narrativeSummary}</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{data.narrativeSummary}</p>
         </div>
       )}
 

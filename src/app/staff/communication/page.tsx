@@ -40,7 +40,7 @@ export default function StaffCommunicationPage() {
       onNewMessage={canManage ? () => setShowComposer(true) : undefined}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-0 lg:gap-6 min-h-[70vh]">
-        <div className="lg:border-r lg:border-line lg:pr-6">
+        <div className="lg:border-r lg:border-border lg:pr-6">
           <MessageList onSelect={setSelectedId} selectedId={selectedId ?? undefined} refreshKey={refreshKey} />
         </div>
         <div className="hidden lg:block">
@@ -49,7 +49,7 @@ export default function StaffCommunicationPage() {
               <div className="w-16 h-16 rounded-2xl bg-royal-50 flex items-center justify-center mb-4">
                 <span className="text-3xl">💬</span>
               </div>
-              <p className="text-base font-medium text-ink mb-1">No message selected</p>
+              <p className="text-base font-medium text-foreground mb-1">No message selected</p>
               <p className="text-sm text-slate">Pick a message from the list to view details</p>
             </div>
           )}

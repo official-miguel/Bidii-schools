@@ -166,11 +166,11 @@ export default function ClassesPage() {
       ) : visibleClasses.length === 0 ? (
         <EmptyState message="No classes match your filters." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[600px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Class</th>
                   <th className="px-5 py-3.5 w-[80px]">Form</th>
                   <th className="px-5 py-3.5 w-[110px]">Framework</th>
@@ -181,12 +181,12 @@ export default function ClassesPage() {
               </thead>
               <tbody>
                 {visibleClasses.map((c) => (
-                  <tr key={c.id} className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openClassDrawer(c.id)}>
+                  <tr key={c.id} className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openClassDrawer(c.id)}>
                     {/* Class name */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-ink group-hover:text-teal transition-colors">{c.name}</p>
+                          <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors">{c.name}</p>
                           {c.stream && <p className="text-xs text-slate/60">{c.stream} stream</p>}
                         </div>
                         <ExternalLink className="h-3.5 w-3.5 text-slate/30 group-hover:text-teal transition-colors shrink-0" />
@@ -330,14 +330,14 @@ export default function ClassesPage() {
                             className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${
                               frameworkType === fw
                                 ? "border-teal bg-teal"
-                                : "border-line"
+                                : "border-border"
                             }`}
                           >
                             {frameworkType === fw && (
-                              <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                              <div className="h-1.5 w-1.5 rounded-full bg-card" />
                             )}
                           </div>
-                          <span className="text-sm font-medium text-ink">
+                          <span className="text-sm font-medium text-foreground">
                             {fw === "EIGHT_FOUR_FOUR" ? "8-4-4 (KCSE)" : "CBE (Competency)"}
                           </span>
                         </div>

@@ -14,6 +14,7 @@ import {
 import { ScreenHeader, Card, ErrorBanner } from '@/components/ui';
 import { api } from '@/services/api';
 import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DollarSign, TrendingUp, AlertTriangle, Clock } from 'lucide-react-native';
@@ -27,6 +28,7 @@ interface FineStats {
 
 export default function FinesStatsScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const [stats,     setStats]     = useState<FineStats | null>(null);
   const [loading,   setLoading]   = useState(true);
@@ -53,6 +55,69 @@ export default function FinesStatsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // StyleSheet.create() inside component so colors are theme-aware
+  const styles = StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scroll: {
+      padding: Spacing[4],
+      gap: Spacing[4],
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing[3],
+    },
+    statCard: {
+      backgroundColor: colors.card,
+      borderRadius: Radius.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: Spacing[4],
+      alignItems: 'center',
+      // each card takes ~48% width on standard phones
+      minWidth: '47%',
+      flex: 1,
+    },
+    statIcon: {
+      marginBottom: Spacing[2],
+    },
+    statValue: {
+      fontSize: Typography.fontSize.xl,
+      fontWeight: Typography.fontWeight.bold,
+      color: colors.foreground,
+      marginBottom: Spacing[1],
+    },
+    statLabel: {
+      fontSize: Typography.fontSize.xs,
+      color: colors.mutedForeground,
+      textAlign: 'center',
+    },
+    placeholder: {
+      alignItems: 'center',
+      paddingVertical: Spacing[6],
+      gap: Spacing[3],
+    },
+    placeholderTitle: {
+      fontSize: Typography.fontSize.base,
+      fontWeight: Typography.fontWeight.semibold,
+      color: colors.foreground,
+    },
+    placeholderBody: {
+      fontSize: Typography.fontSize.sm,
+      color: colors.mutedForeground,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  });
+
   return (
     <View style={styles.root}>
       <ScreenHeader
@@ -71,7 +136,7 @@ export default function FinesStatsScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ScrollView
@@ -85,33 +150,37 @@ export default function FinesStatsScreen() {
             <StatCard
               label="Total Fines"
               value={formatCurrency(stats?.totalFines ?? 0)}
-              icon={<DollarSign size={18} color={Colors.teal} />}
-              accent={Colors.teal}
+              icon={<DollarSign size={18} color={colors.primary} />}
+              accent={colors.primary}
+              styles={styles}
             />
             <StatCard
               label="Collected"
               value={formatCurrency(stats?.collected ?? 0)}
-              icon={<TrendingUp size={18} color={Colors.success} />}
-              accent={Colors.success}
+              icon={<TrendingUp size={18} color={colors.successForeground} />}
+              accent={colors.successForeground}
+              styles={styles}
             />
             <StatCard
               label="Outstanding"
               value={formatCurrency(stats?.outstanding ?? 0)}
-              icon={<AlertTriangle size={18} color={Colors.warn} />}
-              accent={Colors.warn}
+              icon={<AlertTriangle size={18} color={colors.warnForeground} />}
+              accent={colors.warnForeground}
+              styles={styles}
             />
             <StatCard
               label="Overdue Books"
               value={String(stats?.overdue ?? 0)}
-              icon={<Clock size={18} color={Colors.danger} />}
-              accent={Colors.danger}
+              icon={<Clock size={18} color={colors.destructive} />}
+              accent={colors.destructive}
+              styles={styles}
             />
           </View>
 
           {/* ── Placeholder message ───────────────────────────────── */}
           <Card>
             <View style={styles.placeholder}>
-              <DollarSign size={36} color={Colors.slateText} />
+              <DollarSign size={36} color={colors.mutedForeground} />
               <Text style={styles.placeholderTitle}>Statistics coming soon</Text>
               <Text style={styles.placeholderBody}>
                 Detailed fine trends, per-student breakdowns, and payment
@@ -128,12 +197,13 @@ export default function FinesStatsScreen() {
 // ── Stat card sub-component ───────────────────────────────────────────────────
 
 function StatCard({
-  label, value, icon, accent,
+  label, value, icon, accent, styles,
 }: {
   label: string;
   value: string;
   icon: React.ReactNode;
   accent: string;
+  styles: ReturnType<typeof StyleSheet.create>;
 }) {
   return (
     <View style={[styles.statCard, { borderTopColor: accent, borderTopWidth: 3 }]}>
@@ -143,67 +213,3 @@ function StatCard({
     </View>
   );
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.paper,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scroll: {
-    padding: Spacing[4],
-    gap: Spacing[4],
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing[3],
-  },
-  statCard: {
-    backgroundColor: Colors.card,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.line,
-    padding: Spacing[4],
-    alignItems: 'center',
-    // each card takes ~48% width on standard phones
-    minWidth: '47%',
-    flex: 1,
-  },
-  statIcon: {
-    marginBottom: Spacing[2],
-  },
-  statValue: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.ink,
-    marginBottom: Spacing[1],
-  },
-  statLabel: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.slateText,
-    textAlign: 'center',
-  },
-  placeholder: {
-    alignItems: 'center',
-    paddingVertical: Spacing[6],
-    gap: Spacing[3],
-  },
-  placeholderTitle: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.ink,
-  },
-  placeholderBody: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.slateText,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});

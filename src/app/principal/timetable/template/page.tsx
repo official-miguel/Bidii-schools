@@ -38,10 +38,10 @@ const SESSIONS = [
 
 const SLOT_TYPE_COLORS: Record<string, string> = {
   LESSON:   "bg-teal/10 text-teal border-teal/20",
-  BREAK:    "bg-orange-50 text-orange-700 border-orange-200",
-  LUNCH:    "bg-green-50 text-green-700 border-green-200",
-  GAMES:    "bg-pink-50 text-pink-700 border-pink-200",
-  ASSEMBLY: "bg-slate-100 text-slate-600 border-slate-200",
+  BREAK:    "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+  LUNCH:    "bg-green-50  dark:bg-green-950/40  text-green-700  dark:text-green-300  border-green-200  dark:border-green-800",
+  GAMES:    "bg-pink-50   dark:bg-pink-950/40   text-pink-700   dark:text-pink-300   border-pink-200   dark:border-pink-800",
+  ASSEMBLY: "bg-muted text-muted-foreground border-border",
 };
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -304,7 +304,7 @@ export default function TemplatePage() {
         <PageHeader title="Timetable" description="Configure the school day template." />
         <div className="mt-4 space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-white border border-line rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-card border border-border rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -341,8 +341,8 @@ export default function TemplatePage() {
 
         {/* ── Config bar ──────────────────────────────────────────────── */}
         {config && (
-          <div className="bg-white border border-line rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-ink mb-4">Configuration</h2>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-foreground mb-4">Configuration</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <FormField label="Academic year">
                 <input className={inputClass} placeholder="e.g. 2026"
@@ -382,7 +382,7 @@ export default function TemplatePage() {
                           ${active
                             ? isWeekend ? "bg-purple-600 text-white border-purple-600"
                                         : "bg-teal text-white border-teal"
-                            : "bg-white text-slate border-line hover:border-teal/40"
+                            : "bg-card text-slate border-border hover:border-teal/40"
                           }`}>
                         {DAY_NAMES[d]}
                       </button>
@@ -434,7 +434,7 @@ export default function TemplatePage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-purple-600" />
-              <h2 className="text-sm font-semibold text-ink">Weekend Day Templates</h2>
+              <h2 className="text-sm font-semibold text-foreground">Weekend Day Templates</h2>
               <span className="text-xs text-slate bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full text-purple-700">
                 Separate from Mon–Fri
               </span>
@@ -444,10 +444,10 @@ export default function TemplatePage() {
               const dayCols = getDayCols(day);
               const hasOverride = dayCols.length > 0;
               return (
-                <div key={day} className="bg-white border border-purple-200 rounded-xl overflow-hidden">
+                <div key={day} className="bg-card border border-purple-200 rounded-xl overflow-hidden">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-purple-100 bg-purple-50/50">
                     <div>
-                      <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold shrink-0">
                           {DAY_NAMES[day]}
                         </span>
@@ -503,23 +503,23 @@ export default function TemplatePage() {
         )}
 
         {/* ── Info note ──────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-line bg-paper p-4 flex gap-3">
+        <div className="rounded-xl border border-border bg-background p-4 flex gap-3">
           <Info className="h-4 w-4 text-slate shrink-0 mt-0.5" />
           <div className="text-xs text-slate leading-relaxed space-y-1">
             <p>
-              <strong className="text-ink">LESSON</strong> columns are the only slots where subjects can be scheduled.
+              <strong className="text-foreground">LESSON</strong> columns are the only slots where subjects can be scheduled.
               The engine fills every LESSON slot automatically.
             </p>
             <p>
-              <strong className="text-ink">BREAK / LUNCH / GAMES / ASSEMBLY</strong> are non-teaching periods —
+              <strong className="text-foreground">BREAK / LUNCH / GAMES / ASSEMBLY</strong> are non-teaching periods —
               the engine skips them.
             </p>
             <p>
-              <strong className="text-ink">Session</strong> (Morning/Afternoon/Evening) lets you set scheduling
+              <strong className="text-foreground">Session</strong> (Morning/Afternoon/Evening) lets you set scheduling
               preferences — e.g. &quot;Mathematics must be in the morning&quot;.
             </p>
             <p>
-              <strong className="text-ink">Weekend templates</strong> appear when Saturday or Sunday are enabled as
+              <strong className="text-foreground">Weekend templates</strong> appear when Saturday or Sunday are enabled as
               operating days. Each gets a fully independent slot layout.
             </p>
           </div>
@@ -559,14 +559,14 @@ function TemplateSection({
 }) {
   const accentBtn = accent === "purple"
     ? "border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100"
-    : "border-line text-slate hover:text-ink hover:border-teal/40";
+    : "border-border text-slate hover:text-foreground hover:border-teal/40";
 
   return (
-    <div className={`${hideHeader ? "" : "bg-white border border-line rounded-xl overflow-hidden"}`}>
+    <div className={`${hideHeader ? "" : "bg-card border border-border rounded-xl overflow-hidden"}`}>
       {!hideHeader && (
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2 className="text-sm font-semibold text-ink">{title}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
             <p className="text-xs text-slate mt-0.5">{subtitle}</p>
           </div>
           <button type="button" onClick={onLoadDefault}
@@ -587,7 +587,7 @@ function TemplateSection({
       ) : (
         <>
           {/* Header row — desktop only */}
-          <div className="hidden lg:grid grid-cols-[28px_44px_1fr_1fr_1fr_1fr_1fr_36px] gap-2 px-4 py-2 border-b border-line bg-paper">
+          <div className="hidden lg:grid grid-cols-[28px_44px_1fr_1fr_1fr_1fr_1fr_36px] gap-2 px-4 py-2 border-b border-border bg-background">
             <span /><span className="text-[10px] font-semibold uppercase tracking-wide text-slate">#</span>
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Start</span>
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">End</span>
@@ -596,13 +596,13 @@ function TemplateSection({
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Label</span>
             <span />
           </div>
-          <div className="divide-y divide-line">
+          <div className="divide-y divide-border">
             {columns.map((col, idx) => (
               <div key={idx} draggable
                 onDragStart={() => onDragStart(idx)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => onDrop(idx)}
-                className={`transition-colors px-4 py-3 ${col.slotType !== "LESSON" ? "bg-paper/60" : ""} ${dragIdx === idx ? "opacity-40" : ""}`}>
+                className={`transition-colors px-4 py-3 ${col.slotType !== "LESSON" ? "bg-background/60" : ""} ${dragIdx === idx ? "opacity-40" : ""}`}>
 
                 {/* ── Desktop row (lg+) ── */}
                 <div className="hidden lg:grid grid-cols-[28px_44px_1fr_1fr_1fr_1fr_1fr_36px] gap-2 items-center">
@@ -620,7 +620,7 @@ function TemplateSection({
                   </select>
                   <select value={col.session} disabled={col.slotType !== "LESSON"}
                     onChange={(e) => onUpdate(idx, { session: e.target.value })}
-                    className={`${inputClass} text-xs py-1.5 disabled:opacity-40 disabled:bg-paper`}>
+                    className={`${inputClass} text-xs py-1.5 disabled:opacity-40 disabled:bg-background`}>
                     {SESSIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                   <input placeholder={col.slotType === "LESSON" ? "Optional" : "Required"}
@@ -641,12 +641,12 @@ function TemplateSection({
                       <GripVertical className="h-4 w-4" />
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0
-                      ${SLOT_TYPE_COLORS[col.slotType] ?? "bg-slate-100 text-slate border-slate-200"}`}>
+                      ${SLOT_TYPE_COLORS[col.slotType] ?? "bg-muted text-muted-foreground border-border"}`}>
                       #{col.position} · {col.slotType}
                     </span>
                     <div className="flex-1" />
                     <button type="button" onClick={() => onRemove(idx)}
-                      className="p-1.5 rounded-lg border border-line text-slate hover:text-danger hover:border-danger/30 transition-colors">
+                      className="p-1.5 rounded-lg border border-border text-slate hover:text-danger hover:border-danger/30 transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -680,7 +680,7 @@ function TemplateSection({
                       <label className="text-[10px] font-medium text-slate uppercase tracking-wide block mb-1">Session</label>
                       <select value={col.session} disabled={col.slotType !== "LESSON"}
                         onChange={(e) => onUpdate(idx, { session: e.target.value })}
-                        className={`${inputClass} text-sm py-2 w-full disabled:opacity-40 disabled:bg-paper`}>
+                        className={`${inputClass} text-sm py-2 w-full disabled:opacity-40 disabled:bg-background`}>
                         {SESSIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
                     </div>
@@ -705,11 +705,11 @@ function TemplateSection({
       )}
 
       {/* Add slot buttons */}
-      <div className="px-5 py-3 border-t border-line flex flex-wrap gap-2">
+      <div className="px-5 py-3 border-t border-border flex flex-wrap gap-2">
         {SLOT_TYPES.map((t) => (
           <button key={t.value} type="button" onClick={() => onAdd(t.value)}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors
-              ${SLOT_TYPE_COLORS[t.value] ?? "bg-white text-slate border-line hover:border-teal/40"}`}>
+              ${SLOT_TYPE_COLORS[t.value] ?? "bg-card text-slate border-border hover:border-teal/40"}`}>
             <Plus className="h-3 w-3" />{t.label}
           </button>
         ))}

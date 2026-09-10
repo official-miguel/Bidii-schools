@@ -201,7 +201,7 @@ export default function TeacherTimetablePage() {
         <PageHeader title="My Timetable" description="Your weekly schedule." />
         <div className="space-y-3 mt-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border border-line rounded-xl p-5 animate-pulse h-20" />
+            <div key={i} className="bg-card border border-border rounded-xl p-5 animate-pulse h-20" />
           ))}
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function TeacherTimetablePage() {
           <>
             {/* ── Overview strip ───────────────────────────────────────── */}
             <div>
-              <h2 className="text-base font-semibold text-ink mb-3">This week at a glance</h2>
+              <h2 className="text-base font-semibold text-foreground mb-3">This week at a glance</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatPill icon={<BookOpen className="h-4 w-4" />}
                   label="Lessons / week" value={data.weeklyLessons} />
@@ -248,10 +248,10 @@ export default function TeacherTimetablePage() {
 
             {/* ── Today / selected-day panel ────────────────────────────── */}
             <div>
-              <h2 className="text-base font-semibold text-ink mb-3">Your schedule</h2>
-            <div className="bg-white border border-line rounded-xl overflow-hidden">
+              <h2 className="text-base font-semibold text-foreground mb-3">Your schedule</h2>
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               {/* Day navigator header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
                 <button
                   onClick={prevDay}
                   disabled={data.days.indexOf(selectedDay) === 0}
@@ -272,7 +272,7 @@ export default function TeacherTimetablePage() {
                           ? "bg-teal text-white"
                           : d === TODAY_IDX
                             ? "border border-teal/40 text-teal bg-teal-50"
-                            : "text-slate hover:bg-paper"
+                            : "text-slate hover:bg-background"
                         }`}
                     >
                       {DAY_SHORT[d]}
@@ -302,7 +302,7 @@ export default function TeacherTimetablePage() {
                         <div className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-success uppercase tracking-wide">Now teaching</p>
-                          <p className="text-sm font-bold text-ink truncate">
+                          <p className="text-sm font-bold text-foreground truncate">
                             {currentLesson.subjectName} — {currentLesson.className}
                           </p>
                           {currentLesson.room && (
@@ -319,7 +319,7 @@ export default function TeacherTimetablePage() {
                         <Clock className="h-4 w-4 text-info shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-info uppercase tracking-wide">Up next</p>
-                          <p className="text-sm font-bold text-ink truncate">
+                          <p className="text-sm font-bold text-foreground truncate">
                             {nextLesson.subjectName} — {nextLesson.className}
                           </p>
                         </div>
@@ -340,7 +340,7 @@ export default function TeacherTimetablePage() {
 
                   if (special && !slot) {
                     return (
-                      <div key={period} className="flex items-center gap-3 px-4 py-2 rounded-lg bg-paper border border-dashed border-line">
+                      <div key={period} className="flex items-center gap-3 px-4 py-2 rounded-lg bg-background border border-dashed border-border">
                         <span className="text-xs font-medium text-slate w-6 shrink-0">{period}</span>
                         <span className="text-xs text-slate/60 uppercase tracking-wide">{specialLabel(selectedDay, period)}</span>
                         {pt && <span className="ml-auto text-xs text-slate/50">{pt.label}</span>}
@@ -350,7 +350,7 @@ export default function TeacherTimetablePage() {
 
                   if (!slot) {
                     return (
-                      <div key={period} className="flex items-center gap-3 px-4 py-2 rounded-lg bg-paper/50 border border-line/50 min-h-[44px]">
+                      <div key={period} className="flex items-center gap-3 px-4 py-2 rounded-lg bg-background/50 border border-border/50 min-h-[44px]">
                         <span className="text-xs font-medium text-slate/50 w-6 shrink-0">{period}</span>
                         <span className="flex-1 h-px bg-line/50" />
                         {pt && <span className="text-xs text-slate/40">{pt.label}</span>}
@@ -390,9 +390,9 @@ export default function TeacherTimetablePage() {
             </div>
             </div>{/* end schedule wrapper */}
             {/* ── Full week grid (desktop) ──────────────────────────────── */}
-            <div className="hidden lg:block bg-white border border-line rounded-xl overflow-hidden shadow-sm">
-              <div className="px-5 py-3.5 border-b border-line flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-ink">Full week</h2>
+            <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">Full week</h2>
                 <button onClick={load} className="p-1.5 rounded-lg text-slate hover:text-teal transition-colors" title="Refresh">
                   <RefreshCw className="h-3.5 w-3.5" />
                 </button>
@@ -401,12 +401,12 @@ export default function TeacherTimetablePage() {
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-slate-50/80">
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide border-b border-r border-line w-20 sticky left-0 bg-slate-50/80 z-10">
+                      <th className="px-3 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide border-b border-r border-border w-20 sticky left-0 bg-slate-50/80 z-10">
                         Period
                       </th>
                       {data.days.map((d) => (
                         <th key={d}
-                          className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide border-b border-line
+                          className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide border-b border-border
                             ${d === TODAY_IDX ? "text-teal bg-teal-50/60" : "text-slate"}`}>
                           {DAY_FULL[d]}
                           {d === TODAY_IDX && (
@@ -421,8 +421,8 @@ export default function TeacherTimetablePage() {
                       const pt = data.periods.find((p) => p.period === period);
                       return (
                         <tr key={period} className="hover:bg-slate-50/20 transition-colors">
-                          <td className="px-3 py-2 border-r border-b border-line sticky left-0 bg-white z-10">
-                            <div className="text-xs font-semibold text-ink">{period}</div>
+                          <td className="px-3 py-2 border-r border-b border-border sticky left-0 bg-card z-10">
+                            <div className="text-xs font-semibold text-foreground">{period}</div>
                             {pt && <div className="text-[10px] text-slate/60 mt-0.5">{pt.label}</div>}
                           </td>
                           {data.days.map((day) => {
@@ -432,10 +432,10 @@ export default function TeacherTimetablePage() {
                             const isNow   = day === TODAY_IDX && currentLesson?.period === period;
 
                             return (
-                              <td key={day} className={`border-b border-line p-1.5
+                              <td key={day} className={`border-b border-border p-1.5
                                 ${day === TODAY_IDX ? "bg-teal-50/20" : ""}`}>
                                 {special && !slot ? (
-                                  <div className="min-h-[52px] rounded-lg bg-paper border border-dashed border-line flex items-center justify-center px-2">
+                                  <div className="min-h-[52px] rounded-lg bg-background border border-dashed border-border flex items-center justify-center px-2">
                                     <span className="text-[10px] text-slate/60 uppercase tracking-wide text-center">
                                       {specialLabel(day, period)}
                                     </span>
@@ -458,7 +458,7 @@ export default function TeacherTimetablePage() {
                                     )}
                                   </div>
                                 ) : (
-                                  <div className="min-h-[52px] rounded-lg bg-slate-50/40 border border-dashed border-line/40" />
+                                  <div className="min-h-[52px] rounded-lg bg-slate-50/40 border border-dashed border-border/40" />
                                 )}
                               </td>
                             );
@@ -473,8 +473,8 @@ export default function TeacherTimetablePage() {
 
             {/* ── Subject breakdown ─────────────────────────────────────── */}
             {data.subjectBreakdown.length > 0 && (
-              <div className="bg-white border border-line rounded-xl p-5">
-                <h2 className="text-sm font-semibold text-ink mb-3">Subjects this week</h2>
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h2 className="text-sm font-semibold text-foreground mb-3">Subjects this week</h2>
                 <div className="flex flex-wrap gap-2">
                   {data.subjectBreakdown
                     .sort((a, b) => b.count - a.count)
@@ -513,12 +513,12 @@ function StatPill({
   icon, label, value,
 }: { icon: React.ReactNode; label: string; value: number | string }) {
   return (
-    <div className="bg-white border border-line rounded-xl px-4 py-3.5 flex items-center gap-3">
+    <div className="bg-card border border-border rounded-xl px-4 py-3.5 flex items-center gap-3">
       <div className="w-8 h-8 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-lg font-bold text-ink leading-none">{value}</p>
+        <p className="text-lg font-bold text-foreground leading-none">{value}</p>
         <p className="text-[11px] text-slate mt-0.5 leading-snug">{label}</p>
       </div>
     </div>

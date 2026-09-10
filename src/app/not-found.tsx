@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 /**
  * not-found.tsx  (app-level)
@@ -14,7 +14,7 @@ export default function NotFound() {
         404
       </p>
 
-      <h1 className="mb-2 text-2xl font-bold text-ink dark:text-dark-text">
+      <h1 className="mb-2 text-2xl font-bold text-foreground">
         Page not found
       </h1>
 

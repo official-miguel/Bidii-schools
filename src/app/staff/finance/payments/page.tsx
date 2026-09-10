@@ -48,9 +48,9 @@ const METHODS = [
 ];
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "";
 
 // ── Post Payment Modal ─────────────────────────────────────────────────────
 
@@ -176,18 +176,18 @@ function PostPaymentModal({
       aria-label="Post payment"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-line bg-white shadow-2xl dark:bg-dark-surface dark:border-dark-border">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line px-5 py-4 dark:border-dark-border">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Banknote className="h-4 w-4 text-teal" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Post Payment</h2>
+            <h2 className="text-sm font-semibold text-foreground">Post Payment</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors"
+            className="text-slate hover:text-foreground transition-colors"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -206,8 +206,8 @@ function PostPaymentModal({
               const active = step === s;
               return (
                 <div key={s} className="flex items-center gap-2">
-                  {i > 0 && <div className={`h-px w-8 ${done ? "bg-teal" : "bg-line dark:bg-dark-border"}`} />}
-                  <span className={`font-medium ${active ? "text-teal" : done ? "text-teal/70" : "text-slate dark:text-dark-muted"}`}>
+                  {i > 0 && <div className={`h-px w-8 ${done ? "bg-teal" : "bg-line"}`} />}
+                  <span className={`font-medium ${active ? "text-teal" : done ? "text-teal/70" : "text-slate"}`}>
                     {labels[i]}
                   </span>
                 </div>
@@ -224,12 +224,12 @@ function PostPaymentModal({
           {/* ── Step 1: Student search ── */}
           {step === "search" && (
             <div>
-              <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1.5">
+              <label className="block text-xs font-medium text-slate mb-1.5">
                 Search student by name or admission number
               </label>
               <div className="relative">
                 <div className="relative flex items-center">
-                  <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-slate dark:text-dark-muted" aria-hidden="true" />
+                  <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-slate" aria-hidden="true" />
                   <input
                     ref={inputRef}
                     type="text"
@@ -251,7 +251,7 @@ function PostPaymentModal({
                     ) : query ? (
                       <button type="button" tabIndex={-1}
                         onClick={() => { setQuery(""); setResults([]); setDropOpen(false); inputRef.current?.focus(); }}
-                        className="text-slate hover:text-ink dark:text-dark-muted transition-colors"
+                        className="text-slate hover:text-foreground transition-colors"
                         aria-label="Clear"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -265,11 +265,11 @@ function PostPaymentModal({
                     ref={listRef}
                     role="listbox"
                     className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-xl overflow-hidden
-                               bg-white border border-line shadow-xl dark:bg-dark-surface dark:border-dark-border"
+                               bg-card border border-border shadow-xl"
                     style={{ maxHeight: "260px", overflowY: "auto" }}
                   >
                     {results.length === 0 ? (
-                      <li className="px-4 py-3 text-xs text-slate dark:text-dark-muted text-center">
+                      <li className="px-4 py-3 text-xs text-slate text-center">
                         No students found
                       </li>
                     ) : results.map((s, idx) => (
@@ -280,15 +280,15 @@ function PostPaymentModal({
                         onMouseDown={() => selectStudent(s)}
                         onMouseEnter={() => setActiveIdx(idx)}
                         className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors
-                          ${idx < results.length - 1 ? "border-b border-line/60 dark:border-dark-border/60" : ""}
-                          ${idx === activeIdx ? "bg-teal/5 dark:bg-teal/10" : "hover:bg-paper dark:hover:bg-dark-border/40"}`}
+                          ${idx < results.length - 1 ? "border-b border-border/60/60" : ""}
+                          ${idx === activeIdx ? "bg-teal/5" : "hover:bg-background/40"}`}
                       >
                         <div className="flex items-center justify-center h-7 w-7 rounded-full shrink-0 bg-teal text-white text-[10px] font-bold select-none" aria-hidden="true">
                           {s.fullName.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-ink dark:text-dark-text truncate leading-tight">{s.fullName}</p>
-                          <p className="text-[10px] text-slate dark:text-dark-muted font-mono leading-tight">
+                          <p className="text-xs font-semibold text-foreground truncate leading-tight">{s.fullName}</p>
+                          <p className="text-[10px] text-slate font-mono leading-tight">
                             {s.admissionNumber} · {s.schoolClass.name}
                           </p>
                         </div>
@@ -304,20 +304,20 @@ function PostPaymentModal({
           {step === "form" && student && (
             <div className="space-y-4">
               {/* Selected student pill */}
-              <div className="flex items-center justify-between rounded-lg border border-teal/30 bg-teal/5 px-3 py-2 dark:bg-teal/10 dark:border-teal/20">
+              <div className="flex items-center justify-between rounded-lg border border-teal/30 bg-teal/5 px-3 py-2 dark:border-teal/20">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center justify-center h-7 w-7 rounded-full bg-teal text-white text-[10px] font-bold select-none" aria-hidden="true">
                     {student.fullName.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-ink dark:text-dark-text">{student.fullName}</p>
-                    <p className="text-[10px] text-slate dark:text-dark-muted font-mono">{student.admissionNumber} · {student.schoolClass.name}</p>
+                    <p className="text-xs font-semibold text-foreground">{student.fullName}</p>
+                    <p className="text-[10px] text-slate font-mono">{student.admissionNumber} · {student.schoolClass.name}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setStudent(null); setQuery(""); setStep("search"); setErr(null); }}
-                  className="text-slate hover:text-ink dark:text-dark-muted transition-colors"
+                  className="text-slate hover:text-foreground transition-colors"
                   aria-label="Change student"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -326,7 +326,7 @@ function PostPaymentModal({
 
               {/* Amount */}
               <div>
-                <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+                <label className="block text-xs font-medium text-slate mb-1">
                   Amount (KES) <span className="text-danger">*</span>
                 </label>
                 <input
@@ -341,7 +341,7 @@ function PostPaymentModal({
 
               {/* Method */}
               <div>
-                <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+                <label className="block text-xs font-medium text-slate mb-1">
                   Payment method
                 </label>
                 <div className="flex gap-2">
@@ -352,7 +352,7 @@ function PostPaymentModal({
                       className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                         method === m.value
                           ? "bg-teal text-white border-teal"
-                          : "bg-white border-line text-slate hover:border-teal/40 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                          : "bg-card border-border text-slate hover:border-teal/40"
                       }`}
                     >
                       {m.label}
@@ -363,7 +363,7 @@ function PostPaymentModal({
 
               {/* Reference */}
               <div>
-                <label className="block text-xs font-medium text-slate dark:text-dark-muted mb-1">
+                <label className="block text-xs font-medium text-slate mb-1">
                   Reference <span className="text-slate/50">(optional)</span>
                 </label>
                 <input
@@ -393,16 +393,16 @@ function PostPaymentModal({
               <div className="rounded-lg border border-warn/30 bg-warn-bg/60 px-4 py-3 flex gap-3 items-start">
                 <AlertTriangle className="h-5 w-5 text-warn shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
-                  <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                  <p className="text-sm font-semibold text-foreground">
                     Confirm payment?
                   </p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                  <p className="text-xs text-slate mt-0.5">
                     This is <span className="font-semibold text-danger">irreversible</span>. Once posted it is permanently recorded in the ledger.
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border divide-y divide-line dark:divide-dark-border text-sm">
+              <div className="rounded-lg border border-border bg-background divide-y divide-border text-sm">
                 {[
                   { label: "Student", value: student.fullName },
                   { label: "Admission", value: student.admissionNumber },
@@ -411,8 +411,8 @@ function PostPaymentModal({
                   ...(reference.trim() ? [{ label: "Reference", value: reference.trim() }] : []),
                 ].map(row => (
                   <div key={row.label} className="flex justify-between px-4 py-2.5">
-                    <span className="text-slate dark:text-dark-muted">{row.label}</span>
-                    <span className="font-medium text-ink dark:text-dark-text">{row.value}</span>
+                    <span className="text-slate">{row.label}</span>
+                    <span className="font-medium text-foreground">{row.value}</span>
                   </div>
                 ))}
               </div>
@@ -433,7 +433,7 @@ function PostPaymentModal({
                   type="button"
                   onClick={() => setStep("form")}
                   disabled={submitting}
-                  className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-slate hover:text-ink transition-colors dark:border-dark-border dark:text-dark-muted"
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-slate hover:text-foreground transition-colors"
                 >
                   Back
                 </button>
@@ -529,20 +529,20 @@ export default function PaymentsPage() {
                 {payments.map((p) => (
                   <tr key={p.id} className={premiumTrClass}>
                     <td className={premiumTdClass}>
-                      <p className="font-medium text-ink dark:text-dark-text">
+                      <p className="font-medium text-foreground">
                         {p.student?.fullName ?? "—"}
                       </p>
-                      <p className="text-xs text-slate font-mono mt-0.5 dark:text-dark-muted">
+                      <p className="text-xs text-slate font-mono mt-0.5">
                         {p.student?.admissionNumber}
                       </p>
                     </td>
-                    <td className={`${premiumTdClass} text-slate max-w-[200px] truncate dark:text-dark-muted`}>
+                    <td className={`${premiumTdClass} text-slate max-w-[200px] truncate`}>
                       {p.description || "—"}
                     </td>
                     <td className={`${premiumTdClass} text-right tabular-nums font-semibold text-success`}>
                       {formatKES(p.amount)}
                     </td>
-                    <td className={`${premiumTdClass} text-right text-xs text-slate dark:text-dark-muted`}>
+                    <td className={`${premiumTdClass} text-right text-xs text-slate`}>
                       {formatDate(p.postedAt)}
                     </td>
                   </tr>

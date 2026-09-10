@@ -67,7 +67,7 @@ function StatCard({
     <div className={`rounded-xl border p-5 flex gap-4 items-start transition-all ${
       highlight
         ? "border-danger/30 bg-danger-bg/40 dark:bg-danger/10"
-        : "bg-white border-line hover:shadow-sm dark:bg-dark-surface dark:border-dark-border"
+        : "bg-card border-border hover:shadow-sm"
     } ${href ? "cursor-pointer hover:border-teal/40" : ""}`}>
       <div className={`flex items-center justify-center h-10 w-10 rounded-lg shrink-0 ${
         highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
@@ -76,10 +76,10 @@ function StatCard({
       </div>
       <div className="min-w-0">
         <p className={`text-2xl font-semibold leading-none ${
-          highlight ? "text-danger" : "text-ink dark:text-dark-text"
+          highlight ? "text-danger" : "text-foreground"
         }`}>{value}</p>
-        <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{label}</p>
-        {sub && <p className="text-slate/60 text-xs mt-0.5 dark:text-dark-muted/60">{sub}</p>}
+        <p className="text-slate text-sm mt-1.5">{label}</p>
+        {sub && <p className="text-slate/60 text-xs mt-0.5/60">{sub}</p>}
       </div>
       {href && <ArrowRight className="h-4 w-4 text-slate/40 shrink-0 ml-auto mt-1" />}
     </div>
@@ -92,7 +92,7 @@ function StatCard({
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
-  return <div className="rounded-xl border border-line h-24 animate-pulse bg-line/40" />;
+  return <div className="rounded-xl border border-border h-24 animate-pulse bg-line/40" />;
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ export default function LibraryDashboard() {
 
       {/* Quick actions */}
       <div className="mb-8">
-        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-3">
           Quick actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -279,13 +279,13 @@ export default function LibraryDashboard() {
             },
           ].map(a => (
             <Link key={a.href} href={a.href}
-              className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">
+              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-teal/40 hover:shadow-sm transition-all">
               <div className="h-10 w-10 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
                 {a.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">{a.label}</p>
-                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">{a.desc}</p>
+                <p className="text-sm font-semibold text-foreground">{a.label}</p>
+                <p className="text-xs text-slate mt-0.5 truncate">{a.desc}</p>
               </div>
               <ArrowRight className="h-4 w-4 text-slate/40 ml-auto mt-1 shrink-0" aria-hidden="true" />
             </Link>
@@ -296,12 +296,12 @@ export default function LibraryDashboard() {
       {/* Recent activity */}
       {!loading && summary && summary.recentBorrows.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">Recent activity</h2>
-          <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+          <h2 className="text-base font-semibold text-foreground mb-3">Recent activity</h2>
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
                 <thead>
-                  <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:bg-dark-border/30">
+                  <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide/30">
                     <th className="px-5 py-3.5">Student</th>
                     <th className="px-5 py-3.5">Book</th>
                     <th className="px-5 py-3.5 w-[130px]">Borrowed</th>
@@ -313,17 +313,17 @@ export default function LibraryDashboard() {
                   {summary.recentBorrows.map(b => {
                     const overdue = isOverdue(b.dueAt, b.returnedAt);
                     return (
-                      <tr key={b.id} className="border-b border-line last:border-0 hover:bg-slate-50/40 transition-colors dark:hover:bg-dark-border/20">
+                      <tr key={b.id} className="border-b border-border last:border-0 hover:bg-slate-50/40 transition-colors/20">
                         <td className="px-5 py-3.5">
                           {b.student ? (
                             <>
-                              <p className="text-sm font-medium text-ink dark:text-dark-text">{b.student.fullName}</p>
+                              <p className="text-sm font-medium text-foreground">{b.student.fullName}</p>
                               <p className="text-xs text-slate font-mono">{b.student.admissionNumber}</p>
                             </>
                           ) : <span className="text-slate text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3.5">
-                          <p className="text-sm text-ink dark:text-dark-text truncate max-w-[220px]">{b.title}</p>
+                          <p className="text-sm text-foreground truncate max-w-[220px]">{b.title}</p>
                           {b.author && <p className="text-xs text-slate">{b.author}</p>}
                         </td>
                         <td className="px-5 py-3.5 text-slate text-xs">{fmt(b.borrowedAt)}</td>

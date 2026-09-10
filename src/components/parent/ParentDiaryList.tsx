@@ -65,7 +65,7 @@ const ENTRY_TYPE_CONFIG: Record<string, {
   HOMEWORK:     { label: "Homework",     Icon: BookOpen,   badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
   REVISION:     { label: "Revision",     Icon: RotateCcw,  badge: "bg-warn-bg text-warn" },
   PROJECT:      { label: "Project",      Icon: FolderOpen, badge: "bg-success-bg text-success" },
-  ANNOUNCEMENT: { label: "Announcement", Icon: Megaphone,  badge: "bg-slate/10 text-slate dark:bg-dark-border dark:text-dark-muted" },
+  ANNOUNCEMENT: { label: "Announcement", Icon: Megaphone,  badge: "bg-slate/10 text-slate" },
 };
 
 // ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ export default function ParentDiaryList({ entries, studentId }: Props) {
     <div className="space-y-4">
       {/* Filter tabs */}
       <div
-        className="flex gap-0 overflow-x-auto border-b border-line dark:border-dark-border"
+        className="flex gap-0 overflow-x-auto border-b border-border"
         role="tablist"
         aria-label="Diary filters"
       >
@@ -210,7 +210,7 @@ export default function ParentDiaryList({ entries, studentId }: Props) {
               className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap
                 ${isActive
                   ? "text-teal border-b-2 border-teal -mb-px"
-                  : "text-slate hover:text-teal dark:text-dark-muted dark:hover:text-teal"
+                  : "text-slate hover:text-teal dark:hover:text-teal"
                 }`}
             >
               {label}
@@ -218,7 +218,7 @@ export default function ParentDiaryList({ entries, studentId }: Props) {
                 <span className={`ml-1.5 text-[11px] font-semibold rounded-full px-1.5 py-0.5 ${
                   isActive
                     ? "bg-teal/10 text-teal"
-                    : "bg-line text-slate dark:bg-dark-border dark:text-dark-muted"
+                    : "bg-line text-slate"
                 }`}>
                   {counts[key]}
                 </span>
@@ -289,10 +289,10 @@ function EntryCard({
     <div
       className={`rounded-xl border transition-all
         ${isDone
-          ? "bg-card dark:bg-dark-surface border-line dark:border-dark-border opacity-80"
+          ? "bg-card border-border opacity-80"
           : eff === "OVERDUE"
-            ? "bg-card dark:bg-dark-surface border-danger/25 dark:border-danger/20 shadow-xs"
-            : "bg-card dark:bg-dark-surface border-line dark:border-dark-border shadow-xs hover:shadow-sm"
+            ? "bg-card border-danger/25 dark:border-danger/20 shadow-xs"
+            : "bg-card border-border shadow-xs hover:shadow-sm"
         }`}
       // Mark as read when the parent scrolls past / sees this card
       onMouseEnter={onView}
@@ -325,7 +325,7 @@ function EntryCard({
 
         {/* ── Title ────────────────────────────────────────────────────── */}
         <p className={`mt-2.5 text-sm font-semibold leading-snug
-          ${isDone ? "line-through text-slate dark:text-dark-muted" : "text-ink dark:text-dark-text"}`}
+          ${isDone ? "line-through text-slate" : "text-foreground"}`}
         >
           {entry.title}
         </p>
@@ -333,12 +333,12 @@ function EntryCard({
         {/* ── Meta row ─────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">
           {entry.teacher && (
-            <span className="inline-flex items-center gap-1 text-xs text-slate dark:text-dark-muted">
+            <span className="inline-flex items-center gap-1 text-xs text-slate">
               <User className="h-3 w-3" aria-hidden="true" />
               {entry.teacher.fullName}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 text-xs text-slate dark:text-dark-muted">
+          <span className="inline-flex items-center gap-1 text-xs text-slate">
             <Clock className="h-3 w-3" aria-hidden="true" />
             {formatPostedDate(entry.createdAt)}
           </span>
@@ -349,12 +349,12 @@ function EntryCard({
 
         {/* ── Instructions — always visible ────────────────────────────── */}
         {entry.description ? (
-          <div className="mt-3 pt-3 border-t border-line dark:border-dark-border">
-            <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-1.5">
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate uppercase tracking-wide mb-1.5">
               <AlignLeft className="h-3 w-3" aria-hidden="true" />
               Instructions
             </p>
-            <p className="text-sm text-ink dark:text-dark-text whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
               {entry.description}
             </p>
           </div>
@@ -362,8 +362,8 @@ function EntryCard({
 
         {/* ── Mark complete button — not shown for announcements ───────── */}
         {!isAnnouncement && (
-          <div className="mt-3 pt-3 border-t border-line dark:border-dark-border flex items-center justify-between gap-3">
-            <p className="text-xs text-slate dark:text-dark-muted">
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
+            <p className="text-xs text-slate">
               {isDone ? "Marked as done by parent" : "Has your child completed this?"}
             </p>
             <button
@@ -375,7 +375,7 @@ function EntryCard({
                           transition-all min-h-[36px] disabled:opacity-60
                           ${isDone
                             ? "bg-success-bg text-success hover:bg-success/20"
-                            : "bg-line text-slate hover:bg-teal/10 hover:text-teal dark:bg-dark-border dark:text-dark-muted dark:hover:bg-teal/20 dark:hover:text-teal"
+                            : "bg-line text-slate hover:bg-teal/10 hover:text-teal dark:hover:bg-teal/20 dark:hover:text-teal"
                           }`}
             >
               {pending ? (
@@ -438,7 +438,7 @@ function DueDateChip({ dueDate, status }: { dueDate: string; status: "PENDING" |
   const cls =
     status === "OVERDUE" ? "text-danger font-medium" :
     isToday || isTomorrow ? "text-warn font-semibold" :
-    "text-slate dark:text-dark-muted";
+    "text-slate";
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${cls}`}>
@@ -480,12 +480,12 @@ const FILTER_EMPTY_CONFIG: Record<FilterKey, {
 function FilterEmptyState({ filter }: { filter: FilterKey }) {
   const { Icon, iconCls, bgCls, title, body } = FILTER_EMPTY_CONFIG[filter];
   return (
-    <div className="bg-card border border-line rounded-xl p-10 text-center dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-10 text-center">
       <div className={`w-12 h-12 rounded-full ${bgCls} flex items-center justify-center mx-auto mb-3`}>
         <Icon className={`h-6 w-6 ${iconCls}`} aria-hidden="true" />
       </div>
-      <p className="text-sm font-semibold text-ink dark:text-dark-text">{title}</p>
-      <p className="text-sm text-slate dark:text-dark-muted mt-1">{body}</p>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-slate mt-1">{body}</p>
     </div>
   );
 }

@@ -122,7 +122,7 @@ function StatCard({
       className={`rounded-xl border p-5 flex gap-4 items-start transition-all ${
         highlight
           ? "border-danger/30 bg-danger-bg/40 dark:bg-danger/10"
-          : "bg-white border-line hover:shadow-sm dark:bg-dark-surface dark:border-dark-border"
+          : "bg-card border-border hover:shadow-sm"
       } ${href ? "cursor-pointer hover:border-teal/40" : ""}`}
     >
       <div
@@ -136,13 +136,13 @@ function StatCard({
         <p
           className={`font-semibold tabular-nums leading-tight break-words ${
             value.length > 14 ? "text-base" : value.length > 10 ? "text-lg" : "text-2xl"
-          } ${highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}
+          } ${highlight ? "text-danger" : "text-foreground"}`}
         >
           {value}
         </p>
-        <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{label}</p>
+        <p className="text-slate text-sm mt-1.5">{label}</p>
         {sub && (
-          <p className="text-slate/60 text-xs mt-0.5 dark:text-dark-muted/60">{sub}</p>
+          <p className="text-slate/60 text-xs mt-0.5/60">{sub}</p>
         )}
       </div>
       {href && (
@@ -217,7 +217,7 @@ export default function FinanceDashboard() {
             </Link>
             <Link
               href="/staff/finance/reports"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white text-sm font-medium px-4 py-2.5 text-ink hover:bg-paper hover:border-slate-light transition-all duration-100 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-medium px-4 py-2.5 text-foreground hover:bg-background hover:border-slate-light transition-all duration-100"
             >
               <PieChart className="h-4 w-4" aria-hidden="true" />
               Reports
@@ -236,7 +236,7 @@ export default function FinanceDashboard() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 rounded-xl border border-line bg-paper animate-pulse"
+              className="h-24 rounded-xl border border-border bg-background animate-pulse"
             />
           ))}
         </div>
@@ -276,7 +276,7 @@ export default function FinanceDashboard() {
         {/* Recent ledger activity */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               Recent activity
             </h2>
             <Link
@@ -316,10 +316,10 @@ export default function FinanceDashboard() {
                       return (
                         <tr key={e.id} className={premiumTrClass}>
                           <td className={premiumTdClass}>
-                            <p className="font-medium text-ink dark:text-dark-text">
+                            <p className="font-medium text-foreground">
                               {e.student?.fullName ?? "—"}
                             </p>
-                            <p className="text-xs text-slate font-mono dark:text-dark-muted">
+                            <p className="text-xs text-slate font-mono">
                               {e.student?.admissionNumber}
                             </p>
                           </td>
@@ -327,12 +327,12 @@ export default function FinanceDashboard() {
                             <Badge variant={variant}>{label}</Badge>
                           </td>
                           <td
-                            className={`${premiumTdClass} text-right tabular-nums font-semibold text-ink dark:text-dark-text`}
+                            className={`${premiumTdClass} text-right tabular-nums font-semibold text-foreground`}
                           >
                             {formatKES(e.amount)}
                           </td>
                           <td
-                            className={`${premiumTdClass} text-right text-xs text-slate dark:text-dark-muted`}
+                            className={`${premiumTdClass} text-right text-xs text-slate`}
                           >
                             {timeAgo(e.postedAt)}
                           </td>
@@ -349,7 +349,7 @@ export default function FinanceDashboard() {
         {/* Notification feed */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
               <Bell className="h-4 w-4 text-teal" aria-hidden="true" />
               Notifications
             </h2>
@@ -365,16 +365,16 @@ export default function FinanceDashboard() {
               Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 rounded-xl border border-line bg-paper animate-pulse"
+                  className="h-16 rounded-xl border border-border bg-background animate-pulse"
                 />
               ))
             ) : notifications.length === 0 ? (
-              <div className="rounded-xl border border-line bg-white p-6 text-center dark:bg-dark-surface dark:border-dark-border">
+              <div className="rounded-xl border border-border bg-card p-6 text-center">
                 <CheckCircle2
                   className="h-8 w-8 text-success mx-auto mb-2"
                   aria-hidden="true"
                 />
-                <p className="text-sm text-slate dark:text-dark-muted">
+                <p className="text-sm text-slate">
                   All caught up!
                 </p>
               </div>
@@ -382,7 +382,7 @@ export default function FinanceDashboard() {
               notifications.slice(0, 8).map((n) => (
                 <div
                   key={n.id}
-                  className="rounded-xl border border-line bg-white p-4 hover:border-teal/30 transition-all dark:bg-dark-surface dark:border-dark-border"
+                  className="rounded-xl border border-border bg-card p-4 hover:border-teal/30 transition-all"
                 >
                   <div className="flex items-start gap-3">
                     <Bell
@@ -390,10 +390,10 @@ export default function FinanceDashboard() {
                       aria-hidden="true"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-ink leading-snug dark:text-dark-text line-clamp-2">
+                      <p className="text-sm text-foreground leading-snug line-clamp-2">
                         {n.message}
                       </p>
-                      <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+                      <p className="text-xs text-slate mt-1">
                         {timeAgo(n.createdAt)}
                       </p>
                     </div>
@@ -420,7 +420,7 @@ export default function FinanceDashboard() {
 
       {/* Quick-action links */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-ink dark:text-dark-text mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-3">
           Quick actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -465,7 +465,7 @@ export default function FinanceDashboard() {
             <Link
               key={a.href}
               href={a.href}
-              className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border"
+              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-teal/40 hover:shadow-sm transition-all"
             >
               <div
                 className="h-9 w-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0"
@@ -474,10 +474,10 @@ export default function FinanceDashboard() {
                 {a.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                <p className="text-sm font-semibold text-foreground">
                   {a.label}
                 </p>
-                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">
+                <p className="text-xs text-slate mt-0.5 truncate">
                   {a.desc}
                 </p>
               </div>

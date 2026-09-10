@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/imports — School Import Dashboard
@@ -306,7 +306,7 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
             <XCircle className="h-4 w-4" /> {errCount} with errors
           </span>
         )}
-        <span className="text-slate dark:text-dark-muted text-xs">
+        <span className="text-slate text-xs">
           {totalCount.toLocaleString()} rows total
           {isLarge ? ` · previewing first ${previewedCount.toLocaleString()}` : ""}
           {previewedCount > 200 ? " · showing first 200 in table" : ""}
@@ -321,9 +321,9 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
           </p>
         </div>
       )}
-      <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs max-h-60 overflow-y-auto">
-        <table className="min-w-full divide-y divide-line dark:divide-dark-border text-xs">
-          <thead className="sticky top-0 bg-slate-50/95 dark:bg-dark-surface z-10">
+      <div className="rounded-xl border border-border overflow-hidden shadow-xs max-h-60 overflow-y-auto">
+        <table className="min-w-full divide-y divide-border text-xs">
+          <thead className="sticky top-0 bg-slate-50/95 z-10">
             <tr>
               <th className="px-3 py-2.5 text-left font-semibold text-slate uppercase tracking-wide w-10">#</th>
               <th className="px-3 py-2.5 text-left font-semibold text-slate uppercase tracking-wide w-8">✓</th>
@@ -332,7 +332,7 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+          <tbody className="divide-y divide-border bg-card">
             {tableRows.map(row => (
               <tr key={row.rowNum} className={row.errors.length > 0 ? "bg-danger-bg/40" : "hover:bg-slate-50/40"}>
                 <td className="px-3 py-2 text-slate tabular-nums">{row.rowNum}</td>
@@ -343,7 +343,7 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
                 </td>
                 {headers.slice(0, 6).map(h => (
                   <td key={h} className={`px-3 py-2 max-w-[140px] truncate
-                    ${row.errors.some(e => e.startsWith(h)) ? "text-danger font-medium" : "text-ink dark:text-dark-text"}`}>
+                    ${row.errors.some(e => e.startsWith(h)) ? "text-danger font-medium" : "text-foreground"}`}>
                     {row.data[h] || <span className="text-slate/40 italic">—</span>}
                   </td>
                 ))}
@@ -371,8 +371,8 @@ function ValidationPreview({ headers, rows, totalCount }: { headers: string[]; r
 
 function ColumnHints({ def }: { def: ImportTypeDef }) {
   return (
-    <div className="rounded-xl bg-slate-50 dark:bg-dark-bg border border-line dark:border-dark-border px-4 py-3 space-y-2 mt-3">
-      <p className="text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide">Required columns</p>
+    <div className="rounded-xl bg-slate-50 border border-border px-4 py-3 space-y-2 mt-3">
+      <p className="text-xs font-semibold text-slate uppercase tracking-wide">Required columns</p>
       <div className="flex flex-wrap gap-1.5">
         {def.requiredCols.map(c => (
           <span key={c} className="inline-flex rounded-md bg-danger/10 border border-danger/20 text-danger text-[11px] font-mono px-2 py-0.5">{c}</span>
@@ -380,10 +380,10 @@ function ColumnHints({ def }: { def: ImportTypeDef }) {
       </div>
       {def.optionalCols.length > 0 && (
         <>
-          <p className="text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide pt-1">Optional columns</p>
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide pt-1">Optional columns</p>
           <div className="flex flex-wrap gap-1.5">
             {def.optionalCols.map(c => (
-              <span key={c} className="inline-flex rounded-md bg-slate-100 dark:bg-dark-surface text-slate dark:text-dark-muted text-[11px] font-mono px-2 py-0.5 border border-line dark:border-dark-border">{c}</span>
+              <span key={c} className="inline-flex rounded-md bg-slate-100 text-slate text-[11px] font-mono px-2 py-0.5 border border-border">{c}</span>
             ))}
           </div>
         </>
@@ -428,28 +428,28 @@ function ProcessResult({
           : <AlertTriangle className="h-8 w-8 text-warn" strokeWidth={2} />}
       </div>
       <div className="text-center">
-        <p className="text-base font-semibold text-ink dark:text-dark-text">
+        <p className="text-base font-semibold text-foreground">
           {allGood ? "Import complete" : "Import finished with errors"}
         </p>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <p className="text-sm text-slate mt-1">
           {TYPE_LABEL[job.type] ?? job.type} · {job.fileName}
         </p>
       </div>
       {/* Stats */}
-      <div className="flex items-center gap-6 rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-bg px-6 py-4 text-sm">
+      <div className="flex items-center gap-6 rounded-xl border border-border bg-background px-6 py-4 text-sm">
         <div className="text-center">
           <p className="text-2xl font-bold text-success">{result.succeeded}</p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-0.5">Succeeded</p>
+          <p className="text-xs text-slate mt-0.5">Succeeded</p>
         </div>
-        <div className="h-8 w-px bg-line dark:bg-dark-border" />
+        <div className="h-8 w-px bg-line" />
         <div className="text-center">
-          <p className={`text-2xl font-bold ${result.failed > 0 ? "text-danger" : "text-slate dark:text-dark-muted"}`}>{result.failed}</p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-0.5">Failed rows</p>
+          <p className={`text-2xl font-bold ${result.failed > 0 ? "text-danger" : "text-slate"}`}>{result.failed}</p>
+          <p className="text-xs text-slate mt-0.5">Failed rows</p>
         </div>
-        <div className="h-8 w-px bg-line dark:bg-dark-border" />
+        <div className="h-8 w-px bg-line" />
         <div className="text-center">
-          <p className="text-2xl font-bold text-ink dark:text-dark-text">{result.succeeded + result.failed}</p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-0.5">Total rows</p>
+          <p className="text-2xl font-bold text-foreground">{result.succeeded + result.failed}</p>
+          <p className="text-xs text-slate mt-0.5">Total rows</p>
         </div>
       </div>
       {/* Error accordion */}
@@ -461,21 +461,21 @@ function ProcessResult({
             {showErrors ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           {showErrors && (
-            <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden max-h-64 overflow-y-auto">
-              <table className="min-w-full divide-y divide-line dark:divide-dark-border text-xs">
-                <thead className="sticky top-0 bg-slate-50/95 dark:bg-dark-surface">
+            <div className="rounded-xl border border-border overflow-hidden max-h-64 overflow-y-auto">
+              <table className="min-w-full divide-y divide-border text-xs">
+                <thead className="sticky top-0 bg-slate-50/95">
                   <tr>
                     <th className="px-3 py-2.5 text-left font-semibold text-slate uppercase tracking-wide w-12">Row</th>
                     <th className="px-3 py-2.5 text-left font-semibold text-slate uppercase tracking-wide w-28">Field</th>
                     <th className="px-3 py-2.5 text-left font-semibold text-slate uppercase tracking-wide">Error</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+                <tbody className="divide-y divide-border bg-card">
                   {result.errors.map((e, idx) => (
                     <tr key={idx} className="hover:bg-danger-bg/20">
                       <td className="px-3 py-2 tabular-nums text-slate">{e.row || "—"}</td>
                       <td className="px-3 py-2 font-mono text-danger">{e.field}</td>
-                      <td className="px-3 py-2 text-ink dark:text-dark-text">{e.message}</td>
+                      <td className="px-3 py-2 text-foreground">{e.message}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -522,14 +522,14 @@ function TypeSelector({
         <div key={section.id} className="space-y-2">
           {/* Section header */}
           <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-dark-border text-slate dark:text-dark-muted text-[10px] font-bold shrink-0">
+            <span className="flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 text-slate text-[10px] font-bold shrink-0">
               {si + 1}
             </span>
-            <p className="text-xs font-bold text-ink dark:text-dark-text uppercase tracking-wide">{section.title.replace(/^Section \d — /, "")}</p>
-            <div className="flex-1 h-px bg-line dark:bg-dark-border" />
+            <p className="text-xs font-bold text-foreground uppercase tracking-wide">{section.title.replace(/^Section \d — /, "")}</p>
+            <div className="flex-1 h-px bg-line" />
           </div>
           {/* Section hint */}
-          <p className="text-[11px] text-slate dark:text-dark-muted pl-7 flex items-start gap-1">
+          <p className="text-[11px] text-slate pl-7 flex items-start gap-1">
             <AlertTriangle className="h-3 w-3 text-warn shrink-0 mt-0.5" />{section.hint}
           </p>
           {/* Type cards */}
@@ -542,14 +542,14 @@ function TypeSelector({
                   className={`relative flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all
                     ${selected
                       ? "border-teal bg-teal-50/60 dark:bg-teal/5 shadow-sm"
-                      : "border-line dark:border-dark-border hover:border-teal/40 hover:bg-slate-50 dark:hover:bg-dark-border/20"
+                      : "border-border hover:border-teal/40 hover:bg-slate-50/20"
                     }`}>
                   <div className={`flex items-center justify-center h-8 w-8 rounded-lg shrink-0 ${def.iconClass}`}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-semibold ${selected ? "text-teal" : "text-ink dark:text-dark-text"}`}>{def.label}</p>
-                    <p className="text-[11px] text-slate dark:text-dark-muted leading-tight mt-0.5 line-clamp-2">{def.description}</p>
+                    <p className={`text-xs font-semibold ${selected ? "text-teal" : "text-foreground"}`}>{def.label}</p>
+                    <p className="text-[11px] text-slate leading-tight mt-0.5 line-clamp-2">{def.description}</p>
                   </div>
                   {selected && (
                     <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-teal">
@@ -679,36 +679,36 @@ function NewImportTab() {
       {apiError && <ErrorBanner message={apiError} onDismiss={() => setApiError(null)} />}
 
       {/* Step 1 — School */}
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
-        <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-line dark:border-dark-border">
-          <StepBadge n={1} /><h3 className="text-sm font-semibold text-ink dark:text-dark-text">Select School</h3>
+      <Card className="">
+        <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-border">
+          <StepBadge n={1} /><h3 className="text-sm font-semibold text-foreground">Select School</h3>
         </div>
         <label className={labelClass}>School <span className="text-danger">*</span></label>
         <select value={schoolId} onChange={e => setSchoolId(e.target.value)}
-          className="w-full rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                     px-3.5 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15">
+          className="w-full rounded-lg border border-border bg-card
+                     px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15">
           <option value="">Choose a school…</option>
           {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </Card>
 
       {/* Step 2 — Import type */}
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
-        <div className="flex items-center gap-2.5 mb-5 pb-3.5 border-b border-line dark:border-dark-border">
-          <StepBadge n={2} /><h3 className="text-sm font-semibold text-ink dark:text-dark-text">Import Type</h3>
+      <Card className="">
+        <div className="flex items-center gap-2.5 mb-5 pb-3.5 border-b border-border">
+          <StepBadge n={2} /><h3 className="text-sm font-semibold text-foreground">Import Type</h3>
         </div>
         <TypeSelector value={importType} onChange={key => { setImportType(key); setFile(null); setPreview(null); if (fileRef.current) fileRef.current.value = ""; }} />
         <ColumnHints def={typeDef} />
       </Card>
 
       {/* Step 3 — File upload */}
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
-        <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-line dark:border-dark-border">
-          <StepBadge n={3} /><h3 className="text-sm font-semibold text-ink dark:text-dark-text">Upload File</h3>
+      <Card className="">
+        <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-border">
+          <StepBadge n={3} /><h3 className="text-sm font-semibold text-foreground">Upload File</h3>
         </div>
         <div className="space-y-3">
           {/* Template download */}
-          <div className="flex items-center gap-2 text-xs text-slate dark:text-dark-muted flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-slate flex-wrap">
             <FileText className="h-3.5 w-3.5 shrink-0" />
             Download template for <strong>{typeDef.label}</strong>:
             <a href={`/templates/${typeDef.template}`} download
@@ -722,7 +722,7 @@ function NewImportTab() {
             onDragOver={e => e.preventDefault()}
             onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFileChange({ target: { files: [f] } } as unknown as React.ChangeEvent<HTMLInputElement>); }}
             className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed
-                       border-line dark:border-dark-border bg-paper dark:bg-dark-bg py-10 px-6
+                       border-border bg-background py-10 px-6
                        cursor-pointer hover:border-teal/40 hover:bg-teal-50/30 transition-colors"
           >
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="sr-only" onChange={handleFileChange} />
@@ -730,8 +730,8 @@ function NewImportTab() {
               <Upload className="h-6 w-6 text-teal" strokeWidth={1.8} />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-ink dark:text-dark-text">{file ? file.name : "Drop your file here or click to browse"}</p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-1">CSV · max 50 MB · no row limit</p>
+              <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop your file here or click to browse"}</p>
+              <p className="text-xs text-slate mt-1">CSV · max 50 MB · no row limit</p>
             </div>
             {file && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-success-bg border border-success/20 text-success text-xs font-medium px-2.5 py-1">
@@ -744,9 +744,9 @@ function NewImportTab() {
 
       {/* Step 4 — Preview */}
       {(parsing || preview) && (
-        <Card className="dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-line dark:border-dark-border">
-            <StepBadge n={4} /><h3 className="text-sm font-semibold text-ink dark:text-dark-text">Validation Preview</h3>
+        <Card className="">
+          <div className="flex items-center gap-2.5 mb-4 pb-3.5 border-b border-border">
+            <StepBadge n={4} /><h3 className="text-sm font-semibold text-foreground">Validation Preview</h3>
           </div>
           {parsing
             ? <div className="flex items-center gap-2 text-sm text-slate"><Spinner size="sm" /> Parsing…</div>
@@ -758,20 +758,20 @@ function NewImportTab() {
       <div className="flex flex-col gap-3 pt-2">
         {/* Progress bar — shown while uploading or processing */}
         {submitting && (
-          <div className="rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-bg px-5 py-4 space-y-3">
+          <div className="rounded-xl border border-border bg-background px-5 py-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 font-medium text-ink dark:text-dark-text">
+              <span className="flex items-center gap-2 font-medium text-foreground">
                 <Spinner size="sm" />
                 {submitPhase === "uploading"
                   ? uploadPct < 100 ? `Uploading… ${uploadPct}%` : "Upload complete"
                   : "Processing rows on server…"}
               </span>
               {submitPhase === "uploading" && (
-                <span className="text-xs text-slate dark:text-dark-muted tabular-nums">{uploadPct}%</span>
+                <span className="text-xs text-slate tabular-nums">{uploadPct}%</span>
               )}
             </div>
             {submitPhase === "uploading" && (
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-dark-border overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-teal transition-all duration-200"
                   style={{ width: `${uploadPct}%` }}
@@ -779,11 +779,11 @@ function NewImportTab() {
               </div>
             )}
             {submitPhase === "processing" && (
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-dark-border overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                 <div className="h-full rounded-full bg-teal animate-pulse w-full" />
               </div>
             )}
-            <p className="text-xs text-slate dark:text-dark-muted">
+            <p className="text-xs text-slate">
               {submitPhase === "processing"
                 ? "Large files may take a minute — please keep this tab open."
                 : "Uploading your file…"}
@@ -868,8 +868,8 @@ function HistoryTab() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <select value={fStatus} onChange={e => setFStatus(e.target.value)}
-          className="rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                     px-3.5 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs">
+          className="rounded-xl border border-border bg-card
+                     px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs">
           <option value="">All statuses</option>
           {["QUEUED","PROCESSING","COMPLETED","FAILED","ROLLED_BACK"].map(s => (
             <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
@@ -883,14 +883,14 @@ function HistoryTab() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : jobs.length === 0 ? (
-        <div className="flex flex-col items-center py-16 gap-2 text-slate dark:text-dark-muted rounded-xl border border-dashed border-line dark:border-dark-border">
+        <div className="flex flex-col items-center py-16 gap-2 text-slate rounded-xl border border-dashed border-border">
           <History className="h-8 w-8 opacity-40" /><p className="text-sm">No imports yet</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-border overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead className="bg-slate-50/80 dark:bg-dark-surface text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide">
+            <table className="min-w-full divide-y divide-border ">
+              <thead className="bg-slate-50/80 text-xs font-semibold text-slate uppercase tracking-wide">
                 <tr>
                   <th className="px-5 py-3.5 text-left">School</th>
                   <th className="px-5 py-3.5 text-left hidden sm:table-cell">Type</th>
@@ -901,34 +901,34 @@ function HistoryTab() {
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+              <tbody className="divide-y divide-border bg-card">
                 {jobs.map(job => {
                   const busy      = rollbackBusy === job.id;
                   const rollback  = canRollback(job);
                   const hasErrors = Boolean(job.errorReport) && job.failed > 0;
                   return (
-                    <tr key={job.id} className={`transition-colors hover:bg-slate-50/50 dark:hover:bg-dark-border/30 ${busy ? "opacity-50 pointer-events-none" : ""}`}>
-                      <td className="px-5 py-3.5"><p className="text-sm font-medium text-ink dark:text-dark-text truncate max-w-[160px]">{job.school?.name ?? "—"}</p></td>
+                    <tr key={job.id} className={`transition-colors hover:bg-slate-50/50/30 ${busy ? "opacity-50 pointer-events-none" : ""}`}>
+                      <td className="px-5 py-3.5"><p className="text-sm font-medium text-foreground truncate max-w-[160px]">{job.school?.name ?? "—"}</p></td>
                       <td className="px-5 py-3.5 hidden sm:table-cell">
                         <Badge variant="teal">{TYPE_LABEL[job.type] ?? job.type}</Badge>
                       </td>
-                      <td className="px-5 py-3.5"><p className="text-sm text-ink dark:text-dark-text font-mono truncate max-w-[180px]">{job.fileName}</p></td>
+                      <td className="px-5 py-3.5"><p className="text-sm text-foreground font-mono truncate max-w-[180px]">{job.fileName}</p></td>
                       <td className="px-5 py-3.5 hidden md:table-cell">
-                        <div className="text-xs text-slate dark:text-dark-muted space-y-0.5">
+                        <div className="text-xs text-slate space-y-0.5">
                           <p>{job.totalRows} total</p>
                           <p className="text-success">{job.succeeded} ok</p>
                           {job.failed > 0 && <p className="text-danger">{job.failed} failed</p>}
                         </div>
                       </td>
                       <td className="px-5 py-3.5"><StatusBadge status={job.status} /></td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs text-slate dark:text-dark-muted text-right whitespace-nowrap">
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs text-slate text-right whitespace-nowrap">
                         {new Date(job.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2 justify-end">
                           {hasErrors && (
                             <button type="button" onClick={() => downloadErrorReport(job)} title="Download error report"
-                              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:bg-slate-100 dark:hover:bg-dark-border transition-colors">
+                              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:bg-slate-100 transition-colors">
                               <Download className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -939,7 +939,7 @@ function HistoryTab() {
                             </button>
                           )}
                           {job.rollbackAt && job.status === "COMPLETED" && !rollback && (
-                            <span className="text-[10px] text-slate dark:text-dark-muted italic whitespace-nowrap">Window expired</span>
+                            <span className="text-[10px] text-slate italic whitespace-nowrap">Window expired</span>
                           )}
                         </div>
                       </td>
@@ -953,7 +953,7 @@ function HistoryTab() {
       )}
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-slate dark:text-dark-muted">Page {page} of {totalPages} · {total} imports</p>
+          <p className="text-xs text-slate">Page {page} of {totalPages} · {total} imports</p>
           <div className="flex gap-2">
             <button onClick={() => load(page - 1)} disabled={page <= 1 || loading} className={secondaryButtonClass}>Previous</button>
             <button onClick={() => load(page + 1)} disabled={page >= totalPages || loading} className={secondaryButtonClass}>Next</button>
@@ -976,14 +976,14 @@ export default function ImportsPage() {
         title="Import Dashboard"
         description="Bulk-import your entire school — departments, classes, subjects, staff, students, parents, and dormitory allocations."
       />
-      <div className="border-b border-line dark:border-dark-border flex gap-0">
+      <div className="border-b border-border flex gap-0">
         {([
           { id: "new"     as TabId, label: "New Import",     Icon: Upload  },
           { id: "history" as TabId, label: "Import History", Icon: History },
         ] as const).map(({ id, label, Icon }) => (
           <button key={id} type="button" onClick={() => setTab(id)}
             className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px
-              ${tab === id ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"}`}>
+              ${tab === id ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"}`}>
             <Icon className="h-4 w-4 shrink-0" /> {label}
           </button>
         ))}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * NotificationModuleFilter
@@ -62,7 +62,7 @@ export default function NotificationModuleFilter({ activeModule }: Props) {
               "transition-colors duration-100 border-b-2",
               isActive
                 ? "border-teal text-teal bg-teal-50"
-                : "border-transparent text-slate hover:text-ink hover:bg-paper",
+                : "border-transparent text-slate hover:text-foreground hover:bg-background",
               tab.value && !isActive ? tab.colorClass : "",
             ]
               .filter(Boolean)

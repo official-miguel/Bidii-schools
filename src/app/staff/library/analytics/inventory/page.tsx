@@ -51,7 +51,7 @@ export default function InventoryAnalyticsPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Inventory Analytics</h1>
+          <h1 className="text-xl font-bold text-foreground">Inventory Analytics</h1>
           <p className="text-sm text-slate mt-0.5">Condition distribution, inventory value, and replacement recommendations.</p>
         </div>
         <WindowSelector value={days} onChange={setDays} />
@@ -90,9 +90,9 @@ export default function InventoryAnalyticsPage() {
 
           {/* Condition breakdown table */}
           <Section title="Condition Breakdown">
-            <div className="rounded-xl border border-line bg-white overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <thead><tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3">Condition</th>
                   <th className="px-5 py-3 text-right">Copies</th>
                   <th className="px-5 py-3 text-right">% of total</th>
@@ -106,9 +106,9 @@ export default function InventoryAnalyticsPage() {
                       : r.condition === "LOST"  ? "Process replacement order"
                       : "No action required";
                     return (
-                      <tr key={r.condition} className="border-b border-line last:border-0">
+                      <tr key={r.condition} className="border-b border-border last:border-0">
                         <td className="px-5 py-3 font-medium" style={{ color: CONDITION_COLORS[r.condition] }}>{r.condition}</td>
-                        <td className="px-5 py-3 text-right font-bold text-ink">{r.count.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-right font-bold text-foreground">{r.count.toLocaleString()}</td>
                         <td className="px-5 py-3 text-right text-slate">{pct}%</td>
                         <td className="px-5 py-3 text-slate text-xs">{action}</td>
                       </tr>
@@ -123,9 +123,9 @@ export default function InventoryAnalyticsPage() {
           {(damaged > 0 || data.kpis.lost > 0) && (
             <div className="mt-6 rounded-xl border border-warn/30 bg-warn-bg/20 p-4 space-y-2">
               <p className="text-sm font-semibold text-warn flex items-center gap-2"><RefreshCw className="h-4 w-4" />Action Required</p>
-              {data.kpis.lost    > 0 && <p className="text-sm text-ink">• <strong>{data.kpis.lost}</strong> lost copies — submit replacement requisition.</p>}
-              {damaged > 0           && <p className="text-sm text-ink">• <strong>{damaged}</strong> damaged copies — schedule maintenance or replacement.</p>}
-              {fair    > 0           && <p className="text-sm text-ink">• <strong>{fair}</strong> copies in fair condition — monitor for further deterioration.</p>}
+              {data.kpis.lost    > 0 && <p className="text-sm text-foreground">• <strong>{data.kpis.lost}</strong> lost copies — submit replacement requisition.</p>}
+              {damaged > 0           && <p className="text-sm text-foreground">• <strong>{damaged}</strong> damaged copies — schedule maintenance or replacement.</p>}
+              {fair    > 0           && <p className="text-sm text-foreground">• <strong>{fair}</strong> copies in fair condition — monitor for further deterioration.</p>}
             </div>
           )}
         </>

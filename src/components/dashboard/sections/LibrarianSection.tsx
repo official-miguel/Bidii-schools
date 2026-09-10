@@ -22,7 +22,7 @@ export default function LibrarianSection({
         <span className="h-1 w-5 rounded-full bg-teal shrink-0" aria-hidden="true" />
         <h2
           id="librarian-heading"
-          className="text-sm font-semibold text-slate uppercase tracking-wide dark:text-dark-muted"
+          className="text-sm font-semibold text-slate uppercase tracking-wide"
         >
           Library
         </h2>
@@ -43,7 +43,7 @@ export default function LibrarianSection({
                   sub={studentsWithFines > 0 ? `${studentsWithFines} students` : "All cleared"} />
       </div>
 
-      <div className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+      <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
         <div className="grid grid-cols-2 xs:flex xs:flex-wrap gap-2">
           {[
             { label: "Issue book",     href: `${libBase}/issue`     },

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * /parent/fees
  *
  * Server component. Displays a parent's child fee balance, invoices, and
@@ -71,7 +71,7 @@ export default async function FeesPage({ searchParams }: Props) {
     return (
       <div className="space-y-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Fees</h1>
-        <div className="rounded-xl border border-line bg-card p-8 text-center">
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
           <div className="flex justify-center mb-3">
             <div className="w-12 h-12 rounded-xl bg-slate/10 flex items-center justify-center">
               <CreditCard className="h-6 w-6 text-slate" />
@@ -212,7 +212,7 @@ export default async function FeesPage({ searchParams }: Props) {
           <h2 className="text-base font-semibold text-foreground mb-3">
             Make a Payment
           </h2>
-          <div className="rounded-xl border border-line bg-card px-5 py-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="rounded-xl border border-border bg-card px-5 py-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">
                 Pay via M-Pesa

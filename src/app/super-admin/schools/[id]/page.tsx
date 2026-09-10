@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/schools/[id] — School Detail page
@@ -31,7 +31,7 @@ function StatusBadge({ status }: { status: string }) {
     SUSPENDED:  "bg-danger-bg text-danger border-danger/20",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${map[status] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${map[status] ?? "bg-slate-100 text-slate border-border"}`}>
       {status}
     </span>
   );
@@ -42,10 +42,10 @@ function SeverityBadge({ severity }: { severity: string }) {
     CRITICAL: "bg-danger-bg text-danger border-danger/20",
     HIGH:     "bg-orange-50 text-orange-600 border-orange-200",
     MEDIUM:   "bg-warn-bg text-warn border-warn/20",
-    LOW:      "bg-slate-100 text-slate border-line",
+    LOW:      "bg-slate-100 text-slate border-border",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[severity] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[severity] ?? "bg-slate-100 text-slate border-border"}`}>
       {severity}
     </span>
   );
@@ -231,7 +231,7 @@ export default function SchoolDetailPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Back */}
       <Link href="/super-admin/schools"
-        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors">
+        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-foreground transition-colors">
         <ChevronLeft className="h-4 w-4" aria-hidden /> Back to Schools
       </Link>
 
@@ -242,14 +242,14 @@ export default function SchoolDetailPage() {
             <Building2 className="h-6 w-6 text-teal" strokeWidth={1.8} aria-hidden />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-ink dark:text-dark-text truncate">{data.name}</h1>
+            <h1 className="text-xl font-semibold text-foreground truncate">{data.name}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <StatusBadge status={status} />
               {meta?.planTier && (
-                <span className="text-xs text-slate dark:text-dark-muted">{meta.planTier} plan</span>
+                <span className="text-xs text-slate">{meta.planTier} plan</span>
               )}
               {meta?.slug && (
-                <span className="text-xs font-mono text-slate dark:text-dark-muted">/{meta.slug}</span>
+                <span className="text-xs font-mono text-slate">/{meta.slug}</span>
               )}
             </div>
           </div>
@@ -304,18 +304,18 @@ export default function SchoolDetailPage() {
           { label: "Open Errors", value: (data.systemErrors ?? []).filter((e) => e.status !== "RESOLVED").length,
             Icon: AlertTriangle, bg: "bg-danger-bg", text: "text-danger" },
         ].map(({ label, value, Icon, bg, text }) => (
-          <div key={label} className="bg-card border border-line dark:bg-dark-surface dark:border-dark-border rounded-xl p-4 shadow-xs">
+          <div key={label} className="bg-card border border-border rounded-xl p-4 shadow-xs">
             <div className={`inline-flex items-center justify-center h-9 w-9 rounded-lg ${bg} mb-2`}>
               <Icon className={`h-4.5 w-4.5 ${text}`} strokeWidth={1.8} aria-hidden />
             </div>
-            <p className="text-lg font-semibold text-ink dark:text-dark-text">{typeof value === "number" ? value.toLocaleString() : value}</p>
-            <p className="text-xs text-slate dark:text-dark-muted">{label}</p>
+            <p className="text-lg font-semibold text-foreground">{typeof value === "number" ? value.toLocaleString() : value}</p>
+            <p className="text-xs text-slate">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-line dark:border-dark-border">
+      <div className="border-b border-border">
         <nav className="-mb-px flex gap-0 overflow-x-auto" aria-label="School detail tabs">
           {TABS.map(({ id: tid, label, Icon }) => (
             <button
@@ -325,7 +325,7 @@ export default function SchoolDetailPage() {
               className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors
                 ${tab === tid
                   ? "border-teal text-teal"
-                  : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text hover:border-slate-200"
+                  : "border-transparent text-slate hover:text-foreground hover:border-slate-200"
                 }`}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -340,8 +340,8 @@ export default function SchoolDetailPage() {
       {/* OVERVIEW */}
       {tab === "overview" && (
         <div className="space-y-5">
-          <Card className="dark:bg-dark-surface dark:border-dark-border">
-            <h3 className="text-sm font-semibold text-ink dark:text-dark-text mb-4">School Details</h3>
+          <Card className="">
+            <h3 className="text-sm font-semibold text-foreground mb-4">School Details</h3>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {[
                 { label:"Name",           value: data.name },
@@ -354,17 +354,17 @@ export default function SchoolDetailPage() {
                 { label:"Slug",           value: meta?.slug ?? "—" },
               ].map(({ label, value }) => (
                 <div key={label} className="flex gap-2">
-                  <dt className="w-32 shrink-0 text-slate dark:text-dark-muted font-medium">{label}</dt>
-                  <dd className="text-ink dark:text-dark-text">{value}</dd>
+                  <dt className="w-32 shrink-0 text-slate font-medium">{label}</dt>
+                  <dd className="text-foreground">{value}</dd>
                 </div>
               ))}
             </dl>
           </Card>
 
           {/* Plan tier editor */}
-          <Card className="dark:bg-dark-surface dark:border-dark-border">
+          <Card className="">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-ink dark:text-dark-text">Plan Tier</h3>
+              <h3 className="text-sm font-semibold text-foreground">Plan Tier</h3>
               {!editPlan && (
                 <button type="button" onClick={() => setEditPlan(true)} className="text-xs text-teal font-medium hover:underline">
                   Edit
@@ -380,7 +380,7 @@ export default function SchoolDetailPage() {
                       type="button"
                       onClick={() => setNewPlan(tier)}
                       className={`rounded-xl border-2 px-3 py-2.5 text-xs font-semibold transition-all
-                        ${newPlan === tier ? "border-teal bg-teal-50 text-teal" : "border-line text-slate hover:border-teal/40"}`}
+                        ${newPlan === tier ? "border-teal bg-teal-50 text-teal" : "border-border text-slate hover:border-teal/40"}`}
                     >
                       {tier}
                     </button>
@@ -397,7 +397,7 @@ export default function SchoolDetailPage() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-ink dark:text-dark-text">{meta?.planTier ?? "FREE"}</span>
+                <span className="text-2xl font-bold text-foreground">{meta?.planTier ?? "FREE"}</span>
               </div>
             )}
           </Card>
@@ -406,15 +406,15 @@ export default function SchoolDetailPage() {
 
       {/* ERRORS TAB */}
       {tab === "errors" && (
-        <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-border overflow-hidden shadow-xs">
           {(data.systemErrors ?? []).length === 0 ? (
-            <div className="flex flex-col items-center py-12 gap-2 text-slate dark:text-dark-muted">
+            <div className="flex flex-col items-center py-12 gap-2 text-slate">
               <CheckCircle2 className="h-6 w-6 text-success" />
               <p className="text-sm">No errors for this school</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead className="bg-slate-50/80 dark:bg-dark-surface text-xs font-semibold text-slate uppercase tracking-wide">
+            <table className="min-w-full divide-y divide-border ">
+              <thead className="bg-slate-50/80 text-xs font-semibold text-slate uppercase tracking-wide">
                 <tr>
                   <th className="px-5 py-3.5 text-left">Message</th>
                   <th className="px-5 py-3.5 text-left">Severity</th>
@@ -423,18 +423,18 @@ export default function SchoolDetailPage() {
                   <th className="px-5 py-3.5 text-right">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+              <tbody className="divide-y divide-border bg-card">
                 {(data.systemErrors ?? []).map((err) => (
                   <tr key={err.id}
                     onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
-                    className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors">
-                    <td className="px-5 py-3.5 text-sm text-ink dark:text-dark-text max-w-xs truncate">{err.message}</td>
+                    className="cursor-pointer hover:bg-slate-50/50/30 transition-colors">
+                    <td className="px-5 py-3.5 text-sm text-foreground max-w-xs truncate">{err.message}</td>
                     <td className="px-5 py-3.5"><SeverityBadge severity={err.severity} /></td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate dark:text-dark-muted font-mono">{err.module ?? "—"}</td>
+                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate font-mono">{err.module ?? "—"}</td>
                     <td className="px-5 py-3.5 hidden md:table-cell">
                       <Badge variant={err.status === "RESOLVED" ? "success" : "warn"}>{err.status}</Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate dark:text-dark-muted text-right whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-xs text-slate text-right whitespace-nowrap">
                       {new Date(err.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -447,18 +447,18 @@ export default function SchoolDetailPage() {
 
       {/* STORAGE TAB */}
       {tab === "storage" && (
-        <Card className="dark:bg-dark-surface dark:border-dark-border space-y-4">
-          <h3 className="text-sm font-semibold text-ink dark:text-dark-text">Storage Usage</h3>
+        <Card className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Storage Usage</h3>
           <ProgressBar
             value={pct} max={100} size="md" animated showLabel
             variant={pct > 90 ? "danger" : pct > 70 ? "warn" : "teal"}
           />
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             {usedGb.toFixed(2)} GB used of {quotaGb} GB quota
           </p>
           {/* Breakdown by type */}
           {(data.storageUsages ?? []).length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-line dark:border-dark-border">
+            <div className="space-y-2 pt-2 border-t border-border">
               {["documents","media","database","backups"].map(type => {
                 const bytes = (data.storageUsages ?? [])
                   .filter((u) => u.type === type)
@@ -467,9 +467,9 @@ export default function SchoolDetailPage() {
                 const p  = quotaGb > 0 ? (gb / quotaGb) * 100 : 0;
                 return (
                   <div key={type} className="flex items-center gap-3">
-                    <span className="w-24 text-xs text-slate dark:text-dark-muted capitalize">{type}</span>
+                    <span className="w-24 text-xs text-slate capitalize">{type}</span>
                     <ProgressBar value={p} max={100} size="sm" variant="teal" className="flex-1" />
-                    <span className="text-xs text-slate dark:text-dark-muted w-16 text-right tabular-nums">
+                    <span className="text-xs text-slate w-16 text-right tabular-nums">
                       {gb.toFixed(2)} GB
                     </span>
                   </div>
@@ -482,8 +482,8 @@ export default function SchoolDetailPage() {
 
       {/* MODULES TAB */}
       {tab === "modules" && (
-        <Card className="dark:bg-dark-surface dark:border-dark-border">
-          <h3 className="text-sm font-semibold text-ink dark:text-dark-text mb-4">Module Toggles</h3>
+        <Card className="">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Module Toggles</h3>
           <div className="space-y-3">
             {ALL_MODULES.map(mod => {
               const enabled  = enabledMap[mod] ?? false;
@@ -494,10 +494,9 @@ export default function SchoolDetailPage() {
 
               return (
                 <div key={mod}
-                  className="flex items-start justify-between gap-4 py-3 border-b border-line/60
-                             dark:border-dark-border/60 last:border-0">
+                  className="flex items-start justify-between gap-4 py-3 border-b border-border/60/60 last:border-0">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink dark:text-dark-text">
+                    <p className="text-sm font-medium text-foreground">
                       {MODULE_LABEL[mod] ?? mod}
                     </p>
                     {blocked && (
@@ -523,15 +522,15 @@ export default function SchoolDetailPage() {
 
       {/* IMPORTS TAB */}
       {tab === "imports" && (
-        <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-border overflow-hidden shadow-xs">
           {(data.importJobs ?? []).length === 0 ? (
-            <div className="flex flex-col items-center py-12 gap-2 text-slate dark:text-dark-muted">
+            <div className="flex flex-col items-center py-12 gap-2 text-slate">
               <Upload className="h-6 w-6 opacity-40" />
               <p className="text-sm">No imports yet for this school</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead className="bg-slate-50/80 dark:bg-dark-surface text-xs font-semibold text-slate uppercase tracking-wide">
+            <table className="min-w-full divide-y divide-border ">
+              <thead className="bg-slate-50/80 text-xs font-semibold text-slate uppercase tracking-wide">
                 <tr>
                   <th className="px-5 py-3.5 text-left">File</th>
                   <th className="px-5 py-3.5 text-left">Type</th>
@@ -540,16 +539,16 @@ export default function SchoolDetailPage() {
                   <th className="px-5 py-3.5 text-right">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+              <tbody className="divide-y divide-border bg-card">
                 {(data.importJobs ?? []).map((job) => (
                   <tr key={job.id}
                     onClick={() => router.push(`/super-admin/imports?school=${id}`)}
-                    className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors">
-                    <td className="px-5 py-3.5 text-sm text-ink dark:text-dark-text truncate max-w-[200px]">{job.fileName}</td>
+                    className="cursor-pointer hover:bg-slate-50/50/30 transition-colors">
+                    <td className="px-5 py-3.5 text-sm text-foreground truncate max-w-[200px]">{job.fileName}</td>
                     <td className="px-5 py-3.5">
                       <Badge variant="teal">{job.type}</Badge>
                     </td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate dark:text-dark-muted">
+                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate">
                       {job.succeeded}/{job.totalRows} ok
                     </td>
                     <td className="px-5 py-3.5">
@@ -557,7 +556,7 @@ export default function SchoolDetailPage() {
                         {job.status}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate dark:text-dark-muted text-right whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-xs text-slate text-right whitespace-nowrap">
                       {new Date(job.createdAt).toLocaleDateString()}
                     </td>
                   </tr>

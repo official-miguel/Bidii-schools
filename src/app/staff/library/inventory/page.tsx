@@ -216,7 +216,7 @@ export default function LibraryInventoryPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
           <input
-            className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
             placeholder="Search title, author, subject…"
             value={q}
             onChange={e => setQ(e.target.value)}
@@ -227,7 +227,7 @@ export default function LibraryInventoryPage() {
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => setCategory("")}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!category ? "bg-teal text-white border-teal" : "bg-white text-slate border-line hover:border-teal/40 dark:bg-dark-surface dark:text-dark-muted dark:border-dark-border"}`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!category ? "bg-teal text-white border-teal" : "bg-card text-slate border-border hover:border-teal/40"}`}
           >
             All
           </button>
@@ -235,7 +235,7 @@ export default function LibraryInventoryPage() {
             <button
               key={c}
               onClick={() => setCategory(prev => prev === c ? "" : c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${category === c ? "bg-teal text-white border-teal" : "bg-white text-slate border-line hover:border-teal/40 dark:bg-dark-surface dark:text-dark-muted dark:border-dark-border"}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${category === c ? "bg-teal text-white border-teal" : "bg-card text-slate border-border hover:border-teal/40"}`}
             >
               {c.charAt(0) + c.slice(1).toLowerCase().replace(/_/g, " ")}
             </button>
@@ -253,7 +253,7 @@ export default function LibraryInventoryPage() {
       {loading ? (
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 rounded-xl border border-line bg-white animate-pulse dark:bg-dark-surface dark:border-dark-border" />
+            <div key={i} className="h-16 rounded-xl border border-border bg-card animate-pulse" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -266,14 +266,14 @@ export default function LibraryInventoryPage() {
           }
         />
       ) : (
-        <div className="rounded-xl border border-line overflow-hidden bg-white dark:bg-dark-surface dark:border-dark-border">
+        <div className="rounded-xl border border-border overflow-hidden bg-card">
           {/* Table header */}
-          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-2.5 border-b border-line bg-slate-50/80 dark:bg-dark-border/30">
-            <span className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">Book</span>
-            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center dark:text-dark-muted w-20">Copies</span>
-            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center dark:text-dark-muted w-20">Available</span>
-            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center dark:text-dark-muted w-20">Out</span>
-            <span className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted w-28">Actions</span>
+          <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-2.5 border-b border-border bg-slate-50/80/30">
+            <span className="text-xs font-semibold text-slate uppercase tracking-wide">Book</span>
+            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center w-20">Copies</span>
+            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center w-20">Available</span>
+            <span className="text-xs font-semibold text-slate uppercase tracking-wide text-center w-20">Out</span>
+            <span className="text-xs font-semibold text-slate uppercase tracking-wide w-28">Actions</span>
           </div>
 
           {items.map((item, idx) => (
@@ -310,7 +310,7 @@ export default function LibraryInventoryPage() {
 
       {/* ── Summary ─────────────────────────────────────────────────── */}
       {!loading && items.length > 0 && (
-        <p className="mt-3 text-xs text-slate text-center dark:text-dark-muted">
+        <p className="mt-3 text-xs text-slate text-center">
           {items.length} title{items.length !== 1 ? "s" : ""} ·{" "}
           {items.reduce((s, i) => s + i.totalCopies, 0)} total copies ·{" "}
           {items.reduce((s, i) => s + i.availableCopies, 0)} available
@@ -394,10 +394,10 @@ function CatalogueRow({
   const archivedCopies = (copies ?? []).filter(c => c.archivedAt);
 
   return (
-    <div className={`${!isLast ? "border-b border-line dark:border-dark-border" : ""}`}>
+    <div className={`${!isLast ? "border-b border-border" : ""}`}>
       {/* Main row */}
       <div
-        className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-3.5 items-center hover:bg-slate-50/50 dark:hover:bg-dark-border/20 transition-colors cursor-pointer select-none"
+        className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-3.5 items-center hover:bg-slate-50/50/20 transition-colors cursor-pointer select-none"
         onClick={onToggle}
       >
         {/* Book info */}
@@ -406,10 +406,10 @@ function CatalogueRow({
             <ChevronRight className="h-4 w-4 text-slate/50" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">{item.title}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              {item.author && <span className="text-xs text-slate dark:text-dark-muted">{item.author}</span>}
-              {item.edition && <span className="text-xs text-slate/60 dark:text-dark-muted/60">{item.edition}</span>}
+              {item.author && <span className="text-xs text-slate">{item.author}</span>}
+              {item.edition && <span className="text-xs text-slate/60/60">{item.edition}</span>}
               {item.subject && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-teal/10 text-teal">{item.subject}</span>
               )}
@@ -417,46 +417,46 @@ function CatalogueRow({
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">{item.level}</span>
               )}
               {item.shelf && (
-                <span className="text-[10px] text-slate/60 dark:text-dark-muted/60">Shelf {item.shelf}</span>
+                <span className="text-[10px] text-slate/60/60">Shelf {item.shelf}</span>
               )}
             </div>
           </div>
         </div>
 
         {/* Counts */}
-        <span className="hidden sm:block text-sm font-semibold text-ink text-center w-20 dark:text-dark-text">{item.totalCopies}</span>
+        <span className="hidden sm:block text-sm font-semibold text-foreground text-center w-20">{item.totalCopies}</span>
         <span className="hidden sm:block text-sm font-semibold text-success text-center w-20">{item.availableCopies}</span>
-        <span className={`hidden sm:block text-sm font-semibold text-center w-20 ${item.checkedOut > 0 ? "text-info" : "text-slate/40 dark:text-dark-muted/40"}`}>{item.checkedOut}</span>
+        <span className={`hidden sm:block text-sm font-semibold text-center w-20 ${item.checkedOut > 0 ? "text-info" : "text-slate/40/40"}`}>{item.checkedOut}</span>
 
         {/* Action buttons */}
         <div className="hidden sm:flex items-center gap-1.5 w-28" onClick={e => e.stopPropagation()}>
           <button title="Edit book" onClick={onEdit}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-ink hover:bg-line/60 transition-colors dark:text-dark-muted dark:hover:text-dark-text dark:hover:bg-dark-border">
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-foreground hover:bg-line/60 transition-colors">
             <Edit2 className="h-3.5 w-3.5" />
           </button>
           <button title="Add copies" onClick={onAddCopies}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:text-dark-muted dark:hover:text-teal">
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:hover:text-teal">
             <Plus className="h-3.5 w-3.5" />
           </button>
           <button title="Print QR stickers" onClick={onQRSheet}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:text-dark-muted dark:hover:text-teal">
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:hover:text-teal">
             <QrCode className="h-3.5 w-3.5" />
           </button>
           <Link title="Book intelligence" href={`/staff/library/inventory/${item.id}`}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:text-dark-muted dark:hover:text-teal">
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate hover:text-teal hover:bg-teal/10 transition-colors dark:hover:text-teal">
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </div>
 
         {/* Mobile: copy count */}
         <div className="flex sm:hidden items-center gap-2" onClick={e => e.stopPropagation()}>
-          <span className="text-xs font-semibold text-slate dark:text-dark-muted">{item.totalCopies} cop{item.totalCopies !== 1 ? "ies" : "y"}</span>
+          <span className="text-xs font-semibold text-slate">{item.totalCopies} cop{item.totalCopies !== 1 ? "ies" : "y"}</span>
         </div>
       </div>
 
       {/* Expanded copies panel */}
       {isExpanded && (
-        <div className="border-t border-line/60 bg-slate-50/40 dark:bg-dark-border/10 dark:border-dark-border/60 px-4 py-3 space-y-3">
+        <div className="border-t border-border/60 bg-slate-50/40/10/60 px-4 py-3 space-y-3">
           {/* Mobile actions */}
           <div className="flex sm:hidden items-center gap-2 flex-wrap">
             <button onClick={onEdit} className={secondaryButtonClass + " text-xs py-1.5 px-3"}><Edit2 className="h-3.5 w-3.5" /> Edit</button>
@@ -469,7 +469,7 @@ function CatalogueRow({
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading copies…
             </div>
           ) : activeCopies.length === 0 && archivedCopies.length === 0 ? (
-            <div className="flex items-center justify-between text-xs text-slate dark:text-dark-muted py-1">
+            <div className="flex items-center justify-between text-xs text-slate py-1">
               <span>No physical copies registered yet.</span>
               <button onClick={onAddCopies} className="text-teal font-medium hover:underline flex items-center gap-1">
                 <Plus className="h-3 w-3" /> Add copies
@@ -494,7 +494,7 @@ function CatalogueRow({
 
               {/* Archived copies (collapsed by default) */}
               {archivedCopies.length > 0 && (
-                <p className="text-[10px] text-slate/60 dark:text-dark-muted/60 pt-1">
+                <p className="text-[10px] text-slate/60/60 pt-1">
                   {archivedCopies.length} withdrawn cop{archivedCopies.length !== 1 ? "ies" : "y"} not shown
                 </p>
               )}
@@ -520,15 +520,15 @@ function CopyCard({
   const variant    = STATUS_BADGE[copy.status] ?? "default";
 
   return (
-    <div className="group flex items-start justify-between rounded-lg border border-line bg-white px-3 py-2 dark:bg-dark-surface dark:border-dark-border">
+    <div className="group flex items-start justify-between rounded-lg border border-border bg-card px-3 py-2">
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-ink dark:text-dark-text font-mono leading-tight">{copy.bookNumber ?? copy.accessionNumber}</p>
+        <p className="text-xs font-bold text-foreground font-mono leading-tight">{copy.bookNumber ?? copy.accessionNumber}</p>
         {copy.bookNumber && (
-          <p className="text-[10px] text-slate/60 dark:text-dark-muted/60 font-mono">{copy.accessionNumber}</p>
+          <p className="text-[10px] text-slate/60/60 font-mono">{copy.accessionNumber}</p>
         )}
         <div className="mt-1 flex items-center gap-1.5 flex-wrap">
           <Badge variant={variant}>{copy.status.replace(/_/g, " ")}</Badge>
-          <span className="text-[9px] text-slate/60 dark:text-dark-muted/60">{copy.condition}</span>
+          <span className="text-[9px] text-slate/60/60">{copy.condition}</span>
         </div>
       </div>
 
@@ -638,12 +638,12 @@ function BookFormModal({
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-surface rounded-2xl shadow-2xl p-6">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-card rounded-2xl shadow-2xl p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-ink dark:text-dark-text flex items-center gap-2">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-teal" /> {modalTitle}
           </h2>
-          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 transition-colors dark:text-dark-muted dark:hover:bg-dark-border">
+          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -657,7 +657,7 @@ function BookFormModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title — required */}
           <div>
-            <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">
+            <label className="block text-xs font-semibold text-slate mb-1.5">
               Title <span className="text-danger">*</span>
             </label>
             <input className={inputClass} value={form.title} onChange={set("title")} placeholder="e.g. Secondary Mathematics Book 3" autoFocus />
@@ -665,29 +665,29 @@ function BookFormModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Author</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Author</label>
               <input className={inputClass} value={form.author} onChange={set("author")} placeholder="Author name" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Edition</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Edition</label>
               <input className={inputClass} value={form.edition} onChange={set("edition")} placeholder="e.g. 3rd Edition" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Level / Form</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Level / Form</label>
               <input className={inputClass} value={form.level} onChange={set("level")} placeholder="e.g. Form 3, Grade 7" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Subject</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Subject</label>
               <input className={inputClass} value={form.subject} onChange={set("subject")} placeholder="e.g. Mathematics" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Category</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Category</label>
               <select className={inputClass} value={form.category} onChange={set("category")}>
                 {CATEGORIES.map(c => (
                   <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase().replace(/_/g, " ")}</option>
@@ -695,24 +695,24 @@ function BookFormModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Shelf</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Shelf</label>
               <input className={inputClass} value={form.shelf} onChange={set("shelf")} placeholder="e.g. A, Science" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Publisher</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">Publisher</label>
               <input className={inputClass} value={form.publisher} onChange={set("publisher")} placeholder="Publisher name" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">ISBN</label>
+              <label className="block text-xs font-semibold text-slate mb-1.5">ISBN</label>
               <input className={inputClass} value={form.isbn} onChange={set("isbn")} placeholder="ISBN" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">Publish Year</label>
+            <label className="block text-xs font-semibold text-slate mb-1.5">Publish Year</label>
             <input className={inputClass} value={form.publishYear} onChange={set("publishYear")} placeholder="e.g. 2020" type="number" min="1900" max="2099" />
           </div>
 
@@ -764,20 +764,20 @@ function AddCopiesModal({
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="w-full max-w-sm bg-white dark:bg-dark-surface rounded-2xl shadow-2xl p-6">
+      <div className="w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-ink dark:text-dark-text flex items-center gap-2">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <Package className="h-5 w-5 text-teal" /> Add Physical Copies
           </h2>
-          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 dark:text-dark-muted dark:hover:bg-dark-border transition-colors">
+          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <p className="text-sm text-slate mb-4 dark:text-dark-muted">
-          Adding copies of <strong className="text-ink dark:text-dark-text">{catalogue.title}</strong>
+        <p className="text-sm text-slate mb-4">
+          Adding copies of <strong className="text-foreground">{catalogue.title}</strong>
         </p>
-        <p className="text-xs text-slate/70 mb-4 dark:text-dark-muted/70">
+        <p className="text-xs text-slate/70 mb-4/70">
           Each copy gets a unique <strong>BK-NNNNN</strong> sticker number and a signed QR token automatically.
         </p>
 
@@ -789,7 +789,7 @@ function AddCopiesModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate mb-1.5 dark:text-dark-muted">
+            <label className="block text-xs font-semibold text-slate mb-1.5">
               Number of Copies <span className="text-danger">*</span>
             </label>
             <input
@@ -877,22 +877,22 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-surface rounded-2xl shadow-2xl p-6">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-card rounded-2xl shadow-2xl p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-ink dark:text-dark-text flex items-center gap-2">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <Upload className="h-5 w-5 text-teal" /> Bulk Import
           </h2>
-          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 transition-colors dark:text-dark-muted dark:hover:bg-dark-border">
+          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate hover:bg-line/60 transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Template info */}
-        <div className="rounded-xl border border-line bg-slate-50/60 dark:bg-dark-border/20 dark:border-dark-border p-4 mb-5 text-xs text-slate dark:text-dark-muted space-y-1">
-          <p className="font-semibold text-ink dark:text-dark-text">Required CSV columns:</p>
+        <div className="rounded-xl border border-border bg-slate-50/60/20 p-4 mb-5 text-xs text-slate space-y-1">
+          <p className="font-semibold text-foreground">Required CSV columns:</p>
           <p><code className="text-teal font-bold">title</code> (required) · <code className="text-teal font-bold">copies</code> (required, integer)</p>
-          <p className="text-slate/70 dark:text-dark-muted/70">Optional: author · edition · level · subject</p>
-          <p className="text-slate/70 dark:text-dark-muted/70">First row must be the header row. Each row creates or reuses a Book and registers that many physical copies.</p>
+          <p className="text-slate/70/70">Optional: author · edition · level · subject</p>
+          <p className="text-slate/70/70">First row must be the header row. Each row creates or reuses a Book and registers that many physical copies.</p>
         </div>
 
         {error && (
@@ -914,7 +914,7 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
               <FileText className="h-8 w-8 text-teal" />
             )}
             <p className="text-sm font-semibold text-teal">{fileName ? fileName : "Click to choose a CSV file"}</p>
-            {!fileName && <p className="text-xs text-slate dark:text-dark-muted">Supported: .csv</p>}
+            {!fileName && <p className="text-xs text-slate">Supported: .csv</p>}
           </div>
         )}
 
@@ -925,17 +925,17 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
               <CheckCircle2 className="h-4 w-4" /> Import complete
             </p>
             <div className="grid grid-cols-3 gap-3 text-center text-xs">
-              <div className="rounded-lg border border-line bg-white p-2 dark:bg-dark-surface dark:border-dark-border">
-                <p className="text-base font-bold text-ink dark:text-dark-text">{result.imported}</p>
-                <p className="text-slate dark:text-dark-muted">Books</p>
+              <div className="rounded-lg border border-border bg-card p-2">
+                <p className="text-base font-bold text-foreground">{result.imported}</p>
+                <p className="text-slate">Books</p>
               </div>
               <div className="rounded-lg border border-teal/30 bg-teal/5 p-2">
                 <p className="text-base font-bold text-teal">{result.copiesAdded}</p>
-                <p className="text-slate dark:text-dark-muted">Copies added</p>
+                <p className="text-slate">Copies added</p>
               </div>
-              <div className={`rounded-lg border p-2 ${result.skipped > 0 ? "border-danger/30 bg-danger-bg/40" : "border-line bg-white dark:bg-dark-surface dark:border-dark-border"}`}>
-                <p className={`text-base font-bold ${result.skipped > 0 ? "text-danger" : "text-slate dark:text-dark-muted"}`}>{result.skipped}</p>
-                <p className="text-slate dark:text-dark-muted">Skipped</p>
+              <div className={`rounded-lg border p-2 ${result.skipped > 0 ? "border-danger/30 bg-danger-bg/40" : "border-border bg-card"}`}>
+                <p className={`text-base font-bold ${result.skipped > 0 ? "text-danger" : "text-slate"}`}>{result.skipped}</p>
+                <p className="text-slate">Skipped</p>
               </div>
             </div>
             {result.errors.length > 0 && (
@@ -964,18 +964,18 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
               )}
             </div>
 
-            <div className="rounded-xl border border-line overflow-hidden dark:border-dark-border">
+            <div className="rounded-xl border border-border overflow-hidden">
               {preview.slice(0, 20).map((row, idx) => (
-                <div key={idx} className={`flex items-start gap-3 px-4 py-2.5 text-xs ${idx < preview.length - 1 ? "border-b border-line dark:border-dark-border" : ""} ${row.error || !row.data ? "bg-danger-bg/30" : ""}`}>
+                <div key={idx} className={`flex items-start gap-3 px-4 py-2.5 text-xs ${idx < preview.length - 1 ? "border-b border-border" : ""} ${row.error || !row.data ? "bg-danger-bg/30" : ""}`}>
                   {row.error || !row.data
                     ? <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" />
                     : <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium truncate ${row.error || !row.data ? "text-danger" : "text-ink dark:text-dark-text"}`}>
+                    <p className={`font-medium truncate ${row.error || !row.data ? "text-danger" : "text-foreground"}`}>
                       Row {row.index}: {row.data?.title ?? "(empty)"}
                     </p>
                     {row.data && (
-                      <p className="text-slate/70 dark:text-dark-muted/70">
+                      <p className="text-slate/70/70">
                         {[row.data.author && `by ${row.data.author}`, row.data.level, `${row.data.copies} cop${row.data.copies !== 1 ? "ies" : "y"}`].filter(Boolean).join(" · ")}
                       </p>
                     )}
@@ -984,7 +984,7 @@ function ImportModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
                 </div>
               ))}
               {preview.length > 20 && (
-                <div className="px-4 py-2 text-xs text-slate text-center dark:text-dark-muted">
+                <div className="px-4 py-2 text-xs text-slate text-center">
                   + {preview.length - 20} more rows
                 </div>
               )}

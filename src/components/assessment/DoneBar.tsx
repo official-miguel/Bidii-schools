@@ -22,7 +22,7 @@ export default function DoneBar({ role, classId, periodId }: DoneBarProps) {
   }
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-line shadow-[0_-2px_8px_rgba(0,0,0,0.06)] px-6 py-3 flex items-center justify-end gap-3">
+    <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] px-6 py-3 flex items-center justify-end gap-3">
       <span className="text-sm text-slate hidden sm:block">
         Finished entering marks?
       </span>

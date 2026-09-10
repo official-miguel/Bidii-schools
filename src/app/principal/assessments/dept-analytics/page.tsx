@@ -46,11 +46,11 @@ export default async function DeptAnalyticsRoute() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">Department Analytics</h1>
+        <h1 className="font-display text-xl font-semibold text-foreground">Department Analytics</h1>
         <p className="text-sm text-slate mt-0.5">Subject breakdown, trends, and class performance heatmap by department.</p>
       </div>
       {departments.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
           No departments found. Add departments first.
         </div>
       ) : (

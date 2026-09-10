@@ -96,10 +96,10 @@ export default async function HODDashboard({ user }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-2xl font-semibold text-foreground">
           {teacher?.departmentHeadOf?.name ?? "Department"} — Head of Department
         </h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+        <p className="text-slate text-sm mt-1">
           {teacher?.fullName} · {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -116,18 +116,18 @@ export default async function HODDashboard({ user }: Props) {
 
       {/* Active assessment periods with countdown */}
       {activePeriods.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Marks submission deadlines</p>
+            <p className="text-sm font-semibold text-foreground">Marks submission deadlines</p>
             <Link href="/staff/assessments" className="text-xs text-teal hover:underline">Enter marks</Link>
           </div>
           <ul className="space-y-3">
             {activePeriods.map((ap) => (
               <li key={ap.id} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-ink dark:text-dark-text">{ap.name}</span>
+                <span className="text-sm text-foreground">{ap.name}</span>
                 {ap.closingDate
                   ? <CountdownTimer deadline={ap.closingDate.toISOString()} label="Closes" />
-                  : <span className="text-xs text-slate dark:text-dark-muted">No deadline set</span>
+                  : <span className="text-xs text-slate">No deadline set</span>
                 }
               </li>
             ))}
@@ -137,21 +137,20 @@ export default async function HODDashboard({ user }: Props) {
 
       {/* Department classes */}
       {deptClasses.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Classes in your department</p>
-            <span className="text-xs text-slate dark:text-dark-muted">{deptClasses.length} classes</span>
+            <p className="text-sm font-semibold text-foreground">Classes in your department</p>
+            <span className="text-xs text-slate">{deptClasses.length} classes</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {deptClasses.map((c) => (
               <Link
                 key={c.id}
                 href={`/staff/assessments?classId=${c.id}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-line text-sm
-                           hover:border-teal/40 hover:bg-teal-50 transition-colors
-                           dark:border-dark-border dark:hover:border-teal/40 dark:hover:bg-teal/5"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm
+                           hover:border-teal/40 hover:bg-teal-50 transition-colors dark:hover:border-teal/40 dark:hover:bg-teal/5"
               >
-                <span className="text-ink dark:text-dark-text">{c.name}</span>
+                <span className="text-foreground">{c.name}</span>
               </Link>
             ))}
           </div>

@@ -103,11 +103,11 @@ export default function HistoryStaffTab({ globalSearch }: Props) {
   return (
     <>
       {/* ── Desktop table ── */}
-      <div className="hidden md:block bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[760px]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-line bg-slate-50/80 text-left text-xs
+              <tr className="border-b border-border bg-slate-50/80 text-left text-xs
                              font-semibold text-slate uppercase tracking-wide">
                 <th className="px-5 py-3.5 w-[240px]">Staff member</th>
                 <th className="px-5 py-3.5 w-[100px]">Staff ID</th>
@@ -124,7 +124,7 @@ export default function HistoryStaffTab({ globalSearch }: Props) {
                 return (
                   <tr
                     key={t.id}
-                    className="group border-b border-line last:border-0
+                    className="group border-b border-border last:border-0
                                hover:bg-slate-50/50 transition-colors cursor-pointer"
                     onClick={() => setSelectedId(t.id)}
                   >
@@ -132,7 +132,7 @@ export default function HistoryStaffTab({ globalSearch }: Props) {
                       <div className="flex items-center gap-3">
                         <Avatar name={t.fullName} size="sm" />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-ink truncate
+                          <p className="text-sm font-medium text-foreground truncate
                                        group-hover:text-teal transition-colors">
                             {t.fullName}
                           </p>
@@ -144,7 +144,7 @@ export default function HistoryStaffTab({ globalSearch }: Props) {
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="text-xs font-mono text-slate bg-slate-50
-                                      border border-line rounded px-1.5 py-0.5">
+                                      border border-border rounded px-1.5 py-0.5">
                         {t.staffId}
                       </span>
                     </td>
@@ -204,13 +204,13 @@ export default function HistoryStaffTab({ globalSearch }: Props) {
               key={t.id}
               type="button"
               onClick={() => setSelectedId(t.id)}
-              className="w-full text-left rounded-xl border border-line bg-white
+              className="w-full text-left rounded-xl border border-border bg-card
                          shadow-xs px-4 py-3.5 hover:border-teal/40 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Avatar name={t.fullName} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{t.fullName}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{t.fullName}</p>
                   <p className="text-xs text-slate/70 truncate">
                     ID {t.staffId}
                     {dept && ` · ${dept}`}

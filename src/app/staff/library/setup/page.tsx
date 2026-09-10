@@ -167,10 +167,9 @@ function SectionTile({ tile }: { tile: Tile }) {
     <Link
       href={tile.href}
       className="
-        group relative flex flex-col gap-4 rounded-2xl border border-line bg-white p-6
+        group relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6
         hover:border-teal/35 hover:shadow-md hover:-translate-y-0.5
         transition-all duration-150 cursor-pointer
-        dark:bg-dark-surface dark:border-dark-border
         dark:hover:border-teal/40
       "
     >
@@ -203,21 +202,21 @@ function SectionTile({ tile }: { tile: Tile }) {
 
       {/* Text */}
       <div className="flex-1">
-        <h3 className="text-base font-semibold text-ink dark:text-dark-text mb-1.5">
+        <h3 className="text-base font-semibold text-foreground mb-1.5">
           {tile.label}
         </h3>
-        <p className="text-sm text-slate dark:text-dark-muted leading-relaxed">
+        <p className="text-sm text-slate leading-relaxed">
           {tile.description}
         </p>
       </div>
 
       {/* Arrow footer */}
-      <div className="flex items-center justify-end mt-auto pt-2 border-t border-line/60 dark:border-dark-border/60">
-        <span className="text-xs font-medium text-slate dark:text-dark-muted group-hover:text-teal transition-colors mr-1.5">
+      <div className="flex items-center justify-end mt-auto pt-2 border-t border-border/60/60">
+        <span className="text-xs font-medium text-slate group-hover:text-teal transition-colors mr-1.5">
           Open
         </span>
         <ArrowRight
-          className="h-4 w-4 text-slate/40 group-hover:text-teal group-hover:translate-x-0.5 transition-all duration-150 dark:text-dark-muted/40"
+          className="h-4 w-4 text-slate/40 group-hover:text-teal group-hover:translate-x-0.5 transition-all duration-150/40"
         />
       </div>
     </Link>
@@ -244,7 +243,7 @@ function FactPill({
         ${
           urgent
             ? "border-danger/25 bg-danger-bg/40 dark:bg-danger/10"
-            : "border-line bg-white dark:bg-dark-surface dark:border-dark-border"
+            : "border-border bg-card"
         }
       `}
     >
@@ -254,12 +253,12 @@ function FactPill({
       <div className="min-w-0">
         <p
           className={`text-lg font-bold leading-none ${
-            urgent ? "text-danger" : "text-ink dark:text-dark-text"
+            urgent ? "text-danger" : "text-foreground"
           }`}
         >
           {value}
         </p>
-        <p className="text-xs text-slate dark:text-dark-muted mt-0.5 truncate">
+        <p className="text-xs text-slate mt-0.5 truncate">
           {label}
         </p>
       </div>

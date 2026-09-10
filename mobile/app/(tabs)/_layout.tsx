@@ -2,7 +2,7 @@ import { Tabs, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { LayoutDashboard, BookOpen, QrCode, CreditCard, Settings, BarChart3, User } from 'lucide-react-native';
 import { useAuth, isPrincipal, isLibrarian, isStudent } from '@/lib/auth';
-import { Colors } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 /**
  * Role-based tab navigation
@@ -14,6 +14,24 @@ import { Colors } from '@/constants';
 export default function TabsLayout() {
   const { user } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
+
+  const tabBarScreenOptions = {
+    headerShown: false,
+    tabBarActiveTintColor: colors.primary,
+    tabBarInactiveTintColor: colors.mutedForeground,
+    tabBarStyle: {
+      backgroundColor: colors.card,
+      borderTopColor: colors.border,
+      height: 64,
+      paddingBottom: 8,
+      paddingTop: 8,
+    },
+    tabBarLabelStyle: {
+      fontSize: 11,
+      fontWeight: '500' as const,
+    },
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -29,24 +47,7 @@ export default function TabsLayout() {
   // Principal tabs
   if (isPrincipal()) {
     return (
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors.teal,
-          tabBarInactiveTintColor: Colors.slateText,
-          tabBarStyle: {
-            backgroundColor: Colors.card,
-            borderTopColor: Colors.line,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 8,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
-        }}
-      >
+      <Tabs screenOptions={tabBarScreenOptions}>
         <Tabs.Screen
           name="dashboard"
           options={{
@@ -90,24 +91,7 @@ export default function TabsLayout() {
   // Librarian tabs
   if (isLibrarian()) {
     return (
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors.teal,
-          tabBarInactiveTintColor: Colors.slateText,
-          tabBarStyle: {
-            backgroundColor: Colors.card,
-            borderTopColor: Colors.line,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 8,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
-        }}
-      >
+      <Tabs screenOptions={tabBarScreenOptions}>
         <Tabs.Screen
           name="circulate"
           options={{
@@ -157,24 +141,7 @@ export default function TabsLayout() {
   // Student tabs
   if (isStudent()) {
     return (
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors.teal,
-          tabBarInactiveTintColor: Colors.slateText,
-          tabBarStyle: {
-            backgroundColor: Colors.card,
-            borderTopColor: Colors.line,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 8,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
-        }}
-      >
+      <Tabs screenOptions={tabBarScreenOptions}>
         <Tabs.Screen
           name="my-card"
           options={{
@@ -211,20 +178,7 @@ export default function TabsLayout() {
 
   // Fallback for other roles (TEACHER, etc.) — show limited access
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.teal,
-        tabBarInactiveTintColor: Colors.slateText,
-        tabBarStyle: {
-          backgroundColor: Colors.card,
-          borderTopColor: Colors.line,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-      }}
-    >
+    <Tabs screenOptions={tabBarScreenOptions}>
       <Tabs.Screen
         name="browse"
         options={{

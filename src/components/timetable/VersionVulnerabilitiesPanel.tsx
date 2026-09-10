@@ -159,14 +159,14 @@ export default function VersionVulnerabilitiesPanel({
     <div
       role="complementary"
       aria-label={`Vulnerabilities for ${versionName}`}
-      className="flex flex-col bg-white border border-line rounded-2xl shadow-xl
+      className="flex flex-col bg-card border border-border rounded-2xl shadow-xl
                  w-full max-w-md max-h-[calc(100vh-6rem)] overflow-hidden"
     >
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3
-                      border-b border-line shrink-0">
+                      border-b border-border shrink-0">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink truncate">
+          <p className="text-sm font-semibold text-foreground truncate">
             Health report — {versionName}
           </p>
           <p className="text-[11px] text-slate mt-0.5">
@@ -189,7 +189,7 @@ export default function VersionVulnerabilitiesPanel({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-slate hover:text-ink hover:bg-paper transition-colors"
+            className="p-1.5 rounded-lg text-slate hover:text-foreground hover:bg-background transition-colors"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -197,7 +197,7 @@ export default function VersionVulnerabilitiesPanel({
       </div>
 
       {/* ── Summary pills ───────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-line shrink-0 flex-wrap">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-border shrink-0 flex-wrap">
         {isClean ? (
           <div className="flex items-center gap-1.5 text-xs font-semibold text-success">
             <CheckCircle2 className="h-4 w-4" aria-hidden />
@@ -242,7 +242,7 @@ export default function VersionVulnerabilitiesPanel({
             >
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-500 shrink-0" aria-hidden />
-                <span className="text-sm font-semibold text-ink">
+                <span className="text-sm font-semibold text-foreground">
                   Staffing Suggestions
                 </span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full
@@ -258,7 +258,7 @@ export default function VersionVulnerabilitiesPanel({
 
             {/* Explanation callout */}
             {showShortages && (
-              <p className="text-xs text-slate bg-paper rounded-lg px-3 py-2 mb-2.5 leading-relaxed">
+              <p className="text-xs text-slate bg-background rounded-lg px-3 py-2 mb-2.5 leading-relaxed">
                 These subjects don&apos;t have enough teachers to cover all required lessons per week.
                 Adding more staff will reduce scheduling pressure and improve timetable quality.
               </p>
@@ -279,7 +279,7 @@ export default function VersionVulnerabilitiesPanel({
             >
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-danger shrink-0" aria-hidden />
-                <span className="text-sm font-semibold text-ink">
+                <span className="text-sm font-semibold text-foreground">
                   Timetable Conflicts
                 </span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full
@@ -302,7 +302,7 @@ export default function VersionVulnerabilitiesPanel({
         {isClean && (
           <div className="text-center py-10">
             <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-3" aria-hidden />
-            <p className="text-sm font-semibold text-ink">All clear</p>
+            <p className="text-sm font-semibold text-foreground">All clear</p>
             <p className="text-xs text-slate mt-1 max-w-xs mx-auto">
               No conflicts or staffing gaps were found at the time this version was last checked.
             </p>
@@ -325,7 +325,7 @@ function StaffShortageCard({ shortage }: { shortage: VersionStaffShortage }) {
         <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${lvl.dot}`} aria-hidden />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-xs font-semibold text-ink">
+            <p className="text-xs font-semibold text-foreground">
               {shortage.subjectCode}
               {shortage.subjectName !== shortage.subjectCode && (
                 <span className="font-normal text-slate ml-1">— {shortage.subjectName}</span>
@@ -337,7 +337,7 @@ function StaffShortageCard({ shortage }: { shortage: VersionStaffShortage }) {
           </div>
 
           {/* Core message — always visible */}
-          <p className="text-xs text-ink mt-1 leading-snug">{shortage.message}</p>
+          <p className="text-xs text-foreground mt-1 leading-snug">{shortage.message}</p>
 
           {/* What to do — always visible */}
           <p className="text-[11px] text-teal mt-1 leading-snug font-medium">
@@ -385,7 +385,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <span className="text-[10px] text-slate">{label}</span>
-      <span className="text-[10px] font-medium text-ink text-right">{value}</span>
+      <span className="text-[10px] font-medium text-foreground text-right">{value}</span>
     </div>
   );
 }
@@ -409,7 +409,7 @@ function ConflictGroup({ type, items }: { type: string; items: VersionConflictEn
       >
         <Icon className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${color}`} aria-hidden />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-ink leading-snug">{heading}</p>
+          <p className="text-xs font-semibold text-foreground leading-snug">{heading}</p>
           <p className="text-[10px] text-slate mt-0.5 leading-snug">{detail}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -436,7 +436,7 @@ function ConflictGroup({ type, items }: { type: string; items: VersionConflictEn
                 aria-hidden
               />
               <div className="min-w-0">
-                <p className="text-[11px] text-ink leading-snug">{item.message}</p>
+                <p className="text-[11px] text-foreground leading-snug">{item.message}</p>
                 <p className="text-[10px] text-teal mt-0.5 leading-snug">{item.action}</p>
               </div>
             </div>

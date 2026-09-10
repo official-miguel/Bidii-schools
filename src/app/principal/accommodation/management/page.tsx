@@ -47,7 +47,7 @@ const STATUS_META: Record<string, { label: string; color: string; icon: typeof C
 function OccupancyBar({ pct }: { pct: number }) {
   const c = pct >= 100 ? "bg-danger" : pct >= 90 ? "bg-warn" : "bg-teal";
   return (
-    <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+    <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
       <div className={`h-full rounded-full ${c}`} style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
   );
@@ -109,12 +109,12 @@ function TransferStudentModal({ dorms, onClose, onDone }: {
         </FormField>
         {loading && <div className="h-10 rounded-lg bg-line/40 animate-pulse" />}
         {students.length > 0 && (
-          <div className="space-y-1 max-h-36 overflow-y-auto border border-line rounded-lg dark:border-dark-border">
+          <div className="space-y-1 max-h-36 overflow-y-auto border border-border rounded-lg">
             {students.map((s) => (
               <button key={s.id} type="button" onClick={() => setSelectedId(s.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${selectedId === s.id ? "bg-teal text-white" : "hover:bg-paper dark:hover:bg-dark-border"}`}>
-                <span className={selectedId === s.id ? "font-semibold" : "text-ink dark:text-dark-text"}>{s.fullName}</span>
-                <span className={`text-xs ${selectedId === s.id ? "opacity-80" : "text-slate dark:text-dark-muted"}`}>
+                className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${selectedId === s.id ? "bg-teal text-white" : "hover:bg-background"}`}>
+                <span className={selectedId === s.id ? "font-semibold" : "text-foreground"}>{s.fullName}</span>
+                <span className={`text-xs ${selectedId === s.id ? "opacity-80" : "text-slate"}`}>
                   {s.currentAllocation?.dorm.name ?? "—"}
                 </span>
               </button>
@@ -122,9 +122,9 @@ function TransferStudentModal({ dorms, onClose, onDone }: {
           </div>
         )}
         {selected && (
-          <div className="rounded-lg bg-teal/5 border border-teal/20 dark:bg-teal/10 px-3 py-2 text-sm">
+          <div className="rounded-lg bg-teal/5 border border-teal/20 px-3 py-2 text-sm">
             <span className="font-medium text-teal">{selected.fullName}</span>
-            <span className="text-slate dark:text-dark-muted ml-2">
+            <span className="text-slate ml-2">
               currently in {selected.currentAllocation?.dorm.name ?? "no dorm"}
               {selected.currentAllocation?.cubicle ? ` · ${selected.currentAllocation.cubicle.name}` : ""}
             </span>
@@ -205,7 +205,7 @@ function MaintenanceModal({ dorm, dorms, onClose, onDone }: {
 
       {/* Reopen info banner */}
       {!isClosing && (
-        <div className="mb-4 rounded-lg border border-teal/20 bg-teal/5 dark:bg-teal/10 px-3 py-2.5 text-sm text-teal flex items-start gap-2">
+        <div className="mb-4 rounded-lg border border-teal/20 bg-teal/5 px-3 py-2.5 text-sm text-teal flex items-start gap-2">
           <Unlock className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
             Students who were in <strong>{dorm.name}</strong> when it closed will be automatically
@@ -225,7 +225,7 @@ function MaintenanceModal({ dorm, dorms, onClose, onDone }: {
 
             {/* Snapshot info — replaces the old misleading warning */}
             {dorm.occupiedCount > 0 && (
-              <div className="rounded-lg border border-teal/20 bg-teal/5 dark:bg-teal/10 px-3 py-2.5 text-sm text-teal flex items-start gap-2">
+              <div className="rounded-lg border border-teal/20 bg-teal/5 px-3 py-2.5 text-sm text-teal flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>
                   <strong>{dorm.occupiedCount} student(s)</strong> will be held in a snapshot.
@@ -235,12 +235,12 @@ function MaintenanceModal({ dorm, dorms, onClose, onDone }: {
               </div>
             )}
 
-            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-line dark:border-dark-border p-3">
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-border p-3">
               <input type="checkbox" checked={relocate} onChange={(e) => setRelocate(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-line text-teal" />
+                className="mt-0.5 h-4 w-4 rounded border-border text-teal" />
               <div>
-                <p className="text-sm font-medium text-ink dark:text-dark-text">Also give temporary accommodation</p>
-                <p className="text-xs text-slate dark:text-dark-muted">
+                <p className="text-sm font-medium text-foreground">Also give temporary accommodation</p>
+                <p className="text-xs text-slate">
                   Move all {dorm.occupiedCount} student(s) to another dorm while this one is closed.
                   Their snapshot is still saved for the restore.
                 </p>
@@ -451,11 +451,11 @@ export default function DormManagementPage() {
             { label: "Closed", value: closedCount, icon: Lock, color: closedCount > 0 ? "text-slate" : "text-slate", bg: "bg-slate/10" },
             { label: "Total occupied", value: totalOccupied, icon: Users, color: "text-teal", bg: "bg-teal/10" },
           ].map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="rounded-xl border border-line bg-card p-4 dark:bg-dark-surface dark:border-dark-border">
+            <div key={label} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`text-xl font-semibold tabular-nums ${color}`}>{value}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{label}</p>
+                  <p className="text-xs text-slate mt-0.5">{label}</p>
                 </div>
                 <div className={`rounded-lg p-2 ${bg}`}><Icon className={`h-5 w-5 ${color}`} /></div>
               </div>
@@ -468,7 +468,7 @@ export default function DormManagementPage() {
         <WorkspaceToolbar.Search value={search} onChange={setSearch} placeholder="Search dormitories…" />
         <WorkspaceToolbar.Actions>
           <select value={statusFilter} onChange={(e) => setStatus(e.target.value)}
-            className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+            className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card">
             <option value="">All statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="UNDER_MAINTENANCE">Maintenance</option>
@@ -480,14 +480,14 @@ export default function DormManagementPage() {
 
       {loading && (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-28 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-28 rounded-xl bg-line/40/40 animate-pulse" />)}
         </div>
       )}
 
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <Building2 className="h-10 w-10 text-slate/50" />
-          <p className="text-ink font-medium dark:text-dark-text">No dormitories found</p>
+          <p className="text-foreground font-medium">No dormitories found</p>
         </div>
       )}
 
@@ -497,12 +497,12 @@ export default function DormManagementPage() {
           const StatusIcon = meta.icon;
           const pct = dorm.totalCapacity > 0 ? Math.round(((dorm.occupiedCount ?? 0) / dorm.totalCapacity) * 100) : 0;
           return (
-            <div key={dorm.id} className={`rounded-xl border bg-card dark:bg-dark-surface p-5 ${dorm.status === "UNDER_MAINTENANCE" ? "border-warn/30 dark:border-warn/20" : dorm.status === "CLOSED" ? "border-line/50 opacity-80" : "border-line dark:border-dark-border"}`}>
+            <div key={dorm.id} className={`rounded-xl border bg-card p-5 ${dorm.status === "UNDER_MAINTENANCE" ? "border-warn/30 dark:border-warn/20" : dorm.status === "CLOSED" ? "border-border/50 opacity-80" : "border-border"}`}>
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
-                      className="text-sm font-semibold text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                      className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                       {dorm.name}
                     </Link>
                     <span className={`inline-flex items-center gap-1 text-xs font-medium ${meta.color}`}>
@@ -510,7 +510,7 @@ export default function DormManagementPage() {
                     </span>
                   </div>
                   {dorm.boardingMaster && (
-                    <p className="text-xs text-slate dark:text-dark-muted mb-2">
+                    <p className="text-xs text-slate mb-2">
                       <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
                         className="hover:text-teal transition-colors">
                         {dorm.boardingMaster.fullName}
@@ -518,11 +518,11 @@ export default function DormManagementPage() {
                       {" · Boarding master"}
                     </p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-slate dark:text-dark-muted mb-3">
+                  <div className="flex items-center gap-4 text-xs text-slate mb-3">
                     <span>{dorm.occupiedCount ?? 0} occupied</span>
                     <span>{dorm.availableCount} available</span>
                     <span>{dorm.totalCapacity} total</span>
-                    <span className="font-semibold text-ink dark:text-dark-text">{pct}%</span>
+                    <span className="font-semibold text-foreground">{pct}%</span>
                   </div>
                   <OccupancyBar pct={pct} />
                 </div>
@@ -540,7 +540,7 @@ export default function DormManagementPage() {
                       </button>
                       {(dorm.occupiedCount ?? 0) > 0 && (
                         <button onClick={() => setBulkRemoveDorm(dorm)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-slate hover:border-danger/30 hover:text-danger hover:bg-danger/5 text-xs font-medium transition-all dark:border-dark-border">
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-slate hover:border-danger/30 hover:text-danger hover:bg-danger/5 text-xs font-medium transition-all">
                           <UserMinus className="h-3.5 w-3.5" /> Clear allocations
                         </button>
                       )}

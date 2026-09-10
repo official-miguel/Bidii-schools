@@ -18,7 +18,7 @@ import {
 type ClassLite = { id: string; name: string; form: number; stream?: string | null };
 
 const selectClass =
-  "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20";
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -37,7 +37,7 @@ function EmptyBlock({
   action?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-card px-4 py-16 text-center">
+    <div className="rounded-xl border border-dashed border-border bg-card px-4 py-16 text-center">
       <Trophy className="h-10 w-10 text-slate/30 mx-auto mb-3" aria-hidden />
       <p className="text-sm text-slate">{text}</p>
       {action && (
@@ -67,7 +67,7 @@ function AchievementCard({
 }) {
   const meta = CATEGORY_META[achievement.category] ?? CATEGORY_META.OTHER;
   return (
-    <li className="bg-card border border-line rounded-xl p-4 hover:shadow-sm hover:border-teal/20 transition-all flex flex-col gap-3">
+    <li className="bg-card border border-border rounded-xl p-4 hover:shadow-sm hover:border-teal/20 transition-all flex flex-col gap-3">
       {/* Category + edit */}
       <div className="flex items-start justify-between gap-2">
         <span
@@ -89,7 +89,7 @@ function AchievementCard({
 
       {/* Title */}
       <div>
-        <p className="text-sm font-semibold text-ink leading-snug">{achievement.title}</p>
+        <p className="text-sm font-semibold text-foreground leading-snug">{achievement.title}</p>
         {achievement.aiSummary && (
           <p className="text-xs text-royal mt-1">✨ {achievement.aiSummary}</p>
         )}
@@ -106,7 +106,7 @@ function AchievementCard({
       </p>
 
       {/* Students */}
-      <div className="flex items-center gap-1.5 flex-wrap pt-0.5 mt-auto border-t border-line/50">
+      <div className="flex items-center gap-1.5 flex-wrap pt-0.5 mt-auto border-t border-border/50">
         {achievement.students.slice(0, 6).map((s) => (
           <button
             key={s.student.id}
@@ -291,13 +291,13 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
       </div>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────── */}
-      <div className="bg-card border border-line rounded-xl p-3 mb-5 space-y-3">
+      <div className="bg-card border border-border rounded-xl p-3 mb-5 space-y-3">
         <div className="flex gap-2">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden />
             <input
-              className="w-full rounded-lg border border-line bg-white pl-9 pr-3 py-2 text-sm text-ink placeholder:text-slate focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-slate focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
               placeholder="Search by student, achievement title, category, or AI summary…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -313,7 +313,7 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
               showFilters || activeFilters
                 ? "border-teal bg-teal/5 text-teal"
-                : "border-line text-slate hover:text-ink hover:border-slate/40"
+                : "border-border text-slate hover:text-foreground hover:border-slate/40"
             }`}
           >
             <Filter className="h-4 w-4" aria-hidden />
@@ -341,7 +341,7 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
 
         {/* Expandable filter row */}
         {showFilters && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line/60">
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
             <select
               className={selectClass}
               value={classId}
@@ -478,8 +478,8 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
         {/* ── Sidebar ─────────────────────────────────────────────────── */}
         <aside className="hidden lg:block space-y-4">
           {/* Category breakdown */}
-          <div className="bg-card border border-line rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-ink mb-3">By category</h2>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h2 className="text-sm font-semibold text-foreground mb-3">By category</h2>
             {loading ? (
               <div className="space-y-2">
                 {[0, 1, 2, 3].map((i) => (
@@ -499,7 +499,7 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
                         className={`w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
                           category === key
                             ? "bg-teal/10 text-teal font-medium"
-                            : "text-slate hover:bg-paper"
+                            : "text-slate hover:bg-background"
                         }`}
                         onClick={() => setCategory((c) => (c === key ? "" : key))}
                         aria-pressed={category === key}
@@ -508,7 +508,7 @@ export default function AchievementsDashboard({ canManage }: { canManage: boolea
                           <span aria-hidden>{meta.emoji}</span>
                           {meta.label}
                         </span>
-                        <span className="font-semibold text-ink">{count}</span>
+                        <span className="font-semibold text-foreground">{count}</span>
                       </button>
                     );
                   })}

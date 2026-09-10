@@ -32,8 +32,8 @@ interface DeptAnalyticsPageProps {
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-line rounded-xl p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-ink mb-4">{title}</h3>
+    <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+      <h3 className="text-sm font-semibold text-foreground mb-4">{title}</h3>
       {children}
     </div>
   );

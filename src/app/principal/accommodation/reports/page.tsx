@@ -160,7 +160,7 @@ function ReportTypeCard({ meta, active, onClick }: {
   return (
     <button onClick={onClick} type="button"
       className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-        active ? "border-teal bg-teal/5 dark:bg-teal/10" : "border-line hover:border-teal/40 dark:border-dark-border"
+        active ? "border-teal bg-teal/5" : "border-border hover:border-teal/40"
       }`}>
       <div className="flex items-start gap-3">
         <div className={`rounded-lg p-2 shrink-0 ${active ? "bg-teal/15" : meta.color.split(" ")[1]}`}>
@@ -168,12 +168,12 @@ function ReportTypeCard({ meta, active, onClick }: {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className={`text-sm font-semibold truncate ${active ? "text-teal" : "text-ink dark:text-dark-text"}`}>
+            <p className={`text-sm font-semibold truncate ${active ? "text-teal" : "text-foreground"}`}>
               {meta.label}
             </p>
             <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${active ? "text-teal rotate-90" : "text-slate/40"}`} />
           </div>
-          <p className="text-xs text-slate dark:text-dark-muted mt-0.5 leading-relaxed">{meta.description}</p>
+          <p className="text-xs text-slate mt-0.5 leading-relaxed">{meta.description}</p>
         </div>
       </div>
     </button>
@@ -241,7 +241,7 @@ export default function AccommodationReportsPage() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── Left: report type list ─────────────────────────────────── */}
         <div className="w-full lg:w-72 xl:w-80 shrink-0 space-y-2">
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide px-1 mb-3 dark:text-dark-muted">Report type</p>
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide px-1 mb-3">Report type</p>
           {REPORTS.map((meta) => (
             <ReportTypeCard key={meta.type} meta={meta} active={activeType === meta.type}
               onClick={() => { setActiveType(meta.type); setSearch(""); }} />
@@ -251,13 +251,13 @@ export default function AccommodationReportsPage() {
         {/* ── Right: report output ───────────────────────────────────── */}
         <div className="flex-1 min-w-0">
           {/* Report header */}
-          <div className="rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border p-4 mb-4">
+          <div className="rounded-xl border border-border bg-card p-4 mb-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <h2 className="text-base font-semibold text-ink dark:text-dark-text">{activeMeta.label}</h2>
-                <p className="text-sm text-slate dark:text-dark-muted">{activeMeta.description}</p>
+                <h2 className="text-base font-semibold text-foreground">{activeMeta.label}</h2>
+                <p className="text-sm text-slate">{activeMeta.description}</p>
                 {generatedAt && (
-                  <p className="text-xs text-slate/60 dark:text-dark-muted/60 mt-1">
+                  <p className="text-xs text-slate/60/60 mt-1">
                     Generated {new Date(generatedAt).toLocaleString()}
                   </p>
                 )}
@@ -272,17 +272,17 @@ export default function AccommodationReportsPage() {
             {/* Filters */}
             <div className="mt-4 flex flex-wrap gap-3">
               <select value={dormFilter} onChange={(e) => { setDormFilter(e.target.value); }}
-                className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+                className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card">
                 <option value="">All dorms</option>
                 {dorms.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
               {(activeType === "movement") && (
                 <>
                   <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-                    className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                    className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card"
                     aria-label="From date" />
                   <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-                    className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                    className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card"
                     aria-label="To date" />
                 </>
               )}
@@ -295,10 +295,10 @@ export default function AccommodationReportsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
               <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search results…"
-                className="w-full rounded-lg border border-line bg-white pl-9 pr-3 py-2 text-sm text-ink placeholder:text-slate-light focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text" />
+                className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-slate-light focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors" />
             </div>
             {!loading && (
-              <span className="text-sm text-slate dark:text-dark-muted tabular-nums">
+              <span className="text-sm text-slate tabular-nums">
                 {filtered.length} {filtered.length !== rows.length ? `/ ${rows.length}` : ""} row{filtered.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -307,25 +307,25 @@ export default function AccommodationReportsPage() {
           {/* Loading skeleton */}
           {loading && (
             <div className="space-y-2">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded-lg bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+              {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded-lg bg-line/40/40 animate-pulse" />)}
             </div>
           )}
 
           {/* Empty state */}
           {!loading && filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-line dark:border-dark-border">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-border">
               <FileText className="h-8 w-8 text-slate/40" />
-              <p className="text-slate text-sm dark:text-dark-muted">No data for this report</p>
+              <p className="text-slate text-sm">No data for this report</p>
             </div>
           )}
 
           {/* Table */}
           {!loading && filtered.length > 0 && (
-            <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-sm">
+            <div className="rounded-xl border border-border overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-line dark:border-dark-border bg-slate-50/80 dark:bg-dark-border/30">
+                    <tr className="border-b border-border bg-slate-50/80/30">
                       {cols.map((c) => (
                         <th key={c.key} className="px-4 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide whitespace-nowrap">
                           {c.label}
@@ -333,17 +333,17 @@ export default function AccommodationReportsPage() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line/60 dark:divide-dark-border/60 bg-white dark:bg-dark-surface">
+                  <tbody className="divide-y divide-border/60 /60 bg-card">
                     {filtered.map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/60 dark:hover:bg-dark-border/20 transition-colors">
+                      <tr key={i} className="hover:bg-slate-50/60/20 transition-colors">
                         {cols.map((c) => {
                           const raw = row[c.key];
                           const val = c.fmt ? c.fmt(raw) : String(raw ?? "—");
                           return (
-                            <td key={c.key} className="px-4 py-3 text-sm text-ink dark:text-dark-text whitespace-nowrap">
+                            <td key={c.key} className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
                               {c.key === "occupancyPct" || c.key === "boardingPct" ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="w-16 h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+                                  <div className="w-16 h-1.5 rounded-full bg-line overflow-hidden">
                                     <div className={`h-full rounded-full ${(raw as number) >= 90 ? "bg-warn" : "bg-teal"}`}
                                       style={{ width: `${Math.min(raw as number, 100)}%` }} />
                                   </div>
@@ -354,7 +354,7 @@ export default function AccommodationReportsPage() {
                                   val === "CURRENT" || val === "ACTIVE"       ? "text-success bg-success/10 border-success/20" :
                                   val === "UNDER MAINTENANCE"                 ? "text-warn bg-warn/10 border-warn/20" :
                                   val === "TRANSFERRED"                       ? "text-teal bg-teal/10 border-teal/20" :
-                                  "text-slate bg-slate/10 border-line dark:border-dark-border"
+                                  "text-slate bg-slate/10 border-border"
                                 }`}>{val}</span>
                               ) : val}
                             </td>

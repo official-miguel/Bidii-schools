@@ -92,8 +92,8 @@ export default async function DeputyDashboard({ user }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Deputy Principal — Overview</h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+        <h1 className="text-2xl font-semibold text-foreground">Deputy Principal — Overview</h1>
+        <p className="text-slate text-sm mt-1">
           {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -123,9 +123,9 @@ export default async function DeputyDashboard({ user }: Props) {
       </div>
 
       {todayTOD.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-1">Teacher on duty today</p>
-          <p className="text-sm font-medium text-ink dark:text-dark-text">{todayTOD[0].teacher.fullName}</p>
+        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-1">Teacher on duty today</p>
+          <p className="text-sm font-medium text-foreground">{todayTOD[0].teacher.fullName}</p>
         </div>
       )}
 
@@ -136,18 +136,18 @@ export default async function DeputyDashboard({ user }: Props) {
 
         {/* Classes needing attention */}
         {(classesNoTeacher.length > 0 || classesNoTimetable.length > 0) && (
-          <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">Classes needing attention</p>
+          <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+            <p className="text-sm font-semibold text-foreground mb-3">Classes needing attention</p>
             <div className="space-y-2">
               {classesNoTeacher.slice(0, 5).map((c) => (
                 <div key={c.id} className="flex items-center justify-between text-sm">
-                  <span className="text-ink dark:text-dark-text">{c.name}</span>
+                  <span className="text-foreground">{c.name}</span>
                   <span className="text-xs bg-danger-bg text-danger px-2 py-0.5 rounded-full">No class teacher</span>
                 </div>
               ))}
               {classesNoTimetable.slice(0, 5).map((c) => (
                 <div key={c.id} className="flex items-center justify-between text-sm">
-                  <span className="text-ink dark:text-dark-text">{c.name}</span>
+                  <span className="text-foreground">{c.name}</span>
                   <span className="text-xs bg-warn-bg text-warn px-2 py-0.5 rounded-full">No timetable</span>
                 </div>
               ))}

@@ -79,8 +79,8 @@ export default function AlertDismissibleCard({
 
   return (
     <div
-      className={`relative flex flex-col gap-2 rounded-2xl bg-white dark:bg-dark-surface
-                  border ${c.border} dark:border-dark-border shadow-xs p-4
+      className={`relative flex flex-col gap-2 rounded-2xl bg-card
+                  border ${c.border} shadow-xs p-4
                   min-w-0`}
     >
       {/* Dismiss button */}
@@ -102,7 +102,7 @@ export default function AlertDismissibleCard({
       {/* Text */}
       <div className="pr-4">
         <p className={`text-sm font-semibold ${c.linkColor} leading-snug`}>{title}</p>
-        <p className="text-xs text-slate dark:text-dark-muted mt-0.5 leading-relaxed">{body}</p>
+        <p className="text-xs text-slate mt-0.5 leading-relaxed">{body}</p>
       </div>
 
       {/* CTA */}

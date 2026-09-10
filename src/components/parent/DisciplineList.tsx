@@ -49,8 +49,8 @@ export default function DisciplineList({ records, childName }: DisciplineListPro
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="text-4xl mb-3">🌟</div>
-        <p className="text-base font-semibold text-ink dark:text-dark-text">No behaviour matters</p>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1 max-w-xs">
+        <p className="text-base font-semibold text-foreground">No behaviour matters</p>
+        <p className="text-sm text-slate mt-1 max-w-xs">
           {childName
             ? `There are currently no parent-visible behaviour matters for ${childName}.`
             : "There are currently no parent-visible behaviour matters."}
@@ -64,8 +64,7 @@ export default function DisciplineList({ records, childName }: DisciplineListPro
       {records.map((record) => (
         <div
           key={record.id}
-          className="bg-card border border-line rounded-xl p-4 shadow-xs
-                     dark:bg-dark-surface dark:border-dark-border"
+          className="bg-card border border-border rounded-xl p-4 shadow-xs"
         >
           <div className="flex items-start justify-between gap-3">
             {/* Icon + offence */}
@@ -75,16 +74,16 @@ export default function DisciplineList({ records, childName }: DisciplineListPro
                 <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {record.offence}
                 </p>
                 {record.description && (
-                  <p className="text-sm text-slate dark:text-dark-muted mt-0.5 line-clamp-2">
+                  <p className="text-sm text-slate mt-0.5 line-clamp-2">
                     {record.description}
                   </p>
                 )}
                 {record.actionTaken && (
-                  <p className="text-xs text-slate dark:text-dark-muted mt-1">
+                  <p className="text-xs text-slate mt-1">
                     <span className="font-medium">Action taken:</span> {record.actionTaken}
                   </p>
                 )}
@@ -101,7 +100,7 @@ export default function DisciplineList({ records, childName }: DisciplineListPro
           </div>
 
           {/* Date footer */}
-          <p className="mt-3 text-xs text-slate dark:text-dark-muted">
+          <p className="mt-3 text-xs text-slate">
             {formatDate(record.dateOfOffence)}
           </p>
         </div>

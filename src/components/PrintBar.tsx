@@ -7,13 +7,13 @@ export default function PrintBar({ title }: { title: string }) {
       <div className="flex gap-2">
         <button
           onClick={() => window.history.back()}
-          className="text-sm rounded-md border border-white/20 px-3 py-1.5 hover:bg-white/10"
+          className="text-sm rounded-md border border-white/20 px-3 py-1.5 hover:bg-card/10"
         >
           Back
         </button>
         <button
           onClick={() => window.print()}
-          className="text-sm rounded-md bg-gold text-ink font-medium px-3 py-1.5 hover:bg-gold-dark"
+          className="text-sm rounded-md bg-gold text-foreground font-medium px-3 py-1.5 hover:bg-gold-dark"
         >
           Print / Save as PDF
         </button>

@@ -139,16 +139,16 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
   return (
     <div className="space-y-6">
       {/* Entry header card */}
-      <div className="bg-card border border-line rounded-2xl p-6 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">
+            <p className="text-xs font-semibold text-slate uppercase tracking-wide">
               {TYPE_LABELS[entry.entryType] ?? entry.entryType}
             </p>
-            <h1 className="mt-1 text-xl font-bold text-ink dark:text-dark-text leading-snug">
+            <h1 className="mt-1 text-xl font-bold text-foreground leading-snug">
               {entry.title}
             </h1>
-            <p className="mt-1 text-sm text-slate dark:text-dark-muted">
+            <p className="mt-1 text-sm text-slate">
               {entry.subject.name}
               {classNames ? ` · ${classNames}` : ""}
             </p>
@@ -156,14 +156,14 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setEditOpen(true)}
-              className="p-2 rounded-lg text-slate hover:bg-line dark:text-dark-muted dark:hover:bg-dark-border min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg text-slate hover:bg-line min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Edit entry"
             >
               <Edit2 className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={() => setDeleteConfirm(true)}
-              className="p-2 rounded-lg text-slate hover:bg-danger-bg hover:text-danger dark:text-dark-muted min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg text-slate hover:bg-danger-bg hover:text-danger min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Delete entry"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -171,7 +171,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate dark:text-dark-muted">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate">
           <span>Posted {relativeTime(entry.createdAt)}</span>
           {entry.dueDate && entry.entryType !== "ANNOUNCEMENT" && (
             <span>Due {new Date(entry.dueDate).toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })}</span>
@@ -180,7 +180,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
         </div>
 
         {entry.description && (
-          <p className="mt-4 text-sm text-ink dark:text-dark-text whitespace-pre-wrap leading-relaxed">
+          <p className="mt-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
             {entry.description}
           </p>
         )}
@@ -192,9 +192,9 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
           const cfg   = STATUS_CONFIG[s];
           const count = stats[s] ?? 0;
           return (
-            <div key={s} className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border text-center">
+            <div key={s} className="bg-card border border-border rounded-xl p-4 shadow-xs text-center">
               <p className={`text-2xl font-bold ${cfg.color}`}>{count}</p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 {s === "COMPLETED" ? "Parent checked" : cfg.label}
               </p>
             </div>
@@ -203,28 +203,28 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
       </div>
 
       {/* Student list — read-only, shows parent confirmation */}
-      <div className="bg-card border border-line rounded-2xl shadow-xs dark:bg-dark-surface dark:border-dark-border">
-        <div className="p-4 border-b border-line dark:border-dark-border">
+      <div className="bg-card border border-border rounded-2xl shadow-xs">
+        <div className="p-4 border-b border-border">
           {/* Header label */}
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-3">
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
             Parent confirmations
           </p>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" aria-hidden="true" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Search student…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-paper border border-line dark:bg-dark-bg dark:border-dark-border rounded-lg text-sm text-ink dark:text-dark-text placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[40px]"
+                className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[40px]"
               />
             </div>
             <div className="relative">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none pl-3 pr-7 py-2 bg-paper border border-line dark:bg-dark-bg dark:border-dark-border rounded-lg text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[40px]"
+                className="appearance-none pl-3 pr-7 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[40px]"
                 aria-label="Filter by status"
               >
                 <option value="">All</option>
@@ -232,7 +232,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
                 <option value="PENDING">Pending</option>
                 <option value="OVERDUE">Overdue</option>
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate pointer-events-none dark:text-dark-muted" aria-hidden="true" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate pointer-events-none" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -241,19 +241,19 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
           <div className="p-8 text-center">
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-12 bg-line dark:bg-dark-border rounded-lg animate-shimmer" />
+                <div key={i} className="h-12 bg-line rounded-lg animate-shimmer" />
               ))}
             </div>
           </div>
         ) : recipients.length === 0 ? (
           <div className="p-8 text-center">
-            <Users className="h-8 w-8 text-slate dark:text-dark-muted mx-auto mb-2" aria-hidden="true" />
-            <p className="text-sm text-slate dark:text-dark-muted">
+            <Users className="h-8 w-8 text-slate mx-auto mb-2" aria-hidden="true" />
+            <p className="text-sm text-slate">
               {search || statusFilter ? "No students match this filter." : "No recipients yet."}
             </p>
           </div>
         ) : (
-          <ul role="list" className="divide-y divide-line dark:divide-dark-border">
+          <ul role="list" className="divide-y divide-border ">
             {recipients.map((r) => {
               const cfg       = STATUS_CONFIG[r.resolvedStatus] ?? STATUS_CONFIG.PENDING;
               const isChecked = r.resolvedStatus === "COMPLETED";
@@ -263,8 +263,8 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{r.student.fullName}</p>
-                      <p className="text-xs text-slate dark:text-dark-muted">{r.student.admissionNumber}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{r.student.fullName}</p>
+                      <p className="text-xs text-slate">{r.student.admissionNumber}</p>
                     </div>
                   </div>
 
@@ -278,7 +278,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
                         ${isChecked
                           ? "border-success bg-success text-white"
-                          : "border-line dark:border-dark-border"
+                          : "border-border"
                         }`}
                       aria-label={isChecked ? `${r.student.fullName} — confirmed by parent` : `${r.student.fullName} — not yet confirmed`}
                       role="img"
@@ -293,7 +293,7 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
         )}
 
         {nextCursor && (
-          <div className="p-4 text-center border-t border-line dark:border-dark-border">
+          <div className="p-4 text-center border-t border-border">
             <button
               onClick={async () => {
                 setLoadingMore(true);
@@ -313,29 +313,29 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Edit Entry">
           <div className="absolute inset-0 bg-ink/40 dark:bg-black/60" onClick={() => setEditOpen(false)} aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-lg bg-card dark:bg-dark-surface rounded-2xl shadow-xl p-6">
+          <div className="relative z-10 w-full max-w-lg bg-card rounded-2xl shadow-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-ink dark:text-dark-text">Edit Entry</h2>
+              <h2 className="text-base font-semibold text-foreground">Edit Entry</h2>
               <button onClick={() => setEditOpen(false)} className="p-2 rounded-lg text-slate hover:bg-line min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Close">
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
             <form onSubmit={handleEdit} className="space-y-4">
               <div>
-                <label htmlFor="edit-title" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1">Title</label>
+                <label htmlFor="edit-title" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1">Title</label>
                 <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} maxLength={255}
-                  className="w-full bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]" />
+                  className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]" />
               </div>
               <div>
-                <label htmlFor="edit-desc" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1">Instructions</label>
+                <label htmlFor="edit-desc" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1">Instructions</label>
                 <textarea id="edit-desc" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={4}
-                  className="w-full bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 resize-y" />
+                  className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 resize-y" />
               </div>
               {entry.entryType !== "ANNOUNCEMENT" && (
                 <div>
-                  <label htmlFor="edit-due" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1">Due Date</label>
+                  <label htmlFor="edit-due" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1">Due Date</label>
                   <input id="edit-due" type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]" />
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]" />
                 </div>
               )}
               {editError && <p className="text-xs text-danger">{editError}</p>}
@@ -352,15 +352,15 @@ export default function EntryDetailClient({ entry }: EntryDetailClientProps) {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Confirm Delete">
           <div className="absolute inset-0 bg-ink/40 dark:bg-black/60" onClick={() => setDeleteConfirm(false)} aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-sm bg-card dark:bg-dark-surface rounded-2xl shadow-xl p-6 text-center">
+          <div className="relative z-10 w-full max-w-sm bg-card rounded-2xl shadow-xl p-6 text-center">
             <div className="w-12 h-12 rounded-full bg-danger-bg flex items-center justify-center mx-auto mb-3">
               <Trash2 className="h-5 w-5 text-danger" aria-hidden="true" />
             </div>
-            <h2 className="font-semibold text-ink dark:text-dark-text">Delete this entry?</h2>
-            <p className="text-sm text-slate dark:text-dark-muted mt-1">Students and parents will no longer see it.</p>
+            <h2 className="font-semibold text-foreground">Delete this entry?</h2>
+            <p className="text-sm text-slate mt-1">Students and parents will no longer see it.</p>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setDeleteConfirm(false)}
-                className="flex-1 border border-line dark:border-dark-border rounded-xl py-2.5 text-sm font-medium text-slate hover:bg-line dark:text-dark-muted dark:hover:bg-dark-border min-h-[44px]">
+                className="flex-1 border border-border rounded-xl py-2.5 text-sm font-medium text-slate hover:bg-line min-h-[44px]">
                 Cancel
               </button>
               <button onClick={handleDelete} disabled={deleting}

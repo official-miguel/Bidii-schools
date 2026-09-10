@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 /**
  * /parent/notifications
@@ -52,7 +52,7 @@ export default async function ParentNotificationsPage({ searchParams }: Props) {
   return (
     <main className="p-4 sm:p-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold text-ink dark:text-dark-text">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
           Notifications
         </h1>
         {unreadCount > 0 && (

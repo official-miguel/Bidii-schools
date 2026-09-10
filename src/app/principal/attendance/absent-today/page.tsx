@@ -113,13 +113,13 @@ function SummaryCards({
         {
           label: "Absent today",
           value: total,
-          cls: total > 0 ? "text-danger" : "text-ink",
+          cls: total > 0 ? "text-danger" : "text-foreground",
           sub: formatDate(date),
         },
         {
           label: "Classes affected",
           value: classCount,
-          cls: "text-ink",
+          cls: "text-foreground",
           sub: "with at least 1 absence",
         },
         {
@@ -137,7 +137,7 @@ function SummaryCards({
       ].map((c) => (
         <div
           key={c.label}
-          className="bg-card border border-line rounded-xl p-4 shadow-sm dark:bg-dark-surface dark:border-dark-border"
+          className="bg-card border border-border rounded-xl p-4 shadow-sm"
         >
           <p className={`text-2xl font-semibold ${c.cls}`}>{c.value}</p>
           <p className="text-xs font-semibold text-slate mt-1 uppercase tracking-wide">
@@ -160,12 +160,12 @@ function ClassGroupHeader({
   absentCount: number;
 }) {
   return (
-    <tr className="bg-slate-50/70 dark:bg-dark-surface/50">
+    <tr className="bg-slate-50/70/50">
       <td
         colSpan={5}
-        className="px-5 py-2.5 text-xs font-semibold text-slate uppercase tracking-wider border-b border-line"
+        className="px-5 py-2.5 text-xs font-semibold text-slate uppercase tracking-wider border-b border-border"
       >
-        <span className="text-ink font-bold">{className}</span>
+        <span className="text-foreground font-bold">{className}</span>
         <span className="ml-2 text-slate">
           — {absentCount} absent
         </span>
@@ -282,7 +282,7 @@ export default function AbsentTodayPage() {
         </div>
 
         {/* Group toggle */}
-        <div className="flex items-center gap-1 p-1 bg-paper border border-line rounded-lg self-start sm:self-auto">
+        <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-lg self-start sm:self-auto">
           {(["class", "flat"] as const).map((v) => (
             <button
               key={v}
@@ -291,7 +291,7 @@ export default function AbsentTodayPage() {
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-100 ${
                 groupBy === v
                   ? "bg-teal text-white shadow-xs"
-                  : "text-slate hover:text-ink"
+                  : "text-slate hover:text-foreground"
               }`}
             >
               {v === "class" ? "By class" : "All students"}
@@ -391,7 +391,7 @@ function StudentRow({
           <Avatar name={s.fullName} size="sm" />
           <Link
             href={`/principal/students/${s.studentId}`}
-            className="font-medium text-ink hover:text-teal transition-colors"
+            className="font-medium text-foreground hover:text-teal transition-colors"
           >
             {s.fullName}
           </Link>

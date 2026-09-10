@@ -199,8 +199,8 @@ export default async function PrincipalReportsHub() {
           <Printer className="h-5 w-5 text-teal" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Reports</h1>
-          <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+          <h1 className="text-2xl font-semibold text-foreground">Reports</h1>
+          <p className="text-slate text-sm mt-1">
             All printable and exportable reports in one place. Select a report to open it.
           </p>
         </div>
@@ -216,8 +216,8 @@ export default async function PrincipalReportsHub() {
                 <CatIcon className="h-4 w-4 text-teal" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-ink dark:text-dark-text">{label}</h2>
-                <p className="text-xs text-slate dark:text-dark-muted">{description}</p>
+                <h2 className="text-base font-semibold text-foreground">{label}</h2>
+                <p className="text-xs text-slate">{description}</p>
               </div>
             </div>
 
@@ -229,9 +229,8 @@ export default async function PrincipalReportsHub() {
                   href={href}
                   target={print ? "_blank" : undefined}
                   rel={print ? "noopener noreferrer" : undefined}
-                  className="group flex items-start gap-3.5 rounded-xl border border-line bg-card p-4
-                             hover:border-teal/40 hover:shadow-sm transition-all duration-150
-                             dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+                  className="group flex items-start gap-3.5 rounded-xl border border-border bg-card p-4
+                             hover:border-teal/40 hover:shadow-sm transition-all duration-150 dark:hover:border-teal/30"
                 >
                   <div className="rounded-lg bg-teal/10 p-2 shrink-0 mt-0.5
                                   group-hover:bg-teal/15 transition-colors">
@@ -239,7 +238,7 @@ export default async function PrincipalReportsHub() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="text-sm font-semibold text-ink dark:text-dark-text
+                      <p className="text-sm font-semibold text-foreground
                                    group-hover:text-teal transition-colors leading-tight">
                         {itemLabel}
                       </p>
@@ -251,21 +250,20 @@ export default async function PrincipalReportsHub() {
                       )}
                       {print && (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded
-                                         text-[10px] font-medium bg-slate/8 text-slate
-                                         dark:text-dark-muted border border-line dark:border-dark-border">
+                                         text-[10px] font-medium bg-slate/8 text-slate border border-border">
                           <Printer className="h-2.5 w-2.5" aria-hidden="true" />
                           Print
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate dark:text-dark-muted leading-relaxed">
+                    <p className="text-xs text-slate leading-relaxed">
                       {itemDesc}
                     </p>
                   </div>
                   <ArrowRight
                     className="h-3.5 w-3.5 text-slate/40 shrink-0 mt-1
                                group-hover:text-teal group-hover:translate-x-0.5
-                               transition-all dark:text-dark-muted/40"
+                               transition-all/40"
                     aria-hidden="true"
                   />
                 </Link>

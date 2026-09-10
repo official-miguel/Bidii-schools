@@ -12,9 +12,10 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenHeader, Input, Button, Card, ErrorBanner, Toast, useToast } from '@/components/ui';
 import { api, CreateCopyInput } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { syncService } from '@/services/sync';
 import { getErrorMessage } from '@/lib/utils';
+import { useTheme } from '@/lib/ThemeContext';
 
 const CONDITIONS = ['EXCELLENT', 'GOOD', 'FAIR', 'DAMAGED'] as const;
 type Condition = typeof CONDITIONS[number];
@@ -29,6 +30,7 @@ const CONDITION_LABELS: Record<Condition, string> = {
 export default function NewCopyScreen() {
   const { id: catalogueId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
   const { toastProps, show: showToast } = useToast();
 
   const [accessionNumber, setAccessionNumber] = useState('');
@@ -84,7 +86,7 @@ export default function NewCopyScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: Colors.paper }}
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
       <ScreenHeader title="Add Copy" subtitle="Physical book copy" showBack />
 
@@ -120,11 +122,11 @@ export default function NewCopyScreen() {
                 style={{
                   paddingHorizontal: Spacing[4], paddingVertical: Spacing[2],
                   borderRadius: Radius.button, borderWidth: 1,
-                  borderColor: condition === c ? Colors.teal : Colors.line,
-                  backgroundColor: condition === c ? Colors.teal50 : Colors.card,
+                  borderColor: condition === c ? colors.primary : colors.border,
+                  backgroundColor: condition === c ? colors.primary + '15' : colors.card,
                 }}
               >
-                <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: condition === c ? Colors.teal : Colors.slateText }}>
+                <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: condition === c ? colors.primary : colors.mutedForeground }}>
                   {CONDITION_LABELS[c]}
                 </Text>
               </TouchableOpacity>
@@ -170,8 +172,9 @@ export default function NewCopyScreen() {
 }
 
 function SectionTitle({ children }: { children: string }) {
+  const { colors } = useTheme();
   return (
-    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
+    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
       {children}
     </Text>
   );

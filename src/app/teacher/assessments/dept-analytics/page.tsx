@@ -49,8 +49,8 @@ export default async function TeacherDeptAnalyticsPage() {
   if (!isWideAccess && ownDeptIds.length === 0) {
     return (
       <div className="space-y-3">
-        <h1 className="font-display text-xl font-semibold text-ink">Dept Analytics</h1>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <h1 className="font-display text-xl font-semibold text-foreground">Dept Analytics</h1>
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           You are not assigned to a department yet. Contact the principal to be assigned.
         </div>
       </div>
@@ -89,8 +89,8 @@ export default async function TeacherDeptAnalyticsPage() {
   if (departments.length === 0) {
     return (
       <div className="space-y-3">
-        <h1 className="font-display text-xl font-semibold text-ink">Dept Analytics</h1>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <h1 className="font-display text-xl font-semibold text-foreground">Dept Analytics</h1>
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           No departments found.
         </div>
       </div>
@@ -138,7 +138,7 @@ export default async function TeacherDeptAnalyticsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">Dept Analytics</h1>
+        <h1 className="font-display text-xl font-semibold text-foreground">Dept Analytics</h1>
         <p className="text-sm text-slate mt-0.5">
           Subject breakdown, trends, and class performance heatmap for your department.
           {!isWideAccess && (

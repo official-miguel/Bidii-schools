@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * ForcePasswordChangeModal
@@ -116,12 +116,12 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
       role="dialog"
       aria-labelledby="force-pwd-title"
     >
-      <div className="w-full max-w-md bg-card rounded-2xl border border-line shadow-2xl overflow-hidden animate-scale-in">
+      <div className="w-full max-w-md bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-scale-in">
 
         {/* Header */}
         <div className="bg-gradient-to-br from-teal to-teal-dark px-7 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-white/15 rounded-xl">
+            <div className="flex items-center justify-center w-10 h-10 bg-card/15 rounded-xl">
               <Lock className="h-5 w-5 text-white" aria-hidden="true" />
             </div>
             <div>
@@ -152,7 +152,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
               <div className="flex items-center justify-center w-14 h-14 rounded-full bg-success-bg">
                 <CheckCircle2 className="h-7 w-7 text-success" />
               </div>
-              <p className="text-sm font-semibold text-ink">Password set successfully!</p>
+              <p className="text-sm font-semibold text-foreground">Password set successfully!</p>
               <p className="text-xs text-slate">Unlocking your dashboard…</p>
             </div>
           ) : (
@@ -167,7 +167,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
 
               {/* New password */}
               <div>
-                <label htmlFor="fp-new" className="block text-sm font-medium text-ink mb-1.5">
+                <label htmlFor="fp-new" className="block text-sm font-medium text-foreground mb-1.5">
                   New password <span className="text-danger" aria-hidden="true">*</span>
                 </label>
                 <div className="relative">
@@ -179,7 +179,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
                     value={newPwd}
                     onChange={(e) => { setNewPwd(e.target.value); setError(null); }}
                     placeholder="Choose a strong password"
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink pr-10
+                    className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground pr-10
                                placeholder:text-slate/50
                                focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15
                                transition-colors"
@@ -187,7 +187,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
                   <button
                     type="button"
                     onClick={() => setShowNew((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-foreground transition-colors"
                     aria-label={showNew ? "Hide password" : "Show password"}
                     tabIndex={-1}
                   >
@@ -232,7 +232,7 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
 
               {/* Confirm password */}
               <div>
-                <label htmlFor="fp-confirm" className="block text-sm font-medium text-ink mb-1.5">
+                <label htmlFor="fp-confirm" className="block text-sm font-medium text-foreground mb-1.5">
                   Confirm new password <span className="text-danger" aria-hidden="true">*</span>
                 </label>
                 <div className="relative">
@@ -244,20 +244,20 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
                     value={confirm}
                     onChange={(e) => { setConfirm(e.target.value); setError(null); }}
                     placeholder="Re-enter your new password"
-                    className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-ink pr-10
+                    className={`w-full rounded-xl border bg-card px-3.5 py-2.5 text-sm text-foreground pr-10
                                placeholder:text-slate/50
                                focus:outline-none focus:ring-2 transition-colors ${
                       confirm.length > 0
                         ? passwordsMatch
                           ? "border-success focus:border-success focus:ring-success/15"
                           : "border-danger focus:border-danger focus:ring-danger/15 bg-danger-bg/30"
-                        : "border-line focus:border-teal focus:ring-teal/15"
+                        : "border-border focus:border-teal focus:ring-teal/15"
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-foreground transition-colors"
                     aria-label={showConfirm ? "Hide password" : "Show password"}
                     tabIndex={-1}
                   >

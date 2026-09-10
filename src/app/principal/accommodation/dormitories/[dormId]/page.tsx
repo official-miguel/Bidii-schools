@@ -61,7 +61,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 function OccupancyBar({ pct }: { pct: number }) {
   const color = pct >= 100 ? "bg-danger" : pct >= 90 ? "bg-warn" : "bg-teal";
   return (
-    <div className="w-full h-2 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+    <div className="w-full h-2 rounded-full bg-line overflow-hidden">
       <div className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
@@ -105,12 +105,12 @@ function BedCard({
   };
 
   return (
-    <div className="rounded-lg border border-line dark:border-dark-border bg-card dark:bg-dark-surface p-3">
+    <div className="rounded-lg border border-border bg-card p-3">
       {/* Header row */}
       <div className="flex items-center justify-between mb-2 gap-1">
-        <span className="text-xs font-semibold text-ink dark:text-dark-text truncate">{bed.label}</span>
+        <span className="text-xs font-semibold text-foreground truncate">{bed.label}</span>
         <div className="flex items-center gap-1 shrink-0">
-          <span className="text-[10px] uppercase tracking-wide text-slate dark:text-dark-muted font-medium">
+          <span className="text-[10px] uppercase tracking-wide text-slate font-medium">
             {bed.bedType === "DOUBLE_DECKER" ? "Bunk" : bed.bedType === "CUSTOM" ? "Custom" : "Single"}
           </span>
           <button
@@ -140,20 +140,20 @@ function BedCard({
               className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs ${
                 pos.isOccupied
                   ? "bg-teal/8 border border-teal/20 dark:bg-teal/10"
-                  : "bg-slate-50 border border-line/50 dark:bg-dark-border/30 dark:border-dark-border/50"
+                  : "bg-slate-50 border border-border/50/30/50"
               }`}
             >
-              <span className={`font-medium shrink-0 ${pos.isOccupied ? "text-teal" : "text-slate dark:text-dark-muted"}`}>
+              <span className={`font-medium shrink-0 ${pos.isOccupied ? "text-teal" : "text-slate"}`}>
                 {positionLabel(pos)}
               </span>
               {alloc ? (
                 <Link href={`/principal/students/${alloc.student.id}`}
-                  className="text-ink hover:text-teal transition-colors truncate min-w-0 dark:text-dark-text dark:hover:text-teal">
+                  className="text-foreground hover:text-teal transition-colors truncate min-w-0 dark:hover:text-teal">
                   {alloc.student.fullName}
-                  <span className="text-slate ml-1 dark:text-dark-muted">· {alloc.student.schoolClass.name}</span>
+                  <span className="text-slate ml-1">· {alloc.student.schoolClass.name}</span>
                 </Link>
               ) : (
-                <span className="text-slate/60 dark:text-dark-muted/60">Available space</span>
+                <span className="text-slate/60">Available space</span>
               )}
             </div>
           );
@@ -202,11 +202,11 @@ function AddBedsModal({
       onClose={onClose} size="sm">
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex rounded-lg border border-line overflow-hidden dark:border-dark-border">
+        <div className="flex rounded-lg border border-border overflow-hidden">
           {(["auto", "single"] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)}
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                mode === m ? "bg-teal text-white" : "bg-white text-slate hover:bg-paper dark:bg-dark-surface dark:text-dark-muted dark:hover:bg-dark-border"
+                mode === m ? "bg-teal text-white" : "bg-card text-slate hover:bg-background"
               }`}>
               {m === "auto" ? "Auto-generate" : "Single bed"}
             </button>
@@ -335,13 +335,13 @@ function AddCubiclesModal({ dormId, onClose, onAdded }: { dormId: string; onClos
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
       {/* Mode toggle */}
-      <div className="flex rounded-lg border border-line overflow-hidden dark:border-dark-border mb-4">
+      <div className="flex rounded-lg border border-border overflow-hidden mb-4">
         {(["auto", "single"] as const).map((m) => (
           <button key={m} type="button" onClick={() => setMode(m)}
             className={`flex-1 py-2 text-sm font-medium transition-colors ${
               mode === m
                 ? "bg-teal text-white"
-                : "bg-white text-slate hover:bg-paper dark:bg-dark-surface dark:text-dark-muted dark:hover:bg-dark-border"
+                : "bg-card text-slate hover:bg-background"
             }`}>
             {m === "auto" ? "Auto-generate" : "Single cubicle"}
           </button>
@@ -386,22 +386,22 @@ function AddCubiclesModal({ dormId, onClose, onAdded }: { dormId: string; onClos
             )}
 
             {/* Live capacity breakdown */}
-            <div className="rounded-lg border border-line dark:border-dark-border bg-paper dark:bg-dark-surface p-3 space-y-2">
-              <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">Capacity preview</p>
+            <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+              <p className="text-xs font-semibold text-slate uppercase tracking-wide">Capacity preview</p>
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
                   { label: "Cubicles",       value: cubicleCount },
                   { label: `Beds / cubicle`, value: bedsPerCubicle },
                   { label: `Spaces / bed`,   value: posPerBed },
                 ].map(({ label, value }) => (
-                  <div key={label} className="rounded-md bg-white dark:bg-dark-bg border border-line dark:border-dark-border py-2 px-1">
-                    <p className="text-base font-semibold text-ink dark:text-dark-text tabular-nums">{value}</p>
-                    <p className="text-[10px] text-slate dark:text-dark-muted leading-tight">{label}</p>
+                  <div key={label} className="rounded-md bg-card border border-border py-2 px-1">
+                    <p className="text-base font-semibold text-foreground tabular-nums">{value}</p>
+                    <p className="text-[10px] text-slate leading-tight">{label}</p>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between pt-1 border-t border-line dark:border-dark-border">
-                <span className="text-xs text-slate dark:text-dark-muted">Total sleeping positions</span>
+              <div className="flex items-center justify-between pt-1 border-t border-border">
+                <span className="text-xs text-slate">Total sleeping positions</span>
                 <span className="text-sm font-semibold text-teal tabular-nums">{totalCapacity}</span>
               </div>
             </div>
@@ -436,8 +436,8 @@ function AddCubiclesModal({ dormId, onClose, onAdded }: { dormId: string; onClos
             )}
 
             {/* Capacity summary for single mode */}
-            <div className="flex items-center justify-between rounded-lg border border-line dark:border-dark-border bg-paper dark:bg-dark-surface px-4 py-2.5">
-              <div className="flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted">
+            <div className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-2.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>{singleBedsNum} bed{singleBedsNum !== 1 ? "s" : ""} × {singlePosPerBed} space{singlePosPerBed !== 1 ? "s" : ""}</span>
               </div>
@@ -542,19 +542,19 @@ function EditCubicleModal({
           />
         </FormField>
         {/* Show current actual vs target */}
-        <div className="rounded-lg border border-line dark:border-dark-border bg-paper dark:bg-dark-surface px-4 py-3 space-y-1.5">
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">Current status</p>
+        <div className="rounded-lg border border-border bg-background px-4 py-3 space-y-1.5">
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide">Current status</p>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate dark:text-dark-muted">Beds added</span>
-            <span className="font-medium text-ink dark:text-dark-text tabular-nums">{cubicle._count.beds}</span>
+            <span className="text-slate">Beds added</span>
+            <span className="font-medium text-foreground tabular-nums">{cubicle._count.beds}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate dark:text-dark-muted">Sleeping positions</span>
-            <span className="font-medium text-ink dark:text-dark-text tabular-nums">{cubicle._count.sleepingPositions}</span>
+            <span className="text-slate">Sleeping positions</span>
+            <span className="font-medium text-foreground tabular-nums">{cubicle._count.sleepingPositions}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate dark:text-dark-muted">Currently occupied</span>
-            <span className={`font-medium tabular-nums ${cubicle._count.allocations > 0 ? "text-teal" : "text-slate dark:text-dark-muted"}`}>
+            <span className="text-slate">Currently occupied</span>
+            <span className={`font-medium tabular-nums ${cubicle._count.allocations > 0 ? "text-teal" : "text-slate"}`}>
               {cubicle._count.allocations}
             </span>
           </div>
@@ -616,23 +616,23 @@ function CubicleSection({
 
   return (
     <>
-      <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-3 bg-card dark:bg-dark-surface">
+      <div className="rounded-xl border border-border overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 bg-card">
           {/* Expand / collapse trigger */}
           <button className="flex items-center gap-3 flex-1 text-left min-w-0" onClick={fetchBeds}>
             <div className="rounded-md bg-teal/10 p-1.5 shrink-0">
               <LayoutGrid className="h-3.5 w-3.5 text-teal" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">{cubicle.name}</p>
-              <p className="text-xs text-slate dark:text-dark-muted">
+              <p className="text-sm font-semibold text-foreground">{cubicle.name}</p>
+              <p className="text-xs text-slate">
                 {bedsVsTarget} · {cubicle._count.allocations}/{cubicle._count.sleepingPositions} occupied
               </p>
             </div>
             <div className="w-24 shrink-0">
               <div className="flex items-center gap-1.5">
                 <OccupancyBar pct={pct} />
-                <span className="text-xs tabular-nums text-slate dark:text-dark-muted">{pct}%</span>
+                <span className="text-xs tabular-nums text-slate">{pct}%</span>
               </div>
             </div>
             {expanded
@@ -649,7 +649,7 @@ function CubicleSection({
         </div>
 
         {expanded && (
-          <div className="border-t border-line dark:border-dark-border bg-paper/50 dark:bg-dark-bg/30 p-4">
+          <div className="border-t border-border bg-background/50/30 p-4">
             {loadingBeds && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-line/40 animate-pulse" />)}
@@ -657,14 +657,14 @@ function CubicleSection({
             )}
             {!loadingBeds && beds.length === 0 && cubicle._count.beds > 0 && (
               <div className="text-center py-6">
-                <p className="text-slate text-sm dark:text-dark-muted">
+                <p className="text-slate text-sm">
                   {cubicle._count.beds} bed{cubicle._count.beds !== 1 ? 's' : ''} created but details unavailable. This cubicle has {cubicle._count.sleepingPositions} sleeping position{cubicle._count.sleepingPositions !== 1 ? 's' : ''}.
                 </p>
               </div>
             )}
             {!loadingBeds && beds.length === 0 && cubicle._count.beds === 0 && (
               <div className="text-center py-6">
-                <p className="text-slate text-sm dark:text-dark-muted">No beds in this cubicle yet.</p>
+                <p className="text-slate text-sm">No beds in this cubicle yet.</p>
               </div>
             )}
             {!loadingBeds && beds.length > 0 && (
@@ -757,7 +757,7 @@ export default function DormDetailPage() {
       <div>
         <ContextNavigation items={NAV_ITEMS} />
         <div className="py-20 text-center">
-          <p className="text-slate dark:text-dark-muted">Dormitory not found.</p>
+          <p className="text-slate">Dormitory not found.</p>
           <Link href="/principal/accommodation/dormitories" className="text-teal text-sm mt-2 inline-block hover:underline">
             Back to dormitories
           </Link>
@@ -786,28 +786,28 @@ export default function DormDetailPage() {
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
       {/* Header card */}
-      <div className="rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border p-5 mb-6">
+      <div className="rounded-xl border border-border bg-card p-5 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="rounded-xl bg-teal/10 p-3 shrink-0 self-start">
             <BedDouble className="h-7 w-7 text-teal" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl font-semibold text-ink dark:text-dark-text">{dorm.name}</h1>
+              <h1 className="text-xl font-semibold text-foreground">{dorm.name}</h1>
               <span className={`text-xs font-medium ${statusMeta.color}`}>{statusMeta.label}</span>
-              <span className="text-xs text-slate border border-line rounded-full px-2 py-0.5 dark:border-dark-border dark:text-dark-muted">
+              <span className="text-xs text-slate border border-border rounded-full px-2 py-0.5">
                 {GENDER_LABEL[dorm.genderPolicy]}
               </span>
-              <span className="text-xs text-slate border border-line rounded-full px-2 py-0.5 dark:border-dark-border dark:text-dark-muted">
+              <span className="text-xs text-slate border border-border rounded-full px-2 py-0.5">
                 {isCubicleBased ? "Cubicle-based" : "Open hall"}
               </span>
             </div>
-            {dorm.description && <p className="text-sm text-slate dark:text-dark-muted mb-2">{dorm.description}</p>}
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate dark:text-dark-muted">
+            {dorm.description && <p className="text-sm text-slate mb-2">{dorm.description}</p>}
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate">
               {dorm.boardingMaster && (
                 <span>
                   <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
-                    className="font-medium text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                    className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {dorm.boardingMaster.fullName}
                   </Link>
                   {" · Boarding master"}
@@ -816,7 +816,7 @@ export default function DormDetailPage() {
               {dorm.dormCaptain && (
                 <span>
                   <Link href={`/principal/students/${dorm.dormCaptain.id}`}
-                    className="font-medium text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                    className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {dorm.dormCaptain.fullName}
                   </Link>
                   {" · Dorm captain"}
@@ -831,7 +831,7 @@ export default function DormDetailPage() {
         </div>
 
         {/* Occupancy summary row */}
-        <div className="mt-4 pt-4 border-t border-line dark:border-dark-border grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Total capacity", value: displayCapacity },
             { label: "Occupied", value: dorm._count.allocations, highlight: dorm._count.allocations === displayCapacity && displayCapacity > 0 },
@@ -839,8 +839,8 @@ export default function DormDetailPage() {
             { label: "Occupancy", value: `${occupancyPct}%`, highlight: occupancyPct >= 90 },
           ].map(({ label, value, highlight }) => (
             <div key={label}>
-              <p className={`text-xl font-semibold tabular-nums ${highlight ? "text-warn" : "text-ink dark:text-dark-text"}`}>{value}</p>
-              <p className="text-xs text-slate dark:text-dark-muted">{label}</p>
+              <p className={`text-xl font-semibold tabular-nums ${highlight ? "text-warn" : "text-foreground"}`}>{value}</p>
+              <p className="text-xs text-slate">{label}</p>
             </div>
           ))}
         </div>
@@ -853,8 +853,8 @@ export default function DormDetailPage() {
       {isCubicleBased ? (
         <>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
-              Cubicles <span className="text-slate font-normal ml-1 text-sm dark:text-dark-muted">({dorm.cubicles.length})</span>
+            <h2 className="text-base font-semibold text-foreground">
+              Cubicles <span className="text-slate font-normal ml-1 text-sm">({dorm.cubicles.length})</span>
             </h2>
             <div className="flex items-center gap-2">
               <button onClick={() => { setAddBedsCubicleId(undefined); setShowAddCubicles(true); }}
@@ -865,9 +865,9 @@ export default function DormDetailPage() {
           </div>
 
           {dorm.cubicles.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-line dark:border-dark-border">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-border">
               <LayoutGrid className="h-8 w-8 text-slate/50" />
-              <p className="text-slate text-sm dark:text-dark-muted">No cubicles yet. Add cubicles to start organising this dorm.</p>
+              <p className="text-slate text-sm">No cubicles yet. Add cubicles to start organising this dorm.</p>
               <button onClick={() => setShowAddCubicles(true)} className={primaryButtonClass + " !text-xs"}>
                 <Plus className="h-3.5 w-3.5" /> Add cubicles
               </button>
@@ -885,8 +885,8 @@ export default function DormDetailPage() {
       ) : (
         <>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
-              Beds <span className="text-slate font-normal ml-1 text-sm dark:text-dark-muted">({beds.length})</span>
+            <h2 className="text-base font-semibold text-foreground">
+              Beds <span className="text-slate font-normal ml-1 text-sm">({beds.length})</span>
             </h2>
             <button onClick={() => { setAddBedsCubicleId(undefined); setShowAddBeds(true); }}
               className={secondaryButtonClass + " !py-2 !text-xs"}>
@@ -895,9 +895,9 @@ export default function DormDetailPage() {
           </div>
 
           {beds.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-line dark:border-dark-border">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-xl border border-dashed border-border">
               <BedDouble className="h-8 w-8 text-slate/50" />
-              <p className="text-slate text-sm dark:text-dark-muted">No beds yet. Add beds to configure sleeping positions.</p>
+              <p className="text-slate text-sm">No beds yet. Add beds to configure sleeping positions.</p>
               <button onClick={() => setShowAddBeds(true)} className={primaryButtonClass + " !text-xs"}>
                 <Plus className="h-3.5 w-3.5" /> Add beds
               </button>

@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+﻿import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, EmptyState } from "@/components/ui";
 import AttendanceView from "@/components/AttendanceView";
@@ -33,12 +33,12 @@ export default async function PrincipalAttendancePage() {
 
       <div className="space-y-8">
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3">Today at a glance</h2>
+          <h2 className="text-base font-semibold text-foreground mb-3">Today at a glance</h2>
           <AttendanceStats />
         </div>
 
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3">Take or review attendance</h2>
+          <h2 className="text-base font-semibold text-foreground mb-3">Take or review attendance</h2>
           {classes.length === 0 ? (
             <EmptyState message="No classes set up yet. Add a class first." />
           ) : (
@@ -47,7 +47,7 @@ export default async function PrincipalAttendancePage() {
         </div>
 
         <div>
-          <h2 className="text-base font-semibold text-ink mb-1">Attendance analytics</h2>
+          <h2 className="text-base font-semibold text-foreground mb-1">Attendance analytics</h2>
           <p className="text-slate text-sm mb-3">
             Analyse attendance over a period by form, stream, or individual student. Open a student
             from the Students page to see their full attendance history.

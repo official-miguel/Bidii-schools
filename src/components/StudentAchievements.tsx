@@ -78,15 +78,15 @@ export default function StudentAchievements({ studentId }: { studentId: string }
 
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-lg font-semibold text-ink mb-3">
+      <h3 className="font-display text-lg font-semibold text-foreground mb-3">
         Student Achievements
       </h3>
       <div className="space-y-3">
         {achievements.map((achievement) => (
-          <div key={achievement.id} className="bg-card border border-line rounded-lg p-4">
+          <div key={achievement.id} className="bg-card border border-border rounded-lg p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-ink font-medium">{achievement.title}</p>
+                <p className="text-foreground font-medium">{achievement.title}</p>
                 <p className="text-xs text-slate mt-0.5">
                   {CATEGORY_LABELS[achievement.category] || achievement.category} • 
                   {new Date(achievement.achievementDate).toLocaleDateString()}

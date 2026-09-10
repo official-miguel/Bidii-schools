@@ -183,9 +183,9 @@ function groupEntries(
 }
 
 const inputCls =
-  "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink " +
+  "rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "";
 
 const PAGE_SIZE = 50;
 
@@ -209,7 +209,7 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
   return (
     <>
       <tr
-        className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""} cursor-pointer hover:bg-teal/5 transition-colors ${isOpeningBal ? "bg-slate-50/50 dark:bg-dark-border/20" : ""}`}
+        className={`${premiumTrClass} ${e.isVoided ? "opacity-50" : ""} cursor-pointer hover:bg-teal/5 transition-colors ${isOpeningBal ? "bg-slate-50/50/20" : ""}`}
         onClick={() => setExpanded(v => !v)}
       >
         <td className={`${premiumTdClass} whitespace-nowrap`}>
@@ -218,8 +218,8 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
               ? <ChevronDown  className="h-3.5 w-3.5 text-teal shrink-0" />
               : <ChevronRight className="h-3.5 w-3.5 text-slate/40 shrink-0" />}
             <div>
-              <p className="text-xs text-ink dark:text-dark-text font-medium">{formatDate(e.postedAt)}</p>
-              <p className="text-[10px] text-slate dark:text-dark-muted">{timeAgo(e.postedAt)}</p>
+              <p className="text-xs text-foreground font-medium">{formatDate(e.postedAt)}</p>
+              <p className="text-[10px] text-slate">{timeAgo(e.postedAt)}</p>
             </div>
           </div>
         </td>
@@ -230,14 +230,14 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
         <td className={premiumTdClass}>
           {e.student ? (
             <div>
-              <p className="text-sm font-medium text-ink dark:text-dark-text">
-                <span className="text-slate dark:text-dark-muted font-normal text-xs">{cashIn ? "From " : "For "}</span>
+              <p className="text-sm font-medium text-foreground">
+                <span className="text-slate font-normal text-xs">{cashIn ? "From " : "For "}</span>
                 {e.student.fullName}
               </p>
-              <p className="text-xs font-mono text-slate dark:text-dark-muted">{e.student.admissionNumber}</p>
+              <p className="text-xs font-mono text-slate">{e.student.admissionNumber}</p>
             </div>
           ) : (
-            <span className="text-slate dark:text-dark-muted text-xs">{e.description}</span>
+            <span className="text-slate text-xs">{e.description}</span>
           )}
         </td>
         <td className={`${premiumTdClass} text-right tabular-nums font-semibold ${cashIn ? "text-success" : "text-danger"}`}>
@@ -247,34 +247,34 @@ function SingleEntryRow({ e }: { e: LedgerEntry }) {
       </tr>
 
       {expanded && (
-        <tr className="bg-paper/60 dark:bg-dark-border/10">
-          <td colSpan={4} className="px-8 py-3 border-b border-line/60 dark:border-dark-border/60">
+        <tr className="bg-background/60/10">
+          <td colSpan={4} className="px-8 py-3 border-b border-border/60/60">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Description</p>
-                <p className="text-ink dark:text-dark-text">{e.description || "—"}</p>
+                <p className="font-medium text-slate uppercase tracking-wide mb-0.5">Description</p>
+                <p className="text-foreground">{e.description || "—"}</p>
               </div>
               {e.term && (
                 <div>
-                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Term</p>
-                  <p className="text-ink dark:text-dark-text">{e.term.name}</p>
+                  <p className="font-medium text-slate uppercase tracking-wide mb-0.5">Term</p>
+                  <p className="text-foreground">{e.term.name}</p>
                 </div>
               )}
               {e.referenceId && (
                 <div>
-                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Reference</p>
-                  <p className="font-mono text-ink dark:text-dark-text">{e.referenceId}</p>
+                  <p className="font-medium text-slate uppercase tracking-wide mb-0.5">Reference</p>
+                  <p className="font-mono text-foreground">{e.referenceId}</p>
                 </div>
               )}
               {e.paymentMethod && (
                 <div>
-                  <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Method</p>
-                  <p className="text-ink dark:text-dark-text capitalize">{e.paymentMethod.replace(/_/g, " ")}</p>
+                  <p className="font-medium text-slate uppercase tracking-wide mb-0.5">Method</p>
+                  <p className="text-foreground capitalize">{e.paymentMethod.replace(/_/g, " ")}</p>
                 </div>
               )}
               <div>
-                <p className="font-medium text-slate dark:text-dark-muted uppercase tracking-wide mb-0.5">Time</p>
-                <p className="text-ink dark:text-dark-text">{formatDate(e.postedAt)} at {formatTime(e.postedAt)}</p>
+                <p className="font-medium text-slate uppercase tracking-wide mb-0.5">Time</p>
+                <p className="text-foreground">{formatDate(e.postedAt)} at {formatTime(e.postedAt)}</p>
               </div>
             </div>
           </td>
@@ -308,8 +308,8 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
               ? <ChevronDown  className="h-3.5 w-3.5 text-teal shrink-0" />
               : <ChevronRight className="h-3.5 w-3.5 text-teal/60 shrink-0" />}
             <div>
-              <p className="text-xs text-ink dark:text-dark-text font-medium">{formatDate(row.postedAt)}</p>
-              <p className="text-[10px] text-slate dark:text-dark-muted">{timeAgo(row.postedAt)}</p>
+              <p className="text-xs text-foreground font-medium">{formatDate(row.postedAt)}</p>
+              <p className="text-[10px] text-slate">{timeAgo(row.postedAt)}</p>
             </div>
           </div>
         </td>
@@ -322,10 +322,10 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-teal shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 {row.termName} — {row.count} students
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted">
+              <p className="text-xs text-slate">
                 {allPaid
                   ? "Fully collected · click to expand"
                   : `${collectedPct}% collected · click to expand`}
@@ -339,7 +339,7 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
           <p className={`tabular-nums font-bold ${allPaid ? "text-success" : "text-danger"}`}>
             {allPaid ? "" : "− "}{formatKES(row.outstanding)}
           </p>
-          <p className="text-[10px] text-slate dark:text-dark-muted tabular-nums">
+          <p className="text-[10px] text-slate tabular-nums">
             of {formatKES(row.invoiced)} invoiced
           </p>
         </td>
@@ -350,24 +350,24 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
         <>
           {row.entries.length === 0 ? (
             <tr className="bg-teal/5">
-              <td colSpan={4} className="px-10 py-3 text-xs text-slate dark:text-dark-muted italic border-b border-line/40 dark:border-dark-border/40">
+              <td colSpan={4} className="px-10 py-3 text-xs text-slate italic border-b border-border/40/40">
                 Scroll up to load individual invoices for this batch.
               </td>
             </tr>
           ) : (
             row.entries.map(e => (
-              <tr key={e.id} className="bg-teal/5 border-b border-line/40 dark:border-dark-border/40">
-                <td className={`${premiumTdClass} pl-10 text-xs text-slate dark:text-dark-muted whitespace-nowrap`}>
+              <tr key={e.id} className="bg-teal/5 border-b border-border/40/40">
+                <td className={`${premiumTdClass} pl-10 text-xs text-slate whitespace-nowrap`}>
                   {formatDate(e.postedAt)}
                 </td>
                 <td className={premiumTdClass}>
                   <Badge variant="info">Invoice</Badge>
                 </td>
                 <td className={premiumTdClass}>
-                  <p className="text-sm font-medium text-ink dark:text-dark-text">{e.student?.fullName ?? "—"}</p>
-                  <p className="text-xs font-mono text-slate dark:text-dark-muted">{e.student?.admissionNumber ?? ""}</p>
+                  <p className="text-sm font-medium text-foreground">{e.student?.fullName ?? "—"}</p>
+                  <p className="text-xs font-mono text-slate">{e.student?.admissionNumber ?? ""}</p>
                   {e.referenceId && (
-                    <p className="text-[10px] text-slate dark:text-dark-muted font-mono">{e.referenceId}</p>
+                    <p className="text-[10px] text-slate font-mono">{e.referenceId}</p>
                   )}
                 </td>
                 {/* Individual entries show the frozen invoice amount — not live balance */}
@@ -380,7 +380,7 @@ function BatchInvoiceRow({ row }: { row: BatchRow }) {
 
           {row.entries.length > 0 && row.entries.length < row.count && (
             <tr className="bg-teal/5">
-              <td colSpan={4} className="px-10 py-2 text-[11px] text-slate dark:text-dark-muted italic border-b border-line/40 dark:border-dark-border/40">
+              <td colSpan={4} className="px-10 py-2 text-[11px] text-slate italic border-b border-border/40/40">
                 Showing {row.entries.length} of {row.count} · scroll up to load more
               </td>
             </tr>
@@ -516,7 +516,7 @@ export default function LedgerPage() {
 
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" />
             <input
               type="text" value={search}
               onChange={e => setSearch(e.target.value)}
@@ -524,7 +524,7 @@ export default function LedgerPage() {
               className={inputCls + " pl-9 w-full"}
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -544,7 +544,7 @@ export default function LedgerPage() {
             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
               showPanel || typeFilter
                 ? "border-teal bg-teal/5 text-teal"
-                : "border-line bg-white text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                : "border-border bg-card text-slate hover:text-foreground"
             }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -558,7 +558,7 @@ export default function LedgerPage() {
             type="button"
             onClick={() => fetchPage(1, search, typeFilter, termFilter, true)}
             disabled={initialLoading}
-            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-slate hover:text-foreground"
             title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${initialLoading ? "animate-spin" : ""}`} />
@@ -576,8 +576,8 @@ export default function LedgerPage() {
         </div>
 
         {showPanel && (
-          <div className="mb-3 rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border p-4 shadow-sm">
-            <p className="text-xs font-medium text-slate dark:text-dark-muted mb-2">Transaction type</p>
+          <div className="mb-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+            <p className="text-xs font-medium text-slate mb-2">Transaction type</p>
             <div className="flex flex-wrap gap-1.5">
               {TYPE_OPTIONS.map(opt => (
                 <button
@@ -586,7 +586,7 @@ export default function LedgerPage() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                     typeFilter === opt.value
                       ? "bg-teal text-white border-teal"
-                      : "bg-white border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted"
+                      : "bg-card border-border text-slate hover:text-foreground"
                   }`}
                 >
                   {opt.label}
@@ -597,12 +597,12 @@ export default function LedgerPage() {
         )}
 
         {!initialLoading && total > 0 && (
-          <p className="text-xs text-slate dark:text-dark-muted mb-2">
+          <p className="text-xs text-slate mb-2">
             {entries.length < total
               ? `${entries.length.toLocaleString()} of ${total.toLocaleString()} loaded`
               : `All ${total.toLocaleString()} entries`}
             {termLabel && (
-              <span> · <span className="font-medium text-ink dark:text-dark-text">{termLabel}</span></span>
+              <span> · <span className="font-medium text-foreground">{termLabel}</span></span>
             )}
           </p>
         )}
@@ -621,20 +621,20 @@ export default function LedgerPage() {
       ) : (
         <div
           ref={tableRef}
-          className="flex-1 overflow-y-auto rounded-xl border border-line dark:border-dark-border bg-white dark:bg-dark-surface"
+          className="flex-1 overflow-y-auto rounded-xl border border-border bg-card"
           style={{ maxHeight: "calc(100vh - 280px)", minHeight: "400px" }}
         >
           {/* Sentinel at top — triggers loading older entries */}
           <div ref={sentinelRef} className="h-px" />
 
           {loadingMore && (
-            <div className="flex items-center justify-center gap-2 py-4 text-sm text-slate dark:text-dark-muted">
+            <div className="flex items-center justify-center gap-2 py-4 text-sm text-slate">
               <Loader2 className="h-4 w-4 animate-spin text-teal" />Loading older entries…
             </div>
           )}
 
           {!hasMore && entries.length > 0 && (
-            <p className="text-center text-xs text-slate dark:text-dark-muted py-3 border-b border-line/40 dark:border-dark-border/40">
+            <p className="text-center text-xs text-slate py-3 border-b border-border/40/40">
               Beginning of ledger
             </p>
           )}

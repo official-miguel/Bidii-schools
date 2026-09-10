@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/health — System Health
@@ -101,7 +101,7 @@ const STATUS_CONFIG: Record<SvcStatus, {
   OPERATIONAL:  { bg:"bg-success-bg",  border:"border-success/20",  text:"text-success",  dot:"bg-success",  Icon:CheckCircle2, label:"Operational"  },
   DEGRADED:     { bg:"bg-warn-bg",     border:"border-warn/20",     text:"text-warn",     dot:"bg-warn",     Icon:AlertCircle,  label:"Degraded"     },
   OUTAGE:       { bg:"bg-danger-bg",   border:"border-danger/20",   text:"text-danger",   dot:"bg-danger",   Icon:XCircle,      label:"Outage"       },
-  MAINTENANCE:  { bg:"bg-slate-100",   border:"border-line",        text:"text-slate",    dot:"bg-slate",    Icon:Wrench,       label:"Maintenance"  },
+  MAINTENANCE:  { bg:"bg-slate-100",   border:"border-border",        text:"text-slate",    dot:"bg-slate",    Icon:Wrench,       label:"Maintenance"  },
 };
 
 function getStatusCfg(status: string) {
@@ -127,8 +127,8 @@ function ServiceCard({ svc }: { svc: ServiceHealth }) {
     <div className={`rounded-xl border p-5 shadow-xs ${cfg.bg} ${cfg.border}`}>
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">{meta.label}</p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{meta.desc}</p>
+          <p className="text-sm font-semibold text-foreground">{meta.label}</p>
+          <p className="text-xs text-slate mt-0.5">{meta.desc}</p>
         </div>
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shrink-0
                           ${cfg.bg} ${cfg.border} ${cfg.text}`}>
@@ -144,15 +144,15 @@ function ServiceCard({ svc }: { svc: ServiceHealth }) {
           { period: "7d",  pct: svc.uptimePct7d  },
           { period: "30d", pct: svc.uptimePct30d  },
         ].map(({ period, pct }) => (
-          <div key={period} className="rounded-lg bg-white/60 dark:bg-dark-bg/40 border border-white/40 px-2 py-2 text-center">
+          <div key={period} className="rounded-lg bg-card/60/40 border border-white/40 px-2 py-2 text-center">
             <UptimePill pct={pct} />
-            <p className="text-[10px] text-slate dark:text-dark-muted mt-0.5 font-medium">{period}</p>
+            <p className="text-[10px] text-slate mt-0.5 font-medium">{period}</p>
           </div>
         ))}
       </div>
 
       {svc.lastIncidentAt && (
-        <p className="text-[10px] text-slate dark:text-dark-muted mt-3 flex items-center gap-1">
+        <p className="text-[10px] text-slate mt-3 flex items-center gap-1">
           <Clock className="h-3 w-3 shrink-0" aria-hidden />
           Last incident: {new Date(svc.lastIncidentAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}
         </p>
@@ -166,9 +166,9 @@ function ServiceCard({ svc }: { svc: ServiceHealth }) {
 function MetricsSection({ metrics }: { metrics: MetricSnapshot[] }) {
   if (metrics.length === 0) {
     return (
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
-        <h2 className="text-sm font-semibold text-ink dark:text-dark-text mb-3">API Metrics (24h)</h2>
-        <p className="text-xs text-slate dark:text-dark-muted">No metrics recorded yet.</p>
+      <Card className="">
+        <h2 className="text-sm font-semibold text-foreground mb-3">API Metrics (24h)</h2>
+        <p className="text-xs text-slate">No metrics recorded yet.</p>
       </Card>
     );
   }
@@ -198,29 +198,29 @@ function MetricsSection({ metrics }: { metrics: MetricSnapshot[] }) {
   }
 
   return (
-    <Card className="dark:bg-dark-surface dark:border-dark-border">
-      <h2 className="text-sm font-semibold text-ink dark:text-dark-text mb-4">API Metrics (last 24h)</h2>
+    <Card className="">
+      <h2 className="text-sm font-semibold text-foreground mb-4">API Metrics (last 24h)</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-line dark:divide-dark-border text-sm">
+        <table className="min-w-full divide-y divide-border text-sm">
           <thead>
-            <tr className="text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide">
+            <tr className="text-xs font-semibold text-slate uppercase tracking-wide">
               <th className="pb-3 text-left">Service</th>
               <th className="pb-3 text-right">Avg Response</th>
               <th className="pb-3 text-right hidden sm:table-cell">Error Rate</th>
               <th className="pb-3 text-right hidden md:table-cell">Requests</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line dark:divide-dark-border">
+          <tbody className="divide-y divide-border ">
             {rows.map(r => (
               <tr key={r.service}>
-                <td className="py-3 text-ink dark:text-dark-text">{r.service}</td>
+                <td className="py-3 text-foreground">{r.service}</td>
                 <td className={`py-3 text-right tabular-nums font-semibold ${msColor(r.avgMs)}`}>
                   {r.avgMs != null ? `${r.avgMs} ms` : "—"}
                 </td>
-                <td className="py-3 text-right hidden sm:table-cell tabular-nums text-slate dark:text-dark-muted">
+                <td className="py-3 text-right hidden sm:table-cell tabular-nums text-slate">
                   {(r.errorRate * 100).toFixed(2)}%
                 </td>
-                <td className="py-3 text-right hidden md:table-cell tabular-nums text-slate dark:text-dark-muted">
+                <td className="py-3 text-right hidden md:table-cell tabular-nums text-slate">
                   {r.requests.toLocaleString()}
                 </td>
               </tr>
@@ -228,7 +228,7 @@ function MetricsSection({ metrics }: { metrics: MetricSnapshot[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-slate dark:text-dark-muted mt-3">
+      <p className="text-[10px] text-slate mt-3">
         Response time thresholds: <span className="text-success font-medium">&lt;200ms</span> good ·{" "}
         <span className="text-warn font-medium">200–600ms</span> slow ·{" "}
         <span className="text-danger font-medium">&gt;600ms</span> critical
@@ -262,9 +262,9 @@ function IncidentTimeline({
   }
 
   return (
-    <Card className="dark:bg-dark-surface dark:border-dark-border">
+    <Card className="">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Incident Timeline</h2>
+        <h2 className="text-sm font-semibold text-foreground">Incident Timeline</h2>
         <button
           type="button"
           onClick={() => setOpen(o => !o)}
@@ -276,7 +276,7 @@ function IncidentTimeline({
 
       {/* Add form */}
       {open && (
-        <div className="mb-5 rounded-xl border border-line dark:border-dark-border bg-paper dark:bg-dark-bg p-4 space-y-3 animate-fade-in">
+        <div className="mb-5 rounded-xl border border-border bg-background p-4 space-y-3 animate-fade-in">
           <div>
             <label className={labelClass}>Title <span className="text-danger">*</span></label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)}
@@ -286,8 +286,8 @@ function IncidentTimeline({
             <div>
               <label className={labelClass}>Service</label>
               <select value={svc} onChange={e => setSvc(e.target.value)}
-                className="w-full rounded-lg border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                           px-3.5 py-2.5 text-sm text-ink dark:text-dark-text
+                className="w-full rounded-lg border border-border bg-card
+                           px-3.5 py-2.5 text-sm text-foreground
                            focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15">
                 <option value="">All services</option>
                 {Object.keys(SERVICE_META).map(s => <option key={s} value={s}>{s}</option>)}
@@ -310,32 +310,32 @@ function IncidentTimeline({
       )}
 
       {incidents.length === 0 ? (
-        <div className="flex flex-col items-center py-10 gap-2 text-slate dark:text-dark-muted">
+        <div className="flex flex-col items-center py-10 gap-2 text-slate">
           <CheckCircle2 className="h-6 w-6 text-success opacity-70" aria-hidden />
           <p className="text-sm">No incidents recorded</p>
         </div>
       ) : (
-        <ol className="relative border-l border-line dark:border-dark-border ml-2 space-y-0">
+        <ol className="relative border-l border-border ml-2 space-y-0">
           {incidents.map((inc, i) => {
             const resolved = !!inc.resolvedAt;
             return (
               <li key={inc.id} className="mb-6 ml-5 last:mb-0">
                 {/* Dot */}
                 <span className={`absolute -left-[9px] flex h-4 w-4 items-center justify-center rounded-full border-2
-                                  border-white dark:border-dark-bg
+                                  border-white
                                   ${resolved ? "bg-success" : i === 0 ? "bg-danger" : "bg-warn"}`}
                   aria-hidden />
 
-                <div className="rounded-xl border border-line dark:border-dark-border bg-white dark:bg-dark-surface p-4 shadow-xs">
+                <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ink dark:text-dark-text">{inc.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{inc.title}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {inc.serviceName && (
-                          <span className="text-xs bg-slate-100 dark:bg-dark-border text-slate dark:text-dark-muted
+                          <span className="text-xs bg-slate-100 text-slate
                                            font-mono rounded px-1.5 py-0.5">{inc.serviceName}</span>
                         )}
-                        <span className="text-xs text-slate dark:text-dark-muted flex items-center gap-1">
+                        <span className="text-xs text-slate flex items-center gap-1">
                           <Clock className="h-3 w-3" aria-hidden />
                           {new Date(inc.startedAt).toLocaleString("en-GB", {
                             day:"2-digit", month:"short", year:"numeric",
@@ -349,7 +349,7 @@ function IncidentTimeline({
                         )}
                       </div>
                       {inc.description && (
-                        <p className="text-xs text-slate dark:text-dark-muted mt-1.5 leading-relaxed">{inc.description}</p>
+                        <p className="text-xs text-slate mt-1.5 leading-relaxed">{inc.description}</p>
                       )}
                     </div>
                     {!resolved && (
@@ -396,8 +396,8 @@ function SystemStatusEditor({ current, onSave }: {
   }
 
   return (
-    <Card className="dark:bg-dark-surface dark:border-dark-border">
-      <h2 className="text-sm font-semibold text-ink dark:text-dark-text mb-4">System Status Banner</h2>
+    <Card className="">
+      <h2 className="text-sm font-semibold text-foreground mb-4">System Status Banner</h2>
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           {SYSTEM_STATUS_OPTS.map(({ value, label, cls }) => (
@@ -497,7 +497,7 @@ export default function HealthPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <PageHeader title="System Health" description="Live status, uptime, metrics and incident history." />
-        <button onClick={load} className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-ink transition-colors mt-1">
+        <button onClick={load} className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-foreground transition-colors mt-1">
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
       </div>

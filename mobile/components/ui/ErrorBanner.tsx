@@ -6,7 +6,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { AlertCircle, X } from 'lucide-react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface ErrorBannerProps {
   message: string;
@@ -15,6 +16,8 @@ interface ErrorBannerProps {
 }
 
 export function ErrorBanner({ message, onDismiss, style }: ErrorBannerProps) {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
@@ -22,22 +25,22 @@ export function ErrorBanner({ message, onDismiss, style }: ErrorBannerProps) {
           flexDirection: 'row',
           alignItems: 'flex-start',
           gap: Spacing[2],
-          backgroundColor: Colors.dangerBg,
+          backgroundColor: colors.destructive + '15',
           borderWidth: 1,
-          borderColor: Colors.danger + '30',
+          borderColor: colors.destructive + '30',
           borderRadius: Radius.button,
           padding: Spacing[3],
         },
         style,
       ]}
     >
-      <AlertCircle size={16} color={Colors.danger} style={{ marginTop: 1 }} />
+      <AlertCircle size={16} color={colors.destructive} style={{ marginTop: 1 }} />
 
       <Text
         style={{
           flex: 1,
           fontSize: Typography.fontSize.sm,
-          color: Colors.danger,
+          color: colors.destructive,
         }}
       >
         {message}
@@ -48,7 +51,7 @@ export function ErrorBanner({ message, onDismiss, style }: ErrorBannerProps) {
           onPress={onDismiss}
           hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
         >
-          <X size={14} color={Colors.danger} />
+          <X size={14} color={colors.destructive} />
         </TouchableOpacity>
       )}
     </View>

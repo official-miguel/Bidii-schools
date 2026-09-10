@@ -19,25 +19,19 @@ import {
   ErrorBanner, Toast, useToast, ConfirmModal,
 } from '@/components/ui';
 import { api, ReservationRecord } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { formatDate, getErrorMessage } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 const STATUS_TABS = ['ALL','PENDING','ACTIVE','FULFILLED','CANCELLED','EXPIRED'] as const;
 type StatusTab = typeof STATUS_TABS[number];
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  PENDING:   { bg: Colors.warnBg,    text: Colors.warn },
-  ACTIVE:    { bg: Colors.infoBg,    text: Colors.info },
-  FULFILLED: { bg: Colors.successBg, text: Colors.success },
-  CANCELLED: { bg: Colors.line,      text: Colors.slateText },
-  EXPIRED:   { bg: Colors.dangerBg,  text: Colors.danger },
-};
-
 export default function ReservationsScreen() {
   const insets = useSafeAreaInsets();
   const { toastProps, show: showToast } = useToast();
+  const { colors } = useTheme();
 
   const [query,       setQuery]       = useState('');
   const [statusTab,   setStatusTab]   = useState<StatusTab>('ALL');
@@ -98,11 +92,11 @@ export default function ReservationsScreen() {
   };
 
   return (
-    <View style={{ flex:1, backgroundColor: Colors.paper }}>
+    <View style={{ flex:1, backgroundColor: colors.background }}>
       <ScreenHeader title="Reservations" subtitle="Book reservation queue" />
 
       {/* Search */}
-      <View style={{ backgroundColor: Colors.card, borderBottomWidth:1, borderBottomColor: Colors.line, padding: Spacing[4], gap: Spacing[3] }}>
+      <View style={{ backgroundColor: colors.card, borderBottomWidth:1, borderBottomColor: colors.border, padding: Spacing[4], gap: Spacing[3] }}>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search by title or student…" />
         {/* Status tabs */}
         <FlatList
@@ -117,11 +111,11 @@ export default function ReservationsScreen() {
               style={{
                 paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
                 borderRadius: Radius.full, borderWidth:1,
-                borderColor: statusTab === item ? Colors.teal : Colors.line,
-                backgroundColor: statusTab === item ? Colors.teal50 : Colors.card,
+                borderColor: statusTab === item ? colors.primary : colors.border,
+                backgroundColor: statusTab === item ? colors.primary + '15' : colors.card,
               }}
             >
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: statusTab === item ? Colors.teal : Colors.slateText }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: statusTab === item ? colors.primary : colors.mutedForeground }}>
                 {item === 'ALL' ? 'All' : item.charAt(0) + item.slice(1).toLowerCase()}
               </Text>
             </TouchableOpacity>
@@ -133,17 +127,18 @@ export default function ReservationsScreen() {
 
       {loading && !refreshing ? (
         <View style={{ flex:1, alignItems:'center', justifyContent:'center' }}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
           data={reservations}
           keyExtractor={r => r.id}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
           contentContainerStyle={{ padding: Spacing[4], gap: Spacing[2], paddingBottom: insets.bottom + Spacing[8] }}
           renderItem={({ item }) => (
             <ReservationRow
               item={item}
+              colors={colors}
               onFulfill={() => { setActionRow(item); setActionType('fulfill'); }}
               onCancel={()  => { setActionRow(item); setActionType('cancel'); }}
             />
@@ -152,7 +147,7 @@ export default function ReservationsScreen() {
             <EmptyState
               title="No reservations"
               description={debouncedQuery ? `No results for "${debouncedQuery}"` : 'No reservations match the selected filter'}
-              icon={<BookOpen size={40} color={Colors.slateText} />}
+              icon={<BookOpen size={40} color={colors.mutedForeground} />}
             />
           }
         />
@@ -180,23 +175,33 @@ export default function ReservationsScreen() {
   );
 }
 
+import type { ColorTokens } from '@/constants';
+
 function ReservationRow({
-  item, onFulfill, onCancel,
-}: { item: ReservationRecord; onFulfill: () => void; onCancel: () => void }) {
-  const sc = STATUS_COLORS[item.status] || { bg: Colors.line, text: Colors.slateText };
+  item, onFulfill, onCancel, colors,
+}: { item: ReservationRecord; onFulfill: () => void; onCancel: () => void; colors: ColorTokens }) {
+  // Status color map using semantic tokens
+  const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+    PENDING:   { bg: colors.warn,                   text: colors.warnForeground },
+    ACTIVE:    { bg: '#2E90FA15',                   text: '#2E90FA' }, // info blue — chart series
+    FULFILLED: { bg: colors.success,                text: colors.successForeground },
+    CANCELLED: { bg: colors.border,                 text: colors.mutedForeground },
+    EXPIRED:   { bg: colors.destructive + '15',     text: colors.destructive },
+  };
+  const sc = STATUS_COLORS[item.status] || { bg: colors.border, text: colors.mutedForeground };
   const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date() && item.status === 'PENDING';
   const canAct = item.status === 'PENDING' || item.status === 'ACTIVE';
 
   return (
     <View style={{
-      backgroundColor: Colors.card, borderRadius: Radius.card,
-      borderWidth:1, borderColor: isExpired ? Colors.danger + '40' : Colors.line,
+      backgroundColor: colors.card, borderRadius: Radius.card,
+      borderWidth:1, borderColor: isExpired ? colors.destructive + '40' : colors.border,
       overflow:'hidden',
     }}>
       {/* Queue position ribbon */}
       {item.queuePosition != null && (
-        <View style={{ backgroundColor: Colors.teal50, paddingHorizontal: Spacing[4], paddingVertical: Spacing[1], borderBottomWidth:1, borderBottomColor: Colors.line }}>
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.teal, fontWeight: Typography.fontWeight.semibold }}>
+        <View style={{ backgroundColor: colors.primary + '15', paddingHorizontal: Spacing[4], paddingVertical: Spacing[1], borderBottomWidth:1, borderBottomColor: colors.border }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.primary, fontWeight: Typography.fontWeight.semibold }}>
             Queue position #{item.queuePosition}
           </Text>
         </View>
@@ -204,13 +209,13 @@ function ReservationRow({
 
       <View style={{ padding: Spacing[4], gap: Spacing[2] }}>
         {/* Title */}
-        <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }} numberOfLines={1}>
+        <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }} numberOfLines={1}>
           {item.catalogue.title}
         </Text>
 
         {/* Student */}
         {item.student && (
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
             {item.student.fullName} · {item.student.admissionNumber}
           </Text>
         )}
@@ -223,11 +228,11 @@ function ReservationRow({
             </Text>
           </View>
           {item.expiresAt && (
-            <Text style={{ fontSize: Typography.fontSize.xs, color: isExpired ? Colors.danger : Colors.muted }}>
+            <Text style={{ fontSize: Typography.fontSize.xs, color: isExpired ? colors.destructive : colors.mutedForeground }}>
               {isExpired ? 'Expired ' : 'Expires '}{formatDate(item.expiresAt)}
             </Text>
           )}
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>
             Reserved {formatDate(item.createdAt)}
           </Text>
         </View>
@@ -237,17 +242,17 @@ function ReservationRow({
           <View style={{ flexDirection:'row', gap: Spacing[2], marginTop: Spacing[2] }}>
             <TouchableOpacity
               onPress={onFulfill}
-              style={{ flex:1, flexDirection:'row', alignItems:'center', justifyContent:'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.sm, backgroundColor: Colors.teal }}
+              style={{ flex:1, flexDirection:'row', alignItems:'center', justifyContent:'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.sm, backgroundColor: colors.primary }}
             >
-              <CheckCircle2 size={14} color={Colors.white} />
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.white }}>Fulfill</Text>
+              <CheckCircle2 size={14} color={'#FFFFFF'} />
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: '#FFFFFF' }}>Fulfill</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onCancel}
-              style={{ flex:1, flexDirection:'row', alignItems:'center', justifyContent:'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.sm, backgroundColor: Colors.dangerBg, borderWidth:1, borderColor: Colors.danger + '30' }}
+              style={{ flex:1, flexDirection:'row', alignItems:'center', justifyContent:'center', gap: Spacing[1.5], paddingVertical: Spacing[2], borderRadius: Radius.sm, backgroundColor: colors.destructive + '15', borderWidth:1, borderColor: colors.destructive + '30' }}
             >
-              <XCircle size={14} color={Colors.danger} />
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.danger }}>Cancel</Text>
+              <XCircle size={14} color={colors.destructive} />
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.destructive }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         )}

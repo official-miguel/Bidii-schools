@@ -51,7 +51,7 @@ function StepIndicator({ current }: { current: 1 | 2 }) {
                   </svg>
                 ) : n}
               </div>
-              <span className={`text-xs font-medium transition-colors ${active ? "text-ink" : "text-slate"}`}>
+              <span className={`text-xs font-medium transition-colors ${active ? "text-foreground" : "text-slate"}`}>
                 {label}
               </span>
             </div>
@@ -90,8 +90,8 @@ function ChannelCard({
         active
           ? "border-teal bg-teal text-white shadow-md"
           : configured
-          ? "border-line bg-white text-ink hover:border-teal/50 hover:bg-teal-50/40"
-          : "border-line bg-paper text-line cursor-not-allowed opacity-60"
+          ? "border-border bg-card text-foreground hover:border-teal/50 hover:bg-teal-50/40"
+          : "border-border bg-background text-line cursor-not-allowed opacity-60"
       }`}
     >
       {isSms ? (
@@ -110,7 +110,7 @@ function ChannelCard({
         </span>
       )}
       {active && (
-        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-white/60" />
+        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-card/60" />
       )}
     </button>
   );
@@ -246,17 +246,17 @@ export default function Composer({
       onClick={onClose}
     >
       <div
-        className="relative w-full sm:max-w-[600px] bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl border border-line flex flex-col max-h-[96vh] sm:max-h-[90vh] overflow-hidden modal-content"
+        className="relative w-full sm:max-w-[600px] bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border flex flex-col max-h-[96vh] sm:max-h-[90vh] overflow-hidden modal-content"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-line shrink-0 bg-paper rounded-t-2xl">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border shrink-0 bg-background rounded-t-2xl">
           <div className="flex items-center gap-3">
             {step === 2 && (
               <button
                 type="button"
                 onClick={() => { setStep(1); setError(""); }}
-                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-ink hover:bg-line transition-colors -ml-1"
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-foreground hover:bg-line transition-colors -ml-1"
                 aria-label="Back to recipients"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -267,7 +267,7 @@ export default function Composer({
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-ink hover:bg-line transition-colors"
+            className="flex items-center justify-center h-8 w-8 rounded-lg text-slate hover:text-foreground hover:bg-line transition-colors"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -320,11 +320,11 @@ export default function Composer({
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-line bg-paper">
+            <div className="shrink-0 px-6 py-4 border-t border-border bg-background">
               <div className="flex items-center justify-between gap-4">
                 <div className="text-sm">
                   {resolvedCount > 0 ? (
-                    <span className="text-ink">
+                    <span className="text-foreground">
                       <strong>{resolvedCount}</strong> recipient{resolvedCount !== 1 ? "s" : ""}
                       {skippedCount > 0 && (
                         <span className="text-warn ml-2">· {skippedCount} without contact</span>
@@ -414,7 +414,7 @@ export default function Composer({
                   onChange={(e) => setBody(e.target.value)}
                   rows={6}
                   placeholder={"Type your message here…\n\nTip: use /name to personalise for each recipient."}
-                  className="w-full rounded-lg border border-line bg-white px-3.5 py-3 text-sm text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/15 resize-none leading-relaxed transition-colors"
+                  className="w-full rounded-lg border border-border bg-card px-3.5 py-3 text-sm text-foreground focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/15 resize-none leading-relaxed transition-colors"
                 />
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-xs text-slate/60">
@@ -439,7 +439,7 @@ export default function Composer({
               {preview && (
                 <div className="rounded-xl border border-teal/20 bg-teal-50/30 px-4 py-4 animate-fade-in">
                   <p className="text-xs font-semibold text-teal mb-2.5">Preview — first recipient</p>
-                  <pre className="whitespace-pre-wrap text-sm text-ink font-sans leading-relaxed">{preview}</pre>
+                  <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{preview}</pre>
                 </div>
               )}
 
@@ -448,7 +448,7 @@ export default function Composer({
                 <button
                   type="button"
                   onClick={() => setShowExtras((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-slate hover:text-ink transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-medium text-slate hover:text-foreground transition-colors"
                 >
                   <ChevronRight
                     className={`h-3.5 w-3.5 transition-transform duration-150 ${showExtras ? "rotate-90" : ""}`}
@@ -470,9 +470,9 @@ export default function Composer({
                             className="sr-only peer"
                           />
                           <div className="h-5 w-9 rounded-full bg-line peer-checked:bg-teal transition-colors" />
-                          <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+                          <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform peer-checked:translate-x-4" />
                         </div>
-                        <span className="text-sm font-medium text-ink">Schedule for later</span>
+                        <span className="text-sm font-medium text-foreground">Schedule for later</span>
                       </label>
                       {useSchedule && (
                         <input
@@ -516,7 +516,7 @@ export default function Composer({
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-line bg-paper">
+            <div className="shrink-0 px-6 py-4 border-t border-border bg-background">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-xs text-slate">
                   {!channelOk && integrations.length > 0 ? (
@@ -525,7 +525,7 @@ export default function Composer({
                       {channel} not configured
                     </span>
                   ) : useSchedule && scheduledAt ? (
-                    <span className="flex items-center gap-1 text-ink">
+                    <span className="flex items-center gap-1 text-foreground">
                       <Clock className="h-3 w-3" aria-hidden="true" />
                       {new Date(scheduledAt).toLocaleString()}
                     </span>
@@ -535,7 +535,7 @@ export default function Composer({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center rounded-lg border border-line text-sm font-medium px-4 py-2.5 text-ink hover:bg-paper active:scale-[0.98] transition-all duration-100"
+                    className="inline-flex items-center justify-center rounded-lg border border-border text-sm font-medium px-4 py-2.5 text-foreground hover:bg-background active:scale-[0.98] transition-all duration-100"
                   >
                     Cancel
                   </button>

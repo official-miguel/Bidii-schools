@@ -21,6 +21,31 @@
   --shell-sidebar-w:   4rem;    /* 64px  — icon rail */
   --shell-topbar-h:    4rem;    /* 64px  — fixed top bar */
 
+  /* ── Semantic tokens (Req 2.1) — canonical color API ──────────────────
+     These 16 tokens are the canonical color API for the app going forward.
+     All new components should reference these; legacy aliases below are
+     retained for backward compatibility only.
+  ───────────────────────────────────────────────────────────────────── */
+  --color-background:             #FAFBFC;
+  --color-foreground:             #1F2933;
+  --color-card:                   #FFFFFF;
+  --color-card-foreground:        #1F2933;
+  --color-border:                 #E8EDF2;
+  --color-input:                  #FAFBFC;
+  --color-muted:                  #F4F6F8;
+  --color-muted-foreground:       #667085;
+  --color-primary:                #2C7F7E;
+  --color-primary-foreground:     #FFFFFF;
+  --color-destructive:            #C62828;
+  --color-destructive-foreground: #FFFFFF;
+  --color-success:                #ECFDF3;
+  --color-success-foreground:     #0D4D2D;
+  --color-warn:                   #FFFAEB;
+  --color-warn-foreground:        #7A3D00;
+
+  /* ── Legacy aliases — retained for backward compatibility ─────────────
+     Do not use in new components; prefer the semantic tokens above.
+  ───────────────────────────────────────────────────────────────────── */
   /* Brand */
   --color-teal:        #2C7F7E;
   --color-teal-light:  #3A9998;
@@ -30,7 +55,6 @@
   /* Surfaces */
   --color-ink:         #1F2933;
   --color-paper:       #FAFBFC;
-  --color-card:        #FFFFFF;
   --color-line:        #E8EDF2;
 
   /* Text */
@@ -38,12 +62,10 @@
   --color-text-secondary: #667085;
   --color-text-muted:     #98A2B3;
 
-  /* Semantic */
+  /* Semantic (legacy — see semantic tokens above for replacements) */
   --color-danger:      #F04438;
   --color-danger-bg:   #FEF3F2;
-  --color-success:     #17B26A;
   --color-success-bg:  #ECFDF3;
-  --color-warn:        #F79009;
   --color-warn-bg:     #FFFAEB;
   --color-info:        #2E90FA;
   --color-info-bg:     #EFF8FF;
@@ -73,21 +95,39 @@
    Applied when <html class="dark"> is set by ThemeProvider.
 ────────────────────────────────────────────────────────────────────────── */
 html.dark {
-  --color-ink:         #E8EDF2;
-  --color-paper:       #0D1B2A;
-  --color-card:        #162233;
-  --color-line:        #1E3347;
-  --color-text-primary:   #E8EDF2;
-  --color-text-secondary: #8FA3B8;
-  --color-text-muted:     #667085;
+  /* ── Semantic tokens — dark values (Req 2.1) ──────────────────────── */
+  --color-background:             #0D1B2A;
+  --color-foreground:             #E8EDF2;
+  --color-card:                   #162233;
+  --color-card-foreground:        #E8EDF2;
+  --color-border:                 #1E3347;
+  --color-input:                  #162233;
+  --color-muted:                  #1E3347;
+  --color-muted-foreground:       #8FA3B8;
+  --color-primary:                #2C7F7E;
+  --color-primary-foreground:     #FFFFFF;
+  --color-destructive:            #C62828;
+  --color-destructive-foreground: #FFFFFF;
+  --color-success:                #0F2B1A;
+  --color-success-foreground:     #6EE7B7;
+  --color-warn:                   #2D1A00;
+  --color-warn-foreground:        #FCD34D;
+
+  /* ── Legacy aliases — dark overrides ──────────────────────────────── */
+  --color-ink:              #E8EDF2;
+  --color-paper:            #0D1B2A;
+  --color-line:             #1E3347;
+  --color-text-primary:     #E8EDF2;
+  --color-text-secondary:   #8FA3B8;
+  --color-text-muted:       #667085;
 }
 
 /* ── Base reset ────────────────────────────────────────────────────────────*/
 
 html,
 body {
-  background-color: #FAFBFC;
-  color: #1F2933;
+  background-color: var(--color-background, #FAFBFC);
+  color: var(--color-foreground, #1F2933);
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -96,18 +136,27 @@ body {
 
 html.dark,
 html.dark body {
-  background-color: #0D1B2A;
-  color: #E8EDF2;
+  background-color: var(--color-background, #0D1B2A);
+  color: var(--color-foreground, #E8EDF2);
+}
+
+/* ── Placeholder text ───────────────────────────────────────────────────── */
+/* Applies to all inputs, textareas, and selects; auto-responds to dark mode
+   since --color-muted-foreground is overridden in html.dark (Req 13.5).    */
+
+::placeholder {
+  color: var(--color-muted-foreground);
+  opacity: 1; /* Firefox reduces opacity by default */
 }
 
 /* ── Global border colour ──────────────────────────────────────────────────*/
 
 * {
-  border-color: #E8EDF2;
+  border-color: var(--color-border, #E8EDF2);
 }
 
 html.dark * {
-  border-color: #1E3347;
+  border-color: var(--color-border, #1E3347);
 }
 
 /* ── Smooth theme transitions ──────────────────────────────────────────────
@@ -226,6 +275,57 @@ html.dark select {
 html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #667085;
+}
+
+/* ── Dark mode date picker overrides ───────────────────────────────────────
+   Scoped to html.dark to override react-datepicker (or any equivalent library)
+   injected class names that don't respect our CSS variable layer.
+────────────────────────────────────────────────────────────────────────── */
+html.dark .react-datepicker,
+html.dark .react-datepicker__header {
+  background-color: var(--color-card);
+  color: var(--color-card-foreground);
+  border-color: var(--color-border);
+}
+
+html.dark .react-datepicker__current-month,
+html.dark .react-datepicker-time__header,
+html.dark .react-datepicker__day-name,
+html.dark .react-datepicker__day {
+  color: var(--color-card-foreground);
+}
+
+html.dark .react-datepicker__day:hover {
+  background-color: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+html.dark .react-datepicker__day--selected,
+html.dark .react-datepicker__day--keyboard-selected {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+html.dark .react-datepicker__day--disabled {
+  color: var(--color-muted-foreground);
+}
+
+html.dark .react-datepicker__navigation-icon::before {
+  border-color: var(--color-muted-foreground);
+}
+
+html.dark .react-datepicker__month-container {
+  background-color: var(--color-card);
+}
+
+html.dark .react-datepicker-popper[data-placement^="bottom"] .react-datepicker__triangle::before,
+html.dark .react-datepicker-popper[data-placement^="bottom"] .react-datepicker__triangle::after {
+  border-bottom-color: var(--color-card);
+}
+
+html.dark .react-datepicker-popper[data-placement^="top"] .react-datepicker__triangle::before,
+html.dark .react-datepicker-popper[data-placement^="top"] .react-datepicker__triangle::after {
+  border-top-color: var(--color-card);
 }
 
 /* ── Keyframe animations ───────────────────────────────────────────────────*/

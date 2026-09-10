@@ -60,8 +60,8 @@ export default async function HODAssessmentSettingsPage() {
   if (!isDeptHead && !isWide) {
     return (
       <div className="space-y-3 px-6 py-10">
-        <h1 className="font-display text-xl font-semibold text-ink">Settings</h1>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <h1 className="font-display text-xl font-semibold text-foreground">Settings</h1>
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           This page is only available to Heads of Department.
         </div>
       </div>
@@ -71,8 +71,8 @@ export default async function HODAssessmentSettingsPage() {
   if (!department) {
     return (
       <div className="space-y-3 px-6 py-10">
-        <h1 className="font-display text-xl font-semibold text-ink">Settings</h1>
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <h1 className="font-display text-xl font-semibold text-foreground">Settings</h1>
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           No department assigned. Contact the principal to be set as Head of Department.
         </div>
       </div>
@@ -151,12 +151,12 @@ export default async function HODAssessmentSettingsPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">
+        <h1 className="font-display text-xl font-semibold text-foreground">
           Department Settings
         </h1>
         <p className="text-sm text-slate mt-0.5">
           Configure mark calculation formulas for each subject and form group in{" "}
-          <span className="font-medium text-ink">{department.name}</span>.
+          <span className="font-medium text-foreground">{department.name}</span>.
         </p>
       </div>
 

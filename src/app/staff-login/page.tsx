@@ -20,8 +20,8 @@
 
 import { useState, useEffect, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import {
   Mail,
   Lock,
@@ -36,20 +36,20 @@ import {
 // ── Shared input styles ───────────────────────────────────────────────────────
 
 const _inputCls =
-  "w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-3 text-sm text-ink " +
+  "w-full rounded-xl border border-border bg-background pl-10 pr-4 py-3 text-sm text-foreground " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 " +
   "hover:border-slate/40 transition-colors " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text " +
-  "dark:placeholder:text-dark-muted/50";
+  " " +
+  "";
 
 const _inputClsRight =
-  "w-full rounded-xl border border-line bg-paper pl-10 pr-10 py-3 text-sm text-ink " +
+  "w-full rounded-xl border border-border bg-background pl-10 pr-10 py-3 text-sm text-foreground " +
   "placeholder:text-slate/40 " +
   "focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 " +
   "hover:border-slate/40 transition-colors " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text " +
-  "dark:placeholder:text-dark-muted/50";
+  " " +
+  "";
 
 // ── Main form component ───────────────────────────────────────────────────────
 
@@ -202,15 +202,8 @@ function StaffLoginForm() {
 
         {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
-          <div className="rounded-2xl bg-white/10 ring-1 ring-white/20 p-4 mb-5 shadow-xl backdrop-blur-sm">
-            <Image
-              src="/logo.png"
-              alt="Bidii"
-              width={64}
-              height={64}
-              className="object-contain"
-              priority
-            />
+          <div className="rounded-2xl bg-card/10 ring-1 ring-white/20 p-4 mb-5 shadow-xl backdrop-blur-sm">
+            <Logo height={64} width={64} alt="Bidii" className="object-contain" />
           </div>
 
           {/* Staff badge */}
@@ -228,7 +221,7 @@ function StaffLoginForm() {
         </div>
 
         {/* Card */}
-        <div className="bg-white/[0.08] backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/15">
+        <div className="bg-card/[0.08] backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/15">
           {/* Top accent bar */}
           <div
             className="h-0.5"
@@ -263,7 +256,7 @@ function StaffLoginForm() {
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="staff@school.com"
                     className={
-                      "w-full rounded-xl border border-white/10 bg-white/10 pl-10 pr-4 py-3 text-sm text-white " +
+                      "w-full rounded-xl border border-white/10 bg-card/10 pl-10 pr-4 py-3 text-sm text-white " +
                       "placeholder:text-white/30 " +
                       "focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/25 " +
                       "hover:border-white/20 transition-colors backdrop-blur-sm"
@@ -294,7 +287,7 @@ function StaffLoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Your password"
                     className={
-                      "w-full rounded-xl border border-white/10 bg-white/10 pl-10 pr-10 py-3 text-sm text-white " +
+                      "w-full rounded-xl border border-white/10 bg-card/10 pl-10 pr-10 py-3 text-sm text-white " +
                       "placeholder:text-white/30 " +
                       "focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/25 " +
                       "hover:border-white/20 transition-colors backdrop-blur-sm"
@@ -342,7 +335,7 @@ function StaffLoginForm() {
                       onChange={(e) => setSchoolSlug(e.target.value)}
                       placeholder="e.g. kianyaga"
                       className={
-                        "w-full rounded-xl border border-white/10 bg-white/10 pl-10 pr-4 py-3 text-sm text-white " +
+                        "w-full rounded-xl border border-white/10 bg-card/10 pl-10 pr-4 py-3 text-sm text-white " +
                         "placeholder:text-white/30 " +
                         "focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/25 " +
                         "hover:border-white/20 transition-colors backdrop-blur-sm"

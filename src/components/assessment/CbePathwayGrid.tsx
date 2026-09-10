@@ -72,7 +72,7 @@ function ScoreCell({
 
   if (readOnly) {
     return (
-      <span className="text-sm tabular-nums text-ink">
+      <span className="text-sm tabular-nums text-foreground">
         {value === null ? <span className="text-slate">—</span> : value}
       </span>
     );
@@ -95,7 +95,7 @@ function ScoreCell({
       className={`w-16 rounded border px-2 py-1 text-sm tabular-nums text-center focus:outline-none focus:ring-1 focus:ring-royal/40
         ${invalid
           ? "border-danger bg-danger-bg/30 text-danger"
-          : "border-line bg-white text-ink hover:border-royal/40"
+          : "border-border bg-card text-foreground hover:border-royal/40"
         }`}
       placeholder="—"
     />
@@ -373,7 +373,7 @@ export default function CbePathwayGrid({
       )}
 
       {loading && (
-        <div className="overflow-x-auto rounded-lg border border-line">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="min-w-full text-sm" aria-busy="true" aria-label="Loading…">
             <tbody>
               {Array.from({ length: 8 }).map((_, i) => (
@@ -387,25 +387,25 @@ export default function CbePathwayGrid({
 
       {!loading && rows && rows.length > 0 && weights.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-lg border border-line">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="min-w-full text-sm">
               <thead>
                 {/* Subject row */}
-                <tr className="border-b border-line bg-paper text-xs text-slate text-left">
+                <tr className="border-b border-border bg-background text-xs text-slate text-left">
                   <th className="px-3 py-2 font-medium w-28" rowSpan={2}>Adm. No.</th>
                   <th className="px-3 py-2 font-medium" rowSpan={2}>Student</th>
                   {weights.map((w) => (
-                    <th key={w.subject.id} colSpan={3} className="px-3 py-2 font-medium text-center border-l border-line whitespace-nowrap">
+                    <th key={w.subject.id} colSpan={3} className="px-3 py-2 font-medium text-center border-l border-border whitespace-nowrap">
                       {w.subject.name}
                       {w.isDefault && <span className="ml-1 text-slate font-normal">(default weights)</span>}
                     </th>
                   ))}
                 </tr>
                 {/* Sub-column row */}
-                <tr className="border-b border-line bg-paper text-xs text-slate">
+                <tr className="border-b border-border bg-background text-xs text-slate">
                   {weights.map((w) => (
                     <>
-                      <th key={`${w.subject.id}:sba`} className="px-2 py-1.5 text-center border-l border-line whitespace-nowrap">
+                      <th key={`${w.subject.id}:sba`} className="px-2 py-1.5 text-center border-l border-border whitespace-nowrap">
                         SBA /{w.sbaMaxMarks}
                         <span className="block font-normal text-slate/60">×{Math.round(w.sbaWeight * 100)}%</span>
                       </th>
@@ -424,10 +424,10 @@ export default function CbePathwayGrid({
                 {rows.map((row, i) => (
                   <tr
                     key={row.student.id}
-                    className={`border-b border-line last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-paper/40"}`}
+                    className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-card" : "bg-background/40"}`}
                   >
                     <td className="px-3 py-2 text-slate tabular-nums">{row.student.admissionNumber}</td>
-                    <td className="px-3 py-2 font-medium text-ink">{row.student.fullName}</td>
+                    <td className="px-3 py-2 font-medium text-foreground">{row.student.fullName}</td>
                     {weights.map((w) => {
                       const sba  = resolve(row.student.id, w.subject.id, "sba");
                       const exam = resolve(row.student.id, w.subject.id, "exam");
@@ -437,7 +437,7 @@ export default function CbePathwayGrid({
 
                       return (
                         <>
-                          <td key={`${row.student.id}:${w.subject.id}:sba`} className="px-2 py-2 text-center border-l border-line">
+                          <td key={`${row.student.id}:${w.subject.id}:sba`} className="px-2 py-2 text-center border-l border-border">
                             <ScoreCell
                               value={sba}
                               maxMarks={w.sbaMaxMarks}

@@ -85,7 +85,7 @@ export default function LibraryAnalyticsPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Library Analytics</h1>
+          <h1 className="text-xl font-bold text-foreground">Library Analytics</h1>
           <p className="text-sm text-slate mt-0.5">Executive overview — KPIs, trends and insights.</p>
         </div>
         <WindowSelector value={days} onChange={setDays} />
@@ -124,8 +124,8 @@ export default function LibraryAnalyticsPage() {
             { label: "Fines outstanding", value: currency(data.fines.outstanding), hi: data.fines.outstanding > 0 },
             { label: "Fines collected",   value: currency(data.fines.paid) },
           ].map(m => (
-            <div key={m.label} className={`rounded-xl border p-4 ${m.hi ? "border-danger/30 bg-danger-bg/20" : "border-line bg-white dark:bg-dark-surface dark:border-dark-border"}`}>
-              <p className={`text-xl font-bold ${m.hi ? "text-danger" : "text-ink dark:text-dark-text"}`}>{m.value}</p>
+            <div key={m.label} className={`rounded-xl border p-4 ${m.hi ? "border-danger/30 bg-danger-bg/20" : "border-border bg-card"}`}>
+              <p className={`text-xl font-bold ${m.hi ? "text-danger" : "text-foreground"}`}>{m.value}</p>
               <p className="text-xs text-slate mt-1">{m.label}</p>
             </div>
           ))}
@@ -171,7 +171,7 @@ export default function LibraryAnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Section title="Most Borrowed Books"
               action={<Link href="/staff/library/analytics/books" className="text-xs text-teal hover:underline">View all →</Link>}>
-              <div className="rounded-xl border border-line bg-white overflow-hidden dark:bg-dark-surface dark:border-dark-border">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.books.popular.slice(0, 8).map((b, i) => (
                   <RankRow key={b.id} rank={i + 1} primary={b.title}
                     secondary={b.subject ?? undefined} value={b.borrowCount} valueLabel="borrows"
@@ -182,7 +182,7 @@ export default function LibraryAnalyticsPage() {
 
             <Section title="Most Active Students"
               action={<Link href="/staff/library/analytics/students" className="text-xs text-teal hover:underline">View all →</Link>}>
-              <div className="rounded-xl border border-line bg-white overflow-hidden dark:bg-dark-surface dark:border-dark-border">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topStudents.slice(0, 8).map((s, i) => (
                   <RankRow key={s.studentId} rank={i + 1} primary={s.fullName}
                     secondary={`${s.admissionNumber} · ${s.className}`}
@@ -195,7 +195,7 @@ export default function LibraryAnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Section title="Top Borrowing Classes"
               action={<Link href="/staff/library/analytics/students" className="text-xs text-teal hover:underline">View all →</Link>}>
-              <div className="rounded-xl border border-line bg-white overflow-hidden dark:bg-dark-surface dark:border-dark-border">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topClasses.slice(0, 6).map((c, i) => (
                   <RankRow key={c.classId} rank={i + 1} primary={c.className}
                     value={c.count} valueLabel="borrows" />
@@ -213,11 +213,11 @@ export default function LibraryAnalyticsPage() {
                   { href: "/staff/library/analytics/reports",   icon: <BarChart3 className="h-5 w-5" />, label: "Reports",             desc: "Export PDF/CSV/print" },
                 ].map(a => (
                   <Link key={a.href} href={a.href}
-                    className="flex items-center gap-3 rounded-xl border border-line bg-white p-3 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border">
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-teal/40 hover:shadow-sm transition-all">
                     <div className="h-9 w-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">{a.icon}</div>
                     <div>
-                      <p className="text-sm font-semibold text-ink dark:text-dark-text">{a.label}</p>
-                      <p className="text-xs text-slate dark:text-dark-muted">{a.desc}</p>
+                      <p className="text-sm font-semibold text-foreground">{a.label}</p>
+                      <p className="text-xs text-slate">{a.desc}</p>
                     </div>
                   </Link>
                 ))}

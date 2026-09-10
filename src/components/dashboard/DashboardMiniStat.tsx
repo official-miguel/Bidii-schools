@@ -48,8 +48,7 @@ export default function DashboardMiniStat({
   const { iconBg, iconColor } = colorMap[color];
 
   const inner = (
-    <div className="bg-card border border-line rounded-xl p-3 shadow-xs h-full
-                    dark:bg-dark-surface dark:border-dark-border
+    <div className="bg-card border border-border rounded-xl p-3 shadow-xs h-full
                     hover:border-teal/30 hover:shadow-sm transition-all duration-150">
       {/* Icon */}
       <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${iconBg}`}>
@@ -57,12 +56,12 @@ export default function DashboardMiniStat({
       </div>
 
       {/* Label */}
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate dark:text-dark-muted mb-1 truncate leading-tight">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate mb-1 truncate leading-tight">
         {label}
       </p>
 
       {/* Value */}
-      <p className="text-xl font-bold text-ink dark:text-dark-text leading-none">
+      <p className="text-xl font-bold text-foreground leading-none">
         {value}
       </p>
 
@@ -72,7 +71,7 @@ export default function DashboardMiniStat({
           {badge}
         </p>
       ) : (
-        <p className="text-[10px] text-slate dark:text-dark-muted mt-1 leading-tight truncate">
+        <p className="text-[10px] text-slate mt-1 leading-tight truncate">
           {sub}
         </p>
       )}

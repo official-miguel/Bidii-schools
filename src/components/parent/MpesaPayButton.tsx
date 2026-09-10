@@ -192,10 +192,10 @@ export default function MpesaPayButton({
           />
 
           {/* Panel */}
-          <div className="relative w-full max-w-sm rounded-2xl bg-card border border-line shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="relative w-full max-w-sm rounded-2xl bg-card border border-border shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#4caf50]/10 flex items-center justify-center shrink-0">
                   <Smartphone className="h-5 w-5 text-[#4caf50]" />
@@ -259,7 +259,7 @@ export default function MpesaPayButton({
                 <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-4">
 
                   {/* Reference info — paybill + account number */}
-                  <div className="rounded-lg bg-background border border-line divide-y divide-line overflow-hidden">
+                  <div className="rounded-lg bg-background border border-border divide-y divide-border overflow-hidden">
                     {paybillNumber && (
                       <div className="flex items-center justify-between px-3.5 py-2.5">
                         <span className="text-xs text-slate">Paybill number</span>
@@ -304,7 +304,7 @@ export default function MpesaPayButton({
                         disabled={state === "loading"}
                         required
                         placeholder="e.g. 5000"
-                        className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-line bg-background
+                        className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-border bg-background
                                    text-sm text-foreground placeholder:text-slate/50
                                    focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal
                                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -321,7 +321,7 @@ export default function MpesaPayButton({
                   )}
 
                   {/* Info note */}
-                  <div className="flex items-start gap-2 rounded-lg bg-background border border-line px-3.5 py-2.5">
+                  <div className="flex items-start gap-2 rounded-lg bg-background border border-border px-3.5 py-2.5">
                     <CheckCircle2 className="h-4 w-4 text-slate shrink-0 mt-0.5" />
                     <p className="text-xs text-slate leading-relaxed">
                       A payment prompt will be sent to your registered M-Pesa number.

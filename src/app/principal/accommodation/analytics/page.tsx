@@ -52,26 +52,26 @@ const RATING_COLOR: Record<string, string> = {
 const RISK_COLOR: Record<string, string> = {
   high:   "bg-danger/10 border-danger/20 text-danger",
   medium: "bg-warn/10 border-warn/20 text-warn",
-  low:    "bg-slate/10 border-line text-slate",
+  low:    "bg-slate/10 border-border text-slate",
 };
 
 function MiniBar({ value, max, color = "bg-teal" }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
-    <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+    <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
       <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
     </div>
   );
 }
 
 function ScoreRing({ score, size = 56 }: { score: number | null; size?: number }) {
-  if (score === null) return <div className="rounded-full bg-line dark:bg-dark-border flex items-center justify-center" style={{ width: size, height: size }}><span className="text-xs text-slate">—</span></div>;
+  if (score === null) return <div className="rounded-full bg-line flex items-center justify-center" style={{ width: size, height: size }}><span className="text-xs text-slate">—</span></div>;
   const color = score >= 80 ? "text-success" : score >= 60 ? "text-amber-500" : "text-danger";
   const ring  = score >= 80 ? "border-success/40" : score >= 60 ? "border-amber-400/40" : "border-danger/40";
   return (
     <div className={`rounded-full border-2 flex flex-col items-center justify-center ${ring}`} style={{ width: size, height: size }}>
       <span className={`text-sm font-bold tabular-nums leading-none ${color}`}>{Math.round(score)}</span>
-      <span className="text-[9px] text-slate dark:text-dark-muted">avg</span>
+      <span className="text-[9px] text-slate">avg</span>
     </div>
   );
 }
@@ -104,34 +104,34 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
     .map(([, v]) => v.present + v.absent > 0 ? Math.round((v.present / (v.present + v.absent)) * 100) : 0);
 
   return (
-    <div className={`rounded-xl border bg-card dark:bg-dark-surface transition-all ${dorm.risks.some((r) => r.severity === "high") ? "border-danger/30 dark:border-danger/20" : "border-line dark:border-dark-border"}`}>
+    <div className={`rounded-xl border bg-card transition-all ${dorm.risks.some((r) => r.severity === "high") ? "border-danger/30 dark:border-danger/20" : "border-border"}`}>
       {/* Card header */}
       <div className="p-4 pb-3">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {rank && (
-                <span className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold ${rank === 1 ? "bg-amber-400 text-white" : rank === 2 ? "bg-slate-400 text-white" : rank === 3 ? "bg-amber-600 text-white" : "bg-slate-100 text-slate dark:bg-dark-border"}`}>
+                <span className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold ${rank === 1 ? "bg-amber-400 text-white" : rank === 2 ? "bg-slate-400 text-white" : rank === 3 ? "bg-amber-600 text-white" : "bg-slate-100 text-slate"}`}>
                   {rank}
                 </span>
               )}
               <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
-                className="text-sm font-semibold text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal truncate">
+                className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal truncate">
                 {dorm.name}
               </Link>
             </div>
             {dorm.boardingMasterName && (
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{dorm.boardingMasterName}</p>
+              <p className="text-xs text-slate mt-0.5">{dorm.boardingMasterName}</p>
             )}
           </div>
           <div className="text-right shrink-0">
-            <p className="text-sm font-bold tabular-nums text-ink dark:text-dark-text">{dorm.occupancyPct}%</p>
-            <p className="text-[10px] text-slate dark:text-dark-muted">{dorm.occupied}/{dorm.capacity}</p>
+            <p className="text-sm font-bold tabular-nums text-foreground">{dorm.occupancyPct}%</p>
+            <p className="text-[10px] text-slate">{dorm.occupied}/{dorm.capacity}</p>
           </div>
         </div>
 
         {/* Occupancy bar */}
-        <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden mb-3">
+        <div className="w-full h-1.5 rounded-full bg-line overflow-hidden mb-3">
           <div className={`h-full rounded-full ${occupancyColor}`} style={{ width: `${Math.min(dorm.occupancyPct, 100)}%` }} />
         </div>
 
@@ -141,19 +141,19 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
             <p className={`text-sm font-bold tabular-nums ${attendanceColor}`}>
               {dorm.attendance.pct !== null ? `${dorm.attendance.pct}%` : "—"}
             </p>
-            <p className="text-[9px] text-slate dark:text-dark-muted uppercase tracking-wide">Attend.</p>
+            <p className="text-[9px] text-slate uppercase tracking-wide">Attend.</p>
           </div>
           <div>
             <p className={`text-sm font-bold tabular-nums ${academicColor}`}>
               {dorm.academic.avgScore !== null ? `${dorm.academic.avgScore}` : "—"}
             </p>
-            <p className="text-[9px] text-slate dark:text-dark-muted uppercase tracking-wide">Acad.</p>
+            <p className="text-[9px] text-slate uppercase tracking-wide">Acad.</p>
           </div>
           <div>
             <p className={`text-sm font-bold tabular-nums ${dorm.discipline.open > 3 ? "text-danger" : dorm.discipline.open > 0 ? "text-warn" : "text-success"}`}>
               {dorm.discipline.open}
             </p>
-            <p className="text-[9px] text-slate dark:text-dark-muted uppercase tracking-wide">Indiscipline</p>
+            <p className="text-[9px] text-slate uppercase tracking-wide">Indiscipline</p>
           </div>
           <div>
             {dorm.inspection ? (
@@ -161,7 +161,7 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
                 {dorm.inspection.score !== null ? `${Math.round(dorm.inspection.score)}` : "—"}
               </p>
             ) : <p className="text-sm font-bold text-slate">—</p>}
-            <p className="text-[9px] text-slate dark:text-dark-muted uppercase tracking-wide">Insp.</p>
+            <p className="text-[9px] text-slate uppercase tracking-wide">Insp.</p>
           </div>
         </div>
       </div>
@@ -179,27 +179,27 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
 
       {/* Expand toggle */}
       <button onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-2.5 border-t border-line dark:border-dark-border text-xs text-slate hover:text-teal hover:bg-teal/5 transition-colors rounded-b-xl">
+        className="w-full flex items-center justify-between px-4 py-2.5 border-t border-border text-xs text-slate hover:text-teal hover:bg-teal/5 transition-colors rounded-b-xl">
         <span>{expanded ? "Hide details" : "Show details"}</span>
         <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
       </button>
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-line dark:border-dark-border px-4 py-4 space-y-4 bg-paper/50 dark:bg-dark-bg/30 rounded-b-xl">
+        <div className="border-t border-border px-4 py-4 space-y-4 bg-background/50/30 rounded-b-xl">
           {/* Attendance trend */}
           <div>
-            <p className="text-xs font-semibold text-ink dark:text-dark-text mb-1.5">Attendance trend (6 months)</p>
-            {monthlyAttendance.length > 0 ? <Sparkline data={monthlyAttendance} color={dorm.attendance.pct && dorm.attendance.pct >= 80 ? "bg-teal" : "bg-warn"} /> : <p className="text-xs text-slate dark:text-dark-muted">No data</p>}
+            <p className="text-xs font-semibold text-foreground mb-1.5">Attendance trend (6 months)</p>
+            {monthlyAttendance.length > 0 ? <Sparkline data={monthlyAttendance} color={dorm.attendance.pct && dorm.attendance.pct >= 80 ? "bg-teal" : "bg-warn"} /> : <p className="text-xs text-slate">No data</p>}
           </div>
           {/* Academic */}
           <div>
-            <p className="text-xs font-semibold text-ink dark:text-dark-text mb-1.5">Academic performance</p>
+            <p className="text-xs font-semibold text-foreground mb-1.5">Academic performance</p>
             {dorm.academic.avgScore !== null ? (
               <div className="flex items-center gap-3">
                 <ScoreRing score={dorm.academic.avgScore} />
                 <div className="flex-1 space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate dark:text-dark-muted">
+                  <div className="flex justify-between text-[10px] text-slate">
                     <span>Min: {dorm.academic.minScore}</span>
                     <span>Avg: {dorm.academic.avgScore}</span>
                     <span>Max: {dorm.academic.maxScore}</span>
@@ -208,30 +208,30 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
                     color={dorm.academic.avgScore >= 70 ? "bg-success" : dorm.academic.avgScore >= 50 ? "bg-amber-400" : "bg-danger"} />
                 </div>
               </div>
-            ) : <p className="text-xs text-slate dark:text-dark-muted">No assessment data in period</p>}
+            ) : <p className="text-xs text-slate">No assessment data in period</p>}
           </div>
           {/* Discipline / Indiscipline */}
           <div>
-            <p className="text-xs font-semibold text-ink dark:text-dark-text mb-1.5">Indiscipline cases</p>
+            <p className="text-xs font-semibold text-foreground mb-1.5">Indiscipline cases</p>
             <div className="flex gap-4 text-xs">
-              <span className="text-slate dark:text-dark-muted">Total: <strong className="text-ink dark:text-dark-text">{dorm.discipline.total}</strong></span>
-              <span className="text-slate dark:text-dark-muted">Open: <strong className={dorm.discipline.open > 0 ? "text-warn" : "text-success"}>{dorm.discipline.open}</strong></span>
-              <span className="text-slate dark:text-dark-muted">Resolved: <strong className="text-success">{dorm.discipline.resolved}</strong></span>
-              <span className="text-slate dark:text-dark-muted">Per 10: <strong className="text-ink dark:text-dark-text">{dorm.discipline.casesPer10Students}</strong></span>
+              <span className="text-slate">Total: <strong className="text-foreground">{dorm.discipline.total}</strong></span>
+              <span className="text-slate">Open: <strong className={dorm.discipline.open > 0 ? "text-warn" : "text-success"}>{dorm.discipline.open}</strong></span>
+              <span className="text-slate">Resolved: <strong className="text-success">{dorm.discipline.resolved}</strong></span>
+              <span className="text-slate">Per 10: <strong className="text-foreground">{dorm.discipline.casesPer10Students}</strong></span>
             </div>
           </div>
           {/* Inspection */}
           {dorm.inspection && (
             <div>
-              <p className="text-xs font-semibold text-ink dark:text-dark-text mb-1.5">Last inspection</p>
+              <p className="text-xs font-semibold text-foreground mb-1.5">Last inspection</p>
               <div className="flex items-center gap-3">
                 {dorm.inspection.rating && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${RATING_COLOR[dorm.inspection.rating] ?? ""}`}>
                     {dorm.inspection.rating.replace("_", " ")}
                   </span>
                 )}
-                {dorm.inspection.score !== null && <span className="text-xs text-ink dark:text-dark-text font-semibold">{Math.round(dorm.inspection.score)}/100</span>}
-                <span className="text-xs text-slate dark:text-dark-muted">{new Date(dorm.inspection.date).toLocaleDateString()}</span>
+                {dorm.inspection.score !== null && <span className="text-xs text-foreground font-semibold">{Math.round(dorm.inspection.score)}/100</span>}
+                <span className="text-xs text-slate">{new Date(dorm.inspection.date).toLocaleDateString()}</span>
               </div>
             </div>
           )}
@@ -251,7 +251,7 @@ function AchievementBadge({ icon: Icon, title, dormName, value, color }: {
 }) {
   return (
     <div className={`rounded-xl border p-4 flex items-start gap-3 ${color}`}>
-      <div className="rounded-lg bg-white/60 dark:bg-black/20 p-2 shrink-0">
+      <div className="rounded-lg bg-card/60 dark:bg-black/20 p-2 shrink-0">
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
@@ -327,13 +327,13 @@ export default function AccommodationAnalyticsPage() {
         <ContextNavigation items={NAV_ITEMS} />
         <div className="space-y-4 mt-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-line/40/40 animate-pulse" />)}
           </div>
           <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-            {[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+            {[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-line/40/40 animate-pulse" />)}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => <div key={i} className="h-52 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />)}
+            {[...Array(6)].map((_, i) => <div key={i} className="h-52 rounded-xl bg-line/40/40 animate-pulse" />)}
           </div>
         </div>
       </div>
@@ -349,13 +349,13 @@ export default function AccommodationAnalyticsPage() {
         action={
           <div className="flex items-center gap-2">
             <select value={months} onChange={(e) => setMonths(e.target.value)}
-              className="text-sm border border-line rounded-lg px-3 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+              className="text-sm border border-border rounded-lg px-3 py-2 bg-card">
               {[["3","3 months"],["6","6 months"],["12","12 months"],["24","24 months"]].map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
             </select>
             <button onClick={() => load(true)} disabled={refreshing}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-line bg-white text-slate hover:text-ink hover:bg-paper disabled:opacity-50 transition-all dark:bg-dark-surface dark:border-dark-border">
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border bg-card text-slate hover:text-foreground hover:bg-background disabled:opacity-50 transition-all">
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
           </div>
@@ -367,8 +367,8 @@ export default function AccommodationAnalyticsPage() {
       {data.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
           <BarChart2 className="h-10 w-10 text-slate/50" />
-          <p className="text-ink font-medium dark:text-dark-text">No analytics data yet</p>
-          <p className="text-slate text-sm max-w-sm dark:text-dark-muted">Register dormitories and allocate students to generate analytics.</p>
+          <p className="text-foreground font-medium">No analytics data yet</p>
+          <p className="text-slate text-sm max-w-sm">Register dormitories and allocate students to generate analytics.</p>
         </div>
       )}
 
@@ -382,12 +382,12 @@ export default function AccommodationAnalyticsPage() {
               { label: "Avg. academic",     value: avgAcademic !== null ? `${avgAcademic}` : "—",    sub: `${withAcademic.length} dorms with data`, icon: BookOpen, color: avgAcademic && avgAcademic >= 60 ? "text-teal" : "text-warn", bg: "bg-teal/10" },
               { label: "Open indiscipline", value: `${totalOpen}`,                                    sub: `cases across all dorms`,               icon: Shield,   color: totalOpen > 5 ? "text-danger" : totalOpen > 0 ? "text-warn" : "text-success", bg: totalOpen > 5 ? "bg-danger/10" : "bg-success/10" },
             ].map(({ label, value, sub, icon: Icon, color, bg }) => (
-              <div key={label} className="rounded-xl border border-line bg-card p-4 dark:bg-dark-surface dark:border-dark-border">
+              <div key={label} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
-                    <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">{label}</p>
-                    <p className="text-xs text-slate/60 dark:text-dark-muted/60">{sub}</p>
+                    <p className="text-sm text-slate mt-0.5">{label}</p>
+                    <p className="text-xs text-slate/60/60">{sub}</p>
                   </div>
                   <div className={`rounded-lg p-2 shrink-0 ${bg}`}><Icon className={`h-5 w-5 ${color}`} /></div>
                 </div>
@@ -414,12 +414,12 @@ export default function AccommodationAnalyticsPage() {
 
           {/* ── Achievements ──────────────────────────────────────────── */}
           <div className="mb-6">
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Award className="h-4 w-4 text-amber-500" /> Achievements & Rankings
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               {bestAttendance && <AchievementBadge icon={Calendar} title="Best attendance" dormName={bestAttendance.name} value={`${bestAttendance.attendance.pct}% attendance rate`} color="border-success/30 bg-success/5 text-success dark:bg-success/10" />}
-              {bestAcademic && <AchievementBadge icon={BookOpen} title="Top academic" dormName={bestAcademic.name} value={`Avg score ${bestAcademic.academic.avgScore}`} color="border-teal/30 bg-teal/5 text-teal dark:bg-teal/10" />}
+              {bestAcademic && <AchievementBadge icon={BookOpen} title="Top academic" dormName={bestAcademic.name} value={`Avg score ${bestAcademic.academic.avgScore}`} color="border-teal/30 bg-teal/5 text-teal" />}
               {bestDiscipline && bestDiscipline.discipline.open === 0 && <AchievementBadge icon={Shield} title="Best conduct" dormName={bestDiscipline.name} value="Zero indiscipline cases" color="border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300" />}
               {bestInspection && <AchievementBadge icon={Star} title="Cleanest dorm" dormName={bestInspection.name} value={`Inspection score ${Math.round(bestInspection.inspection?.score ?? 0)}/100`} color="border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300" />}
               {highestOccupancy && highestOccupancy.occupancyPct >= 90 && <AchievementBadge icon={Flame} title="Highest demand" dormName={highestOccupancy.name} value={`${highestOccupancy.occupancyPct}% full`} color="border-orange-300 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300" />}
@@ -428,11 +428,11 @@ export default function AccommodationAnalyticsPage() {
 
           {/* ── Dorm cards ────────────────────────────────────────────── */}
           <div className="flex items-center justify-between mb-3 gap-4">
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">All Dormitories</h2>
+            <h2 className="text-sm font-semibold text-foreground">All Dormitories</h2>
             <div className="flex items-center gap-2">
               <WorkspaceToolbar.Search value={search} onChange={setSearch} placeholder="Filter dorms…" />
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="text-xs border border-line rounded-lg px-2.5 py-2 bg-white dark:bg-dark-surface dark:border-dark-border dark:text-dark-text">
+                className="text-xs border border-border rounded-lg px-2.5 py-2 bg-card">
                 <option value="occupancy">Sort: Occupancy</option>
                 <option value="attendance">Sort: Attendance</option>
                 <option value="academic">Sort: Academic</option>
@@ -446,10 +446,10 @@ export default function AccommodationAnalyticsPage() {
           </div>
 
           {/* ── Activity feed / trend ─────────────────────────────────── */}
-          <div className="mt-8 rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border p-5">
+          <div className="mt-8 rounded-xl border border-border bg-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="h-4 w-4 text-teal" />
-              <h3 className="text-sm font-semibold text-ink dark:text-dark-text">Quick links</h3>
+              <h3 className="text-sm font-semibold text-foreground">Quick links</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {[
@@ -459,7 +459,7 @@ export default function AccommodationAnalyticsPage() {
                 { href: "/principal/accommodation/reports",     icon: BarChart2,     label: "Generate report" },
               ].map(({ href, icon: Icon, label }) => (
                 <Link key={href} href={href}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-line bg-white hover:border-teal/40 hover:bg-teal/5 transition-all text-sm text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:hover:border-teal/30">
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-teal/40 hover:bg-teal/5 transition-all text-sm text-foreground dark:hover:border-teal/30">
                   <Icon className="h-4 w-4 text-teal" /> {label}
                 </Link>
               ))}

@@ -123,27 +123,27 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
       }}
     >
       <div
-        className="w-full max-w-2xl mx-4 rounded-xl bg-white border border-line
-                   shadow-2xl dark:bg-dark-surface dark:border-dark-border
+        className="w-full max-w-2xl mx-4 rounded-xl bg-card border border-border
+                   shadow-2xl
                    animate-scale-in"
       >
         {/* ── Search input ─────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-line dark:border-dark-border">
-          <Search className="h-5 w-5 text-slate shrink-0 dark:text-dark-muted" />
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+          <Search className="h-5 w-5 text-slate shrink-0" />
           <input
             ref={inputRef}
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search students, staff, classes, subjects, pages…"
-            className="flex-1 bg-transparent text-sm text-ink placeholder:text-slate
-                       outline-none dark:text-dark-text dark:placeholder:text-dark-muted"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-slate
+                       outline-none"
             aria-label="Search query"
           />
           <button
             type="button"
             onClick={onClose}
-            className="text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text
+            className="text-slate hover:text-foreground
                        transition-colors"
             aria-label="Close search"
           >
@@ -155,13 +155,13 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
         <div className="max-h-[60vh] overflow-y-auto">
           {query.trim().length === 0 && (
             <div className="px-6 py-12 text-center">
-              <Search className="h-10 w-10 mx-auto text-slate/40 mb-3 dark:text-dark-muted/40" />
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <Search className="h-10 w-10 mx-auto text-slate/40 mb-3/40" />
+              <p className="text-sm text-slate">
                 Start typing to search across students, staff, and more…
               </p>
-              <p className="text-xs text-slate/60 dark:text-dark-muted/60 mt-2">
-                Use <kbd className="px-1.5 py-0.5 rounded bg-line text-xs dark:bg-dark-border">↑↓</kbd> to
-                navigate, <kbd className="px-1.5 py-0.5 rounded bg-line text-xs dark:bg-dark-border">Enter</kbd> to
+              <p className="text-xs text-slate/60/60 mt-2">
+                Use <kbd className="px-1.5 py-0.5 rounded bg-line text-xs">↑↓</kbd> to
+                navigate, <kbd className="px-1.5 py-0.5 rounded bg-line text-xs">Enter</kbd> to
                 select
               </p>
             </div>
@@ -169,10 +169,10 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
 
           {query.trim().length > 0 && totalCount === 0 && (
             <div className="px-6 py-12 text-center">
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <p className="text-sm text-slate">
                 No results for &ldquo;{query}&rdquo;
               </p>
-              <p className="text-xs text-slate/60 dark:text-dark-muted/60 mt-1">
+              <p className="text-xs text-slate/60/60 mt-1">
                 Try a different search term
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
               <div key={group.category} className="py-2">
                 {/* Category header */}
                 <div className="flex items-center gap-2 px-4 py-1.5 text-xs font-semibold
-                                text-slate uppercase tracking-wider dark:text-dark-muted">
+                                text-slate uppercase tracking-wider">
                   <GroupIcon className="h-3.5 w-3.5" />
                   {group.label}
                 </div>
@@ -212,7 +212,7 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
                                   ${
                                     isSelected
                                       ? "bg-teal-50 dark:bg-teal-900/20"
-                                      : "hover:bg-paper dark:hover:bg-dark-border/50"
+                                      : "hover:bg-background/50"
                                   }`}
                     >
                       <div
@@ -220,7 +220,7 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
                                     ${
                                       isSelected
                                         ? "bg-teal text-white"
-                                        : "bg-paper text-slate dark:bg-dark-border dark:text-dark-muted"
+                                        : "bg-background text-slate"
                                     }`}
                       >
                         <ResultIcon className="h-4.5 w-4.5" strokeWidth={2} />
@@ -230,14 +230,14 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
                           className={`text-sm font-medium truncate
                                       ${
                                         isSelected
-                                          ? "text-ink dark:text-dark-text"
-                                          : "text-ink dark:text-dark-text"
+                                          ? "text-foreground"
+                                          : "text-foreground"
                                       }`}
                         >
                           {result.label}
                         </p>
                         {result.detail && (
-                          <p className="text-xs text-slate dark:text-dark-muted truncate">
+                          <p className="text-xs text-slate truncate">
                             {result.detail}
                           </p>
                         )}
@@ -252,13 +252,13 @@ export default function GlobalSearchModal({ isOpen, onClose, role }: Props) {
 
         {/* ── Footer hint ─────────────────────────────────────────────── */}
         {totalCount > 0 && (
-          <div className="px-4 py-2 border-t border-line dark:border-dark-border
-                          bg-paper/50 dark:bg-dark-bg/50 rounded-b-xl">
-            <p className="text-xs text-slate dark:text-dark-muted">
+          <div className="px-4 py-2 border-t border-border
+                          bg-background/50/50 rounded-b-xl">
+            <p className="text-xs text-slate">
               {totalCount} result{totalCount === 1 ? "" : "s"} •{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs dark:bg-dark-border">↑↓</kbd> navigate •{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs dark:bg-dark-border">Enter</kbd> select •{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs dark:bg-dark-border">Esc</kbd> close
+              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs">↑↓</kbd> navigate •{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs">Enter</kbd> select •{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-line text-xs">Esc</kbd> close
             </p>
           </div>
         )}

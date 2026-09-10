@@ -43,7 +43,7 @@ function SeverityBadge({ severity }: { severity: string }) {
     CRITICAL: { label: "Critical", cls: "bg-danger-bg text-danger border-danger/20" },
     HIGH:     { label: "High",     cls: "bg-orange-50 text-orange-600 border-orange-200" },
     MEDIUM:   { label: "Medium",   cls: "bg-warn-bg text-warn border-warn/20" },
-    LOW:      { label: "Low",      cls: "bg-slate-100 text-slate border-line" },
+    LOW:      { label: "Low",      cls: "bg-slate-100 text-slate border-border" },
   };
   const { label, cls } = map[severity] ?? map.LOW;
   return (
@@ -94,15 +94,15 @@ function MetricCard({
         <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-semibold text-ink dark:text-dark-text tabular-nums leading-none">
+        <p className="text-2xl font-semibold text-foreground tabular-nums leading-none">
           {value.toLocaleString()}
         </p>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">{label}</p>
-        {sub && <p className="text-xs text-slate/70 dark:text-dark-muted/70 mt-0.5">{sub}</p>}
+        <p className="text-sm text-slate mt-1">{label}</p>
+        {sub && <p className="text-xs text-slate/70/70 mt-0.5">{sub}</p>}
       </div>
     </div>
   );
-  const cls = "bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border";
+  const cls = "bg-card border border-border rounded-xl p-5 shadow-xs";
   if (href) {
     return (
       <Link href={href} className={`block ${cls} hover:border-teal/40 hover:-translate-y-0.5 transition-all duration-150`}>
@@ -128,7 +128,7 @@ function SchoolBreakdown({ active, onboarding, suspended }: {
       {items.map(({ label, count, dot }) => (
         <div key={label} className="flex items-center gap-1.5">
           <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dot}`} aria-hidden />
-          <span className="text-xs text-slate dark:text-dark-muted">
+          <span className="text-xs text-slate">
             {count} <span className="font-medium">{label}</span>
           </span>
         </div>
@@ -215,7 +215,7 @@ export default function SuperAdminOverviewPage() {
         />
         <button
           onClick={load}
-          className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-ink transition-colors mt-1"
+          className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-foreground transition-colors mt-1"
           title="Refresh"
         >
           <RefreshCw className="h-3.5 w-3.5" />
@@ -238,8 +238,8 @@ export default function SuperAdminOverviewPage() {
             value={schoolSearch}
             onChange={e => setSchoolSearch(e.target.value)}
             placeholder="Jump to a school…"
-            className="w-full rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                       pl-10 pr-4 py-3 text-sm text-ink dark:text-dark-text placeholder:text-slate-light
+            className="w-full rounded-xl border border-border bg-card
+                       pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-slate-light
                        focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors shadow-xs"
           />
           {searchLoading && (
@@ -247,15 +247,15 @@ export default function SuperAdminOverviewPage() {
           )}
         </div>
         {schoolResults.length > 0 && schoolSearch.trim() && (
-          <ul className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-dark-surface
-                         border border-line dark:border-dark-border rounded-xl shadow-md z-20 overflow-hidden">
+          <ul className="absolute top-full left-0 right-0 mt-1.5 bg-card
+                         border border-border rounded-xl shadow-md z-20 overflow-hidden">
             {schoolResults.map(s => (
               <li key={s.id}>
                 <button
                   type="button"
                   onClick={() => { router.push(`/super-admin/schools/${s.id}`); setSchoolSearch(""); }}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-ink dark:text-dark-text
-                             hover:bg-teal-50/60 dark:hover:bg-dark-border/40 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-foreground
+                             hover:bg-teal-50/60/40 transition-colors"
                 >
                   <Building2 className="h-4 w-4 text-slate shrink-0" aria-hidden />
                   {s.name}
@@ -268,17 +268,17 @@ export default function SuperAdminOverviewPage() {
 
       {/* Metrics grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs
                         sm:col-span-2 xl:col-span-1">
           <div className="flex items-start gap-4">
             <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-teal-50 shrink-0">
               <Building2 className="h-5 w-5 text-teal" strokeWidth={1.8} aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-2xl font-semibold text-ink dark:text-dark-text tabular-nums leading-none">
+              <p className="text-2xl font-semibold text-foreground tabular-nums leading-none">
                 {data.schools.total.toLocaleString()}
               </p>
-              <p className="text-sm text-slate dark:text-dark-muted mt-1">Schools</p>
+              <p className="text-sm text-slate mt-1">Schools</p>
               <SchoolBreakdown
                 active={data.schools.active}
                 onboarding={data.schools.onboarding}
@@ -314,11 +314,11 @@ export default function SuperAdminOverviewPage() {
       </div>
 
       {/* Storage usage */}
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
+      <Card className="">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-2.5">
             <HardDrive className="h-4.5 w-4.5 text-slate" strokeWidth={1.8} aria-hidden />
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Total Storage</h2>
+            <h2 className="text-sm font-semibold text-foreground">Total Storage</h2>
           </div>
           <Link
             href="/super-admin/storage"
@@ -336,10 +336,10 @@ export default function SuperAdminOverviewPage() {
           showLabel
         />
         <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             {data.storage.usedGb.toFixed(1)} GB used
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             {data.storage.quotaGb.toFixed(0)} GB total quota
           </p>
         </div>
@@ -348,7 +348,7 @@ export default function SuperAdminOverviewPage() {
       {/* Recent critical errors */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+          <h2 className="text-base font-semibold text-foreground">
             Recent Critical Errors
           </h2>
           <Link
@@ -360,8 +360,8 @@ export default function SuperAdminOverviewPage() {
         </div>
 
         {data.recentErrors.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-line dark:border-dark-border
-                          flex items-center justify-center py-12 text-sm text-slate dark:text-dark-muted">
+          <div className="rounded-xl border border-dashed border-border
+                          flex items-center justify-center py-12 text-sm text-slate">
             <CheckCircle2 className="h-5 w-5 mr-2 text-success" aria-hidden />
             No critical errors right now
           </div>
@@ -374,17 +374,16 @@ export default function SuperAdminOverviewPage() {
                   key={err.id}
                   type="button"
                   onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
-                  className="w-full text-left bg-white dark:bg-dark-surface border border-line
-                             dark:border-dark-border rounded-xl p-4 shadow-xs
+                  className="w-full text-left bg-card border border-border rounded-xl p-4 shadow-xs
                              hover:border-teal/40 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <p className="text-sm text-ink dark:text-dark-text font-medium leading-snug flex-1 min-w-0">
+                    <p className="text-sm text-foreground font-medium leading-snug flex-1 min-w-0">
                       {err.message}
                     </p>
                     <SeverityBadge severity={err.severity} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate dark:text-dark-muted">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate">
                     {err.school?.name && <span>{err.school.name}</span>}
                     {err.module && <span className="font-mono">{err.module}</span>}
                     <span>{new Date(err.createdAt).toLocaleDateString()}</span>
@@ -397,11 +396,11 @@ export default function SuperAdminOverviewPage() {
             </div>
 
             {/* Desktop: table */}
-            <div className="hidden sm:block rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
-              <table className="min-w-full divide-y divide-line dark:divide-dark-border">
+            <div className="hidden sm:block rounded-xl border border-border overflow-hidden shadow-xs">
+              <table className="min-w-full divide-y divide-border ">
                 <thead>
-                  <tr className="bg-slate-50/80 dark:bg-dark-surface text-left text-xs font-semibold
-                                 text-slate dark:text-dark-muted uppercase tracking-wide">
+                  <tr className="bg-slate-50/80 text-left text-xs font-semibold
+                                 text-slate uppercase tracking-wide">
                     <th className="px-5 py-3.5">Error</th>
                     <th className="px-5 py-3.5 hidden sm:table-cell">School</th>
                     <th className="px-5 py-3.5 hidden md:table-cell">Module</th>
@@ -410,31 +409,31 @@ export default function SuperAdminOverviewPage() {
                     <th className="px-5 py-3.5 hidden lg:table-cell">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+                <tbody className="divide-y divide-border bg-card">
                   {data.recentErrors.map(err => (
                     <tr
                       key={err.id}
                       onClick={() => router.push(`/super-admin/errors?id=${err.id}`)}
-                      className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30 transition-colors"
+                      className="cursor-pointer hover:bg-slate-50/50/30 transition-colors"
                     >
                       <td className="px-5 py-3.5">
-                        <p className="text-sm text-ink dark:text-dark-text truncate max-w-[260px]">
+                        <p className="text-sm text-foreground truncate max-w-[260px]">
                           {err.message}
                         </p>
-                        <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                        <p className="text-xs text-slate mt-0.5">
                           {new Date(err.createdAt).toLocaleDateString()}
                         </p>
                       </td>
-                      <td className="px-5 py-3.5 hidden sm:table-cell text-sm text-slate dark:text-dark-muted">
+                      <td className="px-5 py-3.5 hidden sm:table-cell text-sm text-slate">
                         {err.school?.name ?? "—"}
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate dark:text-dark-muted font-mono">
+                      <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate font-mono">
                         {err.module ?? "—"}
                       </td>
                       <td className="px-5 py-3.5">
                         <SeverityBadge severity={err.severity} />
                       </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate dark:text-dark-muted tabular-nums">
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-sm text-slate tabular-nums">
                         {err.occurrences}
                       </td>
                       <td className="px-5 py-3.5 hidden lg:table-cell">

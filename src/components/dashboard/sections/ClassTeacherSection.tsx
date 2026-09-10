@@ -51,15 +51,14 @@ export default function ClassTeacherSection({
         href={`/${rolePrefix}/students`}
         id="class-teacher-heading"
         className="flex items-center justify-between gap-3
-                   bg-card border border-line rounded-xl px-4 py-3.5 shadow-xs
-                   hover:border-teal/40 hover:shadow-sm transition-all group
-                   dark:bg-dark-surface dark:border-dark-border"
+                   bg-card border border-border rounded-xl px-4 py-3.5 shadow-xs
+                   hover:border-teal/40 hover:shadow-sm transition-all group"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
             <Users className="h-4 w-4 text-teal" strokeWidth={1.8} />
           </div>
-          <span className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+          <span className="text-sm font-semibold text-foreground truncate">
             Class Teacher — {derived.className}
           </span>
         </div>
@@ -117,8 +116,8 @@ export default function ClassTeacherSection({
               <Link
                 key={s.id}
                 href={`/${rolePrefix}/students/${s.id}`}
-                className="text-xs bg-white border border-warn/30 text-ink px-2.5 py-1.5 rounded-lg
-                           hover:bg-warn-bg/60 transition-colors dark:bg-dark-surface dark:text-dark-text
+                className="text-xs bg-card border border-warn/30 text-foreground px-2.5 py-1.5 rounded-lg
+                           hover:bg-warn-bg/60 transition-colors
                            min-h-[34px] flex items-center"
               >
                 {s.fullName}
@@ -130,22 +129,21 @@ export default function ClassTeacherSection({
 
       {/* ── 4. Assessment deadlines ────────────────────────────────────── */}
       {activePeriods.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-4 shadow-xs
-                        dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">
+        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+          <p className="text-sm font-semibold text-foreground mb-3">
             Assessment deadlines
           </p>
           <ul className="space-y-2">
             {activePeriods.map((ap) => (
               <li key={ap.id}
                   className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 text-sm">
-                <span className="text-ink dark:text-dark-text min-w-0 xs:truncate xs:pr-2">
+                <span className="text-foreground min-w-0 xs:truncate xs:pr-2">
                   {ap.name}
                 </span>
                 <span className="shrink-0">
                   {ap.closingDate
                     ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Due" />
-                    : <span className="text-xs text-slate dark:text-dark-muted">No deadline</span>}
+                    : <span className="text-xs text-slate">No deadline</span>}
                 </span>
               </li>
             ))}

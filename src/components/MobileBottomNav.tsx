@@ -83,8 +83,8 @@ export default function MobileBottomNav({ role, visibleHubs }: Props) {
     <nav
       aria-label="Primary navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 z-40
-                 bg-white dark:bg-dark-sidebar
-                 border-t border-line dark:border-dark-border
+                 bg-card
+                 border-t border-border
                  flex items-stretch"
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
@@ -107,7 +107,7 @@ export default function MobileBottomNav({ role, visibleHubs }: Props) {
                         transition-colors duration-100 min-w-0 select-none
                         ${active
                           ? "text-teal dark:text-teal"
-                          : "text-slate dark:text-dark-muted hover:text-teal dark:hover:text-teal"
+                          : "text-slate hover:text-teal dark:hover:text-teal"
                         }`}
           >
             {/* Active dot */}
@@ -138,7 +138,7 @@ export default function MobileBottomNav({ role, visibleHubs }: Props) {
                       transition-colors duration-100 min-w-0 select-none
                       ${moreIsActive
                         ? "text-teal dark:text-teal"
-                        : "text-slate dark:text-dark-muted hover:text-teal dark:hover:text-teal"
+                        : "text-slate hover:text-teal dark:hover:text-teal"
                       }`}
         >
           {/* Active dot (when user is on an overflow hub page) */}

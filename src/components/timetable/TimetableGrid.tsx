@@ -73,26 +73,29 @@ export type TimetableGridProps = {
 
 // ── Colours ────────────────────────────────────────────────────────────────
 
+// Subject palette — each entry pairs light and dark variants so cells stay legible in both themes.
+// The -50 / -950 backgrounds are intentional data-visualization colors (like chart series) —
+// exempt from token replacement per Req 3.7. Dark variants achieve ≥ 3:1 against dark card (#162233).
 const SUBJECT_PALETTES = [
-  { bg: "bg-teal-50",    border: "border-teal-200",   text: "text-teal-800",    sub: "text-teal-600"   },
-  { bg: "bg-blue-50",    border: "border-blue-200",   text: "text-blue-800",    sub: "text-blue-600"   },
-  { bg: "bg-purple-50",  border: "border-purple-200", text: "text-purple-800",  sub: "text-purple-600" },
-  { bg: "bg-emerald-50", border: "border-emerald-200",text: "text-emerald-800", sub: "text-emerald-600"},
-  { bg: "bg-amber-50",   border: "border-amber-200",  text: "text-amber-800",   sub: "text-amber-600"  },
-  { bg: "bg-rose-50",    border: "border-rose-200",   text: "text-rose-800",    sub: "text-rose-600"   },
-  { bg: "bg-cyan-50",    border: "border-cyan-200",   text: "text-cyan-800",    sub: "text-cyan-600"   },
-  { bg: "bg-orange-50",  border: "border-orange-200", text: "text-orange-800",  sub: "text-orange-600" },
-  { bg: "bg-lime-50",    border: "border-lime-200",   text: "text-lime-800",    sub: "text-lime-600"   },
-  { bg: "bg-indigo-50",  border: "border-indigo-200", text: "text-indigo-800",  sub: "text-indigo-600" },
-  { bg: "bg-pink-50",    border: "border-pink-200",   text: "text-pink-800",    sub: "text-pink-600"   },
-  { bg: "bg-sky-50",     border: "border-sky-200",    text: "text-sky-800",     sub: "text-sky-600"    },
+  { bg: "bg-teal-50    dark:bg-teal-950/60",    border: "border-teal-200    dark:border-teal-800",   text: "text-teal-800    dark:text-teal-200",    sub: "text-teal-600    dark:text-teal-300"   },
+  { bg: "bg-blue-50    dark:bg-blue-950/60",    border: "border-blue-200    dark:border-blue-800",   text: "text-blue-800    dark:text-blue-200",    sub: "text-blue-600    dark:text-blue-300"   },
+  { bg: "bg-purple-50  dark:bg-purple-950/60",  border: "border-purple-200  dark:border-purple-800", text: "text-purple-800  dark:text-purple-200",  sub: "text-purple-600  dark:text-purple-300" },
+  { bg: "bg-emerald-50 dark:bg-emerald-950/60", border: "border-emerald-200 dark:border-emerald-800",text: "text-emerald-800 dark:text-emerald-200", sub: "text-emerald-600 dark:text-emerald-300"},
+  { bg: "bg-amber-50   dark:bg-amber-950/60",   border: "border-amber-200   dark:border-amber-800",  text: "text-amber-800   dark:text-amber-200",   sub: "text-amber-600   dark:text-amber-300"  },
+  { bg: "bg-rose-50    dark:bg-rose-950/60",    border: "border-rose-200    dark:border-rose-800",   text: "text-rose-800    dark:text-rose-200",    sub: "text-rose-600    dark:text-rose-300"   },
+  { bg: "bg-cyan-50    dark:bg-cyan-950/60",    border: "border-cyan-200    dark:border-cyan-800",   text: "text-cyan-800    dark:text-cyan-200",    sub: "text-cyan-600    dark:text-cyan-300"   },
+  { bg: "bg-orange-50  dark:bg-orange-950/60",  border: "border-orange-200  dark:border-orange-800", text: "text-orange-800  dark:text-orange-200",  sub: "text-orange-600  dark:text-orange-300" },
+  { bg: "bg-lime-50    dark:bg-lime-950/60",    border: "border-lime-200    dark:border-lime-800",   text: "text-lime-800    dark:text-lime-200",    sub: "text-lime-600    dark:text-lime-300"   },
+  { bg: "bg-indigo-50  dark:bg-indigo-950/60",  border: "border-indigo-200  dark:border-indigo-800", text: "text-indigo-800  dark:text-indigo-200",  sub: "text-indigo-600  dark:text-indigo-300" },
+  { bg: "bg-pink-50    dark:bg-pink-950/60",    border: "border-pink-200    dark:border-pink-800",   text: "text-pink-800    dark:text-pink-200",    sub: "text-pink-600    dark:text-pink-300"   },
+  { bg: "bg-sky-50     dark:bg-sky-950/60",     border: "border-sky-200     dark:border-sky-800",    text: "text-sky-800     dark:text-sky-200",     sub: "text-sky-600     dark:text-sky-300"    },
 ];
 
 const NON_LESSON_STYLES: Record<string, string> = {
-  BREAK:    "bg-orange-50 border-orange-100 text-orange-600",
-  LUNCH:    "bg-green-50  border-green-100  text-green-700",
-  GAMES:    "bg-pink-50   border-pink-100   text-pink-700",
-  ASSEMBLY: "bg-slate-100 border-slate-200  text-slate-600",
+  BREAK:    "bg-orange-50 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900/40 text-orange-600 dark:text-orange-400",
+  LUNCH:    "bg-green-50  dark:bg-green-950/30  border-green-100  dark:border-green-900/40  text-green-700  dark:text-green-400",
+  GAMES:    "bg-pink-50   dark:bg-pink-950/30   border-pink-100   dark:border-pink-900/40   text-pink-700   dark:text-pink-400",
+  ASSEMBLY: "bg-card      border-border         text-muted-foreground",
 };
 
 const colorCache = new Map<string, (typeof SUBJECT_PALETTES)[0]>();
@@ -143,7 +146,7 @@ export default function TimetableGrid({
 
   if (columns.length === 0) {
     return (
-      <div className="rounded-xl border border-line bg-paper p-8 text-center">
+      <div className="rounded-xl border border-border bg-background p-8 text-center">
         <p className="text-sm text-slate">No template configured.</p>
         <p className="text-xs text-slate/60 mt-1">
           Visit <strong>Day Template</strong> to set up the school-day format first.
@@ -154,33 +157,33 @@ export default function TimetableGrid({
 
   if (operatingDays.length === 0) {
     return (
-      <div className="rounded-xl border border-line bg-paper p-8 text-center">
+      <div className="rounded-xl border border-border bg-background p-8 text-center">
         <p className="text-sm text-slate">No operating days configured.</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="min-w-full border-collapse text-xs">
 
         {/* ── Column headers ──────────────────────────────────────── */}
         <thead>
-          <tr className="bg-paper border-b border-line">
+          <tr className="bg-background border-b border-border">
             {/* Day label corner */}
-            <th className="sticky left-0 z-20 bg-paper px-3 py-2.5 text-left border-r border-line min-w-[72px]">
+            <th className="sticky left-0 z-20 bg-background px-3 py-2.5 text-left border-r border-border min-w-[72px]">
               <span className="text-[10px] font-semibold uppercase tracking-wide text-slate">Day</span>
             </th>
 
             {allCols.map((col) => {
               const isLesson = col.slotType === "LESSON";
               const period   = periodByPosition.get(col.position);
-              const nlStyle  = NON_LESSON_STYLES[col.slotType] ?? "bg-slate-50 border-slate-200 text-slate-500";
+              const nlStyle  = NON_LESSON_STYLES[col.slotType] ?? "bg-muted border-border text-muted-foreground";
 
               return (
                 <th key={col.position}
-                  className={`px-1.5 py-2 min-w-[82px] max-w-[110px] border-r border-line last:border-r-0 font-normal
-                    ${isLesson ? "bg-paper" : nlStyle}`}>
+                  className={`px-1.5 py-2 min-w-[82px] max-w-[110px] border-r border-border last:border-r-0 font-normal
+                    ${isLesson ? "bg-background" : nlStyle}`}>
                   {isLesson ? (
                     <div className="text-center space-y-0.5">
                       <p className="text-[10px] font-semibold text-slate uppercase tracking-wide">
@@ -210,10 +213,10 @@ export default function TimetableGrid({
         {/* ── Day rows ────────────────────────────────────────────── */}
         <tbody>
           {operatingDays.map((day, rowIdx) => (
-            <tr key={day} className={rowIdx % 2 === 0 ? "bg-white" : "bg-paper/40"}>
+            <tr key={day} className={rowIdx % 2 === 0 ? "bg-card" : "bg-background/40"}>
 
               {/* Day label */}
-              <td className="sticky left-0 z-10 bg-inherit px-3 py-1.5 border-r border-b border-line font-medium whitespace-nowrap">
+              <td className="sticky left-0 z-10 bg-inherit px-3 py-1.5 border-r border-b border-border font-medium whitespace-nowrap">
                 <span className="hidden sm:inline text-slate">{DAY_NAMES[day]}</span>
                 <span className="sm:hidden text-slate">{DAY_SHORT[day]}</span>
               </td>
@@ -225,10 +228,10 @@ export default function TimetableGrid({
 
                 if (!isLesson) {
                   // Non-lesson: shaded span across the row
-                  const nlStyle = NON_LESSON_STYLES[col.slotType] ?? "bg-slate-50";
+                  const nlStyle = NON_LESSON_STYLES[col.slotType] ?? "bg-muted";
                   return (
                     <td key={col.position}
-                      className={`border-r border-b border-line last:border-r-0 px-1 py-1.5 text-center ${nlStyle}`}>
+                      className={`border-r border-b border-border last:border-r-0 px-1 py-1.5 text-center ${nlStyle}`}>
                       <span className="text-[9px] font-medium opacity-70">{col.label ?? col.slotType}</span>
                     </td>
                   );
@@ -239,7 +242,7 @@ export default function TimetableGrid({
 
                 return (
                   <td key={col.position}
-                    className={`border-r border-b border-line last:border-r-0 p-0.5 align-top
+                    className={`border-r border-b border-border last:border-r-0 p-0.5 align-top
                       ${isHigh ? "ring-2 ring-teal ring-inset" : ""}`}>
                     <LessonCell
                       slot={slot}
@@ -280,11 +283,11 @@ function LessonCell({
         disabled={readOnly}
         onClick={() => onClick?.(day, period, null)}
         aria-label={`Add lesson — ${DAY_SHORT[day]} period ${period}`}
-        className={`w-full min-h-[52px] rounded border border-dashed border-line/60 flex items-center justify-center
+        className={`w-full min-h-[52px] rounded border border-dashed border-border bg-card flex items-center justify-center
           ${interactive ? "hover:border-teal/50 hover:bg-teal/4 transition-colors cursor-pointer" : "cursor-default"}`}
       >
         {interactive && (
-          <span className="text-[10px] text-slate/40 group-hover:text-teal">+</span>
+          <span className="text-[10px] text-muted-foreground group-hover:text-teal">+</span>
         )}
       </button>
     );
@@ -316,7 +319,7 @@ function LessonCell({
             {isGroup && slot.groupMembers && slot.groupMembers.length > 0 && <span className="text-[9px] ml-0.5">+{slot.groupMembers.length}</span>}
           </span>
           {isGroup && slot.groupMembers && slot.groupMembers.length > 0 && (
-            <p className={`text-[8px] truncate leading-tight mt-0.5 ${palette!.sub} opacity-70`}>
+            <p className={`text-[8px] truncate leading-tight mt-0.5 text-card-foreground/60`}>
               {slot.groupMembers.map(m => m.subjectCode).join(", ")}
             </p>
           )}
@@ -326,7 +329,7 @@ function LessonCell({
             <span className="text-[8px] bg-teal/20 text-teal px-1 rounded font-semibold leading-tight">🔀</span>
           )}
           {slot.isLocked && (
-            <span className="text-[8px] bg-slate-200 text-slate-600 px-1 rounded font-semibold leading-tight">🔒</span>
+            <span className="text-[8px] bg-muted text-muted-foreground px-1 rounded font-semibold leading-tight">🔒</span>
           )}
           {slot.isManual && (
             <span className="text-[8px] bg-teal/20 text-teal px-1 rounded font-semibold leading-tight">M</span>
@@ -337,16 +340,16 @@ function LessonCell({
         {/* For group slots, don't show teachers (they're assigned per subject in class profile) */}
         {!isGroup && (
           <>
-            <p className={`text-[10px] truncate leading-tight ${palette!.sub}`}>
+            <p className={`text-[10px] truncate leading-tight text-card-foreground/70`}>
               {slot.teacherName}
             </p>
             {slot.room && (
-              <p className={`text-[9px] truncate leading-tight mt-0.5 ${palette!.sub} opacity-80`}>{slot.room}</p>
+              <p className={`text-[9px] truncate leading-tight mt-0.5 text-card-foreground/60`}>{slot.room}</p>
             )}
           </>
         )}
         {isGroup && slot.room && (
-          <p className={`text-[9px] truncate leading-tight mt-0.5 ${palette!.sub} opacity-80`}>{slot.room}</p>
+          <p className={`text-[9px] truncate leading-tight mt-0.5 text-card-foreground/60`}>{slot.room}</p>
         )}
       </div>
     </button>
@@ -357,9 +360,9 @@ function LessonCell({
 
 function SessionPip({ session }: { session: "MORNING" | "AFTERNOON" | "EVENING" }) {
   const styles = {
-    MORNING:   "bg-amber-300",
-    AFTERNOON: "bg-blue-300",
-    EVENING:   "bg-purple-300",
+    MORNING:   "bg-amber-300 dark:bg-amber-500",
+    AFTERNOON: "bg-blue-300  dark:bg-blue-500",
+    EVENING:   "bg-purple-300 dark:bg-purple-500",
   };
   return (
     <span

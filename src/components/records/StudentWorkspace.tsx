@@ -52,17 +52,17 @@ const DisciplineItem = memo(function DisciplineItem({
   const open = expanded === r.id;
   return (
     <li className="relative pl-8">
-      <span className="absolute left-0 top-1 w-6 h-6 rounded-full bg-card border border-line flex items-center justify-center text-sm" aria-hidden>
+      <span className="absolute left-0 top-1 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-sm" aria-hidden>
         {offenceIcon(r.offence + " " + (r.aiSummary || ""))}
       </span>
       <button
         type="button"
-        className="w-full text-left rounded-lg border border-line bg-card px-3 py-2.5 hover:border-royal/40 transition-colors"
+        className="w-full text-left rounded-lg border border-border bg-card px-3 py-2.5 hover:border-royal/40 transition-colors"
         aria-expanded={open}
         onClick={() => onToggleExpand(open ? null : r.id)}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-ink truncate">{r.offence}</p>
+          <p className="text-sm font-medium text-foreground truncate">{r.offence}</p>
           <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STATUS_BADGE[r.status] || ""}`}>
             {STATUS_LABELS[r.status] || r.status}
           </span>
@@ -75,16 +75,16 @@ const DisciplineItem = memo(function DisciplineItem({
         {r.aiSummary && <p className="text-xs text-royal mt-1">✨ {r.aiSummary}</p>}
       </button>
       {open && (
-        <div className="mt-2 rounded-lg border border-line bg-paper px-3 py-2.5 space-y-2 text-sm">
-          {r.description && <p className="text-ink whitespace-pre-line">{r.description}</p>}
+        <div className="mt-2 rounded-lg border border-border bg-background px-3 py-2.5 space-y-2 text-sm">
+          {r.description && <p className="text-foreground whitespace-pre-line">{r.description}</p>}
           {r.actionTaken && (
             <p className="text-slate">
-              Action: <span className="text-ink">{r.actionTaken}</span>
+              Action: <span className="text-foreground">{r.actionTaken}</span>
             </p>
           )}
           {r.resolution && (
             <p className="text-slate">
-              Resolution: <span className="text-ink">{r.resolution}</span>
+              Resolution: <span className="text-foreground">{r.resolution}</span>
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -124,17 +124,17 @@ const FileRow = memo(function FileRow({
   onDelete: (id: string) => void;
 }) {
   return (
-    <li className="flex items-center gap-2.5 bg-card border border-line rounded-lg px-3 py-2">
+    <li className="flex items-center gap-2.5 bg-card border border-border rounded-lg px-3 py-2">
       {f.mimeType.startsWith("image/") ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/api/student-files/${f.id}`} alt="" loading="lazy" className="w-9 h-9 object-cover rounded border border-line shrink-0" />
+        <img src={`/api/student-files/${f.id}`} alt="" loading="lazy" className="w-9 h-9 object-cover rounded border border-border shrink-0" />
       ) : (
-        <span className="w-9 h-9 flex items-center justify-center rounded bg-paper border border-line text-sm shrink-0" aria-hidden>
+        <span className="w-9 h-9 flex items-center justify-center rounded bg-background border border-border text-sm shrink-0" aria-hidden>
           📄
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-ink truncate">{f.fileName}</p>
+        <p className="text-sm text-foreground truncate">{f.fileName}</p>
         <p className="text-xs text-slate">
           {fmtSize(f.size)} · {fmtDate(f.createdAt)}
           {f.disciplineRecord ? ` · ${f.disciplineRecord.offence}` : ""}
@@ -148,7 +148,7 @@ const FileRow = memo(function FileRow({
       </a>
       {(canManageDiscipline || canManageAchievements) && (
         <>
-          <button type="button" className="text-xs text-slate hover:text-ink shrink-0" onClick={() => onRename(f)}>
+          <button type="button" className="text-xs text-slate hover:text-foreground shrink-0" onClick={() => onRename(f)}>
             Rename
           </button>
           <button type="button" className="text-xs text-danger hover:underline shrink-0" onClick={() => onDelete(f.id)}>
@@ -337,15 +337,15 @@ export default function StudentWorkspace({
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={`${student.fullName} record workspace`}>
       <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[560px] bg-paper shadow-2xl flex flex-col animate-[slideIn_.2s_ease-out]">
+      <aside className="absolute right-0 top-0 h-full w-full sm:w-[560px] bg-background shadow-2xl flex flex-col animate-[slideIn_.2s_ease-out]">
         <style>{`@keyframes slideIn{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}`}</style>
 
         {/* Header */}
-        <div className="bg-card border-b border-line px-4 sm:px-5 pt-4 pb-0">
+        <div className="bg-card border-b border-border px-4 sm:px-5 pt-4 pb-0">
           <div className="flex items-start gap-3">
             <Avatar name={student.fullName} size="lg" />
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-lg font-semibold text-ink truncate">{student.fullName}</h2>
+              <h2 className="font-display text-lg font-semibold text-foreground truncate">{student.fullName}</h2>
               <p className="text-xs text-slate">
                 <span className="font-mono">{student.admissionNumber}</span>
                 {student.schoolClass ? ` · ${student.schoolClass.name}` : ""}
@@ -361,7 +361,7 @@ export default function StudentWorkspace({
                 )}
               </div>
             </div>
-            <button type="button" onClick={onClose} aria-label="Close workspace" className="text-slate hover:text-ink text-2xl leading-none p-1">
+            <button type="button" onClick={onClose} aria-label="Close workspace" className="text-slate hover:text-foreground text-2xl leading-none p-1">
               ×
             </button>
           </div>
@@ -379,12 +379,12 @@ export default function StudentWorkspace({
               </button>
             )}
             {(canManageDiscipline || canManageAchievements) && (
-              <label className="text-xs px-2.5 py-1.5 rounded-md border border-line text-ink hover:bg-paper cursor-pointer">
+              <label className="text-xs px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-background cursor-pointer">
                 {uploading ? "Uploading…" : "📎 Upload File"}
                 <input type="file" multiple className="sr-only" onChange={(e) => e.target.files && uploadGeneral(e.target.files)} />
               </label>
             )}
-            <button type="button" className="text-xs px-2.5 py-1.5 rounded-md border border-line text-ink hover:bg-paper" onClick={() => window.print()}>
+            <button type="button" className="text-xs px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-background" onClick={() => window.print()}>
               🖨️ Print / PDF
             </button>
           </div>
@@ -397,7 +397,7 @@ export default function StudentWorkspace({
                 role="tab"
                 aria-selected={tab === t.id}
                 className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  tab === t.id ? "border-royal text-royal font-medium" : "border-transparent text-slate hover:text-ink"
+                  tab === t.id ? "border-royal text-royal font-medium" : "border-transparent text-slate hover:text-foreground"
                 }`}
                 onClick={() => setTab(t.id)}
               >
@@ -419,27 +419,27 @@ export default function StudentWorkspace({
           ) : tab === "overview" ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-card border border-line rounded-xl p-3">
+                <div className="bg-card border border-border rounded-xl p-3">
                   <p className="text-xs text-slate">Discipline cases</p>
-                  <p className="font-display text-xl font-semibold text-ink">{discipline!.length}</p>
+                  <p className="font-display text-xl font-semibold text-foreground">{discipline!.length}</p>
                   <p className="text-xs text-slate mt-0.5">{activeCases} active</p>
                 </div>
-                <div className="bg-card border border-line rounded-xl p-3">
+                <div className="bg-card border border-border rounded-xl p-3">
                   <p className="text-xs text-slate">Achievements</p>
-                  <p className="font-display text-xl font-semibold text-ink">{achievements!.length}</p>
+                  <p className="font-display text-xl font-semibold text-foreground">{achievements!.length}</p>
                   <p className="text-xs text-slate mt-0.5">{files!.length} files</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-ink mb-2">Recent activity</h3>
+                <h3 className="text-sm font-medium text-foreground mb-2">Recent activity</h3>
                 {timeline.length === 0 ? (
                   <EmptyPanel emoji="🌱" text="No records yet — this student has a clean slate." />
                 ) : (
                   <ul className="space-y-2">
                     {timeline.slice(0, 5).map((item) => (
-                      <li key={item.id} className="flex items-center gap-2.5 bg-card border border-line rounded-lg px-3 py-2 text-sm">
+                      <li key={item.id} className="flex items-center gap-2.5 bg-card border border-border rounded-lg px-3 py-2 text-sm">
                         <span aria-hidden>{item.kind === "discipline" ? offenceIcon(item.record!.offence) : CATEGORY_META[item.achievement!.category]?.emoji || "🏆"}</span>
-                        <span className="text-ink truncate flex-1">
+                        <span className="text-foreground truncate flex-1">
                           {item.kind === "discipline" ? item.record!.aiSummary || item.record!.offence : item.achievement!.aiSummary || item.achievement!.title}
                         </span>
                         <span className="text-xs text-slate shrink-0">{fmtDate(item.date)}</span>
@@ -484,11 +484,11 @@ export default function StudentWorkspace({
                 {achievements!.map((a) => {
                   const meta = CATEGORY_META[a.category] || CATEGORY_META.OTHER;
                   return (
-                    <li key={a.id} className="bg-card border border-line rounded-xl p-3.5">
+                    <li key={a.id} className="bg-card border border-border rounded-xl p-3.5">
                       <div className="flex items-start gap-2.5">
                         <span className="text-xl" aria-hidden>{meta.emoji}</span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-ink">{a.title}</p>
+                          <p className="text-sm font-medium text-foreground">{a.title}</p>
                           <p className="text-xs text-slate mt-0.5">
                             {meta.label} · {fmtDate(a.achievementDate)}
                             {a.awardLevel ? ` · ${a.awardLevel}` : ""}
@@ -507,7 +507,7 @@ export default function StudentWorkspace({
           ) : tab === "files" ? (
             <div className="space-y-4">
               <input
-                className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
                 placeholder="Search files…"
                 value={fileQuery}
                 onChange={(e) => setFileQuery(e.target.value)}
@@ -550,12 +550,12 @@ export default function StudentWorkspace({
                     />
                   ) : (
                     <li key={item.id} className="relative pl-8">
-                      <span className="absolute left-0 top-1 w-6 h-6 rounded-full bg-card border border-line flex items-center justify-center text-sm" aria-hidden>
+                      <span className="absolute left-0 top-1 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-sm" aria-hidden>
                         {CATEGORY_META[item.achievement!.category]?.emoji || "🏆"}
                       </span>
-                      <div className="rounded-lg border border-line bg-card px-3 py-2.5">
+                      <div className="rounded-lg border border-border bg-card px-3 py-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium text-ink truncate">{item.achievement!.title}</p>
+                          <p className="text-sm font-medium text-foreground truncate">{item.achievement!.title}</p>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-success-bg text-success shrink-0">Achievement</span>
                         </div>
                         <p className="text-xs text-slate mt-0.5">{fmtDate(item.date)}</p>
@@ -584,16 +584,16 @@ export default function StudentWorkspace({
 
 const InsightCard = memo(function InsightCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-card border border-line rounded-xl p-3">
+    <div className="bg-card border border-border rounded-xl p-3">
       <p className="text-xs text-slate">{label}</p>
-      <p className="text-sm font-medium text-ink mt-1">{value}</p>
+      <p className="text-sm font-medium text-foreground mt-1">{value}</p>
     </div>
   );
 });
 
 const EmptyPanel = memo(function EmptyPanel({ emoji, text, action }: { emoji: string; text: string; action?: { label: string; onClick: () => void } }) {
   return (
-    <div className="rounded-xl border border-dashed border-line px-4 py-10 text-center">
+    <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
       <p className="text-3xl mb-2" aria-hidden>{emoji}</p>
       <p className="text-sm text-slate">{text}</p>
       {action && (

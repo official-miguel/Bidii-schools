@@ -6,7 +6,8 @@
 import React from 'react';
 import { View, Text, ViewStyle } from 'react-native';
 import { BookOpen } from 'lucide-react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { Button } from './Button';
 
 interface EmptyStateProps {
@@ -26,13 +27,15 @@ export function EmptyState({
   onAction,
   style,
 }: EmptyStateProps) {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
         {
           borderWidth: 1,
           borderStyle: 'dashed',
-          borderColor: Colors.line,
+          borderColor: colors.border,
           borderRadius: Radius.card,
           paddingVertical: Spacing[16],
           paddingHorizontal: Spacing[6],
@@ -48,14 +51,14 @@ export function EmptyState({
           marginBottom: Spacing[3],
         }}
       >
-        {icon || <BookOpen size={40} color={Colors.slateText} />}
+        {icon || <BookOpen size={40} color={colors.mutedForeground} />}
       </View>
 
       <Text
         style={{
           fontSize: Typography.fontSize.sm,
           fontWeight: Typography.fontWeight.semibold,
-          color: Colors.ink,
+          color: colors.foreground,
           textAlign: 'center',
           marginBottom: description ? Spacing[1] : 0,
         }}
@@ -67,7 +70,7 @@ export function EmptyState({
         <Text
           style={{
             fontSize: Typography.fontSize.sm,
-            color: Colors.slateText,
+            color: colors.mutedForeground,
             textAlign: 'center',
           }}
         >

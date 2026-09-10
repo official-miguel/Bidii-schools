@@ -143,16 +143,15 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
       aria-label="Quick actions"
       className="absolute right-0 top-full mt-2 w-80
                  max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto
-                 rounded-xl bg-white border border-line shadow-xl z-50
-                 dark:bg-dark-surface dark:border-dark-border
+                 rounded-xl bg-card border border-border shadow-xl z-50
                  animate-scale-in origin-top-right"
     >
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-3
-                      border-b border-line dark:border-dark-border">
+                      border-b border-border">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-teal" />
-          <h2 className="text-sm font-semibold text-ink dark:text-dark-text">
+          <h2 className="text-sm font-semibold text-foreground">
             Quick Actions
           </h2>
         </div>
@@ -161,8 +160,7 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
           onClick={onClose}
           aria-label="Close quick actions"
           className="w-7 h-7 flex items-center justify-center rounded-md
-                     text-slate hover:bg-paper transition-colors
-                     dark:text-dark-muted dark:hover:bg-dark-border"
+                     text-slate hover:bg-background transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -179,9 +177,8 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
               type="button"
               onClick={() => navigate(action.href, action.label, action.icon)}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg
-                         text-left border border-line transition-colors
-                         hover:border-teal/40 hover:bg-teal-50 group
-                         dark:border-dark-border dark:hover:border-teal/40 dark:hover:bg-teal-900/10"
+                         text-left border border-border transition-colors
+                         hover:border-teal/40 hover:bg-teal-50 group dark:hover:border-teal/40 dark:hover:bg-teal-900/10"
             >
               <div
                 className="shrink-0 w-8 h-8 rounded-md bg-teal/10 text-teal
@@ -190,7 +187,7 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
               >
                 <Icon className="h-4 w-4" strokeWidth={2} />
               </div>
-              <span className="text-xs font-medium text-ink leading-tight dark:text-dark-text">
+              <span className="text-xs font-medium text-foreground leading-tight">
                 {action.label}
               </span>
             </button>
@@ -200,9 +197,9 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
 
       {/* ── Nav shortcuts ────────────────────────────────────────────── */}
       {navShortcuts.length > 0 && (
-        <div className="border-t border-line dark:border-dark-border">
+        <div className="border-t border-border">
           <p className="px-4 pt-2.5 pb-1 text-[11px] font-semibold text-slate
-                        uppercase tracking-wider dark:text-dark-muted">
+                        uppercase tracking-wider">
             Go to
           </p>
           <div className="px-3 pb-3 flex flex-wrap gap-1.5">
@@ -215,10 +212,9 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
                   type="button"
                   onClick={() => navigate(nav.href, nav.label, nav.icon)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                             text-xs text-slate border border-line
-                             hover:bg-paper hover:text-ink transition-colors
-                             dark:text-dark-muted dark:border-dark-border
-                             dark:hover:bg-dark-border dark:hover:text-dark-text"
+                             text-xs text-slate border border-border
+                             hover:bg-background hover:text-foreground transition-colors
+                            "
                 >
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
                   {nav.label}
@@ -251,10 +247,9 @@ function PanelUtilityFooter({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="border-t border-line dark:border-dark-border px-3 py-2.5
+    <div className="border-t border-border px-3 py-2.5
                     flex items-center justify-between gap-2">
-      <p className="text-[11px] font-semibold text-slate uppercase tracking-wider
-                    dark:text-dark-muted">
+      <p className="text-[11px] font-semibold text-slate uppercase tracking-wider">
         Preferences
       </p>
 
@@ -266,10 +261,9 @@ function PanelUtilityFooter({ onClose }: { onClose: () => void }) {
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           title={isDark ? "Light mode" : "Dark mode"}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                     text-xs text-slate border border-line
-                     hover:bg-paper hover:text-ink transition-colors
-                     dark:text-dark-muted dark:border-dark-border
-                     dark:hover:bg-dark-border dark:hover:text-dark-text"
+                     text-xs text-slate border border-border
+                     hover:bg-background hover:text-foreground transition-colors
+                    "
         >
           {isDark
             ? <Sun  className="h-3.5 w-3.5" />
@@ -287,7 +281,7 @@ function PanelUtilityFooter({ onClose }: { onClose: () => void }) {
                       text-xs border transition-colors
                       ${somaOpen
                         ? "bg-teal/10 text-teal border-teal/30 dark:bg-teal/20 dark:border-teal/40"
-                        : "text-slate border-line hover:bg-paper hover:text-ink dark:text-dark-muted dark:border-dark-border dark:hover:bg-dark-border dark:hover:text-dark-text"
+                        : "text-slate border-border hover:bg-background hover:text-foreground"
                       }`}
         >
           <span className="relative">
@@ -326,7 +320,7 @@ export function QuickActionsButton({
       className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors
                   ${isOpen
                     ? "bg-teal/10 text-teal dark:bg-teal-900/20 dark:text-teal"
-                    : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                    : "text-slate hover:bg-teal-50 hover:text-teal"
                   }`}
     >
       <Zap className="h-[18px] w-[18px]" />

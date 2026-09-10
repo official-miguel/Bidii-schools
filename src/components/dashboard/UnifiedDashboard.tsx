@@ -236,7 +236,7 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
 
       {/* ── 1. Page header ────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text leading-snug">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground leading-snug">
           {isPrincipal
             ? "Overview"
             : (
@@ -247,7 +247,7 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
             )
           }
         </h1>
-        <p className="text-sm text-slate dark:text-dark-muted mt-0.5">
+        <p className="text-sm text-slate mt-0.5">
           {today.toLocaleDateString("en-KE", {
             weekday: "long", day: "numeric", month: "long", year: "numeric",
           })}

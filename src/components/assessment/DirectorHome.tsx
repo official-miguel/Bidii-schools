@@ -22,9 +22,9 @@ function SummaryTile({
   href?: string;
 }) {
   const content = (
-    <div className="bg-white border border-line rounded-xl p-4 shadow-sm h-full">
+    <div className="bg-card border border-border rounded-xl p-4 shadow-sm h-full">
       <p className="text-xs text-slate mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${accent ?? "text-ink"}`}>{value}</p>
+      <p className={`text-2xl font-bold ${accent ?? "text-foreground"}`}>{value}</p>
       {sub && <p className="text-xs text-slate mt-0.5">{sub}</p>}
       {href && (
         <p className="text-xs text-royal mt-2 hover:underline">View →</p>
@@ -96,13 +96,13 @@ export default function DirectorHome() {
           label="Teaching Staff"
           value={data.totalTeachingStaff ?? "—"}
           href="/principal/assessments/staff-performance"
-          accent="text-ink"
+          accent="text-foreground"
         />
       </div>
 
       {/* All classes — grouped by Form */}
       <div>
-        <h2 className="text-sm font-semibold text-ink mb-3">All Classes</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-3">All Classes</h2>
         <FormGroupTable classes={data.classes} />
       </div>
     </div>
@@ -219,18 +219,18 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-slate">
+      <div className="rounded-xl border border-dashed border-border px-4 py-12 text-center text-sm text-slate">
         No classes found.
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+            <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
               <th className="px-5 py-3.5">Form</th>
               <th className="px-5 py-3.5 w-[100px]">Streams</th>
               <th className="px-5 py-3.5 w-[160px]">Avg mean grade</th>
@@ -242,7 +242,7 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
             {groups.map((g) => (
               <tr
                 key={g.form}
-                className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors"
+                className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors"
               >
                 {/* Form name */}
                 <td className="px-5 py-3.5">
@@ -250,7 +250,7 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
                     href={`/principal/assessments/forms/${g.form}`}
                     className="block"
                   >
-                    <p className="text-sm font-semibold text-ink group-hover:text-royal transition-colors">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-royal transition-colors">
                       Form {g.form}
                     </p>
                     <p className="text-xs text-slate/60">

@@ -47,7 +47,7 @@ const VIRTUAL_THRESHOLD = 100;
 // ---------------------------------------------------------------------------
 
 const TABLE_HEADER = (
-  <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+  <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
     <th className="px-5 py-3.5 w-[260px]">Student</th>
     <th className="px-5 py-3.5 w-[130px]">Adm. No.</th>
     <th className="px-5 py-3.5 w-[130px]">Class</th>
@@ -73,7 +73,7 @@ const StudentRow = React.memo(function StudentRow({
   canEdit?: boolean;
 }) {
   return (
-    <tr className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors">
+    <tr className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors">
       <td className="px-5 py-3.5">
         <button
           className="flex items-center gap-3 text-left"
@@ -81,7 +81,7 @@ const StudentRow = React.memo(function StudentRow({
         >
           <Avatar name={s.fullName} size="sm" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-ink hover:text-teal transition-colors truncate">
+            <p className="text-sm font-medium text-foreground hover:text-teal transition-colors truncate">
               {s.fullName}
             </p>
             {s.parentName && (
@@ -91,11 +91,11 @@ const StudentRow = React.memo(function StudentRow({
         </button>
       </td>
       <td className="px-5 py-3.5">
-        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
           {s.admissionNumber}
         </span>
       </td>
-      <td className="px-5 py-3.5 text-sm text-ink">{className || "—"}</td>
+      <td className="px-5 py-3.5 text-sm text-foreground">{className || "—"}</td>
       <td className="px-5 py-3.5">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {canEdit && onEdit && (
@@ -261,7 +261,7 @@ export default function TeacherStudentsPage() {
       ) : useVirtual ? (
         <div
           ref={parentRef}
-          className="bg-white border border-line rounded-xl overflow-auto shadow-sm"
+          className="bg-card border border-border rounded-xl overflow-auto shadow-sm"
           style={{ height: "65vh" }}
         >
           <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
@@ -292,7 +292,7 @@ export default function TeacherStudentsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead className="sticky top-0 z-10">{TABLE_HEADER}</thead>

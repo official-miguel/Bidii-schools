@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * DashboardGreeting
@@ -52,10 +52,10 @@ export default function DashboardGreeting({ parentName, studentName, alerts }: P
     <div className="space-y-5">
       {/* Greeting */}
       <div>
-        <h1 className="text-2xl md:text-[28px] font-bold text-ink dark:text-dark-text leading-tight">
+        <h1 className="text-2xl md:text-[28px] font-bold text-foreground leading-tight">
           {greeting}, {parentName}! {emoji}
         </h1>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <p className="text-sm text-slate mt-1">
           Here&apos;s what&apos;s happening with {studentName} today.
         </p>
       </div>

@@ -141,7 +141,7 @@ export default function NotificationList({ initialNotifications, total, unreadCo
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <span className="text-4xl mb-3" aria-hidden="true">🔔</span>
-        <p className="font-semibold text-ink text-lg">You&apos;re all caught up</p>
+        <p className="font-semibold text-foreground text-lg">You&apos;re all caught up</p>
         <p className="text-slate text-sm mt-1">There are no notifications.</p>
       </div>
     );
@@ -186,8 +186,8 @@ export default function NotificationList({ initialNotifications, total, unreadCo
                     onClick={() => { if (!n.isRead) markRead(n.id); }}
                     className={[
                       "w-full text-left rounded-xl px-4 py-3",
-                      "bg-white dark:bg-dark-surface",
-                      "border border-line dark:border-dark-border",
+                      "bg-card",
+                      "border border-border",
                       "hover:border-teal/40 transition-colors",
                       "relative flex items-start gap-3",
                       leftBorder(n.priority),
@@ -208,7 +208,7 @@ export default function NotificationList({ initialNotifications, total, unreadCo
                         <span
                           className={[
                             "text-[11px] font-medium px-2 py-0.5 rounded-full",
-                            MODULE_BADGE[n.module] ?? "bg-paper text-slate",
+                            MODULE_BADGE[n.module] ?? "bg-background text-slate",
                           ].join(" ")}
                         >
                           {n.module}
@@ -219,12 +219,12 @@ export default function NotificationList({ initialNotifications, total, unreadCo
                       </div>
 
                       {/* Title */}
-                      <p className={`text-sm text-ink dark:text-dark-text leading-snug ${!n.isRead ? "font-semibold" : "font-medium"}`}>
+                      <p className={`text-sm text-foreground leading-snug ${!n.isRead ? "font-semibold" : "font-medium"}`}>
                         {n.title}
                       </p>
 
                       {/* Body */}
-                      <p className="text-sm text-slate dark:text-dark-muted mt-0.5 line-clamp-2">
+                      <p className="text-sm text-slate mt-0.5 line-clamp-2">
                         {n.body}
                       </p>
                     </div>
@@ -243,7 +243,7 @@ export default function NotificationList({ initialNotifications, total, unreadCo
             type="button"
             onClick={loadMore}
             disabled={loadingMore}
-            className="px-6 py-2.5 rounded-lg border border-line text-sm text-slate
+            className="px-6 py-2.5 rounded-lg border border-border text-sm text-slate
                        hover:border-teal/40 hover:text-teal transition-colors
                        disabled:opacity-50"
           >

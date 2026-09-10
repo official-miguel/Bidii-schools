@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canGenerateReportCard } from "@/lib/assessment/auth844";
@@ -36,7 +36,7 @@ export default async function StudentReportPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">{student.fullName}</h1>
+        <h1 className="font-display text-xl font-semibold text-foreground">{student.fullName}</h1>
         <p className="text-sm text-slate mt-0.5">
           {student.schoolClass.name} · Adm. {student.admissionNumber}
         </p>

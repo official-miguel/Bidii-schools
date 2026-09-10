@@ -43,7 +43,7 @@ export default function SomaAIButton({ isOpen, onClick }: Props) {
         select-none
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2
         ${isOpen
-          ? "gap-2 h-9 pl-3 pr-3.5 bg-white border border-line text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:text-dark-text"
+          ? "gap-2 h-9 pl-3 pr-3.5 bg-card border border-border text-slate hover:text-foreground"
           : "h-10 w-10 justify-center bg-gradient-to-br from-teal to-teal-dark text-white hover:-translate-y-0.5"
         }
       `}

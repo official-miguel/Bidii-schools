@@ -159,8 +159,8 @@ export default function ReportPageWithGraph({
   return (
     <div className="space-y-5 print:space-y-0">
       {/* ── Action bar ── */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-white border border-line rounded-xl px-4 py-3 print:hidden">
-        <span className="text-sm font-medium text-ink">Report ready</span>
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-card border border-border rounded-xl px-4 py-3 print:hidden">
+        <span className="text-sm font-medium text-foreground">Report ready</span>
         <div className="flex gap-2">
           <button
             onClick={() => window.print()}
@@ -170,7 +170,7 @@ export default function ReportPageWithGraph({
           </button>
           <button
             onClick={() => setEmailSent(true)}
-            className="rounded-md border border-line text-sm font-medium px-4 py-2 text-ink hover:bg-paper transition-colors"
+            className="rounded-md border border-border text-sm font-medium px-4 py-2 text-foreground hover:bg-background transition-colors"
           >
             {emailSent ? "Email queued ✓" : "Email to Parent"}
           </button>
@@ -198,7 +198,7 @@ export default function ReportPageWithGraph({
           value={editedText}
           onChange={(e) => { setEditedText(e.target.value); setRemarkSaved(false); }}
           rows={3}
-          className="w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm text-ink focus:border-amber-500 focus:outline-none resize-none"
+          className="w-full rounded-md border border-amber-300 bg-card px-3 py-2 text-sm text-foreground focus:border-amber-500 focus:outline-none resize-none"
           placeholder="Write or edit the teacher comment here…"
         />
         <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export default function ReportPageWithGraph({
       </div>
 
       {/* ── Main report area ── */}
-      <div className="border border-line rounded-xl overflow-hidden shadow-sm print:shadow-none print:border-0">
+      <div className="border border-border rounded-xl overflow-hidden shadow-sm print:shadow-none print:border-0">
         {frameworkType === "EIGHT_FOUR_FOUR" ? (
           /*
            * 8-4-4: side-by-side layout matching the screenshot.
@@ -222,16 +222,16 @@ export default function ReportPageWithGraph({
            * Right half: performance-over-time line chart.
            * On mobile they stack vertically.
            */
-          <div className="bg-white">
+          <div className="bg-card">
             <div className="flex flex-col lg:flex-row">
               {/* Left — marks table */}
-              <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-line">
+              <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-border">
                 <ReportCard data={reportData as ReportCardData} />
               </div>
 
               {/* Right — performance chart */}
               <div className="lg:w-1/2 p-6 flex flex-col gap-4">
-                <h3 className="font-display font-semibold text-base text-ink">
+                <h3 className="font-display font-semibold text-base text-foreground">
                   Performance over Time
                 </h3>
                 <PerformanceLineChart points={historyPoints} />
@@ -241,22 +241,22 @@ export default function ReportPageWithGraph({
                   const d = reportData as ReportCardData;
                   return (
                     <div className="grid grid-cols-3 gap-3 mt-2 text-xs">
-                      <div className="rounded-lg bg-paper border border-line p-3 text-center">
+                      <div className="rounded-lg bg-background border border-border p-3 text-center">
                         <div className="text-2xl font-bold text-royal">
                           {d.summary.meanGrade ?? "—"}
                         </div>
                         <div className="text-slate mt-0.5">Mean Grade</div>
                       </div>
-                      <div className="rounded-lg bg-paper border border-line p-3 text-center">
-                        <div className="text-2xl font-bold text-ink">
+                      <div className="rounded-lg bg-background border border-border p-3 text-center">
+                        <div className="text-2xl font-bold text-foreground">
                           {d.summary.position !== null
                             ? `${d.summary.position}/${d.summary.classSize}`
                             : "—"}
                         </div>
                         <div className="text-slate mt-0.5">Class Position</div>
                       </div>
-                      <div className="rounded-lg bg-paper border border-line p-3 text-center">
-                        <div className="text-2xl font-bold text-ink">
+                      <div className="rounded-lg bg-background border border-border p-3 text-center">
+                        <div className="text-2xl font-bold text-foreground">
                           {d.summary.totalPoints ?? "—"}
                         </div>
                         <div className="text-slate mt-0.5">Total Points</div>

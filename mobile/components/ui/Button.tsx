@@ -12,7 +12,8 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize   = 'sm' | 'md' | 'lg';
@@ -30,40 +31,6 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
-
-type StyleMap = {
-  container: ViewStyle;
-  text: TextStyle;
-  disabledContainer: ViewStyle;
-  disabledText: TextStyle;
-};
-
-const VARIANT_STYLES: Record<ButtonVariant, StyleMap> = {
-  primary: {
-    container:        { backgroundColor: Colors.teal, borderWidth: 0 },
-    text:             { color: Colors.white },
-    disabledContainer:{ backgroundColor: Colors.teal + '60' },
-    disabledText:     { color: Colors.white + '80' },
-  },
-  secondary: {
-    container:        { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.line },
-    text:             { color: Colors.ink },
-    disabledContainer:{ backgroundColor: Colors.line },
-    disabledText:     { color: Colors.slateText },
-  },
-  ghost: {
-    container:        { backgroundColor: Colors.transparent, borderWidth: 0 },
-    text:             { color: Colors.teal },
-    disabledContainer:{ backgroundColor: Colors.transparent },
-    disabledText:     { color: Colors.muted },
-  },
-  danger: {
-    container:        { backgroundColor: Colors.danger, borderWidth: 0 },
-    text:             { color: Colors.white },
-    disabledContainer:{ backgroundColor: Colors.danger + '60' },
-    disabledText:     { color: Colors.white + '80' },
-  },
-};
 
 const SIZE_STYLES: Record<ButtonSize, { container: ViewStyle; text: TextStyle }> = {
   sm: {
@@ -93,9 +60,40 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const sizeStyles = SIZE_STYLES[size];
+  const isDisabled = disabled || loading;
+
+  // Variant styles derived from theme colors
+  type StyleMap = { container: ViewStyle; text: TextStyle; disabledContainer: ViewStyle; disabledText: TextStyle };
+  const VARIANT_STYLES: Record<ButtonVariant, StyleMap> = {
+    primary: {
+      container:        { backgroundColor: colors.primary, borderWidth: 0 },
+      text:             { color: colors.primaryForeground },
+      disabledContainer:{ backgroundColor: colors.primary + '60' },
+      disabledText:     { color: colors.primaryForeground + '80' },
+    },
+    secondary: {
+      container:        { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+      text:             { color: colors.foreground },
+      disabledContainer:{ backgroundColor: colors.border },
+      disabledText:     { color: colors.mutedForeground },
+    },
+    ghost: {
+      container:        { backgroundColor: 'transparent', borderWidth: 0 },
+      text:             { color: colors.primary },
+      disabledContainer:{ backgroundColor: 'transparent' },
+      disabledText:     { color: colors.mutedForeground },
+    },
+    danger: {
+      container:        { backgroundColor: colors.destructive, borderWidth: 0 },
+      text:             { color: colors.destructiveForeground },
+      disabledContainer:{ backgroundColor: colors.destructive + '60' },
+      disabledText:     { color: colors.destructiveForeground + '80' },
+    },
+  };
+
   const variantStyles = VARIANT_STYLES[variant];
-  const sizeStyles    = SIZE_STYLES[size];
-  const isDisabled    = disabled || loading;
 
   return (
     <TouchableOpacity
@@ -118,7 +116,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'secondary' || variant === 'ghost' ? Colors.teal : Colors.white}
+          color={variant === 'secondary' || variant === 'ghost' ? colors.primary : colors.primaryForeground}
         />
       ) : (
         <>

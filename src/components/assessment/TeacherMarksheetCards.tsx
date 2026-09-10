@@ -80,13 +80,13 @@ function PeriodSelector({
 }) {
   const current = periods.find((p) => p.id === value);
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper/60 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-background/60 px-4 py-3">
       <label className="text-xs font-medium text-slate shrink-0">Exam period</label>
       <div className="relative min-w-[240px]">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-lg border border-line bg-white pl-3 pr-8 py-2 text-sm text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+          className="w-full appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2 text-sm text-foreground focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/15 transition-colors"
         >
           {periods.map((p) => (
             <option key={p.id} value={p.id}>
@@ -131,7 +131,7 @@ function MarksheetCard({
       type="button"
       onClick={() => router.push(href)}
       className={`group relative rounded-xl border transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 flex flex-col gap-0 overflow-hidden text-left w-full
-        ${done ? "border-green-300 bg-green-50/40" : "border-line bg-white dark:bg-dark-surface dark:border-dark-border"}`}
+        ${done ? "border-green-300 bg-green-50/40" : "border-border bg-card"}`}
     >
       {/* Status stripe */}
       <div
@@ -150,10 +150,10 @@ function MarksheetCard({
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold text-ink text-sm leading-tight truncate dark:text-dark-text">
+            <p className="font-semibold text-foreground text-sm leading-tight truncate">
               {card.className}
             </p>
-            <p className="text-xs text-slate truncate mt-0.5 dark:text-dark-muted">
+            <p className="text-xs text-slate truncate mt-0.5">
               {card.subjectName}
               {card.subjectCode && (
                 <span className="ml-1 text-slate/60">· {card.subjectCode}</span>
@@ -222,7 +222,7 @@ function MarksheetCard({
 
 function CardSkeleton() {
   return (
-    <div className="rounded-xl border border-line bg-white animate-pulse overflow-hidden dark:bg-dark-surface dark:border-dark-border">
+    <div className="rounded-xl border border-border bg-card animate-pulse overflow-hidden">
       <div className="h-1 bg-line/60" />
       <div className="p-4 space-y-3">
         <div className="h-4 bg-line/50 rounded w-2/3" />

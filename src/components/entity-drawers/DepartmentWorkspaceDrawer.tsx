@@ -343,24 +343,24 @@ export default function DepartmentWorkspaceDrawer({
         <div className="space-y-5">
 
           {/* ── Overview ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
-            <h2 className="text-base font-semibold text-ink mb-3">{dept.name}</h2>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-base font-semibold text-foreground mb-3">{dept.name}</h2>
             <div className="flex flex-wrap gap-2">
-              <div className="flex items-center gap-1.5 bg-paper border border-line rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-1.5">
                 <Users className="h-3.5 w-3.5 text-slate" />
-                <span className="text-sm font-medium text-ink">{dept._count.teachers}</span>
+                <span className="text-sm font-medium text-foreground">{dept._count.teachers}</span>
                 <span className="text-xs text-slate">staff</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-paper border border-line rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-slate" />
-                <span className="text-sm font-medium text-ink">{dept._count.subjects}</span>
+                <span className="text-sm font-medium text-foreground">{dept._count.subjects}</span>
                 <span className="text-xs text-slate">subjects</span>
               </div>
             </div>
           </div>
 
           {/* ── Head of department ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>
                 <Crown className="h-3.5 w-3.5" />
@@ -394,7 +394,7 @@ export default function DepartmentWorkspaceDrawer({
                         <ExternalLink className="h-3 w-3" />
                       </button>
                     ) : (
-                      <p className="text-sm font-medium text-ink">{dept.headTeacher.fullName}</p>
+                      <p className="text-sm font-medium text-foreground">{dept.headTeacher.fullName}</p>
                     )}
                     {dept.headTeacher.email && (
                       <p className="text-xs text-slate truncate">{dept.headTeacher.email}</p>
@@ -414,20 +414,20 @@ export default function DepartmentWorkspaceDrawer({
                   <button
                     type="button"
                     onClick={() => setHodPickerOpen((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink hover:border-teal transition-colors"
+                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground hover:border-teal transition-colors"
                   >
                     <span className="truncate">{hodSearch || "Search staff…"}</span>
                     <ChevronDown className="h-4 w-4 text-slate shrink-0" />
                   </button>
                   {hodPickerOpen && (
-                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-line bg-white shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-line">
+                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+                      <div className="p-2 border-b border-border">
                         <input
                           autoFocus
                           value={hodSearch}
                           onChange={(e) => setHodSearch(e.target.value)}
                           placeholder="Search by name or staff ID…"
-                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-line bg-paper outline-none focus:border-teal"
+                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-border bg-background outline-none focus:border-teal"
                         />
                       </div>
                       <ul className="max-h-48 overflow-y-auto">
@@ -452,11 +452,11 @@ export default function DepartmentWorkspaceDrawer({
                                     setHodPickerOpen(false);
                                     saveHOD(s.id);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-background transition-colors"
                                 >
                                   <Avatar name={s.fullName} size="sm" />
                                   <div className="flex-1 min-w-0">
-                                    <span className="block font-medium text-ink truncate">{s.fullName}</span>
+                                    <span className="block font-medium text-foreground truncate">{s.fullName}</span>
                                     {deptSubjects && (
                                       <span className="block text-xs text-slate truncate">{deptSubjects}</span>
                                     )}
@@ -469,7 +469,7 @@ export default function DepartmentWorkspaceDrawer({
                         )}
                       </ul>
                       {dept.headTeacher && (
-                        <div className="border-t border-line p-2">
+                        <div className="border-t border-border p-2">
                           <button
                             type="button"
                             onClick={() => { setHodPickerOpen(false); saveHOD(null); }}
@@ -491,7 +491,7 @@ export default function DepartmentWorkspaceDrawer({
                 <button
                   type="button"
                   onClick={() => { setAssigningHOD(false); setHodSearch(""); setHodError(null); }}
-                  className="text-xs text-slate hover:text-ink"
+                  className="text-xs text-slate hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -500,7 +500,7 @@ export default function DepartmentWorkspaceDrawer({
           </div>
 
           {/* ── Subjects ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>
                 <BookOpen className="h-3.5 w-3.5" />
@@ -526,10 +526,10 @@ export default function DepartmentWorkspaceDrawer({
                 {dept.subjects.map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between gap-3 py-1.5 border-b border-line last:border-0"
+                    className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono text-xs bg-paper border border-line rounded px-1.5 py-0.5 shrink-0">
+                      <span className="font-mono text-xs bg-background border border-border rounded px-1.5 py-0.5 shrink-0">
                         {s.code}
                       </span>
                       {onOpenSubject ? (
@@ -542,7 +542,7 @@ export default function DepartmentWorkspaceDrawer({
                           <ExternalLink className="h-3 w-3 shrink-0" />
                         </button>
                       ) : (
-                        <span className="text-sm text-ink truncate">{s.name}</span>
+                        <span className="text-sm text-foreground truncate">{s.name}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -559,7 +559,7 @@ export default function DepartmentWorkspaceDrawer({
                             setMovePickerOpen(true);
                             setMoveError(null);
                           }}
-                          className="p-1 rounded hover:bg-paper text-slate hover:text-ink transition-colors"
+                          className="p-1 rounded hover:bg-background text-slate hover:text-foreground transition-colors"
                         >
                           <ArrowRightLeft className="h-3.5 w-3.5" />
                         </button>
@@ -572,21 +572,21 @@ export default function DepartmentWorkspaceDrawer({
 
             {/* ── Move-to-department picker ── */}
             {movingSubjectId && movingSubject && (
-              <div className="mt-3 rounded-lg border border-line bg-paper p-3 space-y-2">
-                <p className="text-xs font-medium text-ink">
+              <div className="mt-3 rounded-lg border border-border bg-background p-3 space-y-2">
+                <p className="text-xs font-medium text-foreground">
                   Move <span className="text-teal">{movingSubject.name}</span> to…
                 </p>
                 <div className="relative" ref={movePickerRef}>
                   <button
                     type="button"
                     onClick={() => setMovePickerOpen((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink hover:border-teal transition-colors"
+                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:border-teal transition-colors"
                   >
                     <span className="truncate text-slate">Select department…</span>
                     <ChevronDown className="h-4 w-4 text-slate shrink-0" />
                   </button>
                   {movePickerOpen && (
-                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-line bg-white shadow-lg overflow-hidden">
+                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
                       <ul className="max-h-48 overflow-y-auto">
                         {allDepts.length === 0 ? (
                           <li className="px-3 py-2 text-sm text-slate italic">
@@ -599,7 +599,7 @@ export default function DepartmentWorkspaceDrawer({
                                 type="button"
                                 disabled={moveSaving}
                                 onClick={() => moveSubjectToDept(movingSubjectId, d.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-paper transition-colors disabled:opacity-50"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-background transition-colors disabled:opacity-50"
                               >
                                 {d.name}
                               </button>
@@ -619,7 +619,7 @@ export default function DepartmentWorkspaceDrawer({
                 <button
                   type="button"
                   onClick={() => { setMovingSubjectId(null); setMovePickerOpen(false); setMoveError(null); }}
-                  className="text-xs text-slate hover:text-ink flex items-center gap-1"
+                  className="text-xs text-slate hover:text-foreground flex items-center gap-1"
                 >
                   <X className="h-3 w-3" /> Cancel
                 </button>
@@ -633,20 +633,20 @@ export default function DepartmentWorkspaceDrawer({
                   <button
                     type="button"
                     onClick={() => setSubjectPickerOpen((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-teal bg-paper px-3 py-2 text-sm text-ink transition-colors"
+                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-teal bg-background px-3 py-2 text-sm text-foreground transition-colors"
                   >
                     <span className="truncate text-slate">Search subjects to add…</span>
                     <ChevronDown className="h-4 w-4 text-slate shrink-0" />
                   </button>
                   {subjectPickerOpen && (
-                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-line bg-white shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-line">
+                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+                      <div className="p-2 border-b border-border">
                         <input
                           autoFocus
                           value={subjectSearch}
                           onChange={(e) => setSubjectSearch(e.target.value)}
                           placeholder="Search by name, code or current department…"
-                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-line bg-paper outline-none focus:border-teal"
+                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-border bg-background outline-none focus:border-teal"
                         />
                       </div>
                       <ul className="max-h-56 overflow-y-auto">
@@ -667,13 +667,13 @@ export default function DepartmentWorkspaceDrawer({
                                   setSubjectSearch("");
                                   addSubjectToDept(s);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors disabled:opacity-50"
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-background transition-colors disabled:opacity-50"
                               >
-                                <span className="font-mono text-xs bg-paper border border-line rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
+                                <span className="font-mono text-xs bg-background border border-border rounded px-1.5 py-0.5 shrink-0 w-14 text-center">
                                   {s.code}
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                  <span className="block font-medium text-ink truncate">{s.name}</span>
+                                  <span className="block font-medium text-foreground truncate">{s.name}</span>
                                   <span className="block text-xs text-slate truncate">
                                     Currently: {s.department.name}
                                   </span>
@@ -699,7 +699,7 @@ export default function DepartmentWorkspaceDrawer({
                     setSubjectSearch("");
                     setSubjectError(null);
                   }}
-                  className="text-xs text-slate hover:text-ink flex items-center gap-1"
+                  className="text-xs text-slate hover:text-foreground flex items-center gap-1"
                 >
                   <X className="h-3 w-3" /> Done
                 </button>
@@ -709,14 +709,14 @@ export default function DepartmentWorkspaceDrawer({
 
           {/* ── Staff ── */}
           {dept.teachers.length > 0 && (
-            <div className="bg-white border border-line rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <SectionTitle>
                 <Users className="h-3.5 w-3.5" />
                 Staff ({dept._count.teachers})
               </SectionTitle>
               <div className="space-y-2">
                 {dept.teachers.map((t) => (
-                  <div key={t.id} className="flex items-center gap-3 py-1 border-b border-line last:border-0">
+                  <div key={t.id} className="flex items-center gap-3 py-1 border-b border-border last:border-0">
                     <Avatar name={t.fullName} size="sm" />
                     <div className="flex-1 min-w-0">
                       {onOpenStaff ? (
@@ -729,7 +729,7 @@ export default function DepartmentWorkspaceDrawer({
                           <ExternalLink className="h-3 w-3" />
                         </button>
                       ) : (
-                        <p className="text-sm font-medium text-ink">{t.fullName}</p>
+                        <p className="text-sm font-medium text-foreground">{t.fullName}</p>
                       )}
                       <p className="text-xs text-slate font-mono">{t.staffId}</p>
                     </div>
@@ -748,7 +748,7 @@ export default function DepartmentWorkspaceDrawer({
           )}
 
           {/* ── Quick links ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <SectionTitle>Quick links</SectionTitle>
             <div className="space-y-2">
               <a href={`${basePath}/departments`} className="flex items-center gap-2 text-sm text-teal hover:underline">

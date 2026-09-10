@@ -38,7 +38,7 @@ export default async function AttendancePage({ searchParams }: Props) {
     if (!first) {
       return (
         <div className="space-y-4">
-          <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Attendance</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Attendance</h1>
           <div className="rounded-xl border border-warn/20 bg-warn-bg p-5">
             <p className="text-sm font-medium text-warn">No student linked to your account.</p>
           </div>
@@ -95,10 +95,10 @@ export default async function AttendancePage({ searchParams }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
           Attendance — {student.fullName}
         </h1>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <p className="text-sm text-slate mt-1">
           {activeTerm?.startDate
             ? `From ${new Date(termStart).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" })}`
             : "Last 90 days"}
@@ -107,13 +107,13 @@ export default async function AttendancePage({ searchParams }: Props) {
 
       {records.length === 0 ? (
         /* Empty state — requirement 6.5 */
-        <div className="rounded-xl border border-line bg-card p-10 flex flex-col items-center gap-3 text-center dark:bg-dark-surface dark:border-dark-border">
+        <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center gap-3 text-center">
           <p className="text-4xl">🗓️</p>
           <div>
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">
+            <p className="text-sm font-semibold text-foreground">
               No attendance recorded yet
             </p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-1">
+            <p className="text-xs text-slate mt-1">
               Attendance records will appear here once marked.
             </p>
           </div>
@@ -128,14 +128,14 @@ export default async function AttendancePage({ searchParams }: Props) {
           />
 
           {/* Dot calendar grid */}
-          <div className="rounded-xl border border-line bg-card p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
+            <p className="text-sm font-semibold text-foreground mb-3">
               Daily attendance
             </p>
             <AttendanceDotGrid records={records} />
 
             {/* Legend */}
-            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate dark:text-dark-muted">
+            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-4 h-4 rounded bg-success-bg" />
                 Present

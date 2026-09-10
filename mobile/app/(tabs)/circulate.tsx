@@ -33,9 +33,10 @@ import { StudentListItem } from '@/components/library';
 import {
   api, StudentHit, CardDetail, PolicyEvalResult,
 } from '@/services/api';
-import { Colors, Spacing, Typography, Radius, SCAN_COOLDOWN_MS } from '@/constants';
+import { Spacing, Typography, Radius, SCAN_COOLDOWN_MS } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { syncService } from '@/services/sync';
+import { useTheme } from '@/lib/ThemeContext';
 import {
   formatDate, formatCurrency, cardStatusLabel,
   isOverdue, getErrorMessage,
@@ -56,6 +57,7 @@ export default function CirculateScreen() {
   const insets  = useSafeAreaInsets();
   const params  = useLocalSearchParams<{ preloadStudentId?: string }>();
   const { toastProps } = useToast();
+  const { colors } = useTheme();
 
   // ── Phase ──────────────────────────────────────────────────────────────
   const [phase,  setPhase]  = useState<Phase>('student');
@@ -237,7 +239,7 @@ export default function CirculateScreen() {
   const hasOverdue = cardDetail?.card.borrows.some(b => !b.returnedAt && isOverdue(b.dueAt)) ?? false;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader
         title="Circulation Desk"
         subtitle={
@@ -249,7 +251,7 @@ export default function CirculateScreen() {
         right={
           phase !== 'student' ? (
             <TouchableOpacity onPress={reset} style={{ padding: Spacing[2] }} hitSlop={{ top:8, right:8, bottom:8, left:8 }}>
-              <X size={20} color={Colors.white} />
+              <X size={20} color="#FFFFFF" />
             </TouchableOpacity>
           ) : undefined
         }
@@ -275,11 +277,11 @@ export default function CirculateScreen() {
             ))}
             {!studentQuery && (
               <View style={{ alignItems: 'center', paddingTop: Spacing[10] }}>
-                <User size={48} color={Colors.muted} />
-                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.sm, marginTop: Spacing[3], textAlign: 'center' }}>
+                <User size={48} color={colors.mutedForeground} />
+                <Text style={{ color: colors.foreground, fontSize: Typography.fontSize.sm, marginTop: Spacing[3], textAlign: 'center' }}>
                   Start by finding the student
                 </Text>
-                <Text style={{ color: Colors.muted, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign: 'center', paddingHorizontal: Spacing[6] }}>
+                <Text style={{ color: colors.mutedForeground, fontSize: Typography.fontSize.xs, marginTop: Spacing[2], textAlign: 'center', paddingHorizontal: Spacing[6] }}>
                   Type their name or admission number above.{'\n'}
                   After selecting them, tap the camera icon or toggle Scan Mode to scan a book QR code, or type the accession number directly.
                 </Text>
@@ -302,7 +304,7 @@ export default function CirculateScreen() {
 
               {/* Label row with scan-mode toggle switch */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Search Book
                 </Text>
                 {/* Scan mode switch */}
@@ -311,19 +313,19 @@ export default function CirculateScreen() {
                   activeOpacity={0.75}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[1.5] }}
                 >
-                  <Text style={{ fontSize: Typography.fontSize.xs, color: bookInputMode === 'camera' ? Colors.teal : Colors.slateText, fontWeight: Typography.fontWeight.semibold }}>
+                  <Text style={{ fontSize: Typography.fontSize.xs, color: bookInputMode === 'camera' ? colors.primary : colors.mutedForeground, fontWeight: Typography.fontWeight.semibold }}>
                     Scan Mode
                   </Text>
                   {/* pill toggle */}
                   <View style={{
                     width: 44, height: 24, borderRadius: 12,
-                    backgroundColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                    backgroundColor: bookInputMode === 'camera' ? colors.primary : colors.border,
                     justifyContent: 'center',
                     paddingHorizontal: 2,
                   }}>
                     <View style={{
                       width: 20, height: 20, borderRadius: 10,
-                      backgroundColor: Colors.white,
+                      backgroundColor: colors.card,
                       alignSelf: bookInputMode === 'camera' ? 'flex-end' : 'flex-start',
                       shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2,
                       elevation: 2,
@@ -335,19 +337,19 @@ export default function CirculateScreen() {
               {/* Input field with camera icon */}
               <View style={{
                 flexDirection: 'row', alignItems: 'center',
-                backgroundColor: Colors.card,
+                backgroundColor: colors.card,
                 borderRadius: Radius.button,
-                borderWidth: 1, borderColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                borderWidth: 1, borderColor: bookInputMode === 'camera' ? colors.primary : colors.border,
                 paddingHorizontal: Spacing[3],
                 height: 48,
               }}>
-                <BookOpen size={18} color={Colors.slateText} style={{ marginRight: Spacing[2] }} />
+                <BookOpen size={18} color={colors.mutedForeground} style={{ marginRight: Spacing[2] }} />
                 <TextInput
-                  style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.ink }}
+                  style={{ flex: 1, fontSize: Typography.fontSize.sm, color: colors.foreground }}
                   value={bookQuery}
                   onChangeText={setBookQuery}
                   placeholder="Title, accession number or author…"
-                  placeholderTextColor={Colors.muted}
+                  placeholderTextColor={colors.mutedForeground}
                   editable={bookInputMode === 'keyboard'}
                   autoFocus={bookInputMode === 'keyboard'}
                 />
@@ -357,17 +359,17 @@ export default function CirculateScreen() {
                   hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                   style={{
                     marginLeft: Spacing[2],
-                    backgroundColor: bookInputMode === 'camera' ? Colors.teal : Colors.line,
+                    backgroundColor: bookInputMode === 'camera' ? colors.primary : colors.border,
                     borderRadius: Radius.full,
                     padding: Spacing[1.5],
                   }}
                 >
-                  <QrCode size={18} color={bookInputMode === 'camera' ? Colors.white : Colors.slateText} />
+                  <QrCode size={18} color={bookInputMode === 'camera' ? colors.primaryForeground : colors.mutedForeground} />
                 </TouchableOpacity>
               </View>
 
               {bookInputMode === 'camera' && (
-                <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.teal, textAlign: 'center' }}>
+                <Text style={{ fontSize: Typography.fontSize.xs, color: colors.primary, textAlign: 'center' }}>
                   Scan mode active — point camera at book QR code
                 </Text>
               )}
@@ -391,7 +393,7 @@ export default function CirculateScreen() {
                             [c.includes('t') ? 'top' : 'bottom']: 0,
                             [c.includes('l') ? 'left' : 'right']: 0,
                             width: 32, height: 32,
-                            borderColor: Colors.teal,
+                            borderColor: colors.primary,
                             borderTopWidth:    c.includes('t') ? 3 : 0,
                             borderBottomWidth: c.includes('b') ? 3 : 0,
                             borderLeftWidth:   c.includes('l') ? 3 : 0,
@@ -400,7 +402,7 @@ export default function CirculateScreen() {
                         ))}
                       </View>
                       <View style={{ marginTop: Spacing[4], backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: Radius.button, paddingHorizontal: Spacing[4], paddingVertical: Spacing[1.5] }}>
-                        <Text style={{ color: Colors.white, fontSize: Typography.fontSize.xs, textAlign: 'center' }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: Typography.fontSize.xs, textAlign: 'center' }}>
                           {searchingBook ? 'Processing…' : 'Point camera at book QR code'}
                         </Text>
                       </View>
@@ -408,9 +410,9 @@ export default function CirculateScreen() {
                   </CameraView>
                 </View>
               ) : (
-                <View style={{ height: 200, backgroundColor: Colors.ink, borderRadius: Radius.card, alignItems: 'center', justifyContent: 'center', gap: Spacing[3] }}>
-                  <QrCode size={36} color={Colors.muted} />
-                  <Text style={{ color: Colors.muted, textAlign: 'center', fontSize: Typography.fontSize.sm, paddingHorizontal: Spacing[6] }}>
+                <View style={{ height: 200, backgroundColor: colors.foreground, borderRadius: Radius.card, alignItems: 'center', justifyContent: 'center', gap: Spacing[3] }}>
+                  <QrCode size={36} color={colors.mutedForeground} />
+                  <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: Typography.fontSize.sm, paddingHorizontal: Spacing[6] }}>
                     Camera permission needed
                   </Text>
                   <Button label="Enable Camera" onPress={requestPermission} size="sm" />
@@ -444,9 +446,9 @@ export default function CirculateScreen() {
         {/* ── PHASE 4: Done ─────────────────────────────────────────── */}
         {phase === 'done' && (
           <View style={{ gap: Spacing[4] }}>
-            <View style={{ backgroundColor: Colors.successBg, borderRadius: Radius.card, padding: Spacing[6], alignItems: 'center', gap: Spacing[3] }}>
-              <CheckCircle2 size={40} color={Colors.success} />
-              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink, textAlign: 'center' }}>
+            <View style={{ backgroundColor: colors.success, borderRadius: Radius.card, padding: Spacing[6], alignItems: 'center', gap: Spacing[3] }}>
+              <CheckCircle2 size={40} color={colors.successForeground} />
+              <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: colors.foreground, textAlign: 'center' }}>
                 {doneMsg}
               </Text>
             </View>
@@ -492,27 +494,28 @@ const PHASES: { key: Phase; label: string }[] = [
 ];
 
 function PhaseBar({ phase }: { phase: Phase }) {
+  const { colors } = useTheme();
   const current = PHASES.findIndex(p => p.key === phase);
   return (
-    <View style={{ flexDirection: 'row', backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.line, paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] }}>
+    <View style={{ flexDirection: 'row', backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] }}>
       {PHASES.map(({ key, label }, i) => {
         const done   = i < current;
         const active = i === current;
         return (
           <React.Fragment key={key}>
             <View style={{ alignItems: 'center', opacity: done || active ? 1 : 0.35 }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: done ? Colors.success : active ? Colors.teal : Colors.line, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: done ? colors.successForeground : active ? colors.primary : colors.border, alignItems: 'center', justifyContent: 'center' }}>
                 {done
-                  ? <CheckCircle2 size={14} color={Colors.white} />
-                  : <Text style={{ fontSize: 11, fontWeight: '700', color: active ? Colors.white : Colors.slateText }}>{i + 1}</Text>
+                  ? <CheckCircle2 size={14} color={'#FFFFFF'} />
+                  : <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#FFFFFF' : colors.mutedForeground }}>{i + 1}</Text>
                 }
               </View>
-              <Text style={{ fontSize: Typography.fontSize.xs, marginTop: 2, color: active ? Colors.teal : Colors.slateText, fontWeight: active ? Typography.fontWeight.semibold : Typography.fontWeight.normal }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, marginTop: 2, color: active ? colors.primary : colors.mutedForeground, fontWeight: active ? Typography.fontWeight.semibold : Typography.fontWeight.normal }}>
                 {label}
               </Text>
             </View>
             {i < PHASES.length - 1 && (
-              <View style={{ flex: 1, height: 2, backgroundColor: i < current ? Colors.success : Colors.line, alignSelf: 'center', marginHorizontal: Spacing[1], marginBottom: 14 }} />
+              <View style={{ flex: 1, height: 2, backgroundColor: i < current ? colors.successForeground : colors.border, alignSelf: 'center', marginHorizontal: Spacing[1], marginBottom: 14 }} />
             )}
           </React.Fragment>
         );
@@ -524,36 +527,37 @@ function PhaseBar({ phase }: { phase: Phase }) {
 // ── StudentCardPanel ──────────────────────────────────────────────────────────
 
 function StudentCardPanel({ detail, hasOverdue }: { detail: CardDetail; hasOverdue: boolean }) {
+  const { colors } = useTheme();
   const { student, card } = detail;
   return (
-    <View style={{ backgroundColor: Colors.teal, borderRadius: Radius.card, padding: Spacing[4], flexDirection: 'row', gap: Spacing[3] }}>
+    <View style={{ backgroundColor: colors.primary, borderRadius: Radius.card, padding: Spacing[4], flexDirection: 'row', gap: Spacing[3] }}>
       <Avatar name={student.fullName} photoFileId={student.files[0]?.id} size="lg" />
       <View style={{ flex: 1, gap: Spacing[1] }}>
-        <Text style={{ color: Colors.white, fontWeight: Typography.fontWeight.bold, fontSize: Typography.fontSize.base }} numberOfLines={1}>
+        <Text style={{ color: '#FFFFFF', fontWeight: Typography.fontWeight.bold, fontSize: Typography.fontSize.base }} numberOfLines={1}>
           {student.fullName}
         </Text>
-        <Text style={{ color: Colors.white + 'CC', fontSize: Typography.fontSize.xs }}>
+        <Text style={{ color: '#FFFFFFCC', fontSize: Typography.fontSize.xs }}>
           {student.admissionNumber} · {student.schoolClass.name}
         </Text>
         <View style={{ flexDirection: 'row', gap: Spacing[2], marginTop: Spacing[1], flexWrap: 'wrap' }}>
-          <View style={{ backgroundColor: Colors.white + '30', paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
-            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.white }}>
+          <View style={{ backgroundColor: '#FFFFFF30', paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
+            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: '#FFFFFF' }}>
               {cardStatusLabel(card.status)}
             </Text>
           </View>
           {card.fineBalance > 0 && (
-            <View style={{ backgroundColor: Colors.dangerBg, paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.danger }}>
+            <View style={{ backgroundColor: colors.destructive + '15', paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: colors.destructive }}>
                 Fine: {formatCurrency(card.fineBalance)}
               </Text>
             </View>
           )}
           {hasOverdue && (
-            <View style={{ backgroundColor: Colors.warnBg, paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
-              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: Colors.warn }}>Overdue</Text>
+            <View style={{ backgroundColor: colors.warn, paddingHorizontal: Spacing[2], paddingVertical: 1, borderRadius: Radius.full }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: colors.warnForeground }}>Overdue</Text>
             </View>
           )}
-          <Text style={{ color: Colors.white + '99', fontSize: Typography.fontSize.xs }}>
+          <Text style={{ color: '#FFFFFF99', fontSize: Typography.fontSize.xs }}>
             {card.currentBorrowCount} out
           </Text>
         </View>
@@ -576,6 +580,7 @@ interface EvalPanelProps {
 }
 
 function EvalPanel(p: EvalPanelProps) {
+  const { colors } = useTheme();
   const { eval: ev, canBorrow, canReturn, canRenew } = p;
   const copy = ev.copy;
 
@@ -583,15 +588,15 @@ function EvalPanel(p: EvalPanelProps) {
     <View style={{ gap: Spacing[3] }}>
       {/* Book summary */}
       <Card>
-        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[2] }}>Book</Text>
-        <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }} numberOfLines={1}>
+        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[2] }}>Book</Text>
+        <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }} numberOfLines={1}>
           {copy?.catalogue?.title || copy?.accessionNumber}
         </Text>
-        <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText, marginTop: 2 }}>
+        <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginTop: 2 }}>
           {copy?.accessionNumber} · {copy?.status} · {copy?.condition}
         </Text>
         {ev.dueAt && canBorrow && (
-          <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.teal, marginTop: Spacing[2] }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, color: colors.primary, marginTop: Spacing[2] }}>
             If borrowed → due {formatDate(ev.dueAt)}
           </Text>
         )}
@@ -599,34 +604,34 @@ function EvalPanel(p: EvalPanelProps) {
 
       {/* Block reasons */}
       {ev.reasons?.map((r, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: Colors.dangerBg, borderRadius: Radius.button, padding: Spacing[3] }}>
-          <AlertCircle size={16} color={Colors.danger} />
-          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.danger }}>{r}</Text>
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: colors.destructive + '15', borderRadius: Radius.button, padding: Spacing[3] }}>
+          <AlertCircle size={16} color={colors.destructive} />
+          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: colors.destructive }}>{r}</Text>
         </View>
       ))}
 
       {/* Warnings */}
       {ev.warnings?.map((w, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: Colors.warnBg, borderRadius: Radius.button, padding: Spacing[3] }}>
-          <AlertTriangle size={16} color={Colors.warn} />
-          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: Colors.warn }}>{w}</Text>
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing[2], backgroundColor: colors.warn, borderRadius: Radius.button, padding: Spacing[3] }}>
+          <AlertTriangle size={16} color={colors.warnForeground} />
+          <Text style={{ flex: 1, fontSize: Typography.fontSize.sm, color: colors.warnForeground }}>{w}</Text>
         </View>
       ))}
 
       {/* Action selector */}
       <View style={{ gap: Spacing[2] }}>
-        {canBorrow && <ActionBtn label="Borrow" active={p.action==='borrow'} onPress={() => p.onSelectAction('borrow')} color={Colors.teal} />}
-        {canReturn  && <ActionBtn label="Return" active={p.action==='return'} onPress={() => p.onSelectAction('return')} color={Colors.success} />}
-        {canRenew   && <ActionBtn label="Renew"  active={p.action==='renew'}  onPress={() => p.onSelectAction('renew')}  color={Colors.info} />}
+        {canBorrow && <ActionBtn label="Borrow" active={p.action==='borrow'} onPress={() => p.onSelectAction('borrow')} color={colors.primary} colors={colors} />}
+        {canReturn  && <ActionBtn label="Return" active={p.action==='return'} onPress={() => p.onSelectAction('return')} color={colors.successForeground} colors={colors} />}
+        {canRenew   && <ActionBtn label="Renew"  active={p.action==='renew'}  onPress={() => p.onSelectAction('renew')}  color={'#2E90FA' /* info blue — chart series color */} colors={colors} />}
       </View>
 
       {/* Return options */}
       {p.action === 'return' && (
         <Card>
-          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, marginBottom: Spacing[3], textTransform: 'uppercase', letterSpacing: 0.8 }}>Return Details</Text>
-          <PillRow label="Return type"         options={RETURN_TYPES}      value={p.returnType}      onChange={p.onReturnType} />
+          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, marginBottom: Spacing[3], textTransform: 'uppercase', letterSpacing: 0.8 }}>Return Details</Text>
+          <PillRow label="Return type"         options={RETURN_TYPES}      value={p.returnType}      onChange={p.onReturnType} colors={colors} />
           <View style={{ marginTop: Spacing[3] }}>
-            <PillRow label="Condition on return" options={RETURN_CONDITIONS} value={p.returnCondition} onChange={p.onReturnCondition} />
+            <PillRow label="Condition on return" options={RETURN_CONDITIONS} value={p.returnCondition} onChange={p.onReturnCondition} colors={colors} />
           </View>
         </Card>
       )}
@@ -634,12 +639,12 @@ function EvalPanel(p: EvalPanelProps) {
       {/* Override reason (borrow blocked) */}
       {p.action === 'borrow' && !ev.allowed && (
         <Card>
-          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.warn, marginBottom: Spacing[2] }}>Override Required</Text>
+          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.warnForeground, marginBottom: Spacing[2] }}>Override Required</Text>
           <TextInput
             value={p.overrideReason} onChangeText={p.onOverrideReason}
-            placeholder="Enter override reason" placeholderTextColor={Colors.muted}
+            placeholder="Enter override reason" placeholderTextColor={colors.mutedForeground}
             multiline numberOfLines={2}
-            style={{ borderWidth: 1, borderColor: Colors.line, borderRadius: Radius.sm, padding: Spacing[3], fontSize: Typography.fontSize.sm, color: Colors.ink, minHeight: 60 }}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: Radius.sm, padding: Spacing[3], fontSize: Typography.fontSize.sm, color: colors.foreground, minHeight: 60 }}
           />
         </Card>
       )}
@@ -659,30 +664,30 @@ function EvalPanel(p: EvalPanelProps) {
   );
 }
 
-function ActionBtn({ label, active, onPress, color }: { label: string; active: boolean; onPress: () => void; color: string }) {
+function ActionBtn({ label, active, onPress, color, colors }: { label: string; active: boolean; onPress: () => void; color: string; colors: ReturnType<typeof useTheme>['colors'] }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ padding: Spacing[3], borderRadius: Radius.button, borderWidth: 2, borderColor: active ? color : Colors.line, backgroundColor: active ? color + '15' : Colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+      style={{ padding: Spacing[3], borderRadius: Radius.button, borderWidth: 2, borderColor: active ? color : colors.border, backgroundColor: active ? color + '15' : colors.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
     >
-      <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: active ? color : Colors.ink }}>{label}</Text>
+      <Text style={{ fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: active ? color : colors.foreground }}>{label}</Text>
       {active && <CheckCircle2 size={20} color={color} />}
     </TouchableOpacity>
   );
 }
 
-function PillRow({ label, options, value, onChange }: { label: string; options: readonly string[]; value: string; onChange: (v: string) => void }) {
+function PillRow({ label, options, value, onChange, colors }: { label: string; options: readonly string[]; value: string; onChange: (v: string) => void; colors: ReturnType<typeof useTheme>['colors'] }) {
   return (
     <View>
-      <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted, marginBottom: Spacing[2] }}>{label}</Text>
+      <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginBottom: Spacing[2] }}>{label}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] }}>
         {options.map(o => (
           <TouchableOpacity
             key={o}
             onPress={() => onChange(o)}
-            style={{ paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5], borderRadius: Radius.full, borderWidth: 1, borderColor: value === o ? Colors.teal : Colors.line, backgroundColor: value === o ? Colors.teal50 : Colors.card }}
+            style={{ paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5], borderRadius: Radius.full, borderWidth: 1, borderColor: value === o ? colors.primary : colors.border, backgroundColor: value === o ? colors.primary + '15' : colors.card }}
           >
-            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: value === o ? Colors.teal : Colors.slateText }}>
+            <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.medium, color: value === o ? colors.primary : colors.mutedForeground }}>
               {o.replace(/_/g, ' ').charAt(0) + o.replace(/_/g, ' ').slice(1).toLowerCase()}
             </Text>
           </TouchableOpacity>

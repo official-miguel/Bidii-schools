@@ -79,7 +79,7 @@ function StudentPhoto({ fileId, name, size = "md" }: { fileId?: string; name: st
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`/api/students/files/${fileId}`} alt={name}
-      className={`${sz} rounded-full object-cover border border-line shrink-0`}
+      className={`${sz} rounded-full object-cover border border-border shrink-0`}
       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
     />
   );
@@ -165,12 +165,12 @@ function CardDetailPanel({ studentId, onClose }: { studentId: string; onClose: (
       {data && card && student && (
         <div className="space-y-6">
           {/* Card header with photo */}
-          <div className="flex items-start gap-4 p-4 rounded-xl border border-line bg-paper dark:bg-dark-border/20">
+          <div className="flex items-start gap-4 p-4 rounded-xl border border-border bg-background/20">
             <StudentPhoto fileId={photoId} name={student.fullName} size="lg" />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-ink text-base dark:text-dark-text">{student.fullName}</p>
+                  <p className="font-semibold text-foreground text-base">{student.fullName}</p>
                   <p className="text-sm text-slate font-mono">{student.admissionNumber}</p>
                   <p className="text-sm text-slate">{student.schoolClass.name}</p>
                 </div>
@@ -247,10 +247,10 @@ function CardDetailPanel({ studentId, onClose }: { studentId: string; onClose: (
                   const overdue = isOverdue(b.dueAt, b.returnedAt, b.fineStoppedAt);
                   const stopped = !!b.fineStoppedAt;
                   return (
-                    <li key={b.id} className={`rounded-xl border p-4 text-sm ${overdue ? "border-danger/30 bg-danger-bg/30" : "border-line bg-white dark:bg-dark-surface dark:border-dark-border"}`}>
+                    <li key={b.id} className={`rounded-xl border p-4 text-sm ${overdue ? "border-danger/30 bg-danger-bg/30" : "border-border bg-card"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-semibold text-ink truncate dark:text-dark-text">{title(b)}</p>
+                          <p className="font-semibold text-foreground truncate">{title(b)}</p>
                           {b.copy?.accessionNumber && <p className="text-xs font-mono text-slate">{b.copy.accessionNumber}</p>}
                           <p className="text-xs text-slate mt-1">
                             Borrowed {fmt(b.borrowedAt)} · Due {fmt(b.dueAt)}
@@ -286,13 +286,13 @@ function CardDetailPanel({ studentId, onClose }: { studentId: string; onClose: (
 
           {/* Pay fine panel */}
           {payBorrowId && (
-            <div className="rounded-xl border border-line p-4 space-y-3 animate-slide-down">
-              <p className="text-sm font-semibold text-ink">Record Fine Payment</p>
-              <p className="text-sm text-slate">Outstanding: <strong className="text-ink">KES {card.fineBalance.toFixed(2)}</strong></p>
+            <div className="rounded-xl border border-border p-4 space-y-3 animate-slide-down">
+              <p className="text-sm font-semibold text-foreground">Record Fine Payment</p>
+              <p className="text-sm text-slate">Outstanding: <strong className="text-foreground">KES {card.fineBalance.toFixed(2)}</strong></p>
               {payErr && <ErrorBanner message={payErr} />}
               <div className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-ink mb-1.5">Amount paid (KES)</label>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">Amount paid (KES)</label>
                   <input type="number" min="0.01" step="0.01" className={inputClass} value={payAmount} onChange={e => setPayAmount(e.target.value)} autoFocus />
                 </div>
                 <button className={primaryButtonClass} onClick={handlePayFine}><DollarSign className="h-4 w-4" />Confirm</button>
@@ -304,11 +304,11 @@ function CardDetailPanel({ studentId, onClose }: { studentId: string; onClose: (
           {/* History */}
           {history.length > 0 && (
             <SlideOver.Section title={`Borrow History (${history.length})`}>
-              <ul className="divide-y divide-line rounded-xl border border-line overflow-hidden">
+              <ul className="divide-y divide-border rounded-xl border border-border overflow-hidden">
                 {history.map(b => (
                   <li key={b.id} className="px-4 py-3 text-sm flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-ink truncate dark:text-dark-text">{title(b)}</p>
+                      <p className="font-medium text-foreground truncate">{title(b)}</p>
                       <p className="text-xs text-slate mt-0.5">{fmt(b.borrowedAt)} → {b.returnedAt ? fmt(b.returnedAt) : "—"}</p>
                     </div>
                     {b.fineAmount > 0 && <span className="text-xs text-danger font-medium shrink-0">Fine KES {b.fineAmount.toFixed(2)}</span>}
@@ -442,10 +442,9 @@ export default function StudentCardsPage() {
           <input
             ref={inputRef}
             type="text"
-            className="w-full rounded-lg border border-line bg-white pl-10 pr-10 py-2.5 text-sm
-                       text-ink placeholder:text-slate/50 focus:outline-none focus:border-teal
-                       focus:ring-2 focus:ring-teal/15 transition-colors
-                       dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm
+                       text-foreground placeholder:text-slate/50 focus:outline-none focus:border-teal
+                       focus:ring-2 focus:ring-teal/15 transition-colors"
             placeholder="Type name or admission number…"
             value={studentQuery}
             onChange={e => onStudentQueryChange(e.target.value)}
@@ -470,8 +469,8 @@ export default function StudentCardsPage() {
         {showDrop && studentHits.length > 0 && (
           <div
             ref={dropRef}
-            className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-line
-                       bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border overflow-hidden"
+            className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border
+                       bg-card shadow-xl overflow-hidden"
           >
             {studentHits.map(s => {
               const photoId = s.files?.[0]?.id;
@@ -485,8 +484,8 @@ export default function StudentCardsPage() {
                 >
                   <StudentPhoto fileId={photoId} name={s.fullName} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{s.fullName}</p>
-                    <p className="text-xs text-slate dark:text-dark-muted">{s.admissionNumber} · {s.schoolClass?.name}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{s.fullName}</p>
+                    <p className="text-xs text-slate">{s.admissionNumber} · {s.schoolClass?.name}</p>
                   </div>
                   <span className="text-xs text-teal shrink-0">View card →</span>
                 </button>
@@ -498,8 +497,8 @@ export default function StudentCardsPage() {
         {showDrop && studentHits.length === 0 && studentQuery.trim() && !searching && (
           <div
             ref={dropRef}
-            className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-line
-                       bg-white shadow-xl dark:bg-dark-surface dark:border-dark-border px-4 py-3"
+            className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border
+                       bg-card shadow-xl px-4 py-3"
           >
             <p className="text-sm text-slate">No students found for &ldquo;{studentQuery}&rdquo;</p>
           </div>
@@ -526,7 +525,7 @@ export default function StudentCardsPage() {
         />
         <WorkspaceToolbar.Actions>
           <label className="inline-flex items-center gap-2 text-sm text-slate cursor-pointer select-none">
-            <input type="checkbox" checked={filterFine} onChange={e => setFilterFine(e.target.checked)} className="rounded border-line" />
+            <input type="checkbox" checked={filterFine} onChange={e => setFilterFine(e.target.checked)} className="rounded border-border" />
             With fines only
           </label>
           <WorkspaceToolbar.ResultCount count={filtered.length} total={cards.length} label="card" />
@@ -555,12 +554,12 @@ export default function StudentCardsPage() {
                 className={`text-left rounded-xl border p-4 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-teal/20 ${
                   c.fineBalance > 0 ? "border-danger/30 bg-danger-bg/20 dark:bg-danger/5"
                   : c.status === "SUSPENDED" ? "border-warn/30 bg-warn-bg/20"
-                  : "border-line bg-white hover:border-teal/30 dark:bg-dark-surface dark:border-dark-border"}`}>
+                  : "border-border bg-card hover:border-teal/30"}`}>
                 <div className="flex items-start gap-3">
                   <StudentPhoto fileId={photoId} name={c.student.fullName} size="md" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-1">
-                      <p className="font-semibold text-sm text-ink truncate dark:text-dark-text">{c.student.fullName}</p>
+                      <p className="font-semibold text-sm text-foreground truncate">{c.student.fullName}</p>
                       {cardStatusBadge(c.status)}
                     </div>
                     <p className="text-xs text-slate font-mono">{c.student.admissionNumber}</p>

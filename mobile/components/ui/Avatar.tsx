@@ -5,7 +5,8 @@
 
 import React, { useState } from 'react';
 import { View, Text, Image, ViewStyle } from 'react-native';
-import { Colors, Typography, Radius } from '@/constants';
+import { Typography, Radius } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { initials } from '@/lib/utils';
 import { api } from '@/services/api';
 
@@ -28,6 +29,7 @@ interface AvatarProps {
 
 export function Avatar({ name, photoFileId, size = 'md', style }: AvatarProps) {
   const [imgError, setImgError] = useState(false);
+  const { colors } = useTheme();
   const dims = SIZE_MAP[size];
   const abbr = initials(name);
   const showPhoto = !!photoFileId && !imgError;
@@ -39,8 +41,8 @@ export function Avatar({ name, photoFileId, size = 'md', style }: AvatarProps) {
     overflow: 'hidden',
     flexShrink: 0,
     borderWidth: 2,
-    borderColor: showPhoto ? Colors.line : Colors.teal + '30',
-    backgroundColor: Colors.teal50,
+    borderColor: showPhoto ? colors.border : colors.primary + '30',
+    backgroundColor: colors.primary + '20',
     alignItems: 'center',
     justifyContent: 'center',
   };
@@ -61,7 +63,7 @@ export function Avatar({ name, photoFileId, size = 'md', style }: AvatarProps) {
     <View style={[containerStyle, style]}>
       <Text
         style={{
-          color: Colors.teal,
+          color: colors.primary,
           fontSize: dims.font,
           fontWeight: Typography.fontWeight.bold,
         }}
