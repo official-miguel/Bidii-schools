@@ -111,7 +111,7 @@ export default function ReportsPage() {
 
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Library Reports</h1>
+          <h1 className="text-xl font-bold text-foreground">Library Reports</h1>
           <p className="text-sm text-slate mt-0.5">Filtered reports with date range, class, subject and category filters.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default function ReportsPage() {
       </div>
 
       {/* ── Filter panel ── */}
-      <div className="rounded-xl border border-line bg-white p-5 mb-6 dark:bg-dark-surface dark:border-dark-border">
+      <div className="rounded-xl border border-border bg-card p-5 mb-6">
         <div className="flex flex-wrap items-end gap-4">
           {/* Quick presets */}
           <div>
@@ -133,7 +133,7 @@ export default function ReportsPage() {
             <div className="flex flex-wrap gap-1.5">
               {PRESETS.map(p => (
                 <button key={p.label} onClick={() => { setFrom(p.from); setTo(p.to); }}
-                  className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${from === p.from && to === p.to ? "bg-teal text-white border-teal" : "border-line text-slate hover:border-teal/30 hover:text-teal"}`}>
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${from === p.from && to === p.to ? "bg-teal text-white border-teal" : "border-border text-slate hover:border-teal/30 hover:text-teal"}`}>
                   {p.label}
                 </button>
               ))}
@@ -164,7 +164,7 @@ export default function ReportsPage() {
 
           {/* Advanced filters toggle */}
           <button onClick={() => setShowFilters(v => !v)}
-            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${showFilters ? "border-teal/50 bg-teal-50 text-teal" : "border-line text-slate hover:text-ink"}`}>
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${showFilters ? "border-teal/50 bg-teal-50 text-teal" : "border-border text-slate hover:text-foreground"}`}>
             <Filter className="h-4 w-4" /> Filters
           </button>
 
@@ -174,7 +174,7 @@ export default function ReportsPage() {
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-line animate-slide-down">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border animate-slide-down">
             <div>
               <label className={labelClass}>Class</label>
               <select className={inputClass} value={classId} onChange={e => setClassId(e.target.value)}>
@@ -211,7 +211,7 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between gap-4 mb-6 p-4 rounded-xl border border-teal/20 bg-teal-50/30">
             <div>
               <p className="text-sm font-semibold text-teal">Report Period</p>
-              <p className="text-sm text-ink">{new Date(data.meta.from).toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"})} — {new Date(data.meta.to).toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"})}</p>
+              <p className="text-sm text-foreground">{new Date(data.meta.from).toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"})} — {new Date(data.meta.to).toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"})}</p>
               {(data.meta.classId || data.meta.subject || data.meta.category) && (
                 <p className="text-xs text-slate mt-0.5">
                   Filters: {[data.meta.classId && "Class filtered", data.meta.subject, data.meta.category?.replace("_"," ")].filter(Boolean).join(" · ")}
@@ -220,7 +220,7 @@ export default function ReportsPage() {
             </div>
             <div className="text-right">
               <p className="text-xs text-slate">Generated</p>
-              <p className="text-xs text-ink font-mono">{new Date().toLocaleString("en-KE")}</p>
+              <p className="text-xs text-foreground font-mono">{new Date().toLocaleString("en-KE")}</p>
             </div>
           </div>
 
@@ -233,8 +233,8 @@ export default function ReportsPage() {
               { label: "Fines Charged",    value: cur(data.summary.totalFinesCharged) },
               { label: "New Books Added",  value: data.summary.newBooksAdded.toLocaleString() },
             ].map(s => (
-              <div key={s.label} className="rounded-xl border border-line bg-white p-4 dark:bg-dark-surface dark:border-dark-border">
-                <p className="text-xl font-bold text-ink dark:text-dark-text">{s.value}</p>
+              <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xl font-bold text-foreground">{s.value}</p>
                 <p className="text-xs text-slate mt-1">{s.label}</p>
               </div>
             ))}
@@ -270,7 +270,7 @@ export default function ReportsPage() {
           {/* Top tables */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             <Section title="Top Books">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.topBooks.slice(0, 10).map((b, i) => (
                   <RankRow key={b.id} rank={i+1} primary={b.title} secondary={b.subject ?? undefined} value={b.borrowCount} valueLabel="borrows" highlight={i===0} />
                 ))}
@@ -279,7 +279,7 @@ export default function ReportsPage() {
             </Section>
 
             <Section title="Top Students">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.topStudents.slice(0, 10).map((s, i) => (
                   <RankRow key={s.studentId} rank={i+1} primary={s.fullName} secondary={`${s.admissionNumber} · ${s.className}`} value={s.count} valueLabel="borrows" highlight={i===0} />
                 ))}
@@ -291,7 +291,7 @@ export default function ReportsPage() {
             </Section>
 
             <Section title="Top Classes">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.topClasses.slice(0, 10).map((c, i) => (
                   <RankRow key={c.classId} rank={i+1} primary={c.className} secondary={`Form ${c.form}`} value={c.count} valueLabel="borrows" highlight={i===0} />
                 ))}

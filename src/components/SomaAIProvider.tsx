@@ -109,7 +109,7 @@ function PanelShell({
       <div
         className="fixed top-0 right-0 bottom-0 z-50
                    w-[420px] max-w-[calc(100vw-5rem)]
-                   shadow-xl border-l border-line dark:border-dark-border
+                   shadow-xl border-l border-border
                    animate-soma-slide-in-right
                    flex flex-col overflow-hidden"
         role="none"
@@ -134,14 +134,14 @@ function PanelShell({
           className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px))] md:bottom-0
                      left-0 right-0 z-50
                      h-[72vh] rounded-t-2xl overflow-hidden
-                     shadow-xl border-t border-line dark:border-dark-border
+                     shadow-xl border-t border-border
                      animate-soma-slide-in-up
                      flex flex-col"
           role="none"
         >
           {/* Drag handle */}
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2
-                          w-10 h-1 rounded-full bg-line dark:bg-dark-border"
+                          w-10 h-1 rounded-full bg-line"
             aria-hidden="true"
           />
           {children}

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
@@ -100,7 +100,7 @@ export default async function TeacherPeoplePage() {
         description="Your classes and teaching assignments."
       />
       {tiles.length === 0 ? (
-        <p className="text-sm text-slate dark:text-dark-muted">
+        <p className="text-sm text-slate">
           No class or subject assignments yet — ask the principal to assign you.
         </p>
       ) : (

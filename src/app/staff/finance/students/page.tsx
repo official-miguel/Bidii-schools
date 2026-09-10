@@ -55,14 +55,14 @@ function BalanceCell({
       !("currentBalance" in account))
   ) {
     return (
-      <span className="text-sm text-slate dark:text-dark-muted">—</span>
+      <span className="text-sm text-slate">—</span>
     );
   }
   const acc = account as FinanceAccount;
   const n = parseFloat(acc.currentBalance);
   if (isNaN(n) || n === 0)
     return (
-      <span className="text-sm text-slate tabular-nums dark:text-dark-muted">
+      <span className="text-sm text-slate tabular-nums">
         KES 0.00
       </span>
     );
@@ -151,14 +151,14 @@ export default function StudentsFinancePage() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or admission number…"
             aria-label="Search students"
-            className="w-full pl-9 pr-3 py-2.5 text-sm border border-line rounded-lg bg-white focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+            className="w-full pl-9 pr-3 py-2.5 text-sm border border-border rounded-lg bg-card focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
           />
         </div>
 
         <button
           onClick={() => setShowFilters((f) => !f)}
           aria-expanded={showFilters}
-          className="inline-flex items-center gap-2 rounded-lg border border-line bg-white text-sm font-medium px-3.5 py-2.5 text-ink hover:bg-paper hover:border-slate-light transition-all dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card text-sm font-medium px-3.5 py-2.5 text-foreground hover:bg-background hover:border-slate-light transition-all"
         >
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Filters
@@ -171,7 +171,7 @@ export default function StudentsFinancePage() {
         </button>
 
         {!loading && (
-          <span className="text-sm text-slate dark:text-dark-muted ml-auto">
+          <span className="text-sm text-slate ml-auto">
             {total} student{total !== 1 ? "s" : ""}
             {pendingCount > 0 && (
               <span className="ml-2 text-warn font-medium">
@@ -184,9 +184,9 @@ export default function StudentsFinancePage() {
 
       {/* Expanded filters */}
       {showFilters && (
-        <div className="rounded-xl border border-line bg-paper p-4 mb-5 flex flex-wrap gap-4 items-end dark:bg-dark-surface dark:border-dark-border">
+        <div className="rounded-xl border border-border bg-background p-4 mb-5 flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-xs font-medium text-slate mb-1.5 dark:text-dark-muted">
+            <label className="block text-xs font-medium text-slate mb-1.5">
               Balance filter
             </label>
             <select
@@ -194,7 +194,7 @@ export default function StudentsFinancePage() {
               onChange={(e) =>
                 setBalanceOp(e.target.value as "" | "gt" | "lt")
               }
-              className="text-sm border border-line rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-teal dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="text-sm border border-border rounded-lg px-3 py-2 bg-card focus:outline-none focus:border-teal"
             >
               <option value="">No filter</option>
               <option value="lt">Owes more than</option>
@@ -204,7 +204,7 @@ export default function StudentsFinancePage() {
 
           {balanceOp && (
             <div>
-              <label className="block text-xs font-medium text-slate mb-1.5 dark:text-dark-muted">
+              <label className="block text-xs font-medium text-slate mb-1.5">
                 Amount (KES)
               </label>
               <input
@@ -213,7 +213,7 @@ export default function StudentsFinancePage() {
                 value={balanceVal}
                 onChange={(e) => setBalanceVal(e.target.value)}
                 placeholder="e.g. 1000"
-                className="w-36 text-sm border border-line rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-teal dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                className="w-36 text-sm border border-border rounded-lg px-3 py-2 bg-card focus:outline-none focus:border-teal"
               />
             </div>
           )}
@@ -238,7 +238,7 @@ export default function StudentsFinancePage() {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="h-14 rounded-xl border border-line bg-paper animate-pulse"
+              className="h-14 rounded-xl border border-border bg-background animate-pulse"
             />
           ))}
         </div>
@@ -272,15 +272,15 @@ export default function StudentsFinancePage() {
                   return (
                     <tr key={s.id} className={premiumTrClass}>
                       <td className={premiumTdClass}>
-                        <p className="font-medium text-ink dark:text-dark-text">
+                        <p className="font-medium text-foreground">
                           {s.fullName}
                         </p>
-                        <p className="text-xs text-slate font-mono mt-0.5 dark:text-dark-muted">
+                        <p className="text-xs text-slate font-mono mt-0.5">
                           {s.admissionNumber}
                         </p>
                       </td>
                       <td
-                        className={`${premiumTdClass} text-slate dark:text-dark-muted`}
+                        className={`${premiumTdClass} text-slate`}
                       >
                         {s.schoolClass.name}
                       </td>

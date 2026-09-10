@@ -39,12 +39,12 @@ export default async function DashboardPage({
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">In-depth Analysis</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
           <p className="text-sm text-slate mt-0.5">Unified view across 8-4-4 and CBE classes.</p>
         </div>
 
         {/* Framework tabs */}
-        <div className="flex gap-1 mb-6 border-b border-line">
+        <div className="flex gap-1 mb-6 border-b border-border">
           {[
             { key: "844",  label: `8-4-4 / KCSE  (${kcseClasses.length} class${kcseClasses.length !== 1 ? "es" : ""})` },
             { key: "cbe",  label: `CBE  (${cbeClasses.length} class${cbeClasses.length !== 1 ? "es" : ""})` },
@@ -55,8 +55,8 @@ export default async function DashboardPage({
               href={`?tab=${key}`}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 tab === key
-                  ? "border-ink text-ink"
-                  : "border-transparent text-slate hover:text-ink"
+                  ? "border-ink text-foreground"
+                  : "border-transparent text-slate hover:text-foreground"
               }`}
             >
               {label}
@@ -84,7 +84,7 @@ export default async function DashboardPage({
         {tab === "both" && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             <div>
-              <h2 className="font-display text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+              <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <span className="inline-block rounded-full bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5">8-4-4</span>
                 KCSE classes
               </h2>
@@ -94,7 +94,7 @@ export default async function DashboardPage({
               />
             </div>
             <div>
-              <h2 className="font-display text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+              <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <span className="inline-block rounded-full bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5">CBE</span>
                 CBE classes
               </h2>
@@ -114,7 +114,7 @@ export default async function DashboardPage({
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">In-depth Analysis</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
           <p className="text-sm text-slate mt-0.5">CBE attainment — performance levels by sub-strand, learning area, and pathway.</p>
         </div>
         <CbeDashboardEnhanced
@@ -129,7 +129,7 @@ export default async function DashboardPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink">In-depth Analysis</h1>
+        <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
         <p className="text-sm text-slate mt-0.5">Aggregate performance metrics across periods, classes, and subjects.</p>
       </div>
       <DashboardCharts

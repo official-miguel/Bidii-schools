@@ -264,7 +264,7 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border
                 ${r.id === selectedRoleId
                   ? "bg-teal/10 text-teal border-teal/30 dark:bg-teal/15 dark:border-teal/30"
-                  : "text-slate border-line hover:border-teal/30 hover:bg-teal-50 dark:text-dark-muted dark:border-dark-border dark:hover:border-teal/30"
+                  : "text-slate border-border hover:border-teal/30 hover:bg-teal-50 dark:hover:border-teal/30"
                 }`}>
               <Shield className="h-3.5 w-3.5" />
               {r.name}
@@ -281,19 +281,17 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
 
       {/* Create new role form */}
       {showCreate && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border animate-scale-in">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">Create new role</p>
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs animate-scale-in">
+          <p className="text-sm font-semibold text-foreground mb-3">Create new role</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <input value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)}
               placeholder="Role name (e.g. ICT Coordinator)"
-              className="flex-1 h-10 px-3 rounded-lg border border-line text-sm text-ink bg-paper
-                         focus:outline-none focus:ring-2 focus:ring-teal/30
-                         dark:bg-dark-bg dark:border-dark-border dark:text-dark-text" />
+              className="flex-1 h-10 px-3 rounded-lg border border-border text-sm text-foreground bg-background
+                         focus:outline-none focus:ring-2 focus:ring-teal/30" />
             <input value={newRoleDesc} onChange={(e) => setNewRoleDesc(e.target.value)}
               placeholder="Short description (optional)"
-              className="flex-1 h-10 px-3 rounded-lg border border-line text-sm text-ink bg-paper
-                         focus:outline-none focus:ring-2 focus:ring-teal/30
-                         dark:bg-dark-bg dark:border-dark-border dark:text-dark-text" />
+              className="flex-1 h-10 px-3 rounded-lg border border-border text-sm text-foreground bg-background
+                         focus:outline-none focus:ring-2 focus:ring-teal/30" />
             <button onClick={handleCreateRole} disabled={!newRoleName.trim() || saving}
               className="h-10 px-4 rounded-lg bg-teal text-white text-sm font-medium
                          hover:bg-teal-dark disabled:opacity-40 transition-colors shrink-0">
@@ -304,20 +302,20 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
       )}
 
       {selectedRole && (
-        <div className="bg-card border border-line rounded-xl shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl shadow-xs">
           {/* Role header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 pt-5 pb-3 border-b border-line dark:border-dark-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 pt-5 pb-3 border-b border-border">
             <div>
-              <p className="font-semibold text-ink dark:text-dark-text">{selectedRole.name}</p>
-              {selectedRole.description && <p className="text-xs text-slate dark:text-dark-muted mt-0.5">{selectedRole.description}</p>}
+              <p className="font-semibold text-foreground">{selectedRole.name}</p>
+              {selectedRole.description && <p className="text-xs text-slate mt-0.5">{selectedRole.description}</p>}
             </div>
             <div className="flex items-center gap-2">
               {/* Tab switcher */}
-              <div className="flex rounded-lg border border-line overflow-hidden dark:border-dark-border">
+              <div className="flex rounded-lg border border-border overflow-hidden">
                 {(["matrix", "users"] as const).map((tab) => (
                   <button key={tab} onClick={() => setActiveTab(tab)}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors
-                      ${activeTab === tab ? "bg-teal text-white" : "text-slate hover:bg-teal-50 dark:text-dark-muted dark:hover:bg-dark-border"}`}>
+                      ${activeTab === tab ? "bg-teal text-white" : "text-slate hover:bg-teal-50"}`}>
                     {tab === "matrix" ? "Permissions" : "Assigned users"}
                   </button>
                 ))}
@@ -340,13 +338,13 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
             <div className="overflow-x-auto">
               {/* Column headers */}
               <div className="min-w-[680px]">
-                <div className="flex items-center gap-1 px-5 py-2 border-b border-line dark:border-dark-border bg-paper dark:bg-dark-bg">
-                  <div className="flex-1 text-[10px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">Module</div>
-                  <div className="w-16 text-center text-[10px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">All</div>
+                <div className="flex items-center gap-1 px-5 py-2 border-b border-border bg-background">
+                  <div className="flex-1 text-[10px] font-semibold text-slate uppercase tracking-wider">Module</div>
+                  <div className="w-16 text-center text-[10px] font-semibold text-slate uppercase tracking-wider">All</div>
                   {ACTIONS.map((a) => (
                     <div key={a.key} className="w-8 flex flex-col items-center gap-0.5" title={a.label}>
-                      <a.Icon className="h-3 w-3 text-slate dark:text-dark-muted" />
-                      <span className="text-[9px] text-slate dark:text-dark-muted">{a.short}</span>
+                      <a.Icon className="h-3 w-3 text-slate" />
+                      <span className="text-[9px] text-slate">{a.short}</span>
                     </div>
                   ))}
                 </div>
@@ -355,15 +353,15 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
                 {Object.entries(hubGroups).map(([hub, mods]) => (
                   <div key={hub}>
                     <button onClick={() => toggleHub(hub)}
-                      className="w-full flex items-center gap-2 px-5 py-2 bg-paper/60 dark:bg-dark-bg/40
-                                 border-b border-line dark:border-dark-border text-left hover:bg-teal-50 dark:hover:bg-teal/5 transition-colors">
+                      className="w-full flex items-center gap-2 px-5 py-2 bg-background/60/40
+                                 border-b border-border text-left hover:bg-teal-50 dark:hover:bg-teal/5 transition-colors">
                       {expandedHubs.has(hub)
-                        ? <ChevronDown className="h-3.5 w-3.5 text-slate dark:text-dark-muted" />
-                        : <ChevronRight className="h-3.5 w-3.5 text-slate dark:text-dark-muted" />}
-                      <span className="text-[11px] font-semibold text-slate uppercase tracking-wider dark:text-dark-muted capitalize">
+                        ? <ChevronDown className="h-3.5 w-3.5 text-slate" />
+                        : <ChevronRight className="h-3.5 w-3.5 text-slate" />}
+                      <span className="text-[11px] font-semibold text-slate uppercase tracking-wider capitalize">
                         {hub.replace("-", " ")}
                       </span>
-                      <span className="text-[10px] text-slate/50 dark:text-dark-muted/50">{mods.length} modules</span>
+                      <span className="text-[10px] text-slate/50/50">{mods.length} modules</span>
                     </button>
 
                     {expandedHubs.has(hub) && mods.map((mod) => {
@@ -371,19 +369,19 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
                       const manageAll = isManageAll(perm);
                       return (
                         <div key={mod.key}
-                          className="flex items-center gap-1 px-5 py-2.5 border-b border-line/60 dark:border-dark-border/60
+                          className="flex items-center gap-1 px-5 py-2.5 border-b border-border/60/60
                                      hover:bg-teal-50/30 dark:hover:bg-teal/5 transition-colors min-w-0">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-ink dark:text-dark-text truncate">{mod.label}</p>
-                            <p className="text-[10px] text-slate/70 dark:text-dark-muted truncate">{mod.description}</p>
+                            <p className="text-sm text-foreground truncate">{mod.label}</p>
+                            <p className="text-[10px] text-slate/70 truncate">{mod.description}</p>
                           </div>
                           {/* Manage-all toggle */}
                           <div className="w-16 flex justify-center">
                             <button onClick={() => setModuleManageAll(mod.key, !manageAll)}
                               className={`w-8 h-5 rounded-full transition-colors relative
-                                ${manageAll ? "bg-teal" : "bg-line dark:bg-dark-border"}`}
+                                ${manageAll ? "bg-teal" : "bg-line"}`}
                               title={manageAll ? "Remove all access" : "Grant full access"}>
-                              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-xs transition-all
+                              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-card shadow-xs transition-all
                                 ${manageAll ? "left-3.5" : "left-0.5"}`} />
                             </button>
                           </div>
@@ -396,7 +394,7 @@ export default function PermissionMatrixClient({ roles: initialRoles, modules, s
                                 className={`w-5 h-5 rounded flex items-center justify-center border transition-colors
                                   ${perm[a.key]
                                     ? "bg-teal border-teal text-white"
-                                    : "border-line dark:border-dark-border hover:border-teal/40"}`}>
+                                    : "border-border hover:border-teal/40"}`}>
                                 {perm[a.key] && <CheckSquare className="h-3 w-3" />}
                               </button>
                             </div>
@@ -511,20 +509,18 @@ function AssignUsersPanel({
     <div className="space-y-4">
       {/* ── Search bar ─────────────────────────────────────────────────── */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate dark:text-dark-muted pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, email, or staff ID…"
-          className="w-full h-10 pl-9 pr-4 rounded-lg border border-line text-sm text-ink bg-paper
-                     focus:outline-none focus:ring-2 focus:ring-teal/30
-                     dark:bg-dark-bg dark:border-dark-border dark:text-dark-text
-                     dark:placeholder:text-dark-muted"
+          className="w-full h-10 pl-9 pr-4 rounded-lg border border-border text-sm text-foreground bg-background
+                     focus:outline-none focus:ring-2 focus:ring-teal/30"
         />
         {query && (
           <button
             onClick={() => { setQuery(""); setResults(null); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate hover:text-ink dark:text-dark-muted"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -533,19 +529,19 @@ function AssignUsersPanel({
 
       {/* ── Search results ─────────────────────────────────────────────── */}
       {query.trim().length > 0 && (
-        <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden">
+        <div className="rounded-xl border border-border overflow-hidden">
           {searching ? (
-            <div className="px-4 py-6 text-center text-sm text-slate dark:text-dark-muted animate-pulse">
+            <div className="px-4 py-6 text-center text-sm text-slate animate-pulse">
               Searching…
             </div>
           ) : results && results.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-slate dark:text-dark-muted">
+            <div className="px-4 py-6 text-center text-sm text-slate">
               No staff found matching &ldquo;{query}&rdquo;
             </div>
           ) : results ? (
             <div>
               <p className="px-4 py-2 text-[10px] font-semibold text-slate uppercase tracking-wider
-                            bg-paper border-b border-line dark:bg-dark-bg dark:border-dark-border dark:text-dark-muted">
+                            bg-background border-b border-border">
                 Search results — {results.length} found
               </p>
               {results.map((u) => (
@@ -563,15 +559,15 @@ function AssignUsersPanel({
 
       {/* ── Currently assigned ─────────────────────────────────────────── */}
       <div>
-        <p className="text-[10px] font-semibold text-slate uppercase tracking-wider mb-2 dark:text-dark-muted">
+        <p className="text-[10px] font-semibold text-slate uppercase tracking-wider mb-2">
           Assigned to this role ({assigned.length})
         </p>
         {assigned.length === 0 ? (
-          <p className="text-sm text-slate dark:text-dark-muted py-2">
+          <p className="text-sm text-slate py-2">
             No one assigned yet. Use the search above to find and add staff or teachers.
           </p>
         ) : (
-          <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden">
+          <div className="rounded-xl border border-border overflow-hidden">
             {assigned.map((u) => {
               const displayName = u.teacher?.fullName ?? u.email;
               const subtitle    = u.teacher?.classTeacherOf
@@ -583,7 +579,7 @@ function AssignUsersPanel({
                 <div
                   key={u.id}
                   className="flex items-center justify-between gap-3 px-4 py-2.5
-                             border-b border-line/50 dark:border-dark-border/50 last:border-0"
+                             border-b border-border/50/50 last:border-0"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-teal/10 text-teal text-xs font-semibold
@@ -591,10 +587,10 @@ function AssignUsersPanel({
                       {displayName.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm text-ink dark:text-dark-text truncate font-medium">
+                      <p className="text-sm text-foreground truncate font-medium">
                         {displayName}
                       </p>
-                      <p className="text-[10px] text-slate dark:text-dark-muted truncate">{subtitle}</p>
+                      <p className="text-[10px] text-slate truncate">{subtitle}</p>
                     </div>
                   </div>
                   <button
@@ -613,7 +609,7 @@ function AssignUsersPanel({
         )}
       </div>
 
-      <p className="text-[11px] text-slate dark:text-dark-muted">
+      <p className="text-[11px] text-slate">
         Staff can hold multiple roles. Permissions from all assigned roles are merged (union).
         Teachers keep their built-in class access and gain the extra modules from this role on top.
       </p>
@@ -636,7 +632,7 @@ function SearchResultRow({
 
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-2.5
-                    border-b border-line/50 dark:border-dark-border/50 last:border-0
+                    border-b border-border/50/50 last:border-0
                     hover:bg-teal-50/30 dark:hover:bg-teal/5 transition-colors">
       <div className="flex items-center gap-2.5 min-w-0">
         {/* Role icon badge */}
@@ -647,7 +643,7 @@ function SearchResultRow({
               ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"
               : isTeacher
                 ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                : "bg-slate/10 text-slate dark:bg-dark-border dark:text-dark-muted"
+                : "bg-slate/10 text-slate"
           }`}>
           {isClassTeacher
             ? <GraduationCap className="h-3.5 w-3.5" />
@@ -658,13 +654,13 @@ function SearchResultRow({
         </div>
 
         <div className="min-w-0">
-          <p className="text-sm text-ink dark:text-dark-text truncate font-medium">{displayName}</p>
+          <p className="text-sm text-foreground truncate font-medium">{displayName}</p>
           <div className="flex items-center gap-1.5 flex-wrap">
             {user.email !== displayName && (
-              <span className="text-[10px] text-slate dark:text-dark-muted truncate">{user.email}</span>
+              <span className="text-[10px] text-slate truncate">{user.email}</span>
             )}
             {user.staffId && (
-              <span className="text-[10px] text-slate/60 dark:text-dark-muted/60">· {user.staffId}</span>
+              <span className="text-[10px] text-slate/60/60">· {user.staffId}</span>
             )}
             {isClassTeacher && (
               <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full
@@ -679,8 +675,7 @@ function SearchResultRow({
               </span>
             )}
             {!isTeacher && (
-              <span className="text-[10px] bg-slate/10 text-slate px-1.5 py-0.5 rounded-full
-                               dark:bg-dark-border dark:text-dark-muted">
+              <span className="text-[10px] bg-slate/10 text-slate px-1.5 py-0.5 rounded-full">
                 Admin staff
               </span>
             )}
@@ -694,7 +689,7 @@ function SearchResultRow({
         className={`h-7 px-3 rounded-lg text-xs font-medium transition-colors shrink-0 disabled:opacity-40
           ${user.alreadyAssigned
             ? "bg-teal/10 text-teal hover:bg-danger/10 hover:text-danger"
-            : "bg-line text-slate hover:bg-teal/10 hover:text-teal dark:bg-dark-border dark:text-dark-muted"
+            : "bg-line text-slate hover:bg-teal/10 hover:text-teal"
           }`}
       >
         {busy ? "…" : user.alreadyAssigned ? "Remove" : "Assign"}

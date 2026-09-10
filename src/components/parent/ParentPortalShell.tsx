@@ -21,8 +21,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import {
   Home,
   GraduationCap,
@@ -191,12 +191,12 @@ export default function ParentPortalShell({
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] dark:bg-dark-bg">
+    <div className="min-h-screen bg-[#F5F7FA]">
 
       {/* ── Fixed top bar ──────────────────────────────────────────────── */}
       <header
-        className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-dark-sidebar
-                   border-b border-line dark:border-dark-border flex items-center gap-3 px-4 md:px-6"
+        className="fixed top-0 left-0 right-0 z-40 bg-card
+                   border-b border-border flex items-center gap-3 px-4 md:px-6"
         style={{
           height: "calc(4rem + env(safe-area-inset-top, 0px))",
           paddingTop: "env(safe-area-inset-top, 0px)",
@@ -219,10 +219,10 @@ export default function ParentPortalShell({
           aria-label="Bidii Parent Portal home"
           className="md:hidden flex items-center gap-2 shrink-0"
         >
-          <Image src="/logo.png" alt="Bidii" width={30} height={30} className="object-contain" />
-          <span className="font-bold text-sm text-ink dark:text-dark-text leading-tight">
+          <Logo height={30} width={30} alt="Bidii" className="object-contain" />
+          <span className="font-bold text-sm text-foreground leading-tight">
             BIDII<br />
-            <span className="text-[10px] font-normal text-slate dark:text-dark-muted tracking-wide">PARENT PORTAL</span>
+            <span className="text-[10px] font-normal text-slate tracking-wide">PARENT PORTAL</span>
           </span>
         </Link>
 
@@ -235,8 +235,8 @@ export default function ParentPortalShell({
             type="button"
             onClick={() => {/* TODO: open global search */}}
             className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl
-                       bg-[#F5F7FA] dark:bg-dark-surface border border-line dark:border-dark-border
-                       text-slate dark:text-dark-muted text-sm hover:border-teal/40 transition-colors"
+                       bg-[#F5F7FA] border border-border
+                       text-slate text-sm hover:border-teal/40 transition-colors"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span>Search anything…</span>
@@ -262,7 +262,7 @@ export default function ParentPortalShell({
               }
             }}
             className="hidden md:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full
-                       border border-line dark:border-dark-border bg-white dark:bg-dark-surface
+                       border border-border bg-card
                        hover:border-teal/40 transition-colors group"
             title={children_list.length > 1 ? "Click to switch child" : activeChild.fullName}
           >
@@ -272,8 +272,8 @@ export default function ParentPortalShell({
               </span>
             </div>
             <div className="text-left">
-              <p className="text-xs font-semibold text-ink dark:text-dark-text leading-none">{activeChild.fullName}</p>
-              <p className="text-[10px] text-slate dark:text-dark-muted leading-none mt-0.5">{activeChild.className}</p>
+              <p className="text-xs font-semibold text-foreground leading-none">{activeChild.fullName}</p>
+              <p className="text-[10px] text-slate leading-none mt-0.5">{activeChild.className}</p>
             </div>
             {children_list.length > 1 && (
               <ChevronDown className="h-3.5 w-3.5 text-slate group-hover:text-teal ml-0.5 transition-colors" />
@@ -304,7 +304,7 @@ export default function ParentPortalShell({
                 {userInits}
               </div>
             )}
-            <span className="hidden md:block text-sm font-medium text-ink dark:text-dark-text pr-1">
+            <span className="hidden md:block text-sm font-medium text-foreground pr-1">
               {parentName.split(" ")[0]}
             </span>
             <ChevronDown className="hidden md:block h-3.5 w-3.5 text-slate" />
@@ -313,13 +313,13 @@ export default function ParentPortalShell({
           {/* Profile dropdown */}
           {profileOpen && (
             <div
-              className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-dark-surface
-                         border border-line dark:border-dark-border rounded-xl shadow-lg
+              className="absolute right-0 top-full mt-2 w-52 bg-card
+                         border border-border rounded-xl shadow-lg
                          py-1 z-50 overflow-hidden"
             >
-              <div className="px-4 py-3 border-b border-line dark:border-dark-border">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">{parentName}</p>
-                <p className="text-xs text-slate dark:text-dark-muted mt-0.5 truncate">{userEmail}</p>
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-semibold text-foreground">{parentName}</p>
+                <p className="text-xs text-slate mt-0.5 truncate">{userEmail}</p>
               </div>
               <Link
                 href="/parent/profile"
@@ -340,7 +340,7 @@ export default function ParentPortalShell({
                   <span className="ml-auto text-xs font-bold text-danger">{unreadCount}</span>
                 )}
               </Link>
-              <div className="border-t border-line dark:border-dark-border mt-1" />
+              <div className="border-t border-border mt-1" />
               <button
                 type="button"
                 onClick={handleLogout}
@@ -358,22 +358,22 @@ export default function ParentPortalShell({
       <aside
         aria-label="Parent portal navigation"
         className="hidden md:flex fixed top-0 left-0 bottom-0 w-56 flex-col z-30
-                   bg-white dark:bg-dark-sidebar border-r border-line dark:border-dark-border"
+                   bg-card border-r border-border"
       >
         {/* Logo */}
         <div
-          className="flex items-center gap-3 px-5 shrink-0 border-b border-line dark:border-dark-border"
+          className="flex items-center gap-3 px-5 shrink-0 border-b border-border"
           style={{
             height: "calc(4rem + env(safe-area-inset-top, 0px))",
             paddingTop: "env(safe-area-inset-top, 0px)",
           }}
         >
           <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0">
-            <Image src="/logo.png" alt="Bidii" width={36} height={36} className="object-contain" />
+            <Logo height={36} width={36} alt="Bidii" className="object-contain" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm font-bold text-ink dark:text-dark-text tracking-wide">BIDII</p>
-            <p className="text-[10px] text-slate dark:text-dark-muted tracking-widest uppercase">
+            <p className="text-sm font-bold text-foreground tracking-wide">BIDII</p>
+            <p className="text-[10px] text-slate tracking-widest uppercase">
               Parent Portal
             </p>
           </div>
@@ -393,11 +393,11 @@ export default function ParentPortalShell({
                              transition-colors duration-100 group relative
                              ${active
                                ? "bg-teal/10 text-teal dark:bg-teal/15"
-                               : "text-[#667085] hover:bg-[#F5F7FA] hover:text-ink dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                               : "text-[#667085] hover:bg-[#F5F7FA] hover:text-foreground"
                              }`}
               >
                 <Icon
-                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${active ? "text-teal" : "text-[#98A2B3] group-hover:text-ink dark:group-hover:text-dark-text"}`}
+                  className={`h-[18px] w-[18px] shrink-0 transition-colors ${active ? "text-teal" : "text-[#98A2B3] group-hover:text-foreground dark:group-hover:text-dark-text"}`}
                   strokeWidth={active ? 2.2 : 1.8}
                   aria-hidden="true"
                 />
@@ -413,16 +413,15 @@ export default function ParentPortalShell({
           })}
 
           {/* Divider + account section */}
-          <div className="pt-4 mt-2 border-t border-line dark:border-dark-border space-y-0.5">
-            <p className="px-3 py-1 text-[10px] font-semibold text-slate/60 dark:text-dark-muted/60
+          <div className="pt-4 mt-2 border-t border-border space-y-0.5">
+            <p className="px-3 py-1 text-[10px] font-semibold text-slate/60/60
                           uppercase tracking-widest select-none">
               Account
             </p>
             <Link
               href="/parent/profile"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                         text-[#667085] hover:bg-[#F5F7FA] hover:text-ink transition-colors
-                         dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                         text-[#667085] hover:bg-[#F5F7FA] hover:text-foreground transition-colors"
             >
               <Settings className="h-[18px] w-[18px] shrink-0 text-[#98A2B3]" strokeWidth={1.8} />
               Settings
@@ -431,8 +430,7 @@ export default function ParentPortalShell({
               type="button"
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                         text-[#667085] hover:bg-danger/5 hover:text-danger transition-colors
-                         dark:text-dark-muted dark:hover:text-danger"
+                         text-[#667085] hover:bg-danger/5 hover:text-danger transition-colors dark:hover:text-danger"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0 text-[#98A2B3]" strokeWidth={1.8} />
               Sign out
@@ -442,24 +440,24 @@ export default function ParentPortalShell({
 
         {/* Child card at the bottom of sidebar */}
         {activeChild && (
-          <div className="shrink-0 border-t border-line dark:border-dark-border px-3 py-4 space-y-2">
-            <p className="px-1 text-[10px] font-semibold text-slate/60 dark:text-dark-muted/60
+          <div className="shrink-0 border-t border-border px-3 py-4 space-y-2">
+            <p className="px-1 text-[10px] font-semibold text-slate/60/60
                           uppercase tracking-widest select-none">
               My Child
             </p>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#F5F7FA] dark:bg-dark-surface border border-line dark:border-dark-border">
+            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#F5F7FA] border border-border">
               {/* Student avatar placeholder */}
               <div className="w-10 h-10 rounded-full bg-teal/10 flex items-center justify-center
-                              shrink-0 border-2 border-white dark:border-dark-border shadow-sm overflow-hidden">
+                              shrink-0 border-2 border-white shadow-sm overflow-hidden">
                 <span className="text-xs font-bold text-teal">
                   {initials(activeChild.fullName)}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate leading-tight">
+                <p className="text-sm font-semibold text-foreground truncate leading-tight">
                   {activeChild.fullName}
                 </p>
-                <p className="text-[11px] text-slate dark:text-dark-muted truncate leading-tight">
+                <p className="text-[11px] text-slate truncate leading-tight">
                   {activeChild.className} · Adm #{activeChild.admissionNumber}
                 </p>
               </div>
@@ -502,17 +500,17 @@ export default function ParentPortalShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col bg-white dark:bg-dark-sidebar shadow-xl"
+            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col bg-card shadow-xl"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-line dark:border-dark-border">
+            <div className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-border">
               <Link href="/parent" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5">
-                <Image src="/logo.png" alt="Bidii" width={32} height={32} className="object-contain" />
+                <Logo height={32} width={32} alt="Bidii" className="object-contain" />
                 <div>
-                  <p className="text-sm font-bold text-ink dark:text-dark-text leading-none">BIDII</p>
-                  <p className="text-[10px] text-slate dark:text-dark-muted tracking-widest">PARENT PORTAL</p>
+                  <p className="text-sm font-bold text-foreground leading-none">BIDII</p>
+                  <p className="text-[10px] text-slate tracking-widest">PARENT PORTAL</p>
                 </div>
               </Link>
               <button
@@ -528,15 +526,15 @@ export default function ParentPortalShell({
 
             {/* Child chip in drawer */}
             {activeChild && (
-              <div className="px-4 py-3 border-b border-line dark:border-dark-border">
-                <div className="flex items-center gap-3 bg-[#F5F7FA] dark:bg-dark-surface
-                                rounded-xl px-3 py-2.5 border border-line dark:border-dark-border">
+              <div className="px-4 py-3 border-b border-border">
+                <div className="flex items-center gap-3 bg-[#F5F7FA]
+                                rounded-xl px-3 py-2.5 border border-border">
                   <div className="w-9 h-9 rounded-full bg-teal/10 flex items-center justify-center shrink-0">
                     <span className="text-xs font-bold text-teal">{initials(activeChild.fullName)}</span>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">{activeChild.fullName}</p>
-                    <p className="text-xs text-slate dark:text-dark-muted truncate">{activeChild.className} · Adm #{activeChild.admissionNumber}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{activeChild.fullName}</p>
+                    <p className="text-xs text-slate truncate">{activeChild.className} · Adm #{activeChild.admissionNumber}</p>
                   </div>
                 </div>
               </div>
@@ -557,7 +555,7 @@ export default function ParentPortalShell({
                                 font-medium transition-colors min-h-[44px]
                                 ${active
                                   ? "bg-teal/10 text-teal"
-                                  : "text-slate hover:bg-[#F5F7FA] hover:text-ink dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                                  : "text-slate hover:bg-[#F5F7FA] hover:text-foreground"
                                 }`}
                   >
                     <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
@@ -571,13 +569,13 @@ export default function ParentPortalShell({
             </nav>
 
             {/* Footer */}
-            <div className="shrink-0 border-t border-line dark:border-dark-border px-4 py-4"
+            <div className="shrink-0 border-t border-border px-4 py-4"
                  style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
               <div className="flex items-center gap-3 mb-3 px-1">
                 {showPhoto ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarUrl!} alt={parentName} onError={() => setImgError(true)}
-                       className="w-9 h-9 rounded-full object-cover border border-line shrink-0" />
+                       className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-teal/10 text-teal flex items-center justify-center
                                   text-xs font-semibold shrink-0">
@@ -585,8 +583,8 @@ export default function ParentPortalShell({
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">{parentName}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted truncate">{userEmail}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{parentName}</p>
+                  <p className="text-xs text-slate truncate">{userEmail}</p>
                 </div>
               </div>
               <Link
@@ -628,7 +626,7 @@ export default function ParentPortalShell({
       <nav
         aria-label="Main navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-40
-                   bg-white dark:bg-dark-sidebar border-t border-line dark:border-dark-border
+                   bg-card border-t border-border
                    flex items-start pt-2 px-1 gap-0"
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",

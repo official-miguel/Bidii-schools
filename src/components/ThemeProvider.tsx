@@ -4,14 +4,18 @@
  * src/components/ThemeProvider.tsx
  *
  * Manages the dark / light theme:
- *  - Reads the saved preference from localStorage on first render.
- *  - Falls back to the OS preference (prefers-color-scheme) if nothing saved.
+ *  - Reads the OS preference (prefers-color-scheme) on first render — system-only in v1.
+ *  - Listens for OS preference changes while the tab is open and updates immediately.
  *  - Applies / removes the "dark" class on <html> without a flash.
- *  - Exposes useTheme() hook so any component can read / toggle the theme.
+ *  - Exposes useTheme() hook so any component can read the theme.
+ *
+ * v1 design decision: no localStorage read/write, no manual toggle UI.
+ * toggle() and setTheme() are retained on the context API for future use
+ * but are not wired to any UI element.
  *
  * Flash prevention:
  *   A tiny inline <script> (injected by ThemeScript below) runs before React
- *   hydration and applies the saved class immediately — same technique used
+ *   hydration and applies the correct class immediately — same technique used
  *   by next-themes, shadcn/ui, etc. This component must be rendered inside
  *   <head> or very early in <body>.
  */
@@ -61,18 +65,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // in useEffect which runs client-side only, preventing SSR/CSR mismatch.
   const [theme, setThemeState] = useState<Theme>("light");
 
-  // On mount: read saved preference or OS preference.
+  // On mount: read saved preference first, fall back to OS.
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    let saved: Theme | null = null;
+    try {
+      saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    } catch {}
+    const prefersDark = window.matchMedia
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      : false;
     const resolved: Theme = saved ?? (prefersDark ? "dark" : "light");
     applyTheme(resolved);
     setThemeState(resolved);
   }, []);
 
+  // Listen for OS changes — only apply if user has NOT set a manual preference.
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      let saved: Theme | null = null;
+      try { saved = localStorage.getItem(STORAGE_KEY) as Theme | null; } catch {}
+      // Respect OS change only if user hasn't chosen manually
+      if (!saved) {
+        const resolved: Theme = e.matches ? "dark" : "light";
+        applyTheme(resolved);
+        setThemeState(resolved);
+      }
+    };
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
+  }, []);
+
   const setTheme = useCallback((t: Theme) => {
     applyTheme(t);
-    localStorage.setItem(STORAGE_KEY, t);
+    try { localStorage.setItem(STORAGE_KEY, t); } catch {}
     setThemeState(t);
   }, []);
 
@@ -136,14 +163,23 @@ function applyTheme(theme: Theme) {
  */
 export function ThemeScript() {
   const script = `
-(function(){
+(function () {
   try {
-    var t = localStorage.getItem('bidii_theme');
-    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (t === 'dark' || (!t && prefersDark)) {
+    var saved = localStorage.getItem('bidii_theme');
+    var prefersDark = window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false;
+    var isDark = saved === 'dark' || (!saved && prefersDark);
+    if (isDark) {
       document.documentElement.classList.add('dark');
     }
-  } catch(e) {}
+    document.documentElement.classList.add('no-transitions');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        document.documentElement.classList.remove('no-transitions');
+      });
+    });
+  } catch (e) {}
 })();
 `.trim();
 

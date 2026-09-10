@@ -122,7 +122,7 @@ function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; o
         <div className="grid grid-cols-4 gap-2">
           {[["INDIVIDUAL","Individual"],["CLASSROOM","Classroom"],["DEPARTMENT","Department"],["WAITLIST","Waitlist"]].map(([v,l]) => (
             <button key={v} onClick={() => setRType(v)}
-              className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-colors ${rType === v ? "border-teal bg-teal-50 text-teal" : "border-line text-slate hover:border-teal/30"}`}>
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-colors ${rType === v ? "border-teal bg-teal-50 text-teal" : "border-border text-slate hover:border-teal/30"}`}>
               {TYPE_ICONS[v]} {l}
             </button>
           ))}
@@ -132,18 +132,18 @@ function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; o
         <FormField label="Book" required>
           {selectedCat ? (
             <div className="flex items-center gap-2 rounded-lg border border-teal/30 bg-teal-50/30 px-3 py-2">
-              <p className="text-sm font-medium text-ink flex-1">{selectedCat.title}</p>
-              <button onClick={() => { setSelectedCat(null); setCatalogueQ(""); }} className="text-slate hover:text-ink"><X className="h-4 w-4" /></button>
+              <p className="text-sm font-medium text-foreground flex-1">{selectedCat.title}</p>
+              <button onClick={() => { setSelectedCat(null); setCatalogueQ(""); }} className="text-slate hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
           ) : (
             <div className="relative">
               <input className={inputClass} placeholder="Search book title, number…" value={catalogueQ} onChange={e => setCatalogueQ(e.target.value)} />
               {catalogues.length > 0 && (
-                <ul className="absolute z-20 w-full mt-1 rounded-xl border border-line bg-white shadow-lg divide-y divide-line overflow-hidden max-h-48 overflow-y-auto">
+                <ul className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-card shadow-lg divide-y divide-border overflow-hidden max-h-48 overflow-y-auto">
                   {catalogues.map(c => (
                     <li key={c.id}><button onClick={() => { setSelectedCat(c); setCatalogues([]); setCatalogueQ(""); }}
                       className="w-full text-left px-4 py-3 hover:bg-teal-50/40 text-sm transition-colors">
-                      <p className="font-medium text-ink">{c.title}</p>
+                      <p className="font-medium text-foreground">{c.title}</p>
                       <p className="text-xs text-slate">{[c.subject, c.form ? `Form ${c.form}` : null, c.bookNumber].filter(Boolean).join(" · ")}</p>
                     </button></li>
                   ))}
@@ -159,17 +159,17 @@ function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; o
             {selectedStudent ? (
               <div className="flex items-center gap-2 rounded-lg border border-teal/30 bg-teal-50/30 px-3 py-2">
                 <p className="text-sm flex-1">{selectedStudent.fullName} · {selectedStudent.admissionNumber}</p>
-                <button onClick={() => setSelectedStudent(null)} className="text-slate hover:text-ink"><X className="h-4 w-4" /></button>
+                <button onClick={() => setSelectedStudent(null)} className="text-slate hover:text-foreground"><X className="h-4 w-4" /></button>
               </div>
             ) : (
               <div className="relative">
                 <input className={inputClass} placeholder="Search student name or admission number…" value={studentQ} onChange={e => setStudentQ(e.target.value)} />
                 {students.length > 0 && (
-                  <ul className="absolute z-20 w-full mt-1 rounded-xl border border-line bg-white shadow-lg divide-y divide-line overflow-hidden max-h-48 overflow-y-auto">
+                  <ul className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-card shadow-lg divide-y divide-border overflow-hidden max-h-48 overflow-y-auto">
                     {students.map(s => (
                       <li key={s.id}><button onClick={() => { setSelectedStudent(s); setStudents([]); setStudentQ(""); }}
                         className="w-full text-left px-4 py-3 hover:bg-teal-50/40 text-sm transition-colors">
-                        <p className="font-medium text-ink">{s.fullName}</p>
+                        <p className="font-medium text-foreground">{s.fullName}</p>
                         <p className="text-xs text-slate">{s.admissionNumber} · {s.schoolClass.name}</p>
                       </button></li>
                     ))}
@@ -279,10 +279,10 @@ export default function ReservationsPage() {
       )}
 
       {!loading && filtered.length > 0 && (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide dark:bg-dark-border/30">
+              <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide/30">
                 <th className="px-4 py-3.5">Book</th>
                 <th className="px-4 py-3.5 w-[120px]">Type</th>
                 <th className="px-4 py-3.5 hidden md:table-cell w-[120px]">Patron</th>
@@ -294,10 +294,10 @@ export default function ReservationsPage() {
             </thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} className="border-b border-line last:border-0 hover:bg-slate-50/40 cursor-pointer transition-colors dark:hover:bg-dark-border/20"
+                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-slate-50/40 cursor-pointer transition-colors/20"
                   onClick={() => setSlideItem(r)}>
                   <td className="px-4 py-3.5">
-                    <p className="font-medium text-ink truncate max-w-[220px] dark:text-dark-text">{r.catalogue.title}</p>
+                    <p className="font-medium text-foreground truncate max-w-[220px]">{r.catalogue.title}</p>
                     {r.catalogue.subject && <p className="text-xs text-slate">{r.catalogue.subject}{r.catalogue.form ? ` · Form ${r.catalogue.form}` : ""}</p>}
                   </td>
                   <td className="px-4 py-3.5">
@@ -342,16 +342,16 @@ export default function ReservationsPage() {
                 { label: "Expected return", value: <span className="text-sm">{slideItem.expectedReturnDate ? fmt(slideItem.expectedReturnDate) : "—"}</span> },
                 { label: "Allocated copy", value: <span className="font-mono text-xs">{slideItem.allocatedCopyId ? "Yes" : "Pending"}</span> },
               ].map(f => (
-                <div key={f.label} className="rounded-lg border border-line p-3">
+                <div key={f.label} className="rounded-lg border border-border p-3">
                   <p className="text-xs text-slate mb-1">{f.label}</p>
                   {f.value}
                 </div>
               ))}
             </div>
             {slideItem.notes && (
-              <div className="rounded-lg border border-line p-3">
+              <div className="rounded-lg border border-border p-3">
                 <p className="text-xs text-slate mb-1">Notes</p>
-                <p className="text-sm text-ink">{slideItem.notes}</p>
+                <p className="text-sm text-foreground">{slideItem.notes}</p>
               </div>
             )}
           </div>

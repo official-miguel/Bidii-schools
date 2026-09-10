@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -67,8 +67,8 @@ export default async function TeacherDiaryPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Diary</h1>
-          <p className="text-sm text-slate dark:text-dark-muted mt-0.5">
+          <h1 className="text-2xl font-semibold text-foreground">Diary</h1>
+          <p className="text-sm text-slate mt-0.5">
             Your assignments and subject updates
           </p>
         </div>
@@ -78,7 +78,7 @@ export default async function TeacherDiaryPage({
       {/* Filters + Entries */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted">
+          <h2 className="text-xs font-semibold text-slate uppercase tracking-wide">
             Recent Entries
           </h2>
           <DiaryFilters activeType={typeFilter} />
@@ -89,10 +89,10 @@ export default async function TeacherDiaryPage({
             <div className="w-14 h-14 rounded-full bg-teal/10 flex items-center justify-center mb-4">
               <BookOpen className="h-7 w-7 text-teal" />
             </div>
-            <p className="text-sm font-medium text-ink dark:text-dark-text">
+            <p className="text-sm font-medium text-foreground">
               {typeFilter ? "No entries of this type yet" : "Your Diary is empty"}
             </p>
-            <p className="text-xs text-slate dark:text-dark-muted mt-1 max-w-xs">
+            <p className="text-xs text-slate mt-1 max-w-xs">
               {typeFilter
                 ? "Try a different filter or post a new entry."
                 : "Post your first assignment or subject update."}

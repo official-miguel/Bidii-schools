@@ -103,13 +103,13 @@ export default function SomaAIActionConfirm({ action, onConfirm, onCancel }: Pro
         <div>
           <p
             id="action-confirm-title"
-            className="text-sm font-semibold text-ink dark:text-dark-text leading-snug"
+            className="text-sm font-semibold text-foreground leading-snug"
           >
             {action.label}
           </p>
           <p
             id="action-confirm-desc"
-            className="text-xs text-slate dark:text-dark-muted mt-1 leading-relaxed"
+            className="text-xs text-slate mt-1 leading-relaxed"
           >
             {action.description}
           </p>
@@ -119,18 +119,18 @@ export default function SomaAIActionConfirm({ action, onConfirm, onCancel }: Pro
       {/* Affected items preview */}
       {action.affectedItems && action.affectedItems.length > 0 && (
         <div className="mb-3 pl-8">
-          <p className="text-[11px] font-semibold text-slate dark:text-dark-muted uppercase tracking-wide mb-1">
+          <p className="text-[11px] font-semibold text-slate uppercase tracking-wide mb-1">
             This will affect:
           </p>
-          <ul className="text-xs text-slate dark:text-dark-muted space-y-0.5">
+          <ul className="text-xs text-slate space-y-0.5">
             {action.affectedItems.slice(0, 5).map((item) => (
               <li key={item} className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-slate/50 dark:bg-dark-muted/50 shrink-0" />
+                <span className="w-1 h-1 rounded-full bg-slate/50 shrink-0" />
                 {item}
               </li>
             ))}
             {action.affectedItems.length > 5 && (
-              <li className="text-slate/60 dark:text-dark-muted/60">
+              <li className="text-slate/60/60">
                 … and {action.affectedItems.length - 5} more
               </li>
             )}
@@ -173,9 +173,8 @@ export default function SomaAIActionConfirm({ action, onConfirm, onCancel }: Pro
           onClick={onCancel}
           disabled={action.executing}
           className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-medium
-                     border border-line text-slate hover:text-ink hover:bg-paper
-                     dark:border-dark-border dark:text-dark-muted dark:hover:text-dark-text
-                     dark:hover:bg-dark-border disabled:opacity-40 transition-colors"
+                     border border-border text-slate hover:text-foreground hover:bg-background
+                     disabled:opacity-40 transition-colors"
         >
           <XCircle className="h-3.5 w-3.5" />
           Cancel

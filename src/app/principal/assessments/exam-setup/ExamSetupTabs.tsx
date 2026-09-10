@@ -108,7 +108,7 @@ function RankingConfigForm() {
       {/* ── Ranking weights ────────────────────────────────────────────── */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-sm font-semibold text-ink">Ranking Weights</h3>
+          <h3 className="text-sm font-semibold text-foreground">Ranking Weights</h3>
           <p className="text-xs text-slate mt-0.5">
             Three weights that determine the composite teacher performance score.
             They must sum to <strong>1.0</strong>.
@@ -140,7 +140,7 @@ function RankingConfigForm() {
             },
           ].map(({ label, key, value, set, hint }) => (
             <div key={key}>
-              <label className="block text-xs font-medium text-ink mb-1">{label}</label>
+              <label className="block text-xs font-medium text-foreground mb-1">{label}</label>
               <input
                 type="number"
                 step="0.01"
@@ -148,7 +148,7 @@ function RankingConfigForm() {
                 max="1"
                 value={value}
                 onChange={(e) => set(e.target.value)}
-                className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-royal/30"
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-royal/30"
               />
               <p className="text-xs text-slate mt-1">{hint}</p>
             </div>
@@ -162,9 +162,9 @@ function RankingConfigForm() {
       </div>
 
       {/* ── Mean grade flag threshold ───────────────────────────────────── */}
-      <div className="space-y-3 rounded-xl border border-line bg-white p-5">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
         <div>
-          <h3 className="text-sm font-semibold text-ink">Mean Grade Flag Threshold</h3>
+          <h3 className="text-sm font-semibold text-foreground">Mean Grade Flag Threshold</h3>
           <p className="text-xs text-slate mt-0.5">
             Classes whose mean grade points fall <strong>below</strong> this value will
             be flagged in the dashboard. Leave blank to disable flagging.
@@ -173,7 +173,7 @@ function RankingConfigForm() {
 
         <div className="flex items-end gap-3">
           <div className="w-40">
-            <label className="block text-xs font-medium text-ink mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Threshold (grade points)
             </label>
             <input
@@ -183,7 +183,7 @@ function RankingConfigForm() {
               placeholder="e.g. 5.0"
               value={flagThreshold}
               onChange={(e) => setFlagThreshold(e.target.value)}
-              className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-royal/30"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-royal/30"
             />
           </div>
           {flagThreshold.trim() !== "" && (
@@ -233,7 +233,7 @@ export default function ExamSetupTabs() {
   return (
     <div>
       {/* Tab bar */}
-      <div className="flex gap-1 mb-8 border-b border-line">
+      <div className="flex gap-1 mb-8 border-b border-border">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -241,7 +241,7 @@ export default function ExamSetupTabs() {
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               active === tab.id
                 ? "border-royal text-royal"
-                : "border-transparent text-slate hover:text-ink"
+                : "border-transparent text-slate hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -253,7 +253,7 @@ export default function ExamSetupTabs() {
       {active === "frameworks" && (
         <div>
           <div className="mb-6">
-            <h2 className="text-base font-semibold text-ink mb-1">
+            <h2 className="text-base font-semibold text-foreground mb-1">
               Assessment Frameworks
             </h2>
             <p className="text-sm text-slate">
@@ -270,16 +270,16 @@ export default function ExamSetupTabs() {
       {/* ── Tab 2: Pathway Weights ───────────────────────────────────────── */}
       {active === "pathway-weights" && (
         <div className="max-w-lg">
-          <h2 className="text-base font-semibold text-ink mb-1">
+          <h2 className="text-base font-semibold text-foreground mb-1">
             CBE Pathway Weights
           </h2>
           <p className="text-sm text-slate mb-6">
             Set the SBA-to-exam weighting split for each subject in the senior CBE
             pathway. Weights must sum to 100% per subject.
           </p>
-          <div className="rounded-xl border border-line bg-white p-6 flex items-start gap-4">
+          <div className="rounded-xl border border-border bg-card p-6 flex items-start gap-4">
             <div className="flex-1">
-              <p className="font-medium text-ink text-sm">Configure per-subject weights</p>
+              <p className="font-medium text-foreground text-sm">Configure per-subject weights</p>
               <p className="text-sm text-slate mt-1">
                 Opens the full pathway weights editor where you can set SBA and
                 exam split for each subject.
@@ -303,7 +303,7 @@ export default function ExamSetupTabs() {
       {active === "ranking" && (
         <div>
           <div className="mb-6">
-            <h2 className="text-base font-semibold text-ink mb-1">
+            <h2 className="text-base font-semibold text-foreground mb-1">
               Ranking &amp; Performance Flags
             </h2>
             <p className="text-sm text-slate">

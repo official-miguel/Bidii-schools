@@ -30,10 +30,10 @@ export default async function StaffStudentsPage() {
       {students.length === 0 ? (
         <EmptyState message="No students registered yet." />
       ) : (
-        <div className="bg-white border border-line rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line text-left text-slate bg-paper">
+              <tr className="border-b border-border text-left text-slate bg-background">
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Admission No.</th>
                 <th className="px-4 py-3 font-medium">Class</th>
@@ -43,11 +43,11 @@ export default async function StaffStudentsPage() {
             </thead>
             <tbody>
               {students.map((s) => (
-                <tr key={s.id} className="border-b border-line last:border-0 hover:bg-paper transition-colors">
+                <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background transition-colors">
                   <td className="px-4 py-3 font-medium">
                     <Link
                       href={`/staff/students/${s.id}`}
-                      className="text-ink hover:text-teal hover:underline"
+                      className="text-foreground hover:text-teal hover:underline"
                     >
                       {s.fullName}
                     </Link>

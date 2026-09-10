@@ -86,7 +86,13 @@ type Props = {
 // Pure CSS radar chart (no external lib)
 // ---------------------------------------------------------------------------
 
-function RadarChart({ axes, maxValue = 4 }: { axes: { name: string; value: number }[]; maxValue?: number }) {
+function RadarChart({ axes, maxValue = 4, gridColor = "#e2e8f0", axisColor = "#cbd5e1", labelColor = "#64748b" }: {
+  axes: { name: string; value: number }[];
+  maxValue?: number;
+  gridColor?: string;
+  axisColor?: string;
+  labelColor?: string;
+}) {
   const N = axes.length;
   if (N < 3) return null;
   const cx = 100; const cy = 100; const r = 80;
@@ -112,20 +118,20 @@ function RadarChart({ axes, maxValue = 4 }: { axes: { name: string; value: numbe
     <svg viewBox="0 0 200 200" className="w-full max-w-xs mx-auto">
       {/* Grid */}
       {rings.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke="#e2e8f0" strokeWidth="1" />
+        <path key={i} d={d} fill="none" stroke={gridColor} strokeWidth="1" />
       ))}
       {/* Axis lines */}
       {axes.map((_, i) => {
         const p = pt(i, maxValue);
-        return <line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke="#cbd5e1" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke={axisColor} strokeWidth="1" />;
       })}
-      {/* Data polygon */}
+      {/* Data polygon — chart series — intentional */}
       <path d={dataPath} fill="rgba(59,130,246,0.2)" stroke="#3b82f6" strokeWidth="2" />
       {/* Labels */}
       {axes.map((a, i) => {
         const p = pt(i, maxValue * 1.18);
         return (
-          <text key={i} x={p.x.toFixed(1)} y={p.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="9" fill="#64748b" className="font-sans">
+          <text key={i} x={p.x.toFixed(1)} y={p.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="9" fill={labelColor} className="font-sans">
             {a.name.length > 10 ? a.name.slice(0, 9) + "…" : a.name}
           </text>
         );
@@ -141,7 +147,7 @@ function RadarChart({ axes, maxValue = 4 }: { axes: { name: string; value: numbe
 function LevelDistBar({ dist }: { dist: LevelDist }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-36 shrink-0 text-xs font-medium text-ink truncate" title={dist.learningAreaName}>
+      <div className="w-36 shrink-0 text-xs font-medium text-foreground truncate" title={dist.learningAreaName}>
         {dist.learningAreaName}
       </div>
       <div className="flex-1 flex h-5 rounded overflow-hidden gap-px">
@@ -175,8 +181,8 @@ function LvlBadge({ level }: { level: PerformanceLevel | null }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-line rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-ink mb-4">{title}</h3>
+    <div className="bg-card border border-border rounded-xl p-5">
+      <h3 className="text-sm font-semibold text-foreground mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -226,6 +232,17 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
 
   const radarStudent = data.learnerRadar?.find((r) => r.student.id === selectedStudent) ?? data.learnerRadar?.[0];
 
+  // Read CSS variable values for dark-mode-aware chart chrome
+  const radarGridColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e2e8f0')
+    : '#e2e8f0';
+  const radarAxisColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#cbd5e1')
+    : '#cbd5e1';
+  const radarLabelColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#64748b')
+    : '#64748b';
+
   return (
     <div className="space-y-5">
       {/* Performance-level distribution per learning area */}
@@ -272,7 +289,7 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
                 <p className="text-xs text-slate mb-3">Axis scale: 1 (BE) → 4 (EE). Each axis = mean attainment across all sub-strands in that learning area.</p>
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-line text-slate text-left">
+                    <tr className="border-b border-border text-slate text-left">
                       <th className="pb-2 font-medium">Learning Area</th>
                       <th className="pb-2 font-medium text-center">Mean (1–4)</th>
                       <th className="pb-2 font-medium text-center">Level</th>
@@ -284,8 +301,8 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
                         (a.value >= 3.5 ? "EE" : a.value >= 2.5 ? "ME" : a.value >= 1.5 ? "AE" : "BE") as PerformanceLevel
                         : null;
                       return (
-                        <tr key={a.learningAreaId} className="border-b border-line last:border-0">
-                          <td className="py-1 pr-4 font-medium text-ink">{a.learningAreaName}</td>
+                        <tr key={a.learningAreaId} className="border-b border-border last:border-0">
+                          <td className="py-1 pr-4 font-medium text-foreground">{a.learningAreaName}</td>
                           <td className="py-1 text-center tabular-nums">{a.value > 0 ? a.value.toFixed(2) : "—"}</td>
                           <td className="py-1 text-center"><LvlBadge level={level} /></td>
                         </tr>
@@ -305,7 +322,7 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-line text-slate text-left">
+                <tr className="border-b border-border text-slate text-left">
                   <th className="pb-2 font-medium">Learning Area</th>
                   <th className="pb-2 font-medium text-center">Sub-strands</th>
                   <th className="pb-2 font-medium text-center">Class mean (1–4)</th>
@@ -314,8 +331,8 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
               </thead>
               <tbody>
                 {data.learningAreaStats.map((a) => (
-                  <tr key={a.learningAreaId} className="border-b border-line last:border-0">
-                    <td className="py-1.5 font-medium text-ink pr-4">{a.learningAreaName}</td>
+                  <tr key={a.learningAreaId} className="border-b border-border last:border-0">
+                    <td className="py-1.5 font-medium text-foreground pr-4">{a.learningAreaName}</td>
                     <td className="py-1.5 text-center text-slate">{a.subStrandCount}</td>
                     <td className="py-1.5 text-center tabular-nums">{a.meanAttainment !== null ? a.meanAttainment.toFixed(2) : "—"}</td>
                     <td className="py-1.5 text-center"><LvlBadge level={a.meanLevel} /></td>
@@ -334,7 +351,7 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
             {data.subStrandStats.map((s) => (
               <div key={s.subStrandId} className="flex items-center gap-3">
                 <div className="w-44 shrink-0">
-                  <p className="text-xs font-medium text-ink truncate" title={s.subStrandName}>{s.subStrandName}</p>
+                  <p className="text-xs font-medium text-foreground truncate" title={s.subStrandName}>{s.subStrandName}</p>
                   <p className="text-[10px] text-slate">{s.strandName} · {s.learningAreaName}</p>
                 </div>
                 <div className="flex-1 flex h-4 rounded overflow-hidden gap-px">
@@ -360,7 +377,7 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
           <div className="overflow-x-auto">
             <table className="text-xs min-w-full">
               <thead>
-                <tr className="border-b border-line text-slate text-left">
+                <tr className="border-b border-border text-slate text-left">
                   <th className="pb-2 pr-3 font-medium whitespace-nowrap">Student</th>
                   {data.subStrandColumns.map((col) => (
                     <th key={col.id} className="pb-2 px-1 font-medium text-center whitespace-nowrap" title={`${col.strandName} › ${col.learningAreaName}`}>{col.name}</th>
@@ -370,8 +387,8 @@ function JuniorView({ data, selectedStudent, setSelectedStudent }: {
               </thead>
               <tbody>
                 {data.studentTable.map((row, i) => (
-                  <tr key={row.student.id} className={`border-b border-line last:border-0 ${i % 2 === 0 ? "" : "bg-paper/40"}`}>
-                    <td className="py-1 pr-3 font-medium text-ink whitespace-nowrap">{row.student.fullName}</td>
+                  <tr key={row.student.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-background/40"}`}>
+                    <td className="py-1 pr-3 font-medium text-foreground whitespace-nowrap">{row.student.fullName}</td>
                     {row.cells.map((cell) => (
                       <td key={cell.subStrandId} className="py-1 px-1 text-center"><LvlBadge level={cell.level} /></td>
                     ))}
@@ -402,9 +419,9 @@ function PathwayView({ data }: { data: PathwayData }) {
               const score = t.classMeanWeighted;
               const grade = score !== null ? { ...(score >= 75 ? { bg: "bg-green-100", text: "text-green-800" } : score >= 60 ? { bg: "bg-blue-100", text: "text-blue-800" } : score >= 40 ? { bg: "bg-amber-100", text: "text-amber-800" } : { bg: "bg-red-100", text: "text-red-800" }) } : null;
               return (
-                <div key={t.track} className={`rounded-xl border border-line p-4 ${grade?.bg ?? ""}`}>
-                  <p className={`text-sm font-semibold ${grade?.text ?? "text-ink"}`}>{t.track}</p>
-                  <p className={`text-2xl font-bold tabular-nums mt-1 ${grade?.text ?? "text-ink"}`}>
+                <div key={t.track} className={`rounded-xl border border-border p-4 ${grade?.bg ?? ""}`}>
+                  <p className={`text-sm font-semibold ${grade?.text ?? "text-foreground"}`}>{t.track}</p>
+                  <p className={`text-2xl font-bold tabular-nums mt-1 ${grade?.text ?? "text-foreground"}`}>
                     {score !== null ? `${score.toFixed(1)}%` : "—"}
                   </p>
                   <p className={`text-xs mt-0.5 ${grade?.text ?? "text-slate"}`}>{t.subjectCount} subject{t.subjectCount !== 1 ? "s" : ""}</p>
@@ -426,7 +443,7 @@ function PathwayView({ data }: { data: PathwayData }) {
             {data.subjectStats.filter((s) => s.studentCount > 0).map((s) => (
               <div key={s.subject.id}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-ink">{s.subject.name}</span>
+                  <span className="text-xs font-medium text-foreground">{s.subject.name}</span>
                   <span className="text-xs text-slate tabular-nums">
                     Weighted avg: {s.classMeanWeighted !== null ? `${s.classMeanWeighted.toFixed(1)}%` : "—"}
                     {" · "}{s.studentCount} student{s.studentCount !== 1 ? "s" : ""}
@@ -446,7 +463,7 @@ function PathwayView({ data }: { data: PathwayData }) {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-line text-slate text-left">
+                <tr className="border-b border-border text-slate text-left">
                   <th className="pb-2 font-medium">Student</th>
                   <th className="pb-2 font-medium text-center">Subjects assessed</th>
                   <th className="pb-2 font-medium text-center">Overall weighted %</th>
@@ -457,8 +474,8 @@ function PathwayView({ data }: { data: PathwayData }) {
                 {data.studentSummaries.map((s, i) => {
                   const col = s.grade ? gradeColour(s.grade as Parameters<typeof gradeColour>[0]) : { bg: "", text: "text-slate" };
                   return (
-                    <tr key={s.student.id} className={`border-b border-line last:border-0 ${i % 2 === 0 ? "" : "bg-paper/40"}`}>
-                      <td className="py-1.5 font-medium text-ink">{s.student.fullName}</td>
+                    <tr key={s.student.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-background/40"}`}>
+                      <td className="py-1.5 font-medium text-foreground">{s.student.fullName}</td>
                       <td className="py-1.5 text-center tabular-nums text-slate">{s.subjectCount}</td>
                       <td className="py-1.5 text-center tabular-nums">
                         {s.overallWeighted !== null ? `${s.overallWeighted.toFixed(1)}%` : <span className="text-slate">—</span>}
@@ -570,14 +587,14 @@ export default function CbeDashboardEnhanced({ classes, defaultClassId, cbeOnly 
               <button
                 type="button"
                 onClick={() => setView("junior")}
-                className={`rounded-l-md border border-line px-3 py-2 text-sm font-medium transition-colors ${view === "junior" ? "bg-teal text-white border-teal" : "bg-white text-ink hover:bg-paper"}`}
+                className={`rounded-l-md border border-border px-3 py-2 text-sm font-medium transition-colors ${view === "junior" ? "bg-teal text-white border-teal" : "bg-card text-foreground hover:bg-background"}`}
               >
                 Junior CBE
               </button>
               <button
                 type="button"
                 onClick={() => setView("pathway")}
-                className={`rounded-r-md border-t border-b border-r border-line px-3 py-2 text-sm font-medium transition-colors ${view === "pathway" ? "bg-teal text-white border-teal" : "bg-white text-ink hover:bg-paper"}`}
+                className={`rounded-r-md border-t border-b border-r border-border px-3 py-2 text-sm font-medium transition-colors ${view === "pathway" ? "bg-teal text-white border-teal" : "bg-card text-foreground hover:bg-background"}`}
               >
                 Senior CBE (Pathway)
               </button>

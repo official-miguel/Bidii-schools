@@ -50,7 +50,7 @@ export default async function StaffRecordsLayout({
 
   return (
     <div>
-      <div className="border-b border-line mb-6">
+      <div className="border-b border-border mb-6">
         <ContextNavigation items={tabs} />
       </div>
       {children}

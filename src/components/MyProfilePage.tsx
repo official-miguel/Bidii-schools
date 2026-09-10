@@ -125,12 +125,12 @@ function ProfileAvatar({
           src={avatarUrl}
           alt={displayName}
           onError={() => setImgError(true)}
-          className="w-24 h-24 rounded-full object-cover border-2 border-line shadow-sm"
+          className="w-24 h-24 rounded-full object-cover border-2 border-border shadow-sm"
         />
       ) : (
         <div
           className={`w-24 h-24 rounded-full ${color} flex items-center justify-center
-                      font-display font-bold text-3xl border-2 border-line shadow-sm`}
+                      font-display font-bold text-3xl border-2 border-border shadow-sm`}
         >
           {inits}
         </div>
@@ -160,7 +160,7 @@ function ProfileAvatar({
           onClick={handleRemove}
           title="Remove photo"
           aria-label="Remove profile photo"
-          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white border border-line
+          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-card border border-border
                      flex items-center justify-center shadow-sm
                      opacity-0 group-hover:opacity-100 transition-opacity
                      hover:bg-danger hover:border-danger hover:text-white text-slate"
@@ -198,13 +198,13 @@ function InfoRow({
   value: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-line last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-paper border border-line flex items-center justify-center shrink-0 mt-0.5">
+    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+      <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-slate" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-slate mb-0.5">{label}</p>
-        <p className="text-sm font-medium text-ink break-words">{value}</p>
+        <p className="text-sm font-medium text-foreground break-words">{value}</p>
       </div>
     </div>
   );
@@ -235,9 +235,9 @@ export default function MyProfilePage() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse max-w-xl">
-        <div className="h-8 w-40 bg-paper rounded-lg" />
-        <div className="h-48 bg-paper rounded-xl border border-line" />
-        <div className="h-32 bg-paper rounded-xl border border-line" />
+        <div className="h-8 w-40 bg-background rounded-lg" />
+        <div className="h-48 bg-background rounded-xl border border-border" />
+        <div className="h-32 bg-background rounded-xl border border-border" />
       </div>
     );
   }
@@ -257,7 +257,7 @@ export default function MyProfilePage() {
       />
 
       {/* ── Identity card ─────────────────────────────────────────────── */}
-      <div className="bg-white border border-line rounded-xl p-6">
+      <div className="bg-card border border-border rounded-xl p-6">
         <div className="flex items-center gap-5">
           <ProfileAvatar
             avatarUrl={avatarUrl}
@@ -265,7 +265,7 @@ export default function MyProfilePage() {
             onPhotoChange={setAvatarUrl}
           />
           <div className="min-w-0">
-            <h2 className="font-display text-xl font-semibold text-ink leading-tight truncate">
+            <h2 className="font-display text-xl font-semibold text-foreground leading-tight truncate">
               {displayName}
             </h2>
             <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-medium
@@ -281,7 +281,7 @@ export default function MyProfilePage() {
       </div>
 
       {/* ── Account info ──────────────────────────────────────────────── */}
-      <div className="bg-white border border-line rounded-xl px-5 py-2">
+      <div className="bg-card border border-border rounded-xl px-5 py-2">
         <h3 className="text-xs font-semibold text-slate uppercase tracking-wide pt-3 pb-1">
           Account
         </h3>
@@ -291,7 +291,7 @@ export default function MyProfilePage() {
 
       {/* ── Teacher-specific info ─────────────────────────────────────── */}
       {data.teacher && (
-        <div className="bg-white border border-line rounded-xl px-5 py-2">
+        <div className="bg-card border border-border rounded-xl px-5 py-2">
           <h3 className="text-xs font-semibold text-slate uppercase tracking-wide pt-3 pb-1">
             Staff details
           </h3>

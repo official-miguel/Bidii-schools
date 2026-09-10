@@ -97,8 +97,8 @@ export default async function BoardingMasterDashboard({ user }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Boarding — Overview</h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+        <h1 className="text-2xl font-semibold text-foreground">Boarding — Overview</h1>
+        <p className="text-slate text-sm mt-1">
           {teacher?.fullName} · {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -115,9 +115,9 @@ export default async function BoardingMasterDashboard({ user }: Props) {
 
       {/* Dorm-by-dorm breakdown */}
       {allDorms.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Dormitory status</p>
+            <p className="text-sm font-semibold text-foreground">Dormitory status</p>
             <Link href="/staff/accommodation" className="text-xs text-teal hover:underline">Manage</Link>
           </div>
           <div className="space-y-2">
@@ -127,12 +127,12 @@ export default async function BoardingMasterDashboard({ user }: Props) {
                 <div key={dorm.id} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between text-sm mb-0.5">
-                      <span className="text-ink dark:text-dark-text">{dorm.name}</span>
-                      <span className="text-xs text-slate dark:text-dark-muted shrink-0">
+                      <span className="text-foreground">{dorm.name}</span>
+                      <span className="text-xs text-slate shrink-0">
                         {dorm._count.beds}/{dorm.totalCapacity ?? "?"} · {pct}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-line dark:bg-dark-border rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-line rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${pct > 95 ? "bg-danger" : pct > 80 ? "bg-warn" : "bg-teal"}`}
                         style={{ width: `${Math.min(pct, 100)}%` }}
@@ -140,7 +140,7 @@ export default async function BoardingMasterDashboard({ user }: Props) {
                     </div>
                   </div>
                   {dorm.genderPolicy && dorm.genderPolicy !== "MIXED" && (
-                    <span className="text-[10px] uppercase font-semibold text-slate bg-line px-1.5 py-0.5 rounded dark:bg-dark-border dark:text-dark-muted">
+                    <span className="text-[10px] uppercase font-semibold text-slate bg-line px-1.5 py-0.5 rounded">
                       {dorm.genderPolicy}
                     </span>
                   )}
@@ -153,17 +153,17 @@ export default async function BoardingMasterDashboard({ user }: Props) {
 
       {/* Recent inspections */}
       {recentInspections.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">Recent inspections</p>
+            <p className="text-sm font-semibold text-foreground">Recent inspections</p>
             <Link href="/staff/accommodation/inspections" className="text-xs text-teal hover:underline">All inspections</Link>
           </div>
           <div className="space-y-2">
             {recentInspections.map((ins) => (
               <div key={ins.id} className="flex items-center justify-between text-sm">
                 <div>
-                  <p className="text-ink dark:text-dark-text">{ins.dorm.name}</p>
-                  <p className="text-xs text-slate dark:text-dark-muted">
+                  <p className="text-foreground">{ins.dorm.name}</p>
+                  <p className="text-xs text-slate">
                     {new Date(ins.inspectionDate).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
                   </p>
                 </div>

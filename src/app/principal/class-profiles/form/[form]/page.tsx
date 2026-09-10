@@ -88,7 +88,7 @@ function TypeToggle({
         className={`text-xs font-medium rounded-l-md border px-3 py-1.5 transition-colors ${
           value === "CORE"
             ? "bg-teal text-white border-teal"
-            : "bg-white text-slate border-line hover:bg-slate-50"
+            : "bg-card text-slate border-border hover:bg-slate-50"
         }`}>
         Core
       </button>
@@ -96,7 +96,7 @@ function TypeToggle({
         className={`text-xs font-medium rounded-r-md border-t border-b border-r px-3 py-1.5 transition-colors ${
           value === "ELECTIVE"
             ? "bg-amber-500 text-white border-amber-500"
-            : "bg-white text-slate border-line hover:bg-slate-50"
+            : "bg-card text-slate border-border hover:bg-slate-50"
         }`}>
         Elective
       </button>
@@ -142,7 +142,7 @@ function ElectiveGroupsSummary({
       {/* Section title */}
       <div className="flex items-center gap-2">
         <Layers className="h-4 w-4 text-violet-500" />
-        <span className="text-sm font-semibold text-ink">Elective Groups</span>
+        <span className="text-sm font-semibold text-foreground">Elective Groups</span>
         <Chip variant="purple" size="xs">{groups.length}</Chip>
         <Link href="/principal/timetable/requirements"
           className="ml-auto text-xs text-violet-600 hover:underline flex items-center gap-1">
@@ -175,13 +175,13 @@ function ElectiveGroupsSummary({
 
         return (
           <div key={group.id}
-            className="rounded-xl border border-violet-200 bg-white overflow-hidden shadow-xs">
+            className="rounded-xl border border-violet-200 bg-card overflow-hidden shadow-xs">
             {/* Group header */}
             <div className="flex items-center gap-2.5 px-4 py-3 bg-violet-50/60 border-b border-violet-100">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 shrink-0">
                 <Layers className="h-3.5 w-3.5 text-violet-600" />
               </div>
-              <span className="text-sm font-semibold text-ink flex-1">{group.name}</span>
+              <span className="text-sm font-semibold text-foreground flex-1">{group.name}</span>
               <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium border border-violet-200">
                 {group.lessonsPerWeek} lessons/wk
               </span>
@@ -378,7 +378,7 @@ export default function FormClassProfilePage({
             {data.classes.map((cls) => (
               <Link key={cls.id}
                 href={`/principal/class-profiles/${cls.id}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-xs text-ink shadow-sm hover:border-teal/50 hover:text-teal transition-colors">
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-foreground shadow-sm hover:border-teal/50 hover:text-teal transition-colors">
                 <span className="font-medium">{cls.name}</span>
                 {cls.stream && <span className="text-slate/60">· {cls.stream}</span>}
                 <ChevronRight className="h-3 w-3 text-slate/40" />
@@ -395,7 +395,7 @@ export default function FormClassProfilePage({
 
           {/* ── Non-grouped subjects type editor ──────────────────── */}
           <div className="mb-3 flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-semibold text-ink">Subjects</span>
+            <span className="text-sm font-semibold text-foreground">Subjects</span>
             <Chip variant="success" size="xs">{coreCount} core</Chip>
             {electiveCount > 0 && <Chip variant="warn" size="xs">{electiveCount} elective</Chip>}
             {ungroupedSubjects.some((s) => s.mixed) && (
@@ -410,7 +410,7 @@ export default function FormClassProfilePage({
           <div className="mb-4 flex flex-wrap items-center gap-3">
             {departments.length > 1 && (
               <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)}
-                className="text-sm rounded-lg border border-line px-3 py-1.5 bg-white text-ink focus:outline-none focus:ring-2 focus:ring-teal/30">
+                className="text-sm rounded-lg border border-border px-3 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30">
                 <option value="">All departments</option>
                 {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
@@ -418,7 +418,7 @@ export default function FormClassProfilePage({
               </select>
             )}
             <select value={filterType} onChange={(e) => setFilterType(e.target.value as "" | "CORE" | "ELECTIVE")}
-              className="text-sm rounded-lg border border-line px-3 py-1.5 bg-white text-ink focus:outline-none focus:ring-2 focus:ring-teal/30">
+              className="text-sm rounded-lg border border-border px-3 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30">
               <option value="">All types</option>
               <option value="CORE">Core</option>
               <option value="ELECTIVE">Elective</option>
@@ -447,11 +447,11 @@ export default function FormClassProfilePage({
           ) : visibleSubjects.length === 0 ? (
             <EmptyState message="No subjects match the current filters." />
           ) : (
-            <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[520px]">
                   <thead>
-                    <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                    <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                       <th className="px-5 py-3.5">Subject</th>
                       <th className="px-5 py-3.5 w-[90px]">Code</th>
                       <th className="px-5 py-3.5 hidden md:table-cell">Department</th>
@@ -465,9 +465,9 @@ export default function FormClassProfilePage({
                       const hasOverride = currentType !== s.globalType;
                       return (
                         <tr key={s.id}
-                          className="border-b border-line last:border-0 hover:bg-slate-50/40 transition-colors">
+                          className="border-b border-border last:border-0 hover:bg-slate-50/40 transition-colors">
                           <td className="px-5 py-3.5">
-                            <span className="font-medium text-ink">{s.name}</span>
+                            <span className="font-medium text-foreground">{s.name}</span>
                             {s.mixed && (
                               <span className="ml-2 text-xs text-warn"
                                 title="Classes in this form have different types — saving will unify them.">
@@ -476,7 +476,7 @@ export default function FormClassProfilePage({
                             )}
                           </td>
                           <td className="px-5 py-3.5">
-                            <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+                            <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
                               {s.code}
                             </span>
                           </td>
@@ -498,7 +498,7 @@ export default function FormClassProfilePage({
                   </tbody>
                 </table>
               </div>
-              <div className="border-t border-line px-5 py-3 bg-slate-50/60">
+              <div className="border-t border-border px-5 py-3 bg-slate-50/60">
                 <p className="text-xs text-slate">
                   <span className="text-teal font-medium">*</span> marks subjects where the
                   form assignment differs from the school-wide default. Changes apply to all{" "}

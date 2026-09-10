@@ -312,14 +312,14 @@ export default function ExamFilterBar({
       <div className="flex flex-col gap-1.5 min-w-[200px]">
         <label htmlFor="ef-period" className={labelClass}>Exam period</label>
         {periodsLoading ? (
-          <div className="h-[42px] rounded-lg border border-line bg-paper animate-pulse" />
+          <div className="h-[42px] rounded-lg border border-border bg-background animate-pulse" />
         ) : periodsError ? (
           <div className="flex items-center gap-1.5 rounded-lg border border-danger/30 bg-danger-bg px-3 py-2.5 text-xs text-danger">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             <span>{periodsError}</span>
           </div>
         ) : periods.length === 0 ? (
-          <div className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3 py-2.5 text-xs text-slate">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs text-slate">
             No exam periods set up yet
           </div>
         ) : (

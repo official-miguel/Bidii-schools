@@ -435,10 +435,10 @@ export default function ClassWorkspaceDrawer({
         <div className="space-y-5">
 
           {/* ── Overview ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-base font-semibold text-ink">{cls.name}</h2>
+                <h2 className="text-base font-semibold text-foreground">{cls.name}</h2>
                 <p className="text-sm text-slate mt-0.5">
                   Form {cls.form}{cls.stream ? ` · ${cls.stream} stream` : ""}
                 </p>
@@ -448,21 +448,21 @@ export default function ClassWorkspaceDrawer({
 
             {/* Stat pills */}
             <div className="flex flex-wrap gap-2">
-              <div className="flex items-center gap-1.5 bg-paper border border-line rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-1.5">
                 <Users className="h-3.5 w-3.5 text-slate" />
-                <span className="text-sm font-medium text-ink">{cls._count.students}</span>
+                <span className="text-sm font-medium text-foreground">{cls._count.students}</span>
                 <span className="text-xs text-slate">students</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-paper border border-line rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-3 py-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-slate" />
-                <span className="text-sm font-medium text-ink">{cls.allSubjects?.length ?? cls.subjectTeachers.length}</span>
+                <span className="text-sm font-medium text-foreground">{cls.allSubjects?.length ?? cls.subjectTeachers.length}</span>
                 <span className="text-xs text-slate">subjects</span>
               </div>
             </div>
           </div>
 
           {/* ── Class teacher ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>
                 <UserCheck className="h-3.5 w-3.5" />
@@ -496,7 +496,7 @@ export default function ClassWorkspaceDrawer({
                         <ExternalLink className="h-3 w-3" />
                       </button>
                     ) : (
-                      <p className="text-sm font-medium text-ink">{cls.classTeacher.fullName}</p>
+                      <p className="text-sm font-medium text-foreground">{cls.classTeacher.fullName}</p>
                     )}
                     {cls.classTeacher.email && (
                       <p className="text-xs text-slate truncate">{cls.classTeacher.email}</p>
@@ -515,7 +515,7 @@ export default function ClassWorkspaceDrawer({
                   <button
                     type="button"
                     onClick={() => setTeacherPickerOpen((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink hover:border-teal transition-colors"
+                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground hover:border-teal transition-colors"
                   >
                     <span className="truncate">
                       {teacherSearch || "Search staff…"}
@@ -523,14 +523,14 @@ export default function ClassWorkspaceDrawer({
                     <ChevronDown className="h-4 w-4 text-slate shrink-0" />
                   </button>
                   {teacherPickerOpen && (
-                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-line bg-white shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-line">
+                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+                      <div className="p-2 border-b border-border">
                         <input
                           autoFocus
                           value={teacherSearch}
                           onChange={(e) => setTeacherSearch(e.target.value)}
                           placeholder="Search by name or staff ID…"
-                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-line bg-paper outline-none focus:border-teal"
+                          className="w-full text-sm px-2 py-1.5 rounded-lg border border-border bg-background outline-none focus:border-teal"
                         />
                       </div>
                       <ul className="max-h-48 overflow-y-auto">
@@ -546,10 +546,10 @@ export default function ClassWorkspaceDrawer({
                                   setTeacherPickerOpen(false);
                                   saveClassTeacher(s.id);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors"
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-background transition-colors"
                               >
                                 <Avatar name={s.fullName} size="sm" />
-                                <span className="flex-1 font-medium text-ink truncate">{s.fullName}</span>
+                                <span className="flex-1 font-medium text-foreground truncate">{s.fullName}</span>
                                 <span className="text-xs text-slate font-mono shrink-0">{s.staffId}</span>
                               </button>
                             </li>
@@ -557,7 +557,7 @@ export default function ClassWorkspaceDrawer({
                         )}
                       </ul>
                       {cls.classTeacher && (
-                        <div className="border-t border-line p-2">
+                        <div className="border-t border-border p-2">
                           <button
                             type="button"
                             onClick={() => { setTeacherPickerOpen(false); saveClassTeacher(null); }}
@@ -584,7 +584,7 @@ export default function ClassWorkspaceDrawer({
                   <button
                     type="button"
                     onClick={() => { setAssigningTeacher(false); setTeacherSearch(""); setTeacherError(null); }}
-                    className="text-xs text-slate hover:text-ink"
+                    className="text-xs text-slate hover:text-foreground"
                   >
                     Cancel
                   </button>
@@ -609,19 +609,19 @@ export default function ClassWorkspaceDrawer({
               const isOpen = assigningSubjectId === s.id;
 
               return (
-                <div key={s.id} className="py-2.5 border-b border-line last:border-0">
+                <div key={s.id} className="py-2.5 border-b border-border last:border-0">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono text-xs bg-paper border border-line rounded px-1.5 py-0.5 shrink-0 text-slate">
+                      <span className="font-mono text-xs bg-background border border-border rounded px-1.5 py-0.5 shrink-0 text-slate">
                         {s.code}
                       </span>
                       {onOpenSubject ? (
                         <button type="button" onClick={() => onOpenSubject(s.id, s.name)}
-                          className="text-sm font-medium text-ink hover:text-teal truncate flex items-center gap-1">
+                          className="text-sm font-medium text-foreground hover:text-teal truncate flex items-center gap-1">
                           {s.name}<ExternalLink className="h-3 w-3 shrink-0 text-slate/40" />
                         </button>
                       ) : (
-                        <span className="text-sm font-medium text-ink truncate">{s.name}</span>
+                        <span className="text-sm font-medium text-foreground truncate">{s.name}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -640,7 +640,7 @@ export default function ClassWorkspaceDrawer({
                             <>
                               <button type="button" title="Change teacher"
                                 onClick={() => { setAssigningSubjectId(isOpen ? null : s.id); setSubjectTeacherSearch(""); setSubjectTeacherError(null); }}
-                                className="p-1 rounded hover:bg-paper text-slate/40 hover:text-teal transition-colors">
+                                className="p-1 rounded hover:bg-background text-slate/40 hover:text-teal transition-colors">
                                 <Pencil className="h-3 w-3" />
                               </button>
                               <button type="button" title="Remove teacher"
@@ -667,13 +667,13 @@ export default function ClassWorkspaceDrawer({
                   </div>
                   {isOpen && (
                     <div className="mt-2" ref={subjectPickerRef}>
-                      <div className="rounded-xl border border-line bg-white shadow-sm overflow-hidden">
-                        <div className="p-2 border-b border-line">
+                      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                        <div className="p-2 border-b border-border">
                           <input autoFocus type="text"
                             placeholder={`Search teachers for ${s.name}…`}
                             value={subjectTeacherSearch}
                             onChange={(e) => setSubjectTeacherSearch(e.target.value)}
-                            className="w-full text-sm px-2 py-1.5 rounded-lg border border-line bg-paper outline-none focus:border-teal" />
+                            className="w-full text-sm px-2 py-1.5 rounded-lg border border-border bg-background outline-none focus:border-teal" />
                         </div>
                         <ul className="max-h-44 overflow-y-auto">
                           {qualifiedTeachers.length === 0 ? (
@@ -688,9 +688,9 @@ export default function ClassWorkspaceDrawer({
                                 <button type="button"
                                   onClick={() => saveSubjectTeacher(s.id, t.id)}
                                   disabled={subjectTeacherSaving}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-paper transition-colors disabled:opacity-50">
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-background transition-colors disabled:opacity-50">
                                   <Avatar name={t.fullName} size="sm" />
-                                  <span className="flex-1 font-medium text-ink truncate">{t.fullName}</span>
+                                  <span className="flex-1 font-medium text-foreground truncate">{t.fullName}</span>
                                   {s.assignedTeacher?.id === t.id && (
                                     <span className="text-[10px] bg-teal/10 text-teal px-1.5 py-0.5 rounded-full font-medium">current</span>
                                   )}
@@ -700,17 +700,17 @@ export default function ClassWorkspaceDrawer({
                           )}
                         </ul>
                         {subjectTeacherError && (
-                          <p className="px-3 py-2 text-xs text-danger border-t border-line">{subjectTeacherError}</p>
+                          <p className="px-3 py-2 text-xs text-danger border-t border-border">{subjectTeacherError}</p>
                         )}
                         {subjectTeacherSaving && (
-                          <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate border-t border-line">
+                          <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate border-t border-border">
                             <Spinner size="sm" /> Saving…
                           </div>
                         )}
-                        <div className="border-t border-line px-3 py-1.5">
+                        <div className="border-t border-border px-3 py-1.5">
                           <button type="button"
                             onClick={() => { setAssigningSubjectId(null); setSubjectTeacherSearch(""); setSubjectTeacherError(null); }}
-                            className="text-xs text-slate hover:text-ink">Cancel</button>
+                            className="text-xs text-slate hover:text-foreground">Cancel</button>
                         </div>
                       </div>
                     </div>
@@ -723,7 +723,7 @@ export default function ClassWorkspaceDrawer({
               <>
                 {/* Core subjects — individual teacher per subject */}
                 {coreSubjects.length > 0 && (
-                  <div className="bg-white border border-line rounded-xl p-5">
+                  <div className="bg-card border border-border rounded-xl p-5">
                     <SectionTitle><BookOpen className="h-3.5 w-3.5" />Core subjects</SectionTitle>
                     <div>{coreSubjects.map(renderSubjectRow)}</div>
                   </div>
@@ -731,7 +731,7 @@ export default function ClassWorkspaceDrawer({
 
                 {/* Ungrouped elective subjects */}
                 {ungroupedElectives.length > 0 && (
-                  <div className="bg-white border border-line rounded-xl p-5">
+                  <div className="bg-card border border-border rounded-xl p-5">
                     <SectionTitle><BookOpen className="h-3.5 w-3.5" />Elective subjects</SectionTitle>
                     <div>{ungroupedElectives.map(renderSubjectRow)}</div>
                   </div>
@@ -739,8 +739,8 @@ export default function ClassWorkspaceDrawer({
 
                 {/* Elective groups — interactive teacher assignment */}
                 {(cls.electiveGroups ?? []).length > 0 && (
-                  <div className="bg-white border border-line rounded-xl p-5">
-                    <SectionTitle><Layers className="h-3.5 w-3.5 text-violet-500" />Elective groups</SectionTitle>
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <SectionTitle><Layers className="h-3.5 w-3.5 text-primary" />Elective groups</SectionTitle>
                     {groupTeacherError && (
                       <div className="mb-3 rounded-lg bg-danger-bg border border-danger/20 px-3 py-2 flex items-center justify-between gap-2">
                         <p className="text-xs text-danger">{groupTeacherError}</p>
@@ -755,7 +755,7 @@ export default function ClassWorkspaceDrawer({
                           {/* Group header */}
                           <div className="flex items-center gap-2 px-3 py-2 bg-violet-50/60 border-b border-violet-100">
                             <Layers className="h-3 w-3 text-violet-500 shrink-0" />
-                            <span className="text-xs font-semibold text-ink flex-1">{group.name}</span>
+                            <span className="text-xs font-semibold text-foreground flex-1">{group.name}</span>
                             <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full font-medium">
                               {group.lessonsPerWeek}/wk
                             </span>
@@ -783,10 +783,10 @@ export default function ClassWorkspaceDrawer({
                                 <div key={member.subjectId} className="px-3 py-2.5">
                                   {/* Subject name row */}
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-mono text-[10px] bg-paper border border-line rounded px-1 py-0.5 text-slate shrink-0">
+                                    <span className="font-mono text-[10px] bg-background border border-border rounded px-1 py-0.5 text-slate shrink-0">
                                       {member.subject.code}
                                     </span>
-                                    <span className="text-sm font-medium text-ink flex-1">{member.subject.name}</span>
+                                    <span className="text-sm font-medium text-foreground flex-1">{member.subject.name}</span>
                                     {/* Add teacher button — only for editable mode */}
                                     {!readOnly && (
                                     <button
@@ -839,7 +839,7 @@ export default function ClassWorkspaceDrawer({
                                   {/* Teacher picker dropdown */}
                                   {isPickerOpen && (
                                     <div className="relative mt-1" ref={groupPickerRef}>
-                                      <div className="rounded-xl border border-violet-200 bg-white shadow-md overflow-hidden">
+                                      <div className="rounded-xl border border-violet-200 bg-card shadow-md overflow-hidden">
                                         <div className="p-2 border-b border-violet-100">
                                           <input
                                             autoFocus
@@ -847,7 +847,7 @@ export default function ClassWorkspaceDrawer({
                                             placeholder={`Search teachers for ${member.subject.name}…`}
                                             value={groupTeacherSearch}
                                             onChange={(e) => setGroupTeacherSearch(e.target.value)}
-                                            className="w-full text-sm px-2 py-1.5 rounded-lg border border-line bg-paper outline-none focus:border-violet-400"
+                                            className="w-full text-sm px-2 py-1.5 rounded-lg border border-border bg-background outline-none focus:border-violet-400"
                                           />
                                         </div>
                                         <ul className="max-h-44 overflow-y-auto">
@@ -871,7 +871,7 @@ export default function ClassWorkspaceDrawer({
                                                   className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-violet-50 transition-colors disabled:opacity-50"
                                                 >
                                                   <Avatar name={t.fullName} size="sm" />
-                                                  <span className="flex-1 font-medium text-ink truncate">{t.fullName}</span>
+                                                  <span className="flex-1 font-medium text-foreground truncate">{t.fullName}</span>
                                                 </button>
                                               </li>
                                             ))
@@ -885,7 +885,7 @@ export default function ClassWorkspaceDrawer({
                                         <div className="border-t border-violet-100 px-3 py-1.5">
                                           <button type="button"
                                             onClick={() => { setGroupTeacherPickerKey(null); setGroupTeacherSearch(""); }}
-                                            className="text-xs text-slate hover:text-ink">Cancel</button>
+                                            className="text-xs text-slate hover:text-foreground">Cancel</button>
                                         </div>
                                       </div>
                                     </div>
@@ -905,7 +905,7 @@ export default function ClassWorkspaceDrawer({
 
           {/* ── Students ── */}
           {cls.students.length > 0 && (
-            <div className="bg-white border border-line rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <SectionTitle>
                 <Users className="h-3.5 w-3.5" />
                 Students ({cls._count.students})
@@ -915,11 +915,11 @@ export default function ClassWorkspaceDrawer({
                   <a
                     key={s.id}
                     href={`${basePath}/students/${s.id}`}
-                    className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-paper transition-colors group"
+                    className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-background transition-colors group"
                   >
                     <Avatar name={s.fullName} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink group-hover:text-teal transition-colors truncate">
+                      <p className="text-sm font-medium text-foreground group-hover:text-teal transition-colors truncate">
                         {s.fullName}
                       </p>
                       <p className="text-xs text-slate font-mono">{s.admissionNumber}</p>
@@ -940,7 +940,7 @@ export default function ClassWorkspaceDrawer({
           )}
 
           {/* ── Quick links ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <SectionTitle>Quick links</SectionTitle>
             <div className="space-y-2">
               <a

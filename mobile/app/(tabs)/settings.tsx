@@ -11,13 +11,15 @@ import {
   ScreenHeader, Card, Input, Button, ErrorBanner, Toast, useToast,
 } from '@/components/ui';
 import { api, LibrarySettingsRecord, LibraryPolicyRecord } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { getErrorMessage } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { toastProps, show: showToast } = useToast();
+  const { colors } = useTheme();
 
   const [settings, setSettings] = useState<LibrarySettingsRecord | null>(null);
   const [policy,   setPolicy]   = useState<LibraryPolicyRecord | null>(null);
@@ -87,17 +89,17 @@ export default function SettingsScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex:1, backgroundColor: Colors.paper }}>
+      <View style={{ flex:1, backgroundColor: colors.background }}>
         <ScreenHeader title="Settings" />
         <View style={{ flex:1, alignItems:'center', justifyContent:'center' }}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={{ flex:1, backgroundColor: Colors.paper }}>
+    <View style={{ flex:1, backgroundColor: colors.background }}>
       <ScreenHeader title="Library Settings" subtitle="Synced with all dashboards" />
 
       <ScrollView contentContainerStyle={{ padding: Spacing[4], gap: Spacing[4], paddingBottom: insets.bottom + Spacing[8] }}>
@@ -105,7 +107,7 @@ export default function SettingsScreen() {
 
         {/* ── Circulation limits ──────────────────────────────────── */}
         <Card>
-          <SectionTitle>Circulation Limits</SectionTitle>
+          <SectionTitle colors={colors}>Circulation Limits</SectionTitle>
           <View style={{ gap: Spacing[4] }}>
             <Input label="Max books per student" value={maxBooks} onChangeText={setMaxBooks}
               keyboardType="number-pad" hint="Maximum number of books a student can borrow at once" />
@@ -118,7 +120,7 @@ export default function SettingsScreen() {
 
         {/* ── Fine configuration ──────────────────────────────────── */}
         <Card>
-          <SectionTitle>Fine Configuration</SectionTitle>
+          <SectionTitle colors={colors}>Fine Configuration</SectionTitle>
           <View style={{ gap: Spacing[4] }}>
             <Input label="Fine per overdue day (KES)" value={finePerDay} onChangeText={setFinePerDay}
               keyboardType="decimal-pad" hint="Amount charged per day after due date" />
@@ -133,21 +135,21 @@ export default function SettingsScreen() {
 
         {/* ── Weekend counting ────────────────────────────────────── */}
         <Card>
-          <SectionTitle>Overdue Calculation</SectionTitle>
+          <SectionTitle colors={colors}>Overdue Calculation</SectionTitle>
           <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
             <View style={{ flex:1 }}>
-              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.ink }}>
+              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: colors.foreground }}>
                 Count weekends toward overdue days
               </Text>
-              <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText, marginTop: 2 }}>
+              <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginTop: 2 }}>
                 When off, only Mon–Fri count toward overdue fines
               </Text>
             </View>
             <Switch
               value={countWeekends}
               onValueChange={setCountWeekends}
-              trackColor={{ false: Colors.line, true: Colors.teal + '80' }}
-              thumbColor={countWeekends ? Colors.teal : Colors.muted}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={countWeekends ? colors.primary : colors.mutedForeground}
             />
           </View>
         </Card>
@@ -161,9 +163,9 @@ export default function SettingsScreen() {
   );
 }
 
-function SectionTitle({ children }: { children: string }) {
+function SectionTitle({ children, colors }: { children: string; colors: ReturnType<typeof useTheme>['colors'] }) {
   return (
-    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform:'uppercase', letterSpacing:0.8, marginBottom: Spacing[3] }}>
+    <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform:'uppercase', letterSpacing:0.8, marginBottom: Spacing[3] }}>
       {children}
     </Text>
   );

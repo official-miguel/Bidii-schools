@@ -47,7 +47,7 @@ type Version = {
 const STATUS_BADGE: Record<string, string> = {
   PUBLISHED: "bg-success-bg text-success border-success/20",
   DRAFT:     "bg-teal-50 text-teal border-teal-200",
-  ARCHIVED:  "bg-paper text-slate border-line",
+  ARCHIVED:  "bg-background text-slate border-border",
 };
 
 /** Returns a concise health label for the vulnerability summary chip */
@@ -278,7 +278,7 @@ export default function VersionsPage() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white border border-line rounded-xl p-5 animate-pulse h-20" />
+                <div key={i} className="bg-card border border-border rounded-xl p-5 animate-pulse h-20" />
               ))}
             </div>
           ) : versions.length === 0 ? (
@@ -299,11 +299,11 @@ export default function VersionsPage() {
                   <div
                     key={v.id}
                     onClick={() => setPanelVersion(isSelected ? null : v)}
-                    className={`bg-white border rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center
+                    className={`bg-card border rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center
                                 gap-3 cursor-pointer transition-all duration-150 select-none
                                 ${isSelected
                                   ? "border-teal/50 ring-1 ring-teal/20 shadow-sm"
-                                  : "border-line hover:border-teal/30 hover:shadow-sm"}`}
+                                  : "border-border hover:border-teal/30 hover:shadow-sm"}`}
                   >
                     {/* Status icon */}
                     <div className="shrink-0">
@@ -319,12 +319,12 @@ export default function VersionsPage() {
                     {/* Main info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-ink truncate">{v.name}</span>
+                        <span className="text-sm font-semibold text-foreground truncate">{v.name}</span>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_BADGE[v.status]}`}>
                           {v.status}
                         </span>
                         {v.clonedFromId && (
-                          <span className="text-[10px] text-slate bg-paper border border-line px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] text-slate bg-background border border-border px-2 py-0.5 rounded-full">
                             Cloned
                           </span>
                         )}
@@ -375,7 +375,7 @@ export default function VersionsPage() {
                           onClick={() => handleUnpublish(v)}
                           disabled={busy[v.id]}
                           className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5
-                                     rounded-lg border border-line text-slate hover:border-warn
+                                     rounded-lg border border-border text-slate hover:border-warn
                                      hover:text-warn transition-colors disabled:opacity-50"
                         >
                           <DownloadCloud className="h-3.5 w-3.5" /> Unpublish
@@ -386,18 +386,18 @@ export default function VersionsPage() {
                       <div className="relative">
                         <button
                           onClick={() => setOpenMenu(openMenu === v.id ? null : v.id)}
-                          className="p-2 rounded-lg border border-line text-slate hover:text-teal
+                          className="p-2 rounded-lg border border-border text-slate hover:text-teal
                                      hover:border-teal transition-colors"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                         {openMenu === v.id && (
-                          <div className="absolute right-0 top-full mt-1 w-44 bg-white border
-                                          border-line rounded-xl shadow-lg z-10 py-1">
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-card border
+                                          border-border rounded-xl shadow-lg z-10 py-1">
                             {v.status !== "ARCHIVED" && (
                               <button
                                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm
-                                           text-ink hover:bg-paper transition-colors"
+                                           text-foreground hover:bg-background transition-colors"
                                 onClick={() => { setRenameTarget(v); setRenameName(v.name); setOpenMenu(null); }}
                               >
                                 <Pencil className="h-4 w-4 text-slate" /> Rename
@@ -405,7 +405,7 @@ export default function VersionsPage() {
                             )}
                             <button
                               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm
-                                         text-ink hover:bg-paper transition-colors"
+                                         text-foreground hover:bg-background transition-colors"
                               onClick={() => { setCloneSource(v); setCloneName(`${v.name} (copy)`); setOpenMenu(null); }}
                             >
                               <Copy className="h-4 w-4 text-slate" /> Clone
@@ -444,11 +444,11 @@ export default function VersionsPage() {
             />
           ) : (
             /* Version has no snapshot yet — offer to run validation now */
-            <div className="bg-white border border-line rounded-2xl shadow-lg p-6 space-y-4">
+            <div className="bg-card border border-border rounded-2xl shadow-lg p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-ink">{panelVersion.name}</p>
+                <p className="text-sm font-semibold text-foreground">{panelVersion.name}</p>
                 <button onClick={() => setPanelVersion(null)}
-                  className="p-1.5 rounded-lg text-slate hover:text-ink hover:bg-paper transition-colors">
+                  className="p-1.5 rounded-lg text-slate hover:text-foreground hover:bg-background transition-colors">
                   ✕
                 </button>
               </div>
@@ -583,7 +583,7 @@ export default function VersionsPage() {
                 </div>
               )}
             </div>
-            <p className="text-sm text-ink leading-relaxed">
+            <p className="text-sm text-foreground leading-relaxed">
               This timetable has <strong>{gate.errorCount} critical conflict{gate.errorCount !== 1 ? "s" : ""}</strong> that
               must be resolved before publishing. Open the <strong>Builder</strong> to fix them.
             </p>
@@ -594,7 +594,7 @@ export default function VersionsPage() {
                                           border border-danger/15 rounded-lg">
                     <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" aria-hidden />
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-ink">{e.message}</p>
+                      <p className="text-xs font-medium text-foreground">{e.message}</p>
                       <p className="text-[10px] text-teal mt-0.5">{e.action}</p>
                     </div>
                   </div>

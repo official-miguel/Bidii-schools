@@ -84,16 +84,16 @@ export default function ArchivedStaffDrawer({ staffId, onClose }: Props) {
 
       <aside
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-xl
-                   bg-white border-l border-line shadow-2xl
+                   bg-card border-l border-border shadow-2xl
                    flex flex-col overflow-hidden animate-slide-in-right"
         aria-label="Archived staff profile"
       >
         <div className="flex items-center justify-between px-6 py-4
-                        border-b border-line shrink-0">
-          <h2 className="text-base font-semibold text-ink">Archived Staff Profile</h2>
+                        border-b border-border shrink-0">
+          <h2 className="text-base font-semibold text-foreground">Archived Staff Profile</h2>
           <button type="button" onClick={onClose} aria-label="Close"
             className="flex items-center justify-center h-9 w-9 rounded-lg
-                       text-slate hover:text-ink hover:bg-paper transition-colors">
+                       text-slate hover:text-foreground hover:bg-background transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -101,8 +101,8 @@ export default function ArchivedStaffDrawer({ staffId, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {loading && (
             <div className="space-y-4 animate-pulse">
-              <div className="h-36 bg-paper rounded-xl border border-line" />
-              <div className="h-24 bg-paper rounded-xl border border-line" />
+              <div className="h-36 bg-background rounded-xl border border-border" />
+              <div className="h-24 bg-background rounded-xl border border-border" />
             </div>
           )}
           {error && <p className="text-sm text-danger">{error}</p>}
@@ -128,11 +128,11 @@ function StaffProfileBody({ teacher }: { teacher: ArchivedTeacher }) {
     <div className="space-y-5 max-w-2xl">
 
       {/* Identity card */}
-      <div className="bg-white border border-line rounded-xl p-5">
+      <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-start gap-4">
           <Avatar name={teacher.fullName} size="lg" />
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-xl font-semibold text-ink leading-tight">
+            <h3 className="font-display text-xl font-semibold text-foreground leading-tight">
               {teacher.fullName}
             </h3>
             <p className="text-sm text-slate mt-0.5">
@@ -150,7 +150,7 @@ function StaffProfileBody({ teacher }: { teacher: ArchivedTeacher }) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3
-                        mt-4 pt-4 border-t border-line text-sm">
+                        mt-4 pt-4 border-t border-border text-sm">
           {teacher.email && (
             <div>
               <p className="text-xs text-slate mb-0.5">Email</p>
@@ -171,36 +171,36 @@ function StaffProfileBody({ teacher }: { teacher: ArchivedTeacher }) {
           )}
           <div>
             <p className="text-xs text-slate mb-0.5">Joined</p>
-            <p className="text-ink">{fmtDate(teacher.employmentStartDate ?? teacher.createdAt)}</p>
+            <p className="text-foreground">{fmtDate(teacher.employmentStartDate ?? teacher.createdAt)}</p>
           </div>
           <div>
             <p className="text-xs text-slate mb-0.5">Left</p>
-            <p className="text-ink">{fmtDate(teacher.archivedAt)}</p>
+            <p className="text-foreground">{fmtDate(teacher.archivedAt)}</p>
           </div>
           <div>
             <p className="text-xs text-slate mb-0.5">Department</p>
-            <p className="text-ink">{dept}</p>
+            <p className="text-foreground">{dept}</p>
           </div>
           {teacher.archivedBy && (
             <div>
               <p className="text-xs text-slate mb-0.5">Archived by</p>
-              <p className="text-ink text-xs">{teacher.archivedBy.email}</p>
+              <p className="text-foreground text-xs">{teacher.archivedBy.email}</p>
             </div>
           )}
         </div>
 
         {teacher.archiveReason && (
-          <div className="mt-3 pt-3 border-t border-line">
+          <div className="mt-3 pt-3 border-t border-border">
             <p className="text-xs text-slate mb-1">Departure reason</p>
-            <p className="text-sm text-ink leading-relaxed">{teacher.archiveReason}</p>
+            <p className="text-sm text-foreground leading-relaxed">{teacher.archiveReason}</p>
           </div>
         )}
       </div>
 
       {/* Subjects taught */}
       {teacher.teacherSubjects.length > 0 && (
-        <div className="bg-white border border-line rounded-xl p-5">
-          <h4 className="text-sm font-semibold text-ink mb-3">Subjects Taught</h4>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h4 className="text-sm font-semibold text-foreground mb-3">Subjects Taught</h4>
           <div className="flex flex-wrap gap-1.5">
             {teacher.teacherSubjects.map((ts) => (
               <Chip key={ts.subject.id} variant="teal" size="xs">
@@ -213,8 +213,8 @@ function StaffProfileBody({ teacher }: { teacher: ArchivedTeacher }) {
 
       {/* Class assignments from timetable */}
       {classesSet.size > 0 && (
-        <div className="bg-white border border-line rounded-xl p-5">
-          <h4 className="text-sm font-semibold text-ink mb-3">Class Assignments (historical)</h4>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h4 className="text-sm font-semibold text-foreground mb-3">Class Assignments (historical)</h4>
           <div className="flex flex-wrap gap-1.5">
             {Array.from(classesSet.entries()).map(([name, form]) => (
               <Chip key={name} variant="info" size="xs">{name} · {form}</Chip>

@@ -83,10 +83,9 @@ export default function AssessmentShell({ navItems, children, contextNav }: Prop
   return (
     <div className="flex gap-0 min-h-[calc(100vh-64px)]">
       {/* ── Inner sidebar — desktop only ── */}
-      <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-line
-                        bg-paper/60 py-4 px-2 gap-0.5 sticky top-16 self-start
-                        max-h-[calc(100vh-4rem)] overflow-y-auto
-                        dark:bg-dark-bg/60 dark:border-dark-border">
+      <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-border
+                        bg-background/60 py-4 px-2 gap-0.5 sticky top-16 self-start
+                        max-h-[calc(100vh-4rem)] overflow-y-auto/60">
         {navItems.map((item) => {
           const active = isActive(item);
           const Icon = ICON_MAP[item.icon] ?? LayoutDashboard;
@@ -97,7 +96,7 @@ export default function AssessmentShell({ navItems, children, contextNav }: Prop
               className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors duration-100 ${
                 active
                   ? "bg-teal text-white font-medium shadow-xs"
-                  : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                  : "text-slate hover:bg-teal-50 hover:text-teal"
               }`}
             >
               <Icon
@@ -117,17 +116,15 @@ export default function AssessmentShell({ navItems, children, contextNav }: Prop
         <div className="md:hidden">
           {/* Strip 1 — context nav (Classes / Subjects / …) */}
           {contextNav && (
-            <div className="sticky top-16 z-20 bg-paper/95 border-b border-line
-                            dark:bg-dark-bg/95 dark:border-dark-border
+            <div className="sticky top-16 z-20 bg-background/95 border-b border-border/95
                             overflow-x-auto scrollbar-none px-3 pt-2 pb-0">
               {contextNav}
             </div>
           )}
 
           {/* Strip 2 — module inner nav (Overview / Mark Sheets / …) */}
-          <div className={`flex overflow-x-auto gap-1 px-3 py-2 border-b border-line
-                          bg-paper/80 scrollbar-none
-                          dark:bg-dark-bg/80 dark:border-dark-border
+          <div className={`flex overflow-x-auto gap-1 px-3 py-2 border-b border-border
+                          bg-background/80 scrollbar-none/80
                           ${contextNav ? "sticky top-[calc(4rem+40px)] z-10" : "sticky top-16 z-10"}`}>
             {navItems.map((item) => {
               const active = isActive(item);
@@ -140,7 +137,7 @@ export default function AssessmentShell({ navItems, children, contextNav }: Prop
                               text-xs font-medium transition-colors duration-100 whitespace-nowrap ${
                     active
                       ? "bg-teal text-white shadow-xs"
-                      : "bg-white border border-line text-slate hover:border-teal/40 hover:text-teal dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/30"
+                      : "bg-card border border-border text-slate hover:border-teal/40 hover:text-teal dark:hover:border-teal/30"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />

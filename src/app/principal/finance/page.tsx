@@ -73,7 +73,7 @@ export default function PrincipalFinancePage() {
 
   return (
     <div>
-      <div className="border-b border-line mb-6 dark:border-dark-border">
+      <div className="border-b border-border mb-6">
         <ContextNavigation items={navItems} />
       </div>
 
@@ -104,7 +104,7 @@ export default function PrincipalFinancePage() {
                 { label: "Active debtors",  value: String(summary.debtorCount),         icon: <AlertTriangle className="h-5 w-5" />, highlight: summary.debtorCount > 0 },
               ].map(c => (
                 <div key={c.label} className={`rounded-xl border p-5 flex gap-4 items-start ${
-                  c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-white border-line dark:bg-dark-surface dark:border-dark-border"
+                  c.highlight ? "border-danger/30 bg-danger-bg/40" : "bg-card border-border"
                 }`}>
                   <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
                     c.highlight ? "bg-danger/10 text-danger" : "bg-teal/10 text-teal"
@@ -112,8 +112,8 @@ export default function PrincipalFinancePage() {
                   <div className="min-w-0 overflow-hidden">
                     <p className={`font-semibold tabular-nums leading-tight break-words ${
                       c.value.length > 14 ? "text-base" : c.value.length > 10 ? "text-lg" : "text-2xl"
-                    } ${c.highlight ? "text-danger" : "text-ink dark:text-dark-text"}`}>{c.value}</p>
-                    <p className="text-slate text-sm mt-1.5 dark:text-dark-muted">{c.label}</p>
+                    } ${c.highlight ? "text-danger" : "text-foreground"}`}>{c.value}</p>
+                    <p className="text-slate text-sm mt-1.5">{c.label}</p>
                     {"sub" in c && c.sub && <p className="text-slate/60 text-xs mt-0.5">{c.sub}</p>}
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export default function PrincipalFinancePage() {
           )}
 
           {/* Debtors list */}
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text flex items-center gap-2">
+          <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-danger" aria-hidden="true" />
             Debtor list
           </h2>
@@ -145,10 +145,10 @@ export default function PrincipalFinancePage() {
                     {aging.map(row => (
                       <tr key={row.studentId} className={premiumTrClass}>
                         <td className={premiumTdClass}>
-                          <p className="font-medium text-ink dark:text-dark-text">{row.fullName}</p>
-                          <p className="text-xs font-mono text-slate dark:text-dark-muted">{row.admissionNumber}</p>
+                          <p className="font-medium text-foreground">{row.fullName}</p>
+                          <p className="text-xs font-mono text-slate">{row.admissionNumber}</p>
                         </td>
-                        <td className={`${premiumTdClass} text-slate dark:text-dark-muted`}>{row.className ?? "—"}</td>
+                        <td className={`${premiumTdClass} text-slate`}>{row.className ?? "—"}</td>
                         <td className={`${premiumTdClass} text-right tabular-nums text-danger font-semibold`}>{formatKES(row.balance)}</td>
                         <td className={`${premiumTdClass} text-right tabular-nums text-slate`}>{row.daysOverdue}d</td>
                         <td className={premiumTdClass}>{bucketBadge(row.bucket)}</td>

@@ -126,8 +126,8 @@ function SidebarBody({
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
-              className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
-              style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded text-white"
+              style={{ background: "rgba(255,255,255,0.2)" }}
             >
               FEES
             </span>
@@ -155,8 +155,8 @@ function SidebarBody({
                 group flex items-center gap-3 px-3 py-2.5 rounded-xl
                 text-sm font-medium transition-all duration-150
                 ${active
-                  ? "bg-white/15 text-white shadow-sm"
-                  : "text-white/70 hover:text-white hover:bg-white/10"}
+                  ? "bg-card/15 text-white shadow-sm"
+                  : "text-white/70 hover:text-white hover:bg-card/10"}
               `}
             >
               <span className={`shrink-0 ${active ? "text-white" : "text-white/60 group-hover:text-white"}`}>
@@ -278,7 +278,7 @@ function MobileDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          className="absolute top-4 right-4 z-10 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-card/10 transition-colors"
           aria-label="Close navigation"
         >
           <X className="h-5 w-5" />
@@ -305,7 +305,7 @@ export function FinanceMobileMenuButton({
       onClick={onToggle}
       aria-expanded={open}
       aria-label="Open finance navigation"
-      className="flex items-center justify-center h-9 w-9 rounded-xl border border-line bg-paper text-ink hover:bg-teal/10 hover:text-teal hover:border-teal/30 transition-colors dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+      className="flex items-center justify-center h-9 w-9 rounded-xl border border-border bg-background text-foreground hover:bg-teal/10 hover:text-teal hover:border-teal/30 transition-colors"
     >
       <Menu className="h-5 w-5" />
     </button>

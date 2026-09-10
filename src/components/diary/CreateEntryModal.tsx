@@ -266,13 +266,13 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
           />
 
           {/* Panel */}
-          <div className="relative z-10 w-full sm:max-w-xl bg-card dark:bg-dark-surface rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[92dvh] flex flex-col">
+          <div className="relative z-10 w-full sm:max-w-xl bg-card rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[92dvh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-line dark:border-dark-border shrink-0">
-              <h2 className="text-base font-semibold text-ink dark:text-dark-text">New Diary Entry</h2>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
+              <h2 className="text-base font-semibold text-foreground">New Diary Entry</h2>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-lg text-slate hover:bg-line dark:text-dark-muted dark:hover:bg-dark-border min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2 rounded-lg text-slate hover:bg-line min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
@@ -284,13 +284,13 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
               {ctxLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <Loader2 className="h-6 w-6 text-teal animate-spin" />
-                  <span className="ml-2 text-sm text-slate dark:text-dark-muted">Loading your classes…</span>
+                  <span className="ml-2 text-sm text-slate">Loading your classes…</span>
                 </div>
               ) : (
                 <form id="create-diary-form" onSubmit={handleSubmit} noValidate>
                   {/* ── Step 1: Entry type ────────────────────────────────── */}
                   <fieldset>
-                    <legend className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-2">
+                    <legend className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">
                       What are you posting?
                     </legend>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -301,16 +301,16 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                           onClick={() => setEntryType(value)}
                           className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all min-h-[72px]
                             ${entryType === value
-                              ? "border-teal bg-teal/5 dark:bg-teal/10"
-                              : "border-line bg-card hover:border-teal/40 hover:bg-teal/5 dark:border-dark-border dark:bg-dark-surface dark:hover:border-teal/30"
+                              ? "border-teal bg-teal/5"
+                              : "border-border bg-card hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30"
                             }`}
                           aria-pressed={entryType === value}
                         >
-                          <Icon className={`h-4 w-4 mb-1.5 ${entryType === value ? "text-teal" : "text-slate dark:text-dark-muted"}`} aria-hidden="true" />
-                          <span className={`text-sm font-medium leading-none ${entryType === value ? "text-teal" : "text-ink dark:text-dark-text"}`}>
+                          <Icon className={`h-4 w-4 mb-1.5 ${entryType === value ? "text-teal" : "text-slate"}`} aria-hidden="true" />
+                          <span className={`text-sm font-medium leading-none ${entryType === value ? "text-teal" : "text-foreground"}`}>
                             {label}
                           </span>
-                          <span className="text-[11px] text-slate dark:text-dark-muted mt-1 leading-tight line-clamp-2">
+                          <span className="text-[11px] text-slate mt-1 leading-tight line-clamp-2">
                             {desc}
                           </span>
                         </button>
@@ -321,36 +321,36 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                   {/* ── Step 2: Subject (hidden if only 1) ──────────────── */}
                   {showSubjectSelector && (
                     <div>
-                      <label className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                      <label className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                         Subject
                       </label>
                       <div className="relative">
                         <select
                           value={subjectId}
                           onChange={(e) => { setSubjectId(e.target.value); setClassIds([]); }}
-                          className="w-full appearance-none bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 pr-8 text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]"
+                          className="w-full appearance-none bg-card border border-border rounded-lg px-3 py-2.5 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]"
                         >
                           <option value="">Choose subject…</option>
                           {context!.subjects.map((s) => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </select>
-                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none dark:text-dark-muted" aria-hidden="true" />
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden="true" />
                       </div>
                     </div>
                   )}
 
                   {/* Auto-selected subject hint */}
                   {!showSubjectSelector && selectedSubject && (
-                    <p className="text-xs text-slate dark:text-dark-muted -mt-1">
-                      Subject: <span className="font-medium text-ink dark:text-dark-text">{selectedSubject.name}</span>
+                    <p className="text-xs text-slate -mt-1">
+                      Subject: <span className="font-medium text-foreground">{selectedSubject.name}</span>
                     </p>
                   )}
 
                   {/* ── Step 3: Class selection ──────────────────────────── */}
                   {subjectId && availableClasses.length > 0 && (
                     <div>
-                      <label className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                      <label className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                         Who is this for?
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -361,8 +361,8 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                             onClick={() => toggleClass(cls.id)}
                             className={`px-3.5 py-2 rounded-lg border text-sm font-medium transition-all min-h-[44px]
                               ${classIds.includes(cls.id)
-                                ? "border-teal bg-teal/5 text-teal dark:bg-teal/10"
-                                : "border-line text-slate hover:border-teal/40 hover:bg-teal/5 dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/30"
+                                ? "border-teal bg-teal/5 text-teal"
+                                : "border-border text-slate hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30"
                               }`}
                             aria-pressed={classIds.includes(cls.id)}
                           >
@@ -376,7 +376,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                   {/* ── Step 4: Recipient toggle ─────────────────────────── */}
                   {classIds.length > 0 && (
                     <div>
-                      <label className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                      <label className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                         Who should receive this?
                       </label>
                       <div className="flex gap-2">
@@ -385,8 +385,8 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                           onClick={() => setRecipientMode("everyone")}
                           className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg border text-sm font-medium transition-all min-h-[44px]
                             ${recipientMode === "everyone"
-                              ? "border-teal bg-teal/5 text-teal dark:bg-teal/10"
-                              : "border-line text-slate hover:border-teal/40 dark:border-dark-border dark:text-dark-muted"
+                              ? "border-teal bg-teal/5 text-teal"
+                              : "border-border text-slate hover:border-teal/40"
                             }`}
                           aria-pressed={recipientMode === "everyone"}
                         >
@@ -398,8 +398,8 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                           onClick={() => setRecipientMode("specific")}
                           className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg border text-sm font-medium transition-all min-h-[44px]
                             ${recipientMode === "specific"
-                              ? "border-teal bg-teal/5 text-teal dark:bg-teal/10"
-                              : "border-line text-slate hover:border-teal/40 dark:border-dark-border dark:text-dark-muted"
+                              ? "border-teal bg-teal/5 text-teal"
+                              : "border-border text-slate hover:border-teal/40"
                             }`}
                           aria-pressed={recipientMode === "specific"}
                         >
@@ -410,18 +410,18 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
 
                       {/* Specific student selector */}
                       {recipientMode === "specific" && (
-                        <div className="mt-2 border border-line dark:border-dark-border rounded-xl overflow-hidden">
-                          <div className="p-2 border-b border-line dark:border-dark-border">
+                        <div className="mt-2 border border-border rounded-xl overflow-hidden">
+                          <div className="p-2 border-b border-border">
                             <input
                               type="text"
                               placeholder="Search students…"
                               value={studentSearch}
                               onChange={(e) => setStudentSearch(e.target.value)}
-                              className="w-full bg-transparent text-sm text-ink dark:text-dark-text placeholder:text-slate outline-none py-1 px-2"
+                              className="w-full bg-transparent text-sm text-foreground placeholder:text-slate outline-none py-1 px-2"
                             />
                           </div>
                           {studentsLoading ? (
-                            <div className="p-4 text-center text-sm text-slate dark:text-dark-muted">
+                            <div className="p-4 text-center text-sm text-slate">
                               Loading students…
                             </div>
                           ) : (
@@ -433,7 +433,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                                     ? []
                                     : filteredStudents.map((s) => s.id)
                                 )}
-                                className="w-full text-left px-3 py-2 text-xs font-medium text-teal hover:bg-teal/5 border-b border-line dark:border-dark-border min-h-[36px]"
+                                className="w-full text-left px-3 py-2 text-xs font-medium text-teal hover:bg-teal/5 border-b border-border min-h-[36px]"
                               >
                                 {specificStudents.length === filteredStudents.length ? "Deselect all" : "Select all"}
                               </button>
@@ -448,11 +448,11 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                                     onChange={() => toggleStudent(student.id)}
                                     className="h-4 w-4 rounded border-slate text-teal focus:ring-teal/30"
                                   />
-                                  <span className="text-sm text-ink dark:text-dark-text">{student.fullName}</span>
+                                  <span className="text-sm text-foreground">{student.fullName}</span>
                                 </label>
                               ))}
                               {filteredStudents.length === 0 && (
-                                <p className="p-4 text-sm text-slate dark:text-dark-muted text-center">
+                                <p className="p-4 text-sm text-slate text-center">
                                   No students found.
                                 </p>
                               )}
@@ -465,7 +465,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
 
                   {/* ── Step 5: Title ────────────────────────────────────── */}
                   <div>
-                    <label htmlFor="diary-title" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                    <label htmlFor="diary-title" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                       Title <span className="text-danger" aria-label="required">*</span>
                     </label>
                     <input
@@ -475,8 +475,8 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                       onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(null); }}
                       placeholder="e.g. Algebra Practice — Chapter 4"
                       maxLength={255}
-                      className={`w-full bg-card border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]
-                        ${titleError ? "border-danger" : "border-line dark:border-dark-border"}`}
+                      className={`w-full bg-card border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]
+                        ${titleError ? "border-danger" : "border-border"}`}
                       aria-describedby={titleError ? "title-error" : undefined}
                       aria-invalid={!!titleError}
                     />
@@ -487,7 +487,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
 
                   {/* ── Step 6: Instructions ─────────────────────────────── */}
                   <div>
-                    <label htmlFor="diary-description" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                    <label htmlFor="diary-description" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                       Instructions
                     </label>
                     <textarea
@@ -496,14 +496,14 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="e.g. Complete questions 1–10 from Chapter 4. Show all your working."
                       rows={4}
-                      className="w-full bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 resize-y"
+                      className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-slate focus:outline-none focus:ring-2 focus:ring-teal/30 resize-y"
                     />
                   </div>
 
                   {/* ── Step 7: Due date (hidden for ANNOUNCEMENT) ───────── */}
                   {showDueDate && (
                     <div>
-                      <label htmlFor="diary-duedate" className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted block mb-1.5">
+                      <label htmlFor="diary-duedate" className="text-xs font-semibold text-slate uppercase tracking-wide block mb-1.5">
                         Due Date
                       </label>
                       <input
@@ -512,7 +512,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
                         value={dueDate ? dueDate.split("T")[0] : ""}
                         min={new Date().toISOString().split("T")[0]}
                         onChange={(e) => setDueDate(e.target.value ? `${e.target.value}T23:59:00+03:00` : "")}
-                        className="w-full bg-card border border-line dark:border-dark-border dark:bg-dark-surface rounded-lg px-3 py-2.5 text-sm text-ink dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]"
+                        className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-teal/30 min-h-[44px]"
                       />
                     </div>
                   )}
@@ -529,7 +529,7 @@ export default function CreateEntryModal({ trigger = "button" }: CreateEntryModa
 
             {/* Footer with post button */}
             {!ctxLoading && (
-              <div className="px-5 pb-5 pt-3 border-t border-line dark:border-dark-border shrink-0">
+              <div className="px-5 pb-5 pt-3 border-t border-border shrink-0">
                 <button
                   type="submit"
                   form="create-diary-form"

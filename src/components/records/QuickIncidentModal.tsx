@@ -282,7 +282,7 @@ export default function QuickIncidentModal({
             <div className="flex items-center gap-3 rounded-lg bg-teal-50/50 border border-teal/20 px-4 py-3">
               <Avatar name={selected.fullName} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink truncate">{selected.fullName}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{selected.fullName}</p>
                 <p className="text-xs text-slate font-mono">
                   {selected.admissionNumber}
                   {selected.schoolClass ? ` · ${selected.schoolClass.name}` : ""}
@@ -309,7 +309,7 @@ export default function QuickIncidentModal({
               />
               {matches.length > 0 && (
                 <ul
-                  className="absolute z-20 mt-1 w-full bg-card border border-line rounded-xl shadow-lg overflow-hidden divide-y divide-line/60"
+                  className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden divide-y divide-border/60"
                   role="listbox"
                 >
                   {matches.map((s) => (
@@ -323,7 +323,7 @@ export default function QuickIncidentModal({
                         }}
                       >
                         <Avatar name={s.fullName} size="sm" />
-                        <span className="text-sm font-medium text-ink">{s.fullName}</span>
+                        <span className="text-sm font-medium text-foreground">{s.fullName}</span>
                         <span className="text-xs text-slate font-mono ml-auto">
                           {s.admissionNumber}
                         </span>
@@ -365,12 +365,12 @@ export default function QuickIncidentModal({
         {suggestion && (
           <div
             className={`rounded-xl border p-4 space-y-4 ${
-              severityConfig?.borderClass ?? "border-line"
+              severityConfig?.borderClass ?? "border-border"
             }`}
           >
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-teal shrink-0" aria-hidden="true" />
-              <p className="text-sm font-semibold text-ink">AI suggestions</p>
+              <p className="text-sm font-semibold text-foreground">AI suggestions</p>
               <p className="text-xs text-slate ml-1">— confirm or edit before saving</p>
             </div>
 
@@ -396,7 +396,7 @@ export default function QuickIncidentModal({
                         className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold transition-all duration-100 ${
                           severity === s
                             ? cfg.chipClass + " shadow-xs"
-                            : "border-line text-slate hover:border-slate-light"
+                            : "border-border text-slate hover:border-slate-light"
                         }`}
                       >
                         <span
@@ -422,13 +422,13 @@ export default function QuickIncidentModal({
             {/* Tags row */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               <span className="text-xs text-slate font-medium">Tags:</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-line text-slate border border-line">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-line text-slate border border-border">
                 {suggestion.category}
               </span>
               {suggestion.keywords.map((k) => (
                 <span
                   key={k}
-                  className="text-xs px-2 py-0.5 rounded-full bg-paper border border-line text-slate"
+                  className="text-xs px-2 py-0.5 rounded-full bg-background border border-border text-slate"
                 >
                   #{k}
                 </span>
@@ -436,9 +436,9 @@ export default function QuickIncidentModal({
             </div>
 
             {suggestion.suggestedAction && (
-              <div className="rounded-lg bg-paper border border-line px-3 py-2.5">
+              <div className="rounded-lg bg-background border border-border px-3 py-2.5">
                 <p className="text-xs text-slate font-medium mb-0.5">Suggested action</p>
-                <p className="text-sm text-ink">{suggestion.suggestedAction}</p>
+                <p className="text-sm text-foreground">{suggestion.suggestedAction}</p>
               </div>
             )}
           </div>
@@ -451,7 +451,7 @@ export default function QuickIncidentModal({
             className={`rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors cursor-pointer ${
               dragOver
                 ? "border-teal bg-teal-50/40"
-                : "border-line hover:border-teal/40 hover:bg-paper/60"
+                : "border-border hover:border-teal/40 hover:bg-background/60"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -487,12 +487,12 @@ export default function QuickIncidentModal({
               {files.map((pf) => (
                 <li
                   key={pf.id}
-                  className="flex items-center gap-3 rounded-lg border border-line bg-paper px-3 py-2.5 text-sm"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
                 >
                   <span aria-hidden className="shrink-0 text-base">
                     {pf.file.type.startsWith("image/") ? "🖼" : "📄"}
                   </span>
-                  <span className="text-ink truncate flex-1">{pf.file.name}</span>
+                  <span className="text-foreground truncate flex-1">{pf.file.name}</span>
                   <span className="text-xs text-slate shrink-0">{fmtSize(pf.file.size)}</span>
                   {pf.status === "uploading" && (
                     <Loader2
@@ -528,7 +528,7 @@ export default function QuickIncidentModal({
         <div>
           <button
             type="button"
-            className="flex items-center gap-2 text-sm font-medium text-slate hover:text-ink transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-slate hover:text-foreground transition-colors"
             aria-expanded={showMore}
             onClick={() => setShowMore((v) => !v)}
           >

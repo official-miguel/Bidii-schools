@@ -127,7 +127,7 @@ function IssueRow({
     ? "bg-danger/5 border-danger/20"
     : issue.severity === "WARNING"
       ? "bg-warn-bg border-warn/20"
-      : "bg-paper border-line";
+      : "bg-background border-border";
   const icon = issue.severity === "BLOCKING"
     ? <AlertCircle className="h-4 w-4 text-danger shrink-0 mt-0.5" />
     : issue.severity === "WARNING"
@@ -141,7 +141,7 @@ function IssueRow({
     <div className={`flex items-start gap-3 p-3 rounded-lg border ${bg}`}>
       {icon}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-ink">{issue.message}</p>
+        <p className="text-sm text-foreground">{issue.message}</p>
         {issue.suggestedAction && (
           <p className="text-xs text-slate mt-1 leading-snug">{issue.suggestedAction}</p>
         )}
@@ -153,7 +153,7 @@ function IssueRow({
           title={label}
           className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg
                      text-xs font-medium border transition-colors
-                     bg-white border-line text-teal hover:bg-teal hover:text-white hover:border-teal"
+                     bg-card border-border text-teal hover:bg-teal hover:text-white hover:border-teal"
         >
           {label}
           <ExternalLink className="h-3 w-3" aria-hidden />
@@ -294,7 +294,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
           <div className="rounded-xl border border-success/20 bg-success-bg p-5 flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-ink">Timetable published.</p>
+              <p className="text-sm font-semibold text-foreground">Timetable published.</p>
               <p className="text-xs text-slate mt-0.5">All teachers can now view their schedules.</p>
             </div>
           </div>
@@ -302,10 +302,10 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
 
         {/* ── STEP 1: Scope + pre-check ─────────────────────────────────── */}
         {!result && (
-          <div className="bg-white border border-line rounded-xl p-5 space-y-5">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-5">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-teal text-white text-xs font-bold flex items-center justify-center shrink-0">1</div>
-              <h2 className="text-sm font-semibold text-ink">Scope &amp; readiness check</h2>
+              <h2 className="text-sm font-semibold text-foreground">Scope &amp; readiness check</h2>
             </div>
 
             {/* Draft name */}
@@ -323,7 +323,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                     className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors
                       ${(opt === "all") === scopeAll
                         ? "bg-teal text-white border-teal"
-                        : "bg-white text-slate border-line hover:border-teal/40"}`}>
+                        : "bg-card text-slate border-border hover:border-teal/40"}`}>
                     {opt === "all" ? "All classes" : "Select classes"}
                   </button>
                 ))}
@@ -342,7 +342,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                       {classes.filter((c) => c.form === form).map((c) => (
                         <button key={c.id} type="button" onClick={() => toggleClass(c.id)}
                           className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors
-                            ${selClassIds.has(c.id) ? "bg-teal text-white border-teal" : "bg-white text-slate border-line hover:border-teal/40"}`}>
+                            ${selClassIds.has(c.id) ? "bg-teal text-white border-teal" : "bg-card text-slate border-border hover:border-teal/40"}`}>
                           {c.name}
                         </button>
                       ))}
@@ -365,7 +365,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                       ? <AlertTriangle className="h-4 w-4 text-warn" />
                       : <CheckCircle2 className="h-4 w-4 text-success" />
                   }
-                  <p className="text-sm font-semibold text-ink">
+                  <p className="text-sm font-semibold text-foreground">
                     {blockingCount > 0
                       ? `${blockingCount} blocking issue${blockingCount !== 1 ? "s" : ""} — fix before generating`
                       : warningCount > 0
@@ -410,7 +410,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
             </div>
 
             {showAttempts && (
-              <div className="pt-2 border-t border-line">
+              <div className="pt-2 border-t border-border">
                 <label className={`${labelClass} max-w-xs`}>
                   Max generation attempts (1–20)
                   <input type="number" min={1} max={20} value={maxAttempts}
@@ -427,10 +427,10 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
 
         {/* ── STEP 2: Generating progress ───────────────────────────────── */}
         {generating && (
-          <div className="bg-white border border-line rounded-xl p-5 space-y-3">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-3">
             <div className="flex items-center gap-3">
               <RefreshCw className="h-4 w-4 text-teal animate-spin shrink-0" />
-              <p className="text-sm font-medium text-ink">Solving constraints… this may take a moment.</p>
+              <p className="text-sm font-medium text-foreground">Solving constraints… this may take a moment.</p>
             </div>
             <p className="text-xs text-slate">
               The engine places every lesson without double-booking any teacher or class, respects
@@ -446,7 +446,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
         {result && !generating && (
           <div className="space-y-4">
             {/* Summary card */}
-            <div className="bg-white border border-line rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
                   ${result.success ? "bg-success-bg" : "bg-danger/10"}`}>
@@ -455,15 +455,15 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                     : <AlertCircle className="h-6 w-6 text-danger" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-ink">
+                  <p className="text-sm font-semibold text-foreground">
                     {result.success ? "Timetable generated successfully" : "Generation failed after all attempts"}
                   </p>
                   {result.stats && (
                     <div className="flex flex-wrap gap-4 text-xs text-slate mt-1.5">
                       <span>
-                        <span className="font-semibold text-ink">{result.stats.totalLessonsScheduled}</span>
+                        <span className="font-semibold text-foreground">{result.stats.totalLessonsScheduled}</span>
                         {" "}of{" "}
-                        <span className="font-semibold text-ink">{result.stats.totalLessonsRequired}</span>
+                        <span className="font-semibold text-foreground">{result.stats.totalLessonsRequired}</span>
                         {" "}lessons scheduled
                       </span>
                       <span className={result.stats.completionRate === 100 ? "text-success font-semibold" : "text-warn font-semibold"}>
@@ -517,7 +517,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
               <Collapsible title="Warnings" badge={result.warnings.length} badgeColor="warn">
                 <div className="space-y-2">
                   {result.warnings.map((w, i) => (
-                    <p key={i} className="text-xs text-ink flex items-start gap-2">
+                    <p key={i} className="text-xs text-foreground flex items-start gap-2">
                       <AlertTriangle className="h-3.5 w-3.5 text-warn shrink-0 mt-0.5" />{w}
                     </p>
                   ))}
@@ -542,7 +542,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                     const levelColor =
                       s.level === "critical" ? "border-danger/30 bg-danger/5" :
                       s.level === "high" ? "border-warn/30 bg-warn/5" :
-                      "border-line bg-paper";
+                      "border-border bg-background";
                     const levelBadge =
                       s.level === "critical" ? "bg-danger/10 text-danger" :
                       s.level === "high" ? "bg-warn/10 text-warn" :
@@ -551,17 +551,17 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                       <div key={i} className={`rounded-lg border p-3 ${levelColor}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="h-3.5 w-3.5 text-slate shrink-0" />
-                          <span className="text-xs font-semibold text-ink">{s.subjectCode} — {s.subjectName}</span>
+                          <span className="text-xs font-semibold text-foreground">{s.subjectCode} — {s.subjectName}</span>
                           <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${levelBadge}`}>
                             {s.level}
                           </span>
                         </div>
-                        <p className="text-xs text-ink ml-5 mb-1">{s.message}</p>
+                        <p className="text-xs text-foreground ml-5 mb-1">{s.message}</p>
                         <div className="ml-5 flex flex-wrap gap-3 text-xs text-slate">
-                          <span>Required: <strong className="text-ink">{s.totalLessonsRequired}</strong> lessons/week</span>
-                          <span>Capacity: <strong className="text-ink">{s.totalLessonsCapacity}</strong> lessons/week</span>
+                          <span>Required: <strong className="text-foreground">{s.totalLessonsRequired}</strong> lessons/week</span>
+                          <span>Capacity: <strong className="text-foreground">{s.totalLessonsCapacity}</strong> lessons/week</span>
                           <span>Shortfall: <strong className="text-danger">{s.deficit}</strong> lessons</span>
-                          <span>Assigned teachers: <strong className="text-ink">{s.assignedTeachers}</strong></span>
+                          <span>Assigned teachers: <strong className="text-foreground">{s.assignedTeachers}</strong></span>
                           <span>Extra needed: <strong className="text-danger">{s.estimatedExtraTeachersNeeded}</strong></span>
                         </div>
                         {s.affectedClasses.length > 0 && (
@@ -593,7 +593,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                     or subject teachers page, then regenerate.
                   </p>
                   {result.skippedNoTeacher.map((line, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-ink">
+                    <div key={i} className="flex items-start gap-2 text-xs text-foreground">
                       <XCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" />
                       <span>{line}</span>
                     </div>
@@ -649,7 +649,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                         {ruleIssues.length > 0 ? (
                           <ul className="ml-5 space-y-1">
                             {ruleIssues.slice(0, 20).map((issue, idx) => (
-                              <li key={idx} className="text-xs text-ink leading-relaxed">
+                              <li key={idx} className="text-xs text-foreground leading-relaxed">
                                 {issue.message}
                               </li>
                             ))}
@@ -674,7 +674,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
             {result.success && !published && result.versionId && (
               <div className="rounded-xl border border-teal/20 bg-teal-50 p-4 flex items-center gap-3">
                 <Info className="h-4 w-4 text-teal shrink-0 mt-0.5" />
-                <p className="text-xs text-ink leading-relaxed flex-1">
+                <p className="text-xs text-foreground leading-relaxed flex-1">
                   The draft is saved. Open it in the Builder to review, fine-tune manually, then publish when ready.
                 </p>
                 <button
@@ -705,16 +705,16 @@ function Collapsible({
     success: "bg-success/10 text-success", slate: "bg-line text-slate",
   };
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
       <button type="button" onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-paper transition-colors">
-        <span className="text-sm font-semibold text-ink flex-1">{title}</span>
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-background transition-colors">
+        <span className="text-sm font-semibold text-foreground flex-1">{title}</span>
         {badge !== undefined && (
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[badgeColor] ?? colors.slate}`}>{badge}</span>
         )}
         {open ? <ChevronUp className="h-4 w-4 text-slate" /> : <ChevronDown className="h-4 w-4 text-slate" />}
       </button>
-      {open && <div className="border-t border-line px-5 pb-5 pt-4">{children}</div>}
+      {open && <div className="border-t border-border px-5 pb-5 pt-4">{children}</div>}
     </div>
   );
 }

@@ -72,13 +72,13 @@ function typeBadgeClass(type: string) {
 export default function CalendarEventList({ events }: Props) {
   if (events.length === 0) {
     return (
-      <div className="rounded-xl border border-line bg-card p-10 flex flex-col items-center gap-3 text-center dark:bg-dark-surface dark:border-dark-border">
-        <CalendarDays className="h-10 w-10 text-slate dark:text-dark-muted" />
+      <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center gap-3 text-center">
+        <CalendarDays className="h-10 w-10 text-slate" />
         <div>
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">
+          <p className="text-sm font-semibold text-foreground">
             📅 No upcoming events
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted mt-1">
+          <p className="text-xs text-slate mt-1">
             School events and important dates will appear here.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function CalendarEventList({ events }: Props) {
       {Array.from(grouped.entries()).map(([month, items]) => (
         <section key={month}>
           {/* Month heading */}
-          <p className="text-xs font-semibold text-slate uppercase tracking-wide dark:text-dark-muted mb-3">
+          <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
             {month}
           </p>
 
@@ -113,8 +113,7 @@ export default function CalendarEventList({ events }: Props) {
               return (
                 <div
                   key={event.id}
-                  className="flex items-start gap-4 rounded-xl border border-line bg-card p-4 shadow-xs
-                             dark:bg-dark-surface dark:border-dark-border"
+                  className="flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-xs"
                 >
                   {/* Date badge */}
                   <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-teal/10 text-teal shrink-0">
@@ -125,7 +124,7 @@ export default function CalendarEventList({ events }: Props) {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                      <p className="text-sm font-semibold text-foreground truncate">
                         {event.title}
                       </p>
                       <span
@@ -136,7 +135,7 @@ export default function CalendarEventList({ events }: Props) {
                       </span>
                     </div>
                     {event.description && (
-                      <p className="text-xs text-slate dark:text-dark-muted mt-1 line-clamp-2">
+                      <p className="text-xs text-slate mt-1 line-clamp-2">
                         {event.description}
                       </p>
                     )}

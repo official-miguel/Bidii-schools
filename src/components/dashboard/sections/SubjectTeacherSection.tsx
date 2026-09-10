@@ -60,8 +60,7 @@ export default function SubjectTeacherSection({
           <span className="h-1 w-5 rounded-full bg-teal shrink-0" aria-hidden="true" />
           <h2
             id="subject-teacher-heading"
-            className="text-sm font-semibold text-slate uppercase tracking-wide
-                       dark:text-dark-muted"
+            className="text-sm font-semibold text-slate uppercase tracking-wide"
           >
             Subject Teacher
           </h2>
@@ -105,7 +104,7 @@ export default function SubjectTeacherSection({
       {/* ── 2. Today's schedule ────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+          <h2 className="text-base font-semibold text-foreground">
             Today&apos;s schedule
           </h2>
           <Link
@@ -118,25 +117,23 @@ export default function SubjectTeacherSection({
 
         {todaySlots.length === 0 ? (
           /* Empty state matching mockup */
-          <div className="bg-card border border-line rounded-xl px-5 py-6 shadow-xs
-                          dark:bg-dark-surface dark:border-dark-border
+          <div className="bg-card border border-border rounded-xl px-5 py-6 shadow-xs
                           flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center shrink-0">
               <Clock className="h-6 w-6 text-teal/60" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 No classes today
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 Enjoy your free time or prepare your lessons.
               </p>
             </div>
           </div>
         ) : (
-          <div className="bg-card border border-line rounded-xl overflow-hidden shadow-xs
-                          dark:bg-dark-surface dark:border-dark-border divide-y divide-line
-                          dark:divide-dark-border">
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xs divide-y divide-border
+                          ">
             {todaySlots.map((slot) => (
               <div
                 key={slot.id}
@@ -149,10 +146,10 @@ export default function SubjectTeacherSection({
                 </span>
                 {/* Info */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                  <p className="text-sm font-semibold text-foreground truncate">
                     {slot.subject.name}
                   </p>
-                  <p className="text-xs text-slate dark:text-dark-muted">
+                  <p className="text-xs text-slate">
                     {slot.schoolClass.name}
                     {" · "}{slot.schoolClass._count.students} students
                     {slot.room ? ` · ${slot.room}` : ""}
@@ -176,7 +173,7 @@ export default function SubjectTeacherSection({
       {subjects.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">
+            <h2 className="text-base font-semibold text-foreground">
               My subjects
             </h2>
             <Link
@@ -198,14 +195,13 @@ export default function SubjectTeacherSection({
               return (
                 <div
                   key={subject.id}
-                  className="bg-card border border-line rounded-xl shadow-xs
-                             dark:bg-dark-surface dark:border-dark-border overflow-hidden"
+                  className="bg-card border border-border rounded-xl shadow-xs overflow-hidden"
                 >
                   {/* Subject row */}
                   <Link
                     href={`/${rolePrefix}/assessments`}
                     className="flex items-center gap-3 px-4 py-3.5
-                               hover:bg-[#F9FAFB] dark:hover:bg-dark-border
+                               hover:bg-[#F9FAFB]
                                transition-colors group"
                   >
                     {/* Code chip */}
@@ -216,11 +212,11 @@ export default function SubjectTeacherSection({
                     </div>
                     {/* Name + class */}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                      <p className="text-sm font-semibold text-foreground truncate">
                         {subject.name}
                       </p>
                       {firstSlot && (
-                        <p className="text-xs text-slate dark:text-dark-muted">
+                        <p className="text-xs text-slate">
                           {firstSlot.schoolClass.name}
                         </p>
                       )}
@@ -237,7 +233,7 @@ export default function SubjectTeacherSection({
                   </Link>
 
                   {/* Action shortcuts row */}
-                  <div className="grid grid-cols-4 border-t border-line dark:border-dark-border">
+                  <div className="grid grid-cols-4 border-t border-border">
                     {[
                       {
                         label: "Lesson plan",
@@ -272,14 +268,14 @@ export default function SubjectTeacherSection({
                         className="flex flex-col items-center gap-1.5 py-3 px-1
                                    hover:bg-teal-50 dark:hover:bg-teal/5
                                    transition-colors group/action
-                                   border-r border-line dark:border-dark-border last:border-r-0"
+                                   border-r border-border last:border-r-0"
                       >
                         <action.Icon
                           className={`h-[18px] w-[18px] ${action.color}
                                       group-hover/action:scale-110 transition-transform`}
                           strokeWidth={1.8}
                         />
-                        <span className="text-[9px] font-medium text-slate dark:text-dark-muted
+                        <span className="text-[9px] font-medium text-slate
                                          text-center leading-tight group-hover/action:text-teal
                                          transition-colors">
                           {action.label}
@@ -296,10 +292,9 @@ export default function SubjectTeacherSection({
 
       {/* ── 4. Assessment deadlines ────────────────────────────────────── */}
       {activePeriods.length > 0 && (
-        <div className="bg-card border border-line rounded-xl p-4 shadow-xs
-                        dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ink dark:text-dark-text">
+            <p className="text-sm font-semibold text-foreground">
               Assessment deadlines
             </p>
             <Link href={`/${rolePrefix}/assessments`} className="text-xs text-teal hover:underline">
@@ -310,13 +305,13 @@ export default function SubjectTeacherSection({
             {activePeriods.map((ap) => (
               <li key={ap.id}
                   className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 text-sm">
-                <span className="text-ink dark:text-dark-text min-w-0 xs:truncate xs:pr-2">
+                <span className="text-foreground min-w-0 xs:truncate xs:pr-2">
                   {ap.name}
                 </span>
                 <span className="shrink-0">
                   {ap.closingDate
                     ? <CountdownTimer deadline={new Date(ap.closingDate).toISOString()} label="Due" />
-                    : <span className="text-xs text-slate dark:text-dark-muted">No deadline</span>}
+                    : <span className="text-xs text-slate">No deadline</span>}
                 </span>
               </li>
             ))}

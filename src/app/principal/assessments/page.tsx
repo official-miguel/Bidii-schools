@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
 import DirectorHome from "@/components/assessment/DirectorHome";
@@ -39,10 +39,10 @@ export default async function AssessmentsIndexPage() {
       </div>
       
       <div>
-        <h1 className="text-xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl font-semibold text-foreground">
           {isHod ? "Department Overview" : "School Overview"}
         </h1>
-        <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">
+        <p className="text-sm text-slate mt-0.5">
           {isHod
             ? "Assessment summary for your department."
             : "School-wide assessment performance at a glance."}

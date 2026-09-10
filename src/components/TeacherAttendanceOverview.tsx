@@ -59,7 +59,7 @@ export default function TeacherAttendanceOverview({ classIds, classTeacherOfId: 
   }
 
   const cards = [
-    { label: "My students",    value: stats.totalStudents, color: "text-ink"     },
+    { label: "My students",    value: stats.totalStudents, color: "text-foreground"     },
     { label: "Present today",  value: stats.present,       color: "text-success" },
     { label: "Absent today",   value: stats.absent,        color: "text-danger"  },
     { label: "Recorded today", value: stats.recorded,      color: "text-teal"    },
@@ -72,10 +72,10 @@ export default function TeacherAttendanceOverview({ classIds, classTeacherOfId: 
         {cards.map((c) => (
           <div
             key={c.label}
-            className="bg-white border border-line rounded-xl p-4 shadow-sm dark:bg-dark-surface dark:border-dark-border"
+            className="bg-card border border-border rounded-xl p-4 shadow-sm"
           >
-            <p className={`text-2xl font-semibold ${c.color} dark:text-dark-text`}>{c.value}</p>
-            <p className="text-slate text-xs mt-1 dark:text-dark-muted">{c.label}</p>
+            <p className={`text-2xl font-semibold ${c.color}`}>{c.value}</p>
+            <p className="text-slate text-xs mt-1">{c.label}</p>
           </div>
         ))}
       </div>

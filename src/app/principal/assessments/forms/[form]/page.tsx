@@ -1,4 +1,4 @@
-import { redirect, notFound } from "next/navigation";
+﻿import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
@@ -140,7 +140,7 @@ export default async function FormStreamsPage({ params }: PageProps) {
       <div>
         <Link
           href="/principal/assessments"
-          className="inline-flex items-center gap-1 text-sm text-slate hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1 text-sm text-slate hover:text-foreground transition-colors"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           All Classes
@@ -149,10 +149,10 @@ export default async function FormStreamsPage({ params }: PageProps) {
 
       {/* Page heading */}
       <div>
-        <h1 className="text-xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl font-semibold text-foreground">
           Form {formNum}
         </h1>
-        <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">
+        <p className="text-sm text-slate mt-0.5">
           {rows.length} stream{rows.length !== 1 ? "s" : ""} — select one to view marks or dashboard.
         </p>
       </div>

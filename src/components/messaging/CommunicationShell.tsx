@@ -26,14 +26,14 @@ export default function CommunicationShell({ base, canManage, children, onNewMes
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink">Communication</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Communication</h1>
           <p className="text-sm text-slate mt-0.5">Send messages to parents, staff, and custom groups</p>
         </div>
         {canManage && (
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href={`${base}/exam-results`}
-              className="hidden sm:flex items-center gap-1.5 rounded-lg border border-line text-sm font-medium px-3 py-2 text-ink hover:bg-paper transition-colors"
+              className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border text-sm font-medium px-3 py-2 text-foreground hover:bg-background transition-colors"
             >
               <BarChart2 className="w-4 h-4" aria-hidden />
               <span>Exam Results</span>
@@ -52,7 +52,7 @@ export default function CommunicationShell({ base, canManage, children, onNewMes
       <OfflineQueueBanner />
 
       {/* Tab bar */}
-      <div className="flex overflow-x-auto gap-0 border-b border-line mb-6">
+      <div className="flex overflow-x-auto gap-0 border-b border-border mb-6">
         {TABS.map((tab) => {
           const href    = tab.href(base);
           const isExact = tab.label === "Messages";
@@ -65,7 +65,7 @@ export default function CommunicationShell({ base, canManage, children, onNewMes
               className={`shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                 active
                   ? "border-royal text-royal bg-royal-50/60"
-                  : "border-transparent text-slate hover:text-ink hover:bg-paper"
+                  : "border-transparent text-slate hover:text-foreground hover:bg-background"
               }`}
             >
               <Icon className="w-4 h-4" aria-hidden />
@@ -80,7 +80,7 @@ export default function CommunicationShell({ base, canManage, children, onNewMes
             className={`sm:hidden shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
               pathname.startsWith(`${base}/exam-results`)
                 ? "border-royal text-royal bg-royal-50/60"
-                : "border-transparent text-slate hover:text-ink hover:bg-paper"
+                : "border-transparent text-slate hover:text-foreground hover:bg-background"
             }`}
           >
             <BarChart2 className="w-4 h-4" aria-hidden />

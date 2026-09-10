@@ -58,7 +58,7 @@ export default function RecentActivity({ items, viewHref }: Props) {
   return (
     <section aria-labelledby="activity-heading" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="activity-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+        <h2 id="activity-heading" className="text-base font-semibold text-foreground">
           Recent activity
         </h2>
         <Link href={viewHref} className="text-xs font-medium text-teal hover:underline">
@@ -67,14 +67,12 @@ export default function RecentActivity({ items, viewHref }: Props) {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                        dark:border-dark-border px-5 py-6 text-center">
-          <p className="text-sm text-slate dark:text-dark-muted">No recent activity.</p>
+        <div className="rounded-2xl bg-card border border-border px-5 py-6 text-center">
+          <p className="text-sm text-slate">No recent activity.</p>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                        dark:border-dark-border overflow-hidden shadow-xs divide-y divide-line
-                        dark:divide-dark-border">
+        <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-xs divide-y divide-border
+                        ">
           {items.map((item) => {
             const cfg = TYPE_CONFIG[item.type];
             return (
@@ -82,10 +80,10 @@ export default function RecentActivity({ items, viewHref }: Props) {
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}>
                   <cfg.Icon className={`h-4 w-4 ${cfg.color}`} strokeWidth={1.8} aria-hidden="true" />
                 </div>
-                <p className="flex-1 text-sm text-ink dark:text-dark-text min-w-0 truncate">
+                <p className="flex-1 text-sm text-foreground min-w-0 truncate">
                   {item.title}
                 </p>
-                <p className="text-xs text-slate dark:text-dark-muted shrink-0 whitespace-nowrap pl-2">
+                <p className="text-xs text-slate shrink-0 whitespace-nowrap pl-2">
                   {item.timeLabel}
                 </p>
               </div>

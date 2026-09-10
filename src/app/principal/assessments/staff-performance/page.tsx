@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
@@ -63,7 +63,7 @@ export default async function StaffPerformanceRoute() {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">Staff Performance</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">Staff Performance</h1>
           <p className="text-sm text-slate mt-0.5">
             Teacher ranking by composite score — entry completion, improvement, and class mean.
           </p>

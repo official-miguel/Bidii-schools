@@ -11,10 +11,10 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
 
 interface NavItem {
   label: string;
@@ -50,22 +50,15 @@ export default function Sidebar({
   return (
     <aside
       aria-label="Sidebar navigation"
-      className="flex flex-col h-full w-64 bg-white border-r border-line
-                 dark:bg-dark-sidebar dark:border-dark-border"
+      className="flex flex-col h-full w-64 bg-card border-r border-border"
     >
       {/* ── Logo / school name ──────────────────────────────────────────── */}
       <div className="flex items-center gap-3 h-16 px-4 shrink-0
-                      border-b border-line dark:border-dark-border">
+                      border-b border-border">
         <div className="h-8 w-8 rounded overflow-hidden shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Bidii KE"
-            width={32}
-            height={32}
-            className="object-contain"
-          />
+          <Logo height={32} width={32} alt="Bidii KE" className="object-contain" />
         </div>
-        <span className="font-semibold text-sm text-ink dark:text-dark-text truncate">
+        <span className="font-semibold text-sm text-foreground truncate">
           {schoolName ?? "Bidii"}
         </span>
       </div>
@@ -78,8 +71,8 @@ export default function Sidebar({
             href={item.href}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm
                        text-slate hover:bg-teal-50 hover:text-teal
-                       transition-colors dark:text-dark-muted
-                       dark:hover:bg-dark-border dark:hover:text-dark-text"
+                       transition-colors
+                      "
           >
             {item.icon && (
               <span className="shrink-0 h-4 w-4" aria-hidden="true">
@@ -97,7 +90,7 @@ export default function Sidebar({
       </div>
 
       {/* ── User info + sign-out ────────────────────────────────────────── */}
-      <div className="border-t border-line dark:border-dark-border p-3">
+      <div className="border-t border-border p-3">
         <div className="flex items-center gap-3 mb-2 px-1">
           <div
             className="w-8 h-8 rounded-full bg-teal text-white text-xs font-semibold
@@ -106,10 +99,10 @@ export default function Sidebar({
             {userInitials}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-ink dark:text-dark-text truncate">
+            <p className="text-xs font-medium text-foreground truncate">
               {roleLabel}
             </p>
-            <p className="text-[11px] text-slate dark:text-dark-muted truncate">
+            <p className="text-[11px] text-slate truncate">
               {userEmail}
             </p>
           </div>
@@ -120,7 +113,7 @@ export default function Sidebar({
           onClick={handleLogout}
           className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2
                      text-sm text-slate hover:bg-danger/5 hover:text-danger
-                     transition-colors dark:text-dark-muted dark:hover:text-danger
+                     transition-colors dark:hover:text-danger
                      min-h-[44px]"
         >
           <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />

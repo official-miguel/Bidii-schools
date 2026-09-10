@@ -45,7 +45,7 @@ export default function FineAnalyticsPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Fine Analytics</h1>
+          <h1 className="text-xl font-bold text-foreground">Fine Analytics</h1>
           <p className="text-sm text-slate mt-0.5">Fine generation, collection rates, and top debtors.</p>
         </div>
         <WindowSelector value={days} onChange={setDays} />
@@ -82,7 +82,7 @@ export default function FineAnalyticsPage() {
             {data.fines.topStudents.length === 0
               ? <p className="text-sm text-slate py-8 text-center">No outstanding fines — all clear!</p>
               : (
-                <div className="rounded-xl border border-line bg-white overflow-hidden">
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
                   {data.fines.topStudents.map((s, i) => (
                     <RankRow key={s.studentId} rank={i+1} primary={s.fullName}
                       secondary={`${s.admissionNumber} · ${s.className}`}

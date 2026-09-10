@@ -4,7 +4,8 @@
 
 import React from 'react';
 import { View, Text, ViewStyle } from 'react-native';
-import { Colors, Radius, Typography, Spacing, Shadows } from '@/constants';
+import { Radius, Typography, Spacing, Shadows } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface StatCardProps {
   label: string;
@@ -16,13 +17,13 @@ interface StatCardProps {
   subtitle?: string;
 }
 
-function SkeletonPulse({ width, height }: { width: number | string; height: number }) {
+function SkeletonPulse({ width, height, borderColor }: { width: number | string; height: number; borderColor: string }) {
   return (
     <View
       style={{
         width,
         height,
-        backgroundColor: Colors.line,
+        backgroundColor: borderColor,
         borderRadius: Radius.sm,
       }}
     />
@@ -30,16 +31,17 @@ function SkeletonPulse({ width, height }: { width: number | string; height: numb
 }
 
 export function StatCard({ label, value, icon, color, loading, style, subtitle }: StatCardProps) {
-  const accentColor = color || Colors.teal;
+  const { colors } = useTheme();
+  const accentColor = color || colors.primary;
 
   return (
     <View
       style={[
         {
-          backgroundColor: Colors.card,
+          backgroundColor: colors.card,
           borderRadius: Radius.card,
           borderWidth: 1,
-          borderColor: Colors.line,
+          borderColor: colors.border,
           padding: Spacing[4],
           flex: 1,
           ...Shadows.sm,
@@ -70,9 +72,9 @@ export function StatCard({ label, value, icon, color, loading, style, subtitle }
       {/* Value */}
       {loading ? (
         <>
-          <SkeletonPulse width="50%" height={24} />
+          <SkeletonPulse width="50%" height={24} borderColor={colors.border} />
           <View style={{ marginTop: Spacing[2] }}>
-            <SkeletonPulse width="80%" height={14} />
+            <SkeletonPulse width="80%" height={14} borderColor={colors.border} />
           </View>
         </>
       ) : (
@@ -81,7 +83,7 @@ export function StatCard({ label, value, icon, color, loading, style, subtitle }
             style={{
               fontSize: Typography.fontSize['2xl'],
               fontWeight: Typography.fontWeight.bold,
-              color: Colors.ink,
+              color: colors.foreground,
               marginBottom: 2,
             }}
             numberOfLines={1}
@@ -93,7 +95,7 @@ export function StatCard({ label, value, icon, color, loading, style, subtitle }
             style={{
               fontSize: Typography.fontSize.xs,
               fontWeight: Typography.fontWeight.medium,
-              color: Colors.slateText,
+              color: colors.mutedForeground,
             }}
           >
             {label}
@@ -103,7 +105,7 @@ export function StatCard({ label, value, icon, color, loading, style, subtitle }
             <Text
               style={{
                 fontSize: Typography.fontSize.xs,
-                color: Colors.muted,
+                color: colors.mutedForeground,
                 marginTop: 2,
               }}
             >

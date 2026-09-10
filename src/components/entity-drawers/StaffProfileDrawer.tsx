@@ -85,14 +85,14 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-paper border border-line shrink-0 mt-0.5">
+      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-background border border-border shrink-0 mt-0.5">
         <span className="text-slate">{icon}</span>
       </div>
       <div className="min-w-0">
         <p className="text-[11px] font-semibold text-slate uppercase tracking-wide mb-0.5">
           {label}
         </p>
-        <div className="text-sm text-ink">{value}</div>
+        <div className="text-sm text-foreground">{value}</div>
       </div>
     </div>
   );
@@ -137,15 +137,15 @@ function ProvisionLoginCard({
   }
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-4">
+    <div className="bg-warn-bg border border-warn/20 rounded-xl p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 shrink-0">
-          <KeyRound className="h-4 w-4 text-amber-600" aria-hidden="true" />
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-warn/10 shrink-0">
+          <KeyRound className="h-4 w-4 text-warn" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-amber-900">No login account</p>
-          <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+          <p className="text-sm font-semibold text-foreground">No login account</p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             This staff member was imported and has no login credentials yet.
             Create an account so they can sign in.
           </p>
@@ -163,19 +163,19 @@ function ProvisionLoginCard({
         <div className="space-y-3">
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium text-amber-900 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Email address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-amber-400 pointer-events-none" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 placeholder="staff@school.com"
-                className="w-full rounded-lg border border-amber-200 bg-white pl-9 pr-3 py-2 text-sm
-                           text-ink placeholder:text-slate/40
-                           focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-300/30
+                className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm
+                           text-foreground placeholder:text-slate/40
+                           focus:outline-none focus:border-warn focus:ring-2 focus:ring-warn/20
                            transition-colors"
               />
             </div>
@@ -183,15 +183,15 @@ function ProvisionLoginCard({
 
           {/* Role selector */}
           <div>
-            <label className="block text-xs font-medium text-amber-900 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Login type
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as "TEACHER" | "ADMIN_STAFF")}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm
-                         text-ink focus:outline-none focus:border-amber-400 focus:ring-2
-                         focus:ring-amber-300/30 transition-colors"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm
+                         text-foreground focus:outline-none focus:border-warn focus:ring-2
+                         focus:ring-warn/20 transition-colors"
             >
               <option value="TEACHER">Teacher (teaching staff)</option>
               <option value="ADMIN_STAFF">Admin staff (non-teaching)</option>
@@ -212,9 +212,9 @@ function ProvisionLoginCard({
             onClick={handleCreate}
             disabled={busy}
             className="w-full flex items-center justify-center gap-2 rounded-lg
-                       bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold
+                       bg-warn hover:bg-warn/90 text-white text-sm font-semibold
                        py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed
-                       focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                       focus:outline-none focus:ring-2 focus:ring-warn/30"
           >
             {busy
               ? <><Loader2 className="h-4 w-4 animate-spin" />Creating…</>
@@ -222,7 +222,7 @@ function ProvisionLoginCard({
             }
           </button>
 
-          <p className="text-[11px] text-amber-600 text-center">
+          <p className="text-[11px] text-muted-foreground text-center">
             Initial password will be the school username. They&apos;ll be prompted to change it on first login.
           </p>
         </div>
@@ -332,7 +332,7 @@ function RoleAssignmentCard({
   if (!userId) return null;
 
   return (
-    <div className="bg-white border border-line rounded-xl p-5 space-y-3">
+    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
         <ShieldPlus className="h-4 w-4 text-teal" />
@@ -384,7 +384,7 @@ function RoleAssignmentCard({
           onClick={() => { setOpen((v) => !v); setFilter(""); }}
           disabled={loading || allRoles.length === 0}
           className="w-full flex items-center justify-between gap-2 h-9 px-3
-                     rounded-lg border border-line text-sm bg-paper
+                     rounded-lg border border-border text-sm bg-background
                      hover:border-teal/40 focus:outline-none focus:ring-2 focus:ring-teal/30
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
           <span className="text-slate/60 text-sm">
@@ -396,10 +396,10 @@ function RoleAssignmentCard({
         {/* Dropdown panel */}
         {open && (
           <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50
-                          bg-white border border-line rounded-xl shadow-lg
+                          bg-card border border-border rounded-xl shadow-lg
                           overflow-hidden">
             {/* Inline filter input */}
-            <div className="px-2 pt-2 pb-1 border-b border-line">
+            <div className="px-2 pt-2 pb-1 border-b border-border">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5
                                    text-slate/40 pointer-events-none" />
@@ -408,12 +408,12 @@ function RoleAssignmentCard({
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                   placeholder="Filter roles…"
-                  className="w-full h-8 pl-8 pr-3 text-sm text-ink bg-paper rounded-lg
-                             border border-line focus:outline-none focus:ring-2 focus:ring-teal/30"
+                  className="w-full h-8 pl-8 pr-3 text-sm text-foreground bg-background rounded-lg
+                             border border-border focus:outline-none focus:ring-2 focus:ring-teal/30"
                 />
                 {filter && (
                   <button onClick={() => setFilter("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-foreground">
                     <XIcon className="h-3.5 w-3.5" />
                   </button>
                 )}
@@ -434,10 +434,10 @@ function RoleAssignmentCard({
                     onClick={() => toggle(role.id, false)}
                     disabled={busy === role.id}
                     className="w-full flex items-start gap-3 px-4 py-2.5 text-left
-                               border-b border-line/50 last:border-0
+                               border-b border-border/50 last:border-0
                                hover:bg-teal-50/50 transition-colors disabled:opacity-40">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{role.name}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{role.name}</p>
                       {role.description && (
                         <p className="text-[10px] text-slate truncate mt-0.5">
                           {role.description}
@@ -528,11 +528,11 @@ export default function StaffProfileDrawer({
       {staff && !loading && (
         <div className="space-y-5">
           {/* ── Identity card ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-start gap-4 mb-4">
               <Avatar name={staff.fullName} size="lg" />
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-ink leading-tight">{staff.fullName}</h2>
+                <h2 className="text-base font-semibold text-foreground leading-tight">{staff.fullName}</h2>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   <Chip variant={roleVariant as "teal" | "info" | "default"} size="xs">
                     {roleVariant === "teal" && <ShieldCheck className="h-3 w-3" />}
@@ -555,7 +555,7 @@ export default function StaffProfileDrawer({
                 icon={<Shield className="h-3.5 w-3.5" />}
                 label="Staff ID"
                 value={
-                  <span className="font-mono text-sm bg-paper border border-line rounded px-1.5 py-0.5">
+                  <span className="font-mono text-sm bg-background border border-border rounded px-1.5 py-0.5">
                     {staff.staffId}
                   </span>
                 }
@@ -648,7 +648,7 @@ export default function StaffProfileDrawer({
 
           {/* ── Login status ── */}
           {staff.user && (
-            <div className="bg-white border border-line rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <h3 className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
                 Login account
               </h3>
@@ -661,7 +661,7 @@ export default function StaffProfileDrawer({
                     : <XCircle     className="h-4 w-4 text-danger" />}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-ink">{staff.user.email}</p>
+                  <p className="text-sm font-medium text-foreground">{staff.user.email}</p>
                   <p className="text-xs text-slate">
                     {staff.user.isActive ? "Active account" : "Account deactivated"}{" "}
                     · {staff.user.role === "PRINCIPAL" ? "Principal" : staff.user.role === "TEACHER" ? "Teacher login" : "Staff login"}
@@ -680,7 +680,7 @@ export default function StaffProfileDrawer({
 
           {/* ── Subjects ── */}
           {staff.teacherSubjects.length > 0 && (
-            <div className="bg-white border border-line rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <h3 className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
                 <div className="flex items-center gap-1.5">
                   <BookOpen className="h-3.5 w-3.5" />
@@ -703,7 +703,7 @@ export default function StaffProfileDrawer({
             <RoleAssignmentCard staff={staff} onMutate={fetchStaff} />
           )}
           {/* ── Quick links ── */}
-          <div className="bg-white border border-line rounded-xl p-5">
+          <div className="bg-card border border-border rounded-xl p-5">
             <h3 className="text-xs font-semibold text-slate uppercase tracking-wide mb-3">
               Quick links
             </h3>

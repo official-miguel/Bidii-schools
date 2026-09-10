@@ -23,8 +23,7 @@ export default function FinanceTopBar({ roleLabel, userInitials, mobileMenuButto
   return (
     <header
       className="fixed top-0 right-0 z-30 h-16 flex items-center gap-3 px-4
-                 bg-white/95 backdrop-blur-sm border-b border-line
-                 dark:bg-dark-sidebar/95 dark:border-dark-border
+                 bg-card/95 backdrop-blur-sm border-b border-border/95
                  left-0 md:left-64"
       aria-label="Top bar"
     >
@@ -50,7 +49,7 @@ export default function FinanceTopBar({ roleLabel, userInitials, mobileMenuButto
         >
           {userInitials}
         </div>
-        <span className="hidden sm:block text-xs font-medium text-ink dark:text-dark-text">
+        <span className="hidden sm:block text-xs font-medium text-foreground">
           {roleLabel}
         </span>
       </div>

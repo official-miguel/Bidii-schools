@@ -104,7 +104,7 @@ function NotifCard({
   return (
     <div
       className={`relative flex gap-3 px-4 py-3 cursor-pointer group
-                  transition-colors hover:bg-paper dark:hover:bg-dark-border/50
+                  transition-colors hover:bg-background/50
                   ${notif.read ? "" : "bg-teal-50/60 dark:bg-teal-900/10"}`}
       onClick={onRead}
     >
@@ -112,7 +112,7 @@ function NotifCard({
       <div
         className={`shrink-0 mt-0.5 w-9 h-9 rounded-lg flex items-center justify-center
                     ${notif.read
-                      ? "bg-paper text-slate dark:bg-dark-border dark:text-dark-muted"
+                      ? "bg-background text-slate"
                       : "bg-teal/10 text-teal"}`}
       >
         <CatIcon className="h-4 w-4" />
@@ -123,17 +123,17 @@ function NotifCard({
           <p
             className={`text-sm leading-snug truncate
                         ${notif.read
-                          ? "font-normal text-ink/80 dark:text-dark-text/80"
-                          : "font-semibold text-ink dark:text-dark-text"}`}
+                          ? "font-normal text-foreground/80/80"
+                          : "font-semibold text-foreground"}`}
           >
             {notif.title}
           </p>
-          <span className="text-[11px] text-slate/70 dark:text-dark-muted/70 shrink-0 mt-0.5">
+          <span className="text-[11px] text-slate/70/70 shrink-0 mt-0.5">
             {relativeTime(notif.timestamp)}
           </span>
         </div>
 
-        <p className="text-xs text-slate dark:text-dark-muted mt-0.5 line-clamp-2">
+        <p className="text-xs text-slate mt-0.5 line-clamp-2">
           {notif.body}
         </p>
 
@@ -169,8 +169,7 @@ function NotifCard({
         }}
         aria-label="Dismiss notification"
         className="absolute top-3 right-3 opacity-0 group-hover:opacity-100
-                   text-slate hover:text-danger transition-opacity
-                   dark:text-dark-muted dark:hover:text-danger"
+                   text-slate hover:text-danger transition-opacity dark:hover:text-danger"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -252,16 +251,15 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
           role="region"
           aria-label="Notification center"
           className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)]
-                     rounded-xl bg-white border border-line shadow-xl z-50
-                     dark:bg-dark-surface dark:border-dark-border
+                     rounded-xl bg-card border border-border shadow-xl z-50
                      animate-scale-in origin-top-right"
         >
           {/* ── Header ──────────────────────────────────────────────── */}
           <div className="flex items-center justify-between px-4 py-3
-                          border-b border-line dark:border-dark-border">
+                          border-b border-border">
             <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-slate dark:text-dark-muted" />
-              <h2 className="text-sm font-semibold text-ink dark:text-dark-text">
+              <Bell className="h-4 w-4 text-slate" />
+              <h2 className="text-sm font-semibold text-foreground">
                 Notifications
               </h2>
               {count > 0 && (
@@ -278,8 +276,7 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                   onClick={() => useProductivityStore.getState().markAllRead()}
                   title="Mark all as read"
                   className="flex items-center justify-center w-7 h-7 rounded-md
-                             text-slate hover:bg-teal-50 hover:text-teal transition-colors
-                             dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                             text-slate hover:bg-teal-50 hover:text-teal transition-colors"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
                 </button>
@@ -290,8 +287,7 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                   onClick={() => useProductivityStore.getState().clearAllNotifications()}
                   title="Clear all notifications"
                   className="flex items-center justify-center w-7 h-7 rounded-md
-                             text-slate hover:bg-danger/10 hover:text-danger transition-colors
-                             dark:text-dark-muted dark:hover:text-danger"
+                             text-slate hover:bg-danger/10 hover:text-danger transition-colors dark:hover:text-danger"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -301,8 +297,7 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                 onClick={onClose}
                 aria-label="Close notifications"
                 className="flex items-center justify-center w-7 h-7 rounded-md
-                           text-slate hover:bg-paper transition-colors
-                           dark:text-dark-muted dark:hover:bg-dark-border"
+                           text-slate hover:bg-background transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -311,7 +306,7 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
 
           {/* ── Category filter tabs ─────────────────────────────────── */}
           <div className="flex gap-0.5 px-3 py-2 overflow-x-auto
-                          border-b border-line dark:border-dark-border
+                          border-b border-border
                           scrollbar-none">
             {FILTER_TABS.map((tab) => {
               const active = notifFilter === tab.value;
@@ -331,14 +326,14 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                               text-xs font-medium whitespace-nowrap transition-colors shrink-0
                               ${active
                                 ? "bg-teal text-white"
-                                : "text-slate hover:bg-paper hover:text-ink dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                                : "text-slate hover:bg-background hover:text-foreground"
                               }`}
                 >
                   {tab.label}
                   {tabCount > 0 && (
                     <span
                       className={`text-[10px] font-bold leading-none rounded-full px-1 py-0.5
-                                  ${active ? "bg-white/20 text-white" : "bg-teal/10 text-teal"}`}
+                                  ${active ? "bg-card/20 text-white" : "bg-teal/10 text-teal"}`}
                     >
                       {tabCount}
                     </span>
@@ -349,11 +344,11 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
           </div>
 
           {/* ── Notification list ─────────────────────────────────────── */}
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-line dark:divide-dark-border">
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-border ">
             {visible.length === 0 ? (
               <div className="px-4 py-12 text-center">
-                <Bell className="h-9 w-9 mx-auto text-slate/30 dark:text-dark-muted/30 mb-3" />
-                <p className="text-sm text-slate dark:text-dark-muted">
+                <Bell className="h-9 w-9 mx-auto text-slate/30/30 mb-3" />
+                <p className="text-sm text-slate">
                   {notifFilter
                     ? `No ${CAT_META[notifFilter]?.label ?? notifFilter} notifications`
                     : "You're all caught up"}
@@ -374,9 +369,9 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
 
           {/* ── Footer ──────────────────────────────────────────────── */}
           {visible.length > 0 && (
-            <div className="px-4 py-2 border-t border-line dark:border-dark-border
-                            bg-paper/50 dark:bg-dark-bg/50 rounded-b-xl">
-              <p className="text-[11px] text-slate/70 dark:text-dark-muted/70 text-center">
+            <div className="px-4 py-2 border-t border-border
+                            bg-background/50/50 rounded-b-xl">
+              <p className="text-[11px] text-slate/70/70 text-center">
                 {visible.length} notification{visible.length === 1 ? "" : "s"}
                 {notifFilter ? ` in ${CAT_META[notifFilter]?.label}` : ""}
               </p>
@@ -420,7 +415,7 @@ export function NotificationBell({
                   transition-colors
                   ${isOpen
                     ? "bg-teal-50 text-teal dark:bg-teal-900/20 dark:text-teal"
-                    : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                    : "text-slate hover:bg-teal-50 hover:text-teal"
                   }`}
     >
       <Bell className="h-4.5 w-4.5" />

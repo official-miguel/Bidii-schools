@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Pure KCSE 8-4-4 grading functions.
  * No Prisma or server-only imports — safe to use in both Server and Client
  * Components.
@@ -185,7 +185,7 @@ export function gradeColourHex(grade: KcseGrade): string {
  * Tailwind colour classes. Combines pointsToGrade + gradeColour.
  */
 export function pointsToColour(pts: number | null): { bg: string; text: string } {
-  if (pts === null) return { bg: 'bg-paper', text: 'text-slate' };
+  if (pts === null) return { bg: 'bg-background', text: 'text-slate' };
   return gradeColour(pointsToGrade(pts));
 }
 

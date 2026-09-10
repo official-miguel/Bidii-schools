@@ -90,7 +90,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-ink mb-1">Exam Results Messaging</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground mb-1">Exam Results Messaging</h1>
         <p className="text-sm text-slate">Send each student&apos;s results directly to their parent&apos;s phone.</p>
       </div>
 
@@ -99,7 +99,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
         <div>
           <label className="block text-xs font-medium text-slate uppercase tracking-wide mb-1">Assessment period</label>
           <select value={periodId} onChange={(e) => setPeriodId(e.target.value)}
-            className="w-full md:w-80 rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-royal focus:outline-none">
+            className="w-full md:w-80 rounded-md border border-border bg-card px-3 py-2 text-sm focus:border-royal focus:outline-none">
             <option value="">— Select a period —</option>
             {periods.map((p) => (
               <option key={p.id} value={p.id}>
@@ -114,11 +114,11 @@ export default function ExamResultsPanel({ canManage }: Props) {
         {summary && !summaryLoading && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Students with results", value: summary.totalStudents, colour: "text-ink" },
+              { label: "Students with results", value: summary.totalStudents, colour: "text-foreground" },
               { label: "With parent contact",   value: summary.withContact,   colour: "text-emerald-700" },
               { label: "No contact (skipped)",  value: summary.withoutContact, colour: summary.withoutContact > 0 ? "text-warn" : "text-slate" },
             ].map((s) => (
-              <div key={s.label} className="rounded-lg border border-line bg-paper p-3">
+              <div key={s.label} className="rounded-lg border border-border bg-background p-3">
                 <p className={`text-2xl font-semibold ${s.colour}`}>{s.value}</p>
                 <p className="text-xs text-slate mt-0.5">{s.label}</p>
               </div>
@@ -130,17 +130,17 @@ export default function ExamResultsPanel({ canManage }: Props) {
       {/* Preview */}
       {periodId && (
         <div className={`${royalCardClass} p-5 space-y-3`}>
-          <p className="text-sm font-medium text-ink">Preview a student&apos;s message</p>
+          <p className="text-sm font-medium text-foreground">Preview a student&apos;s message</p>
           <div className="relative">
             <input
               type="text"
               value={previewSearch}
               onChange={(e) => setPreviewSearch(e.target.value)}
               placeholder="Search student name…"
-              className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-royal focus:outline-none"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm focus:border-royal focus:outline-none"
             />
             {previewStudents.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full rounded-lg border border-line bg-white shadow-lg max-h-36 overflow-y-auto">
+              <ul className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-36 overflow-y-auto">
                 {previewStudents.map((s) => (
                   <li key={s.id}>
                     <button
@@ -162,7 +162,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
               <p className="text-xs text-slate">
                 To: {preview.recipientLabel} · {preview.phone ?? "no contact"}
               </p>
-              <pre className="whitespace-pre-wrap text-sm text-ink bg-paper rounded-lg p-3 border border-line font-sans max-h-64 overflow-y-auto">
+              <pre className="whitespace-pre-wrap text-sm text-foreground bg-background rounded-lg p-3 border border-border font-sans max-h-64 overflow-y-auto">
                 {preview.body}
               </pre>
             </div>
@@ -183,7 +183,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
                     type="button"
                     onClick={() => setChannel(ch)}
                     className={`flex-1 rounded-md border py-2 text-sm font-medium transition-colors ${
-                      channel === ch ? "border-royal bg-royal text-white" : "border-line text-slate hover:border-royal"
+                      channel === ch ? "border-royal bg-royal text-white" : "border-border text-slate hover:border-royal"
                     }`}
                   >
                     {ch === "WHATSAPP" ? "WhatsApp" : "SMS"}
@@ -198,7 +198,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
                 value={closingLine}
                 onChange={(e) => setClosingLine(e.target.value)}
                 placeholder="Thank you for your continued support."
-                className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-royal focus:outline-none"
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm focus:border-royal focus:outline-none"
               />
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function ExamResultsPanel({ canManage }: Props) {
       {/* Progress */}
       {batchId && (
         <div className={`${royalCardClass} p-5`}>
-          <p className="text-sm font-semibold text-ink mb-4">Sending in progress…</p>
+          <p className="text-sm font-semibold text-foreground mb-4">Sending in progress…</p>
           <ExamResultsProgress batchId={batchId} onDone={() => {}} />
         </div>
       )}

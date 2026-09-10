@@ -68,7 +68,7 @@ export default function GroupManager({ canManage }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="text-sm font-medium text-ink">
+          <p className="text-sm font-medium text-foreground">
             {groups.length} group{groups.length !== 1 ? "s" : ""}
           </p>
           <p className="text-xs text-slate mt-0.5">Groups let you message custom sets of people with one click</p>
@@ -89,7 +89,7 @@ export default function GroupManager({ canManage }: Props) {
       {/* Create form */}
       {showCreate && canManage && (
         <div className={`${royalCardClass} p-5 mb-5`}>
-          <h3 className="text-sm font-semibold text-ink mb-1">Create a new group</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Create a new group</h3>
           <p className="text-xs text-slate mb-4">
             Give it a name like <strong>Board of Management</strong> or <strong>PTA Committee</strong>. After creating, you can add members immediately.
           </p>
@@ -102,7 +102,7 @@ export default function GroupManager({ canManage }: Props) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Board of Management"
                 autoFocus
-                className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
               />
             </div>
             <div>
@@ -112,7 +112,7 @@ export default function GroupManager({ canManage }: Props) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this group for?"
-                className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
               />
             </div>
             {error && <p className="text-sm text-danger">{error}</p>}
@@ -126,7 +126,7 @@ export default function GroupManager({ canManage }: Props) {
               </button>
               <button
                 onClick={() => { setShowCreate(false); setError(""); clearDraft(); setName(""); setDescription(""); }}
-                className="rounded-lg border border-line text-sm font-medium px-4 py-2 text-ink hover:bg-paper transition-colors"
+                className="rounded-lg border border-border text-sm font-medium px-4 py-2 text-foreground hover:bg-background transition-colors"
               >
                 Cancel
               </button>
@@ -143,11 +143,11 @@ export default function GroupManager({ canManage }: Props) {
           ))}
         </div>
       ) : groups.length === 0 && !showCreate ? (
-        <div className="rounded-xl border border-dashed border-line px-6 py-14 text-center">
+        <div className="rounded-xl border border-dashed border-border px-6 py-14 text-center">
           <div className="w-14 h-14 rounded-2xl bg-royal-50 flex items-center justify-center mx-auto mb-4">
             <Users className="h-7 w-7 text-royal/60" aria-hidden />
           </div>
-          <p className="text-base font-medium text-ink mb-1">No groups yet</p>
+          <p className="text-base font-medium text-foreground mb-1">No groups yet</p>
           <p className="text-sm text-slate mb-4">
             Create a group like &quot;Board of Management&quot; or &quot;PTA Committee&quot; to message multiple specific people at once.
           </p>
@@ -169,7 +169,7 @@ export default function GroupManager({ canManage }: Props) {
                   <Users className="h-5 w-5 text-royal/70" aria-hidden />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink truncate">{g.name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{g.name}</p>
                   <p className="text-xs text-slate mt-0.5">
                     {g._count.members} member{g._count.members !== 1 ? "s" : ""}
                     {g.description && <> · {g.description}</>}
@@ -186,7 +186,7 @@ export default function GroupManager({ canManage }: Props) {
                   </button>
                   <button
                     onClick={() => handleDelete(g.id, g.name)}
-                    className="rounded-lg border border-line text-slate text-xs font-medium px-3 py-1.5 hover:border-danger hover:text-danger transition-colors"
+                    className="rounded-lg border border-border text-slate text-xs font-medium px-3 py-1.5 hover:border-danger hover:text-danger transition-colors"
                   >
                     Delete
                   </button>

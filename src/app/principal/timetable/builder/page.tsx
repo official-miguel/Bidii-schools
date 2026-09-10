@@ -53,17 +53,20 @@ import { TIMETABLE_NAV } from "@/lib/timetable/navItems";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+// Subject palette — data-visualization colors for lesson cells.
+// Light and dark variants ensure ≥ 3:1 contrast on both themes (exempt from token
+// replacement per Req 3.7, same as chart series colors).
 const COLORS = [
-  ["bg-teal-50",   "border-teal-200",   "text-teal-800"   ],
-  ["bg-blue-50",   "border-blue-200",   "text-blue-800"   ],
-  ["bg-purple-50", "border-purple-200", "text-purple-800" ],
-  ["bg-emerald-50","border-emerald-200","text-emerald-800"],
-  ["bg-amber-50",  "border-amber-200",  "text-amber-800"  ],
-  ["bg-rose-50",   "border-rose-200",   "text-rose-800"   ],
-  ["bg-cyan-50",   "border-cyan-200",   "text-cyan-800"   ],
-  ["bg-orange-50", "border-orange-200", "text-orange-800" ],
-  ["bg-lime-50",   "border-lime-200",   "text-lime-800"   ],
-  ["bg-indigo-50", "border-indigo-200", "text-indigo-800" ],
+  ["bg-teal-50    dark:bg-teal-950/60",   "border-teal-200    dark:border-teal-800",   "text-teal-800    dark:text-teal-200"   ],
+  ["bg-blue-50    dark:bg-blue-950/60",   "border-blue-200    dark:border-blue-800",   "text-blue-800    dark:text-blue-200"   ],
+  ["bg-purple-50  dark:bg-purple-950/60", "border-purple-200  dark:border-purple-800", "text-purple-800  dark:text-purple-200" ],
+  ["bg-emerald-50 dark:bg-emerald-950/60","border-emerald-200 dark:border-emerald-800","text-emerald-800 dark:text-emerald-200"],
+  ["bg-amber-50   dark:bg-amber-950/60",  "border-amber-200   dark:border-amber-800",  "text-amber-800   dark:text-amber-200"  ],
+  ["bg-rose-50    dark:bg-rose-950/60",   "border-rose-200    dark:border-rose-800",   "text-rose-800    dark:text-rose-200"   ],
+  ["bg-cyan-50    dark:bg-cyan-950/60",   "border-cyan-200    dark:border-cyan-800",   "text-cyan-800    dark:text-cyan-200"   ],
+  ["bg-orange-50  dark:bg-orange-950/60", "border-orange-200  dark:border-orange-800", "text-orange-800  dark:text-orange-200" ],
+  ["bg-lime-50    dark:bg-lime-950/60",   "border-lime-200    dark:border-lime-800",   "text-lime-800    dark:text-lime-200"   ],
+  ["bg-indigo-50  dark:bg-indigo-950/60", "border-indigo-200  dark:border-indigo-800", "text-indigo-800  dark:text-indigo-200" ],
 ];
 const CONFLICT_CELL = "bg-danger/10 border-danger text-danger";
 const WARN_CELL     = "bg-warn-bg border-warn text-warn";
@@ -999,7 +1002,7 @@ export default function BuilderPage() {
       {/* Header row */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">Timetable Editor</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">Timetable Editor</h1>
           <p className="text-slate text-sm mt-1">Drag-and-drop, click to edit, keyboard navigation.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -1008,7 +1011,7 @@ export default function BuilderPage() {
           <button
             onClick={() => { setNewTimetableModal(true); setNewName(""); setNewAcademicYear(""); setNewTerm(""); setNewCreateError(null); }}
             title="Create a new blank timetable"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-teal/40 bg-teal-50 text-teal text-xs font-semibold hover:bg-teal/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-teal/40 bg-teal-50 dark:bg-teal-950/60 text-teal text-xs font-semibold hover:bg-teal/10 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden />
             New Timetable
@@ -1105,7 +1108,7 @@ export default function BuilderPage() {
             <button
               onClick={toggleHistory}
               title="Change history"
-              className={`p-2 rounded-lg border transition-colors ${showHistory ? "bg-teal/10 border-teal text-teal" : "border-line text-slate hover:text-teal hover:border-teal"}`}
+              className={`p-2 rounded-lg border transition-colors ${showHistory ? "bg-teal/10 border-teal text-teal" : "border-border text-slate hover:text-teal hover:border-teal"}`}
             >
               <History className="h-4 w-4" aria-hidden /><span className="sr-only">History</span>
             </button>
@@ -1113,30 +1116,30 @@ export default function BuilderPage() {
 
           {/* Undo/Redo */}
           <button onClick={undo} disabled={!undoStack.current.length} title="Undo (Ctrl+Z)"
-            className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors disabled:opacity-30">
+            className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors disabled:opacity-30">
             <Undo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Undo</span>
           </button>
           <button onClick={redo} disabled={!redoStack.current.length} title="Redo (Ctrl+Y)"
-            className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors disabled:opacity-30">
+            className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors disabled:opacity-30">
             <Redo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Redo</span>
           </button>
 
           {/* Diff toggle */}
           {diffSlots.length > 0 && (
             <button onClick={() => setShowDiff((o) => !o)} title="Compare with published"
-              className={`p-2 rounded-lg border transition-colors ${showDiff ? "bg-teal/10 border-teal text-teal" : "border-line text-slate hover:text-teal hover:border-teal"}`}>
+              className={`p-2 rounded-lg border transition-colors ${showDiff ? "bg-teal/10 border-teal text-teal" : "border-border text-slate hover:text-teal hover:border-teal"}`}>
               <GitCompare className="h-4 w-4" aria-hidden /><span className="sr-only">Diff view</span>
             </button>
           )}
 
           {/* Help */}
           <button onClick={() => setShowHelp((o) => !o)} title="Keyboard shortcuts (?)"
-            className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors">
+            className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors">
             <Keyboard className="h-4 w-4" aria-hidden /><span className="sr-only">Shortcuts</span>
           </button>
 
           <button onClick={loadSlots} title="Refresh"
-            className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors">
+            className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
             <span className="sr-only">Refresh</span>
           </button>
@@ -1146,14 +1149,14 @@ export default function BuilderPage() {
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {/* Controls bar */}
-      <div className="bg-white border border-line rounded-xl p-4 flex flex-wrap gap-3 items-end mb-4">
+      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap gap-3 items-end mb-4">
         {/* Mode toggle */}
         <div>
           <label className={labelClass}>View</label>
-          <div className="flex rounded-lg border border-line overflow-hidden text-sm">
+          <div className="flex rounded-lg border border-border overflow-hidden text-sm">
             {(["school","class","teacher"] as const).map((m) => (
               <button key={m} onClick={() => { setMode(m); setSlots([]); setSelectedCell(null); setSchoolSearchFilter(""); }}
-                className={`px-3 py-2 font-medium transition-colors ${mode === m ? "bg-teal text-white" : "bg-white text-slate hover:bg-paper"}`}>
+                className={`px-3 py-2 font-medium transition-colors ${mode === m ? "bg-teal text-white" : "bg-card text-slate hover:bg-background"}`}>
                 {m === "school"
                   ? <><LayoutGrid className="h-4 w-4 inline mr-1" aria-hidden />School</>
                   : m === "class"
@@ -1239,7 +1242,7 @@ export default function BuilderPage() {
           </button>
         )}
         {!versionId && (
-          <span className="px-2.5 py-1 rounded-full bg-paper border border-line text-slate text-xs">
+          <span className="px-2.5 py-1 rounded-full bg-background border border-border text-slate text-xs">
             No versions yet — generate a timetable first
           </span>
         )}
@@ -1250,7 +1253,7 @@ export default function BuilderPage() {
       {/* "No draft to edit" notice when no versions exist */}
       {!versionId && !versions.length && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 mb-3 rounded-xl
-                        bg-paper border border-line text-slate text-xs">
+                        bg-background border border-border text-slate text-xs">
           No timetable versions found. Go to
           <a href="/principal/timetable/generate"
             className="font-semibold text-teal underline underline-offset-2 ml-1">
@@ -1289,20 +1292,20 @@ export default function BuilderPage() {
           ) : ((mode === "class" && !classId) || (mode === "teacher" && !teacherId)) ? (
             <EmptyState message={mode === "class" ? "Select a class to edit its timetable." : "Select a teacher to view their schedule."} />
           ) : loading ? (
-            <div className="bg-white border border-line rounded-xl p-10 text-center text-slate text-sm animate-pulse">
+            <div className="bg-card border border-border rounded-xl p-10 text-center text-slate text-sm animate-pulse">
               Loading timetable…
             </div>
           ) : (
-            <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse" style={{ minWidth: "640px" }}>
                   <thead>
-                    <tr className="bg-slate-50/80">
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide border-b border-r border-line w-20 sticky left-0 bg-slate-50/80 z-10">
+                    <tr className="bg-muted">
+                      <th className="px-3 py-3 text-left text-xs font-semibold text-slate uppercase tracking-wide border-b border-r border-border w-20 sticky left-0 bg-muted z-10">
                         Period
                       </th>
                       {activeDays.map((day) => (
-                        <th key={day} className="px-3 py-3 text-xs font-semibold text-slate uppercase tracking-wide border-b border-line text-left">
+                        <th key={day} className="px-3 py-3 text-xs font-semibold text-slate uppercase tracking-wide border-b border-border text-left">
                           {DAYS[day]}
                         </th>
                       ))}
@@ -1316,17 +1319,17 @@ export default function BuilderPage() {
                       // render a single full-width separator row
                       if (!isLesson) {
                         const nonLessonStyles: Record<string, string> = {
-                          BREAK:    "bg-orange-50 text-orange-600",
-                          LUNCH:    "bg-green-50 text-green-700",
-                          GAMES:    "bg-pink-50 text-pink-700",
-                          ASSEMBLY: "bg-slate-100 text-slate-600",
+                          BREAK:    "bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400",
+                          LUNCH:    "bg-green-50  dark:bg-green-950/30  text-green-700  dark:text-green-400",
+                          GAMES:    "bg-pink-50   dark:bg-pink-950/30   text-pink-700   dark:text-pink-400",
+                          ASSEMBLY: "bg-muted text-muted-foreground",
                         };
-                        const style = nonLessonStyles[col.slotType] ?? "bg-slate-50 text-slate-500";
+                        const style = nonLessonStyles[col.slotType] ?? "bg-muted text-muted-foreground";
                         return (
                           <tr key={`nonlesson-${colIdx}`} aria-hidden>
                             <td
                               colSpan={activeDays.length + 1}
-                              className={`px-4 py-1.5 text-center text-[10px] font-semibold uppercase tracking-widest border-b border-line ${style}`}
+                              className={`px-4 py-1.5 text-center text-[10px] font-semibold uppercase tracking-widest border-b border-border ${style}`}
                             >
                               {col.label ?? col.slotType} · {col.startTime}–{col.endTime}
                             </td>
@@ -1339,9 +1342,9 @@ export default function BuilderPage() {
                       if (period === 0) return null; // safety
 
                       return (
-                      <tr key={period} className="hover:bg-slate-50/20 transition-colors">
-                        <td className="px-3 py-2 border-r border-b border-line sticky left-0 bg-white z-10">
-                          <div className="text-xs font-semibold text-ink">{period}</div>
+                      <tr key={period} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-3 py-2 border-r border-b border-border sticky left-0 bg-card z-10">
+                          <div className="text-xs font-semibold text-foreground">{period}</div>
                           {periodTimes.get(period) && (
                             <div className="text-[10px] text-slate/60 mt-0.5">{periodTimes.get(period)!.label}</div>
                           )}
@@ -1368,7 +1371,7 @@ export default function BuilderPage() {
 
                           return (
                             <td key={day}
-                              className={`border-b border-line p-1 align-top transition-colors
+                              className={`border-b border-border p-1 align-top transition-colors
                                 ${isSelected || isMulti ? "bg-teal-50/50 ring-1 ring-inset ring-teal/30" : ""}
                                 ${isDiffChanged ? "bg-amber-50/30" : ""}
                                 ${isDiffAdded   ? "bg-green-50/30" : ""}
@@ -1397,7 +1400,7 @@ export default function BuilderPage() {
                               }}
                             >
                               {special && !slot ? (
-                                <div className="min-h-[60px] rounded-lg bg-paper border border-dashed border-line flex items-center justify-center px-1">
+                                <div className="min-h-[60px] rounded-lg bg-background border border-dashed border-border flex items-center justify-center px-1">
                                   <span className="text-[9px] text-slate/60 font-medium uppercase tracking-wide text-center">
                                     {specialLabel(day, period)}
                                   </span>
@@ -1425,13 +1428,13 @@ export default function BuilderPage() {
                                   aria-label={`Add lesson — ${DAYS[day]} period ${period}`}
                                   onClick={() => setEditModal({ slot: null, day, period })}
                                   className="w-full min-h-[60px] rounded-lg border-2 border-dashed
-                                             border-line/60 text-slate/30 hover:border-teal hover:text-teal
+                                             border-border/60 text-slate/30 hover:border-teal hover:text-teal
                                              hover:bg-teal-50/20 flex items-center justify-center transition-all"
                                 >
                                   <span className="text-lg font-light" aria-hidden>+</span>
                                 </button>
                               ) : (
-                                <div className="min-h-[60px] rounded-lg bg-slate-50/40 border border-dashed border-line/30" />
+                                <div className="min-h-[60px] rounded-lg bg-muted/40 border border-dashed border-border/30" />
                               )}
 
                               {/* Diff removed indicator */}
@@ -1453,11 +1456,11 @@ export default function BuilderPage() {
 
               {/* Diff legend */}
               {showDiff && (
-                <div className="px-4 py-2 border-t border-line flex flex-wrap gap-3 text-xs text-slate">
+                <div className="px-4 py-2 border-t border-border flex flex-wrap gap-3 text-xs text-slate">
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200" />Added</span>
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-200" />Changed</span>
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-200"   />Removed</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white border border-line" />Unchanged</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-card border border-border" />Unchanged</span>
                 </div>
               )}
             </div>
@@ -1528,13 +1531,13 @@ export default function BuilderPage() {
       {showHelp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4"
           onClick={() => setShowHelp(false)}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-ink">Keyboard shortcuts</h2>
-              <button onClick={() => setShowHelp(false)} className="text-slate hover:text-ink">✕</button>
+              <h2 className="text-sm font-semibold text-foreground">Keyboard shortcuts</h2>
+              <button onClick={() => setShowHelp(false)} className="text-slate hover:text-foreground">✕</button>
             </div>
             <table className="w-full text-xs">
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-border">
                 {[
                   ["←↑→↓",        "Navigate cells"],
                   ["Enter",        "Edit focused cell"],
@@ -1548,7 +1551,7 @@ export default function BuilderPage() {
                 ].map(([key, label]) => (
                   <tr key={key}>
                     <td className="py-1.5 pr-4">
-                      <kbd className="px-1.5 py-0.5 bg-paper border border-line rounded text-[10px] font-mono">{key}</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-[10px] font-mono">{key}</kbd>
                     </td>
                     <td className="py-1.5 text-slate">{label}</td>
                   </tr>
@@ -1561,19 +1564,19 @@ export default function BuilderPage() {
 
       {/* ── History panel ─────────────────────────────────────────────── */}
       {showHistory && isDraft && (
-        <div className="mt-4 bg-white border border-line rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-line">
-            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+        <div className="mt-4 bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <History className="h-4 w-4 text-teal" aria-hidden /> Change history
             </h3>
-            <button onClick={() => setShowHistory(false)} className="text-slate hover:text-ink p-1">✕</button>
+            <button onClick={() => setShowHistory(false)} className="text-slate hover:text-foreground p-1">✕</button>
           </div>
           {historyLoading ? (
             <p className="p-5 text-sm text-slate animate-pulse">Loading…</p>
           ) : historyRows.length === 0 ? (
             <p className="p-5 text-sm text-slate">No changes recorded yet.</p>
           ) : (
-            <div className="divide-y divide-line max-h-64 overflow-y-auto">
+            <div className="divide-y divide-border max-h-64 overflow-y-auto">
               {historyRows.map((r) => (
                 <div key={r.id} className="px-5 py-3 flex items-start gap-3">
                   <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0
@@ -1581,7 +1584,7 @@ export default function BuilderPage() {
                     {r.changeSource ?? "—"}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink">{r.actionLabel}</p>
+                    <p className="text-sm font-medium text-foreground">{r.actionLabel}</p>
                     {r.reason && <p className="text-xs text-slate mt-0.5 italic">{r.reason}</p>}
                     <p className="text-[10px] text-slate mt-0.5">
                       {r.performer?.email ?? "System"} · {new Date(r.performedAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
@@ -1597,18 +1600,18 @@ export default function BuilderPage() {
       {/* ── Lock context menu ──────────────────────────────────────────── */}
       {contextMenu && (
         <div
-          className="fixed z-50 bg-white border border-line rounded-xl shadow-xl py-1.5 w-52"
+          className="fixed z-50 bg-card border border-border rounded-xl shadow-xl py-1.5 w-52"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onMouseLeave={() => setContextMenu(null)}
         >
-          <p className="px-4 py-1.5 text-[10px] font-semibold text-slate uppercase tracking-wide border-b border-line">
+          <p className="px-4 py-1.5 text-[10px] font-semibold text-slate uppercase tracking-wide border-b border-border">
             {contextMenu.slot.subjectCode} · {DAYS[contextMenu.slot.dayOfWeek]} P{contextMenu.slot.period}
           </p>
           {contextMenu.slot.isLocked ? (
             <button
               onClick={() => handleToggleLock(contextMenu.slot, contextMenu.slot.lockScope ?? "SLOT")}
               disabled={locking}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-background transition-colors"
             >
               <LockOpen className="h-4 w-4 text-teal shrink-0" aria-hidden /> Unlock this slot
             </button>
@@ -1618,7 +1621,7 @@ export default function BuilderPage() {
                 <button key={scope}
                   onClick={() => handleToggleLock(contextMenu.slot, scope)}
                   disabled={locking}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-background transition-colors"
                 >
                   <Lock className="h-4 w-4 text-slate shrink-0" aria-hidden />
                   Lock {scope === "SLOT" ? "this slot" : scope === "SUBJECT" ? "all lessons (subject)" : scope === "CLASS" ? "entire class" : scope === "DAY" ? "all class lessons today" : "all teacher lessons"}
@@ -1629,7 +1632,7 @@ export default function BuilderPage() {
           {!contextMenu.slot.isLocked && (
             <button
               onClick={() => { setContextMenu(null); handleDeleteSlot(contextMenu.slot); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors border-t border-line mt-1"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors border-t border-border mt-1"
             >
               Remove lesson
             </button>
@@ -1656,11 +1659,11 @@ export default function BuilderPage() {
       {/* ── Publish clash-gate confirmation ───────────────────────────────── */}
       {publishConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-3 mb-4">
               <AlertCircle className="h-6 w-6 text-danger shrink-0 mt-0.5" aria-hidden />
               <div>
-                <h2 className="text-base font-semibold text-ink">Publish with clashes?</h2>
+                <h2 className="text-base font-semibold text-foreground">Publish with clashes?</h2>
                 <p className="text-sm text-slate mt-1">
                   This draft has <strong className="text-danger">{conflictSummary.totalErrors} clash{conflictSummary.totalErrors !== 1 ? "es" : ""}</strong> that
                   will be visible to teachers and students. It&apos;s recommended to resolve them first.
@@ -1682,7 +1685,7 @@ export default function BuilderPage() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => { setPublishConfirm(false); setShowConflictPanel(true); }}
-                className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors"
+                className="px-4 py-2 rounded-lg border border-border text-slate text-sm font-medium hover:bg-background transition-colors"
               >
                 Fix clashes first
               </button>
@@ -1702,13 +1705,13 @@ export default function BuilderPage() {
       {/* ── Edit & Revise modal (clone published → draft) ─────────────────── */}
       {cloneModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <Copy className="h-5 w-5 text-indigo-500" aria-hidden />
-                <h2 className="text-base font-semibold text-ink">Edit &amp; Revise Published Timetable</h2>
+                <h2 className="text-base font-semibold text-foreground">Edit &amp; Revise Published Timetable</h2>
               </div>
-              <button onClick={() => setCloneModal(false)} className="text-slate hover:text-ink p-1">
+              <button onClick={() => setCloneModal(false)} className="text-slate hover:text-foreground p-1">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1723,7 +1726,7 @@ export default function BuilderPage() {
                   value={cloneName}
                   onChange={(e) => setCloneName(e.target.value)}
                   placeholder="e.g. Term 2 Revision"
-                  className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
                   autoFocus
                 />
               </div>
@@ -1735,7 +1738,7 @@ export default function BuilderPage() {
                     value={cloneAcademicYear}
                     onChange={(e) => setCloneAcademicYear(e.target.value)}
                     placeholder="e.g. 2025/2026"
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
                   />
                 </div>
                 <div className="w-24">
@@ -1743,7 +1746,7 @@ export default function BuilderPage() {
                   <select
                     value={cloneTerm}
                     onChange={(e) => setCloneTerm(e.target.value !== "" ? Number(e.target.value) : "")}
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30"
                   >
                     <option value="">—</option>
                     <option value="1">1</option>
@@ -1760,7 +1763,7 @@ export default function BuilderPage() {
               </p>
             )}
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setCloneModal(false)} className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors">
+              <button onClick={() => setCloneModal(false)} className="px-4 py-2 rounded-lg border border-border text-slate text-sm font-medium hover:bg-background transition-colors">
                 Cancel
               </button>
               <button
@@ -1779,13 +1782,13 @@ export default function BuilderPage() {
       {/* ── New blank timetable modal ─────────────────────────────────────── */}
       {newTimetableModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <Plus className="h-5 w-5 text-teal" aria-hidden />
-                <h2 className="text-base font-semibold text-ink">New Timetable</h2>
+                <h2 className="text-base font-semibold text-foreground">New Timetable</h2>
               </div>
-              <button onClick={() => setNewTimetableModal(false)} className="text-slate hover:text-ink p-1">
+              <button onClick={() => setNewTimetableModal(false)} className="text-slate hover:text-foreground p-1">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1800,7 +1803,7 @@ export default function BuilderPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g. Term 1 Timetable 2026"
-                  className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === "Enter") handleCreateBlankTimetable(); }}
                 />
@@ -1813,7 +1816,7 @@ export default function BuilderPage() {
                     value={newAcademicYear}
                     onChange={(e) => setNewAcademicYear(e.target.value)}
                     placeholder="e.g. 2025/2026"
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
                   />
                 </div>
                 <div className="w-24">
@@ -1821,7 +1824,7 @@ export default function BuilderPage() {
                   <select
                     value={newTerm}
                     onChange={(e) => setNewTerm(e.target.value !== "" ? Number(e.target.value) : "")}
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg bg-paper focus:outline-none focus:ring-2 focus:ring-teal/30"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-teal/30"
                   >
                     <option value="">—</option>
                     <option value="1">1</option>
@@ -1842,7 +1845,7 @@ export default function BuilderPage() {
               <span>Clashes (teacher double-bookings, class conflicts) are detected instantly as you add lessons.</span>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setNewTimetableModal(false)} className="px-4 py-2 rounded-lg border border-line text-slate text-sm font-medium hover:bg-paper transition-colors">
+              <button onClick={() => setNewTimetableModal(false)} className="px-4 py-2 rounded-lg border border-border text-slate text-sm font-medium hover:bg-background transition-colors">
                 Cancel
               </button>
               <button
@@ -1883,7 +1886,7 @@ function SlotCell({
 
   // Locked cells get a distinct teal-ring style
   const baseClass = slot.isLocked
-    ? "bg-teal-50 border-teal-300 text-teal-800 ring-1 ring-inset ring-teal/30"
+    ? "bg-teal-50 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-200 ring-1 ring-inset ring-teal/30"
     : hasError
       ? CONFLICT_CELL
       : hasWarning
@@ -2115,7 +2118,7 @@ function SchoolTimetableView({
 
   if (loading) {
     return (
-      <div className="bg-white border border-line rounded-xl p-10 text-center text-slate text-sm animate-pulse">
+      <div className="bg-card border border-border rounded-xl p-10 text-center text-slate text-sm animate-pulse">
         Loading full school timetable…
       </div>
     );
@@ -2130,7 +2133,7 @@ function SchoolTimetableView({
   return (
     <div className="space-y-4">
       {/* ── Toolbar ────────────────────────────────────────────── */}
-      <div className="bg-white border border-line rounded-xl px-4 py-3 flex flex-wrap gap-3 items-center">
+      <div className="bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap gap-3 items-center">
         {/* Search */}
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate pointer-events-none" />
@@ -2139,12 +2142,12 @@ function SchoolTimetableView({
             value={searchFilter}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Filter by class or form…"
-            className="w-full pl-8 pr-8 py-2 text-sm border border-line rounded-lg bg-paper
+            className="w-full pl-8 pr-8 py-2 text-sm border border-border rounded-lg bg-background
                        focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal/40"
           />
           {searchFilter && (
             <button onClick={() => onSearchChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-foreground">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -2152,21 +2155,21 @@ function SchoolTimetableView({
 
         {/* Coverage stats */}
         <div className="flex items-center gap-4 text-xs text-slate ml-auto shrink-0">
-          <span><strong className="text-ink">{filledClasses}</strong>/{totalClasses} classes scheduled</span>
+          <span><strong className="text-foreground">{filledClasses}</strong>/{totalClasses} classes scheduled</span>
           <span>
-            <strong className={coveragePct === 100 ? "text-success" : coveragePct > 80 ? "text-ink" : "text-warn"}>
+            <strong className={coveragePct === 100 ? "text-success" : coveragePct > 80 ? "text-foreground" : "text-warn"}>
               {coveragePct}%
             </strong> coverage
           </span>
           <button onClick={onRefresh} title="Refresh"
-            className="p-1.5 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors">
+            className="p-1.5 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors">
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
       {filteredByForm.size === 0 ? (
-        <div className="bg-white border border-line rounded-xl p-10 text-center">
+        <div className="bg-card border border-border rounded-xl p-10 text-center">
           <LayoutGrid className="h-10 w-10 text-slate/25 mx-auto mb-3" />
           <p className="text-sm text-slate">
             {searchFilter ? `No classes match "${searchFilter}"` : "No classes found."}
@@ -2174,30 +2177,30 @@ function SchoolTimetableView({
         </div>
       ) : (
         /* ── Master timetable table ─────────────────────────── */
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse" style={{ minWidth: `${200 + activeDays.length * periods.length * 52}px` }}>
               <thead>
                 {/* ── Day header row ── */}
-                <tr className="bg-slate-50 border-b border-line">
-                  <th className="sticky left-0 z-20 bg-slate-50 px-3 py-2 text-left text-[10px] font-semibold text-slate uppercase tracking-wide border-r border-line min-w-[140px]">
+                <tr className="bg-muted border-b border-border">
+                  <th className="sticky left-0 z-20 bg-muted px-3 py-2 text-left text-[10px] font-semibold text-slate uppercase tracking-wide border-r border-border min-w-[140px]">
                     Class
                   </th>
                   {activeDays.map((day) => (
                     <th key={day}
                       colSpan={periods.length}
-                      className="px-2 py-2 text-center text-[10px] font-semibold text-slate uppercase tracking-wide border-r border-line last:border-r-0">
+                      className="px-2 py-2 text-center text-[10px] font-semibold text-slate uppercase tracking-wide border-r border-border last:border-r-0">
                       {DAY_SHORT[day]}
                     </th>
                   ))}
                 </tr>
                 {/* ── Period sub-header row ── */}
-                <tr className="bg-paper border-b-2 border-line">
-                  <th className="sticky left-0 z-20 bg-paper border-r border-line" />
+                <tr className="bg-background border-b-2 border-border">
+                  <th className="sticky left-0 z-20 bg-background border-r border-border" />
                   {activeDays.map((day) =>
                     periods.map((p) => (
                       <th key={`${day}-${p}`}
-                        className="px-1 py-1.5 text-center text-[9px] font-medium text-slate/70 border-r border-line last:border-r-0 min-w-[48px]">
+                        className="px-1 py-1.5 text-center text-[9px] font-medium text-slate/70 border-r border-border last:border-r-0 min-w-[48px]">
                         P{p}
                       </th>
                     ))
@@ -2210,7 +2213,7 @@ function SchoolTimetableView({
                   return (
                     <>
                       {/* ── Form group header ── */}
-                      <tr key={`form-${form}`} className="bg-teal/5 border-b border-line">
+                      <tr key={`form-${form}`} className="bg-teal/5 border-b border-border">
                         <td
                           colSpan={activeDays.length * periods.length + 1}
                           className="sticky left-0 px-3 py-2"
@@ -2235,10 +2238,10 @@ function SchoolTimetableView({
                       {/* ── Class rows ── */}
                       {!isCollapsed && formClasses.map((cls, rowIdx) => (
                         <tr key={cls.id}
-                          className={`border-b border-line transition-colors hover:bg-teal/4 group
-                            ${rowIdx % 2 === 0 ? "bg-white" : "bg-paper/30"}`}>
+                          className={`border-b border-border transition-colors hover:bg-teal/4 group
+                            ${rowIdx % 2 === 0 ? "bg-card" : "bg-background/30"}`}>
                           {/* Class name cell */}
-                          <td className="sticky left-0 z-10 bg-inherit border-r border-line px-3 py-1.5 min-w-[140px]">
+                          <td className="sticky left-0 z-10 bg-inherit border-r border-border px-3 py-1.5 min-w-[140px]">
                             <button
                               type="button"
                               onClick={() => onSelectClass(cls.id)}
@@ -2260,7 +2263,7 @@ function SchoolTimetableView({
 
                               return (
                                 <td key={`${day}-${period}`}
-                                  className={`border-r border-line last:border-r-0 p-0.5 align-top
+                                  className={`border-r border-border last:border-r-0 p-0.5 align-top
                                     ${clash ? "bg-danger/8" : ""}`}>
                                   {slot ? (
                                     <button
@@ -2284,7 +2287,7 @@ function SchoolTimetableView({
                                       )}
                                     </button>
                                   ) : (
-                                    <div className="w-full h-[30px] rounded border border-dashed border-line/40
+                                    <div className="w-full h-[30px] rounded border border-dashed border-border/40
                                                     hover:border-teal/30 hover:bg-teal/4 transition-colors cursor-pointer"
                                       onClick={() => onSelectClass(cls.id)}
                                       title={`Empty — click to open ${cls.name}`}
@@ -2304,13 +2307,13 @@ function SchoolTimetableView({
           </div>
 
           {/* ── Legend ── */}
-          <div className="px-4 py-2.5 border-t border-line flex flex-wrap gap-4 text-[10px] text-slate bg-paper/50">
+          <div className="px-4 py-2.5 border-t border-border flex flex-wrap gap-4 text-[10px] text-slate bg-background/50">
             <span className="flex items-center gap-1.5">
               <span className="inline-block w-8 h-3.5 rounded bg-teal-100 border border-teal-200" />
               Scheduled lesson (colour = subject)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-8 h-3.5 rounded border-2 border-dashed border-line/60" />
+              <span className="inline-block w-8 h-3.5 rounded border-2 border-dashed border-border/60" />
               Empty slot
             </span>
             <span className="flex items-center gap-1.5">

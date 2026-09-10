@@ -46,7 +46,7 @@ export default function DeptTop3Leaderboard({
 }: DeptTop3LeaderboardProps) {
   if (top3.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
         No ranking data available for this department.
       </div>
     );
@@ -90,7 +90,7 @@ export default function DeptTop3Leaderboard({
                 </span>
 
                 {/* Name */}
-                <p className="font-bold text-ink text-sm text-center leading-tight">
+                <p className="font-bold text-foreground text-sm text-center leading-tight">
                   {entry.teacherName}
                 </p>
 

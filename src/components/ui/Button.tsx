@@ -34,12 +34,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       teal:      "bg-teal text-white hover:bg-teal-dark focus:ring-teal/30 shadow-xs",
       royal:     "bg-teal text-white hover:bg-teal-dark focus:ring-teal/30 shadow-xs",
       // Ghost outlined
-      secondary: "bg-white text-ink border border-line hover:bg-paper hover:border-slate-light focus:ring-teal/20",
-      outline:   "bg-transparent border border-line text-ink hover:bg-paper hover:border-slate-light focus:ring-teal/20",
+      secondary: "bg-card text-foreground border border-border hover:bg-background hover:border-slate-light focus:ring-teal/20",
+      outline:   "bg-transparent border border-border text-foreground hover:bg-background hover:border-slate-light focus:ring-teal/20",
       // Destructive
       danger:    "bg-danger text-white hover:bg-red-600 focus:ring-danger/30 shadow-xs",
       // Subtle / text
-      ghost:     "text-ink hover:bg-paper focus:ring-teal/20",
+      ghost:     "text-foreground hover:bg-background focus:ring-teal/20",
     };
 
     const sizes: Record<string, string> = {

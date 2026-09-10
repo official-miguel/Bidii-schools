@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/modules — Module Management
@@ -98,7 +98,7 @@ function ToggleCell({
                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:ring-offset-1
                     ${enabled ? "bg-teal" : blocked ? "bg-slate-200 cursor-not-allowed" : "bg-line hover:bg-slate-200"}`}
       >
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-card shadow
                           transition-transform duration-200 ${enabled ? "translate-x-4" : "translate-x-0"}`} />
       </button>
       {blocked && !enabled && (
@@ -112,14 +112,14 @@ function ToggleCell({
 
 function PlanBadge({ tier }: { tier: string }) {
   const map: Record<string, string> = {
-    FREE:"bg-slate-100 text-slate border-line",
+    FREE:"bg-slate-100 text-slate border-border",
     STARTER:"bg-teal-50 text-teal border-teal/20",
     GROWTH:"bg-info-bg text-info border-info/20",
     PROFESSIONAL:"bg-warn-bg text-warn border-warn/20",
     ENTERPRISE:"bg-danger-bg text-danger border-danger/20",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-border"}`}>
       {tier.slice(0,3)}
     </span>
   );
@@ -249,14 +249,14 @@ export default function ModulesPage() {
       )}
 
       {/* Tab bar */}
-      <div className="border-b border-line dark:border-dark-border flex gap-0">
+      <div className="border-b border-border flex gap-0">
         {([
           { id: "grid"  as TabId, label: "Toggle Grid",  Icon: LayoutGrid },
           { id: "audit" as TabId, label: "Audit Trail",  Icon: History    },
         ]).map(({ id, label, Icon }) => (
           <button key={id} type="button" onClick={() => setTab(id)}
             className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px
-              ${tab === id ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"}`}
+              ${tab === id ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"}`}
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden /> {label}
           </button>
@@ -271,8 +271,8 @@ export default function ModulesPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate pointer-events-none" aria-hidden />
               <input type="search" value={q} onChange={e => setQ(e.target.value)}
                 placeholder="Filter schools…"
-                className="w-full rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                           pl-10 pr-4 py-2.5 text-sm text-ink dark:text-dark-text placeholder:text-slate-light
+                className="w-full rounded-xl border border-border bg-card
+                           pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-slate-light
                            focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs" />
             </div>
             <button type="button" onClick={load} className={`${secondaryButtonClass} shrink-0`}>
@@ -283,36 +283,36 @@ export default function ModulesPage() {
           {loading ? (
             <div className="flex justify-center py-16"><Spinner size="lg" /></div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-16 gap-2 text-slate dark:text-dark-muted">
+            <div className="flex flex-col items-center py-16 gap-2 text-slate">
               <Puzzle className="h-8 w-8 opacity-40" aria-hidden />
               <p className="text-sm">No schools found</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+            <div className="rounded-xl border border-border overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   {/* Module column headers */}
                   <thead>
-                    <tr className="bg-slate-50/80 dark:bg-dark-surface border-b border-line dark:border-dark-border">
+                    <tr className="bg-slate-50/80 border-b border-border">
                       {/* School + plan col */}
-                      <th className="sticky left-0 z-10 bg-slate-50/80 dark:bg-dark-surface px-4 py-3 text-left
-                                     text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide
-                                     min-w-[200px] border-r border-line dark:border-dark-border">
+                      <th className="sticky left-0 z-10 bg-slate-50/80 px-4 py-3 text-left
+                                     text-xs font-semibold text-slate uppercase tracking-wide
+                                     min-w-[200px] border-r border-border">
                         School
                       </th>
                       {/* Apply bundle col */}
-                      <th className="px-3 py-3 text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide
-                                     whitespace-nowrap border-r border-line dark:border-dark-border min-w-[110px]">
+                      <th className="px-3 py-3 text-xs font-semibold text-slate uppercase tracking-wide
+                                     whitespace-nowrap border-r border-border min-w-[110px]">
                         Apply Bundle
                       </th>
                       {/* Module cols */}
                       {ALL_MODULES.map(mod => (
                         <th key={mod}
-                          className="px-3 py-3 text-center text-[10px] font-semibold text-slate dark:text-dark-muted
+                          className="px-3 py-3 text-center text-[10px] font-semibold text-slate
                                      uppercase tracking-wide whitespace-nowrap min-w-[72px]">
                           {MODULE_LABEL[mod]}
                           {(MODULE_DEPS[mod] ?? []).length > 0 && (
-                            <span className="block text-[8px] font-normal text-slate/50 dark:text-dark-muted/50 mt-0.5 normal-case tracking-normal">
+                            <span className="block text-[8px] font-normal text-slate/50/50 mt-0.5 normal-case tracking-normal">
                               needs {(MODULE_DEPS[mod] ?? []).map(d => MODULE_LABEL[d as Mod]).join("+")}
                             </span>
                           )}
@@ -320,16 +320,16 @@ export default function ModulesPage() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+                  <tbody className="divide-y divide-border bg-card">
                     {filtered.map(school => {
                       const planTier = school.schoolMeta?.planTier ?? "FREE";
                       return (
                         <tr key={school.id}
-                          className="hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors">
+                          className="hover:bg-slate-50/40/20 transition-colors">
                           {/* School name + plan */}
-                          <td className="sticky left-0 z-10 bg-white dark:bg-dark-surface px-4 py-3
-                                         border-r border-line dark:border-dark-border">
-                            <p className="text-sm font-medium text-ink dark:text-dark-text truncate max-w-[160px]">
+                          <td className="sticky left-0 z-10 bg-card px-4 py-3
+                                         border-r border-border">
+                            <p className="text-sm font-medium text-foreground truncate max-w-[160px]">
                               {school.name}
                             </p>
                             <div className="mt-0.5">
@@ -337,7 +337,7 @@ export default function ModulesPage() {
                             </div>
                           </td>
                           {/* Quick-apply bundle */}
-                          <td className="px-3 py-3 border-r border-line dark:border-dark-border">
+                          <td className="px-3 py-3 border-r border-border">
                             <button
                               type="button"
                               onClick={() => applyBundle(school.id, planTier)}
@@ -379,7 +379,7 @@ export default function ModulesPage() {
           )}
 
           {/* Legend */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate dark:text-dark-muted pt-1">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-slate pt-1">
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-4 w-7 rounded-full bg-teal" />
               Enabled
@@ -401,14 +401,14 @@ export default function ModulesPage() {
         auditLoading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : audit.length === 0 ? (
-          <div className="flex flex-col items-center py-16 gap-2 text-slate dark:text-dark-muted">
+          <div className="flex flex-col items-center py-16 gap-2 text-slate">
             <History className="h-8 w-8 opacity-40" aria-hidden />
             <p className="text-sm">No module toggle events yet</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
-            <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-              <thead className="bg-slate-50/80 dark:bg-dark-surface text-xs font-semibold text-slate uppercase tracking-wide">
+          <div className="rounded-xl border border-border overflow-hidden shadow-xs">
+            <table className="min-w-full divide-y divide-border ">
+              <thead className="bg-slate-50/80 text-xs font-semibold text-slate uppercase tracking-wide">
                 <tr>
                   <th className="px-5 py-3.5 text-left">Action</th>
                   <th className="px-5 py-3.5 text-left hidden sm:table-cell">Module</th>
@@ -417,14 +417,14 @@ export default function ModulesPage() {
                   <th className="px-5 py-3.5 text-right">When</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+              <tbody className="divide-y divide-border bg-card">
                 {audit.map(entry => (
-                  <tr key={entry.id} className="hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors">
-                    <td className="px-5 py-3.5 text-xs font-mono text-ink dark:text-dark-text">{entry.action}</td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate dark:text-dark-muted font-mono">
+                  <tr key={entry.id} className="hover:bg-slate-50/40/20 transition-colors">
+                    <td className="px-5 py-3.5 text-xs font-mono text-foreground">{entry.action}</td>
+                    <td className="px-5 py-3.5 hidden sm:table-cell text-xs text-slate font-mono">
                       {String(entry.metadata?.module ?? "—")}
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate dark:text-dark-muted font-mono truncate max-w-[140px]">
+                    <td className="px-5 py-3.5 hidden md:table-cell text-xs text-slate font-mono truncate max-w-[140px]">
                       {entry.targetId ?? "—"}
                     </td>
                     <td className="px-5 py-3.5">
@@ -432,7 +432,7 @@ export default function ModulesPage() {
                         {(entry.metadata?.enabled as boolean | undefined) ? "On" : "Off"}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate dark:text-dark-muted text-right whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-xs text-slate text-right whitespace-nowrap">
                       {new Date(entry.createdAt).toLocaleString("en-GB", {
                         day:"2-digit", month:"short", year:"numeric",
                         hour:"2-digit", minute:"2-digit",

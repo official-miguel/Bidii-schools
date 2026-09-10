@@ -12,8 +12,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Search, X } from 'lucide-react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
-import { SEARCH_DEBOUNCE_MS } from '@/constants/config';
+import { Radius, Typography, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface SearchBarProps {
   value: string;
@@ -39,6 +39,7 @@ export function SearchBar({
   onSubmit,
 }: SearchBarProps) {
   const inputRef = useRef<TextInput>(null);
+  const { colors } = useTheme();
 
   const handleClear = () => {
     onChangeText('');
@@ -51,9 +52,9 @@ export function SearchBar({
         {
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: Colors.card,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: Colors.line,
+          borderColor: colors.border,
           borderRadius: Radius.button,
           paddingLeft: Spacing[3],
           paddingRight: Spacing[2],
@@ -65,9 +66,9 @@ export function SearchBar({
     >
       {/* Search icon or spinner */}
       {loading ? (
-        <ActivityIndicator size="small" color={Colors.teal} />
+        <ActivityIndicator size="small" color={colors.primary} />
       ) : (
-        <Search size={18} color={Colors.slateText} />
+        <Search size={18} color={colors.mutedForeground} />
       )}
 
       {/* Input */}
@@ -76,7 +77,7 @@ export function SearchBar({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.muted}
+        placeholderTextColor={colors.placeholder}
         autoFocus={autoFocus}
         autoCorrect={false}
         autoCapitalize="none"
@@ -85,7 +86,7 @@ export function SearchBar({
         style={{
           flex: 1,
           fontSize: Typography.fontSize.sm,
-          color: Colors.ink,
+          color: colors.foreground,
           fontFamily: Typography.fontFamily.sans,
           paddingVertical: 0, // remove Android default padding
         }}
@@ -97,7 +98,7 @@ export function SearchBar({
           onPress={handleClear}
           hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
         >
-          <X size={16} color={Colors.slateText} />
+          <X size={16} color={colors.mutedForeground} />
         </TouchableOpacity>
       )}
     </View>

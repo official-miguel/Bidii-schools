@@ -20,8 +20,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import dynamic from "next/dynamic";
+import { Logo } from "@/components/Logo";
 import { Search, ChevronDown, LogOut, Menu, UserCircle2 } from "lucide-react";
 
 const ActiveChildBar = dynamic(
@@ -157,16 +157,14 @@ export default function TopAppBar({
 
   const iconBtn = `flex items-center justify-center w-11 h-11 rounded-lg
                    transition-colors duration-100
-                   text-slate hover:bg-teal-50 hover:text-teal
-                   dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text`;
+                   text-slate hover:bg-teal-50 hover:text-teal`;
 
   return (
     <>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <header
         className="fixed top-0 right-0 z-30 h-16 flex items-center gap-1 px-2 sm:px-4
-                   bg-white/95 backdrop-blur-sm border-b border-line
-                   dark:bg-dark-sidebar/95 dark:border-dark-border
+                   bg-card/95 backdrop-blur-sm border-b border-border/95
                    md:left-16 left-0"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
@@ -183,15 +181,9 @@ export default function TopAppBar({
         {/* ── Mobile logo / school name ───────────────────────────────── */}
         <div className="md:hidden flex items-center gap-2 mx-1 min-w-0 flex-1">
           <div className="h-7 w-7 rounded overflow-hidden shrink-0">
-            <Image
-              src="/logo.png"
-              alt="Bidii KE"
-              width={28}
-              height={28}
-              className="object-contain"
-            />
+            <Logo height={28} width={28} alt="Bidii KE" className="object-contain" />
           </div>
-          <span className="font-semibold text-sm text-ink dark:text-dark-text truncate">
+          <span className="font-semibold text-sm text-foreground truncate">
             {schoolName ?? "Bidii"}
           </span>
         </div>
@@ -201,16 +193,14 @@ export default function TopAppBar({
           type="button"
           onClick={() => setSearchOpen(true)}
           className="hidden md:flex items-center gap-2 h-9 pl-3 pr-4 rounded-lg
-                     bg-paper border border-line text-slate text-sm
-                     hover:border-teal/40 hover:text-ink transition-colors
-                     dark:bg-dark-surface dark:border-dark-border
-                     dark:text-dark-muted dark:hover:text-dark-text"
+                     bg-background border border-border text-slate text-sm
+                     hover:border-teal/40 hover:text-foreground transition-colors"
           aria-label="Search (Ctrl+K)"
         >
           <Search className="h-3.5 w-3.5 shrink-0" />
           <span className="text-sm">Search…</span>
           <kbd className="ml-3 text-[10px] font-medium text-slate/60 bg-line
-                          rounded px-1.5 py-0.5 dark:bg-dark-border dark:text-dark-muted">
+                          rounded px-1.5 py-0.5">
             ⌘K
           </kbd>
         </button>
@@ -273,7 +263,7 @@ export default function TopAppBar({
             aria-haspopup="true"
             className="flex items-center gap-1.5 h-11 pl-1 pr-2 rounded-lg
                        hover:bg-teal-50 transition-colors group
-                       dark:hover:bg-dark-border"
+                      "
           >
             {/* Avatar: photo or initials */}
             {showPhoto ? (
@@ -282,7 +272,7 @@ export default function TopAppBar({
                 src={avatarUrl!}
                 alt={roleLabel}
                 onError={() => setImgError(true)}
-                className="w-8 h-8 rounded-full object-cover border border-line shrink-0"
+                className="w-8 h-8 rounded-full object-cover border border-border shrink-0"
               />
             ) : (
               <div
@@ -293,31 +283,29 @@ export default function TopAppBar({
               </div>
             )}
             <div className="hidden sm:block text-left max-w-[100px]">
-              <p className="text-xs font-medium text-ink leading-none dark:text-dark-text truncate">
+              <p className="text-xs font-medium text-foreground leading-none truncate">
                 {roleLabel}
               </p>
             </div>
             <ChevronDown
-              className={`hidden sm:block h-3 w-3 text-slate transition-transform duration-150
-                         dark:text-dark-muted ${profileOpen ? "rotate-180" : ""}`}
+              className={`hidden sm:block h-3 w-3 text-slate transition-transform duration-150 ${profileOpen ? "rotate-180" : ""}`}
             />
           </button>
 
           {profileOpen && (
             <div
               className="absolute right-0 top-full mt-1.5 w-56 rounded-xl
-                         bg-white border border-line shadow-lg
-                         dark:bg-dark-surface dark:border-dark-border
+                         bg-card border border-border shadow-lg
                          animate-scale-in origin-top-right z-50"
             >
               {/* User info */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-line dark:border-dark-border">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                 {showPhoto ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl!}
                     alt={roleLabel}
-                    className="w-9 h-9 rounded-full object-cover border border-line shrink-0"
+                    className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
                   />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-teal text-white text-sm font-semibold
@@ -326,10 +314,10 @@ export default function TopAppBar({
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {roleLabel}
                   </p>
-                  <p className="text-xs text-slate dark:text-dark-muted truncate mt-0.5">
+                  <p className="text-xs text-slate truncate mt-0.5">
                     {userEmail}
                   </p>
                 </div>
@@ -342,7 +330,7 @@ export default function TopAppBar({
                   onClick={() => setProfileOpen(false)}
                   className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5
                              text-sm text-slate hover:bg-teal-50 hover:text-teal
-                             transition-colors dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-teal
+                             transition-colors dark:hover:text-teal
                              min-h-[44px]"
                 >
                   <UserCircle2 className="h-4 w-4 shrink-0" />
@@ -355,7 +343,7 @@ export default function TopAppBar({
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5
                              text-sm text-slate hover:bg-danger/5 hover:text-danger
-                             transition-colors dark:text-dark-muted dark:hover:text-danger
+                             transition-colors dark:hover:text-danger
                              min-h-[44px]"
                 >
                   <LogOut className="h-4 w-4 shrink-0" />

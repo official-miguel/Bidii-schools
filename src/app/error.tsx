@@ -22,7 +22,7 @@ export default function AppError({
         🏫
       </div>
 
-      <h1 className="mb-2 text-2xl font-bold text-ink dark:text-dark-text">
+      <h1 className="mb-2 text-2xl font-bold text-foreground">
         Something went wrong
       </h1>
 
@@ -33,7 +33,7 @@ export default function AppError({
 
       {/* Dev-only: show error message */}
       {process.env.NODE_ENV === "development" && error.message && (
-        <pre className="mb-6 max-w-md overflow-auto rounded-lg border border-line bg-paper px-4 py-3 text-left font-mono text-xs text-danger">
+        <pre className="mb-6 max-w-md overflow-auto rounded-lg border border-border bg-background px-4 py-3 text-left font-mono text-xs text-danger">
           {error.message}
         </pre>
       )}

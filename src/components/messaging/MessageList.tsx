@@ -88,7 +88,7 @@ export default function MessageList({ onSelect, selectedId, refreshKey }: Props)
           placeholder="Search messages…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full rounded-lg border border-line bg-white pl-9 pr-3 py-2.5 text-sm text-ink focus:border-royal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2.5 text-sm text-foreground focus:border-royal focus:outline-none"
         />
       </div>
 
@@ -103,11 +103,11 @@ export default function MessageList({ onSelect, selectedId, refreshKey }: Props)
 
       {/* Empty state */}
       {!loading && items.length === 0 && (
-        <div className="rounded-xl border border-dashed border-line px-4 py-12 text-center">
+        <div className="rounded-xl border border-dashed border-border px-4 py-12 text-center">
           <div className="w-14 h-14 rounded-2xl bg-royal-50 flex items-center justify-center mx-auto mb-3">
             <MessageSquare className="h-7 w-7 text-royal/60" aria-hidden />
           </div>
-          <p className="text-sm font-medium text-ink mb-1">No messages yet</p>
+          <p className="text-sm font-medium text-foreground mb-1">No messages yet</p>
           <p className="text-xs text-slate">Messages you send will appear here.</p>
         </div>
       )}
@@ -123,7 +123,7 @@ export default function MessageList({ onSelect, selectedId, refreshKey }: Props)
                   className={`w-full text-left rounded-xl border px-4 py-3.5 transition-all ${
                     selectedId === m.id
                       ? "border-teal bg-teal-50 shadow-sm ring-1 ring-teal/20"
-                      : "border-line bg-white hover:border-teal/40 hover:bg-teal-50/30"
+                      : "border-border bg-card hover:border-teal/40 hover:bg-teal-50/30"
                   }`}
                 >
                   {/* Top row: badges + time */}
@@ -144,7 +144,7 @@ export default function MessageList({ onSelect, selectedId, refreshKey }: Props)
                   {/* Recipient summary */}
                   <p className="text-xs text-slate/80 truncate mb-1.5">{m.recipientSummary}</p>
                   {/* Message preview */}
-                  <p className="text-sm text-ink truncate leading-snug font-medium">{m.body}</p>
+                  <p className="text-sm text-foreground truncate leading-snug font-medium">{m.body}</p>
                 </button>
               </li>
             ))}
@@ -153,7 +153,7 @@ export default function MessageList({ onSelect, selectedId, refreshKey }: Props)
           {items.length < total && (
             <button
               onClick={loadMore}
-              className="w-full rounded-xl border border-line bg-white py-2.5 text-sm text-slate hover:text-ink hover:bg-slate-50 hover:border-teal/40 transition-colors"
+              className="w-full rounded-xl border border-border bg-card py-2.5 text-sm text-slate hover:text-foreground hover:bg-slate-50 hover:border-teal/40 transition-colors"
             >
               Load more ({total - items.length} remaining)
             </button>

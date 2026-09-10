@@ -14,15 +14,17 @@ import {
   Toast, useToast, ConfirmModal, Badge, Card, SyncStatusBar,
 } from '@/components/ui';
 import { api, CatalogueRecord } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { useAuth } from '@/lib/auth';
 import { truncate, pluralize } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 export default function BrowseScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { toastProps, show: showToast } = useToast();
 
   const [query,      setQuery]      = useState('');
@@ -62,11 +64,11 @@ export default function BrowseScreen() {
   };
 
   return (
-    <View style={{ flex:1, backgroundColor: Colors.paper }}>
+    <View style={{ flex:1, backgroundColor: colors.background }}>
       <ScreenHeader title="Browse Books" subtitle="Find and reserve titles" />
       <SyncStatusBar />
 
-      <View style={{ backgroundColor: Colors.card, borderBottomWidth:1, borderBottomColor: Colors.line, padding: Spacing[4] }}>
+      <View style={{ backgroundColor: colors.card, borderBottomWidth:1, borderBottomColor: colors.border, padding: Spacing[4] }}>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search by title, author, subject…" loading={loading} autoFocus={false} />
       </View>
 
@@ -75,26 +77,26 @@ export default function BrowseScreen() {
       <FlatList
         data={catalogues}
         keyExtractor={c => c.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: Spacing[4], gap: Spacing[2], paddingBottom: insets.bottom + Spacing[8] }}
         renderItem={({ item }) => (
           <View style={{
-            backgroundColor: Colors.card, borderRadius: Radius.card,
-            borderWidth:1, borderColor: Colors.line, padding: Spacing[4],
+            backgroundColor: colors.card, borderRadius: Radius.card,
+            borderWidth:1, borderColor: colors.border, padding: Spacing[4],
             flexDirection:'row', gap: Spacing[3], alignItems:'flex-start',
           }}>
-            <View style={{ width:44, height:44, borderRadius: Radius.sm, backgroundColor: Colors.teal50, alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <BookOpen size={22} color={Colors.teal} />
+            <View style={{ width:44, height:44, borderRadius: Radius.sm, backgroundColor: colors.primary + '15', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <BookOpen size={22} color={colors.primary} />
             </View>
             <View style={{ flex:1, gap: Spacing[1] }}>
-              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }} numberOfLines={2}>
+              <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }} numberOfLines={2}>
                 {item.title}
               </Text>
-              {item.author && <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>by {item.author}</Text>}
+              {item.author && <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>by {item.author}</Text>}
               <View style={{ flexDirection:'row', gap: Spacing[1.5], flexWrap:'wrap', marginTop: Spacing[1] }}>
                 {item.form && <Badge label={`Form ${item.form}`} variant="info" size="sm" />}
-                <View style={{ paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full, backgroundColor: Colors.teal50 }}>
-                  <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.teal }}>
+                <View style={{ paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full, backgroundColor: colors.primary + '15' }}>
+                  <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.primary }}>
                     {pluralize(item.totalCopies, 'copy', 'copies')}
                   </Text>
                 </View>
@@ -102,9 +104,9 @@ export default function BrowseScreen() {
             </View>
             <TouchableOpacity
               onPress={() => setReserveTarget(item)}
-              style={{ width:36, height:36, borderRadius: Radius.button, backgroundColor: Colors.teal, alignItems:'center', justifyContent:'center', flexShrink:0 }}
+              style={{ width:36, height:36, borderRadius: Radius.button, backgroundColor: colors.primary, alignItems:'center', justifyContent:'center', flexShrink:0 }}
             >
-              <Plus size={18} color={Colors.white} />
+              <Plus size={18} color={'#FFFFFF'} />
             </TouchableOpacity>
           </View>
         )}
@@ -113,7 +115,7 @@ export default function BrowseScreen() {
             <EmptyState
               title={debouncedQuery ? 'No books found' : 'Search for a book'}
               description={debouncedQuery ? `No results for "${debouncedQuery}"` : 'Type a title, author, or subject to search'}
-              icon={<BookOpen size={40} color={Colors.slateText} />}
+              icon={<BookOpen size={40} color={colors.mutedForeground} />}
             />
           ) : null
         }

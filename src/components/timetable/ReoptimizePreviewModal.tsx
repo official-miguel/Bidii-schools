@@ -64,10 +64,10 @@ const DAY_NAMES  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const STATUS_CFG: Record<DiffStatus, {
   bg: string; border: string; text: string; icon: React.ElementType; label: string;
 }> = {
-  locked:    { bg:"bg-teal-50",   border:"border-teal-200",   text:"text-teal-800",   icon:Lock,            label:"Locked"    },
-  unchanged: { bg:"bg-slate-50",  border:"border-line",       text:"text-slate",      icon:CheckCircle2,    label:"Unchanged" },
-  changed:   { bg:"bg-amber-50",  border:"border-amber-300",  text:"text-amber-800",  icon:ArrowLeftRight,  label:"Changed"   },
-  added:     { bg:"bg-green-50",  border:"border-green-300",  text:"text-green-800",  icon:Plus,            label:"Added"     },
+  locked:    { bg:"bg-teal-50   dark:bg-teal-950/60",  border:"border-teal-200   dark:border-teal-800",  text:"text-teal-800   dark:text-teal-200",  icon:Lock,            label:"Locked"    },
+  unchanged: { bg:"bg-muted",                          border:"border-border",                             text:"text-muted-foreground",                    icon:CheckCircle2,    label:"Unchanged" },
+  changed:   { bg:"bg-amber-50  dark:bg-amber-950/60", border:"border-amber-300  dark:border-amber-800",  text:"text-amber-800  dark:text-amber-200",  icon:ArrowLeftRight,  label:"Changed"   },
+  added:     { bg:"bg-green-50  dark:bg-green-950/60", border:"border-green-300  dark:border-green-800",  text:"text-green-800  dark:text-green-200",  icon:Plus,            label:"Added"     },
   removed:   { bg:"bg-danger/8",  border:"border-danger/30",  text:"text-danger",     icon:Minus,           label:"Removed"   },
 };
 
@@ -100,8 +100,8 @@ export default function ReoptimizePreviewModal({
       <div className="space-y-4">
 
         {/* ── Summary banner ──────────────────────────────────────────── */}
-        <div className="rounded-xl bg-teal-50 border border-teal-200 p-4">
-          <p className="text-sm font-semibold text-teal-900 mb-2">
+        <div className="rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 p-4">
+          <p className="text-sm font-semibold text-teal-900 dark:text-teal-200 mb-2">
             AI proposed {totalChanges} change{totalChanges !== 1 ? "s" : ""} to unlocked lessons
           </p>
           <div className="flex flex-wrap gap-3 text-xs">
@@ -114,7 +114,7 @@ export default function ReoptimizePreviewModal({
                   key={s}
                   onClick={() => setFilterStatus(filterStatus === s ? "all" : s)}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-semibold
-                    transition-colors ${filterStatus === s ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-white border-line text-slate hover:border-teal/40"}`}
+                    transition-colors ${filterStatus === s ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-card border-border text-slate hover:border-teal/40"}`}
                 >
                   <Icon className="h-3.5 w-3.5" aria-hidden />
                   {cfg.label}: {count}
@@ -123,7 +123,7 @@ export default function ReoptimizePreviewModal({
             })}
           </div>
           {manualPreserved > 0 && (
-            <p className="text-xs text-teal-700 mt-2 flex items-center gap-1.5">
+            <p className="text-xs text-teal-700 dark:text-teal-300 mt-2 flex items-center gap-1.5">
               <Lock className="h-3 w-3 shrink-0" aria-hidden />
               {manualPreserved} manual override{manualPreserved !== 1 ? "s" : ""} preserved
             </p>
@@ -146,7 +146,7 @@ export default function ReoptimizePreviewModal({
             {showWarnings && (
               <ul className="mt-2 space-y-1">
                 {stats.warnings.slice(0, 6).map((w, i) => (
-                  <li key={i} className="text-xs text-ink/80 flex items-start gap-1.5">
+                  <li key={i} className="text-xs text-foreground/80 flex items-start gap-1.5">
                     <span className="text-warn shrink-0 mt-0.5">·</span>{w}
                   </li>
                 ))}
@@ -198,7 +198,7 @@ export default function ReoptimizePreviewModal({
                   </div>
 
                   {d.changedFields.length > 0 && (
-                    <span className="text-[10px] text-amber-700 shrink-0">
+                    <span className="text-[10px] text-amber-700 dark:text-amber-300 shrink-0">
                       {d.changedFields.join(", ")} changed
                     </span>
                   )}
@@ -251,7 +251,7 @@ export default function ReoptimizePreviewModal({
         </div>
 
         {/* ── Footer actions ───────────────────────────────────────────── */}
-        <div className="flex items-center justify-between pt-2 border-t border-line">
+        <div className="flex items-center justify-between pt-2 border-t border-border">
           <p className="text-xs text-slate">
             {totalChanges} lesson{totalChanges !== 1 ? "s" : ""} will change.
             {stats.locked > 0 ? ` ${stats.locked} locked lesson${stats.locked !== 1 ? "s" : ""} preserved.` : ""}
@@ -291,12 +291,12 @@ function SlotDetail({
 }) {
   return (
     <div className="space-y-0.5 text-xs">
-      <p className="font-semibold text-ink">{slot.subjectCode}</p>
-      <p className={highlight.includes("teacher") ? "text-amber-700 font-semibold" : "text-slate"}>
+      <p className="font-semibold text-foreground">{slot.subjectCode}</p>
+      <p className={highlight.includes("teacher") ? "text-amber-700 dark:text-amber-300 font-semibold" : "text-slate"}>
         {slot.teacherName || "—"}
       </p>
       {slot.room && (
-        <p className={highlight.includes("room") ? "text-amber-700 font-semibold" : "text-slate/70"}>
+        <p className={highlight.includes("room") ? "text-amber-700 dark:text-amber-300 font-semibold" : "text-slate/70"}>
           {slot.room}
         </p>
       )}

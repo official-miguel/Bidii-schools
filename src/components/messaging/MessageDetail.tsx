@@ -62,13 +62,13 @@ export default function MessageDetail({ messageId, canManage, onClose, onRetry }
   return (
     <div className="fixed inset-0 z-50 flex md:justify-end" onClick={onClose}>
       <div
-        className="relative w-full md:w-[480px] bg-white h-full shadow-xl flex flex-col overflow-hidden"
+        className="relative w-full md:w-[480px] bg-card h-full shadow-xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
-          <h2 className="font-display text-base font-semibold text-ink">Message detail</h2>
-          <button onClick={onClose} className="text-slate hover:text-ink p-1">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <h2 className="font-display text-base font-semibold text-foreground">Message detail</h2>
+          <button onClick={onClose} className="text-slate hover:text-foreground p-1">
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
           </button>
         </div>
@@ -90,18 +90,18 @@ export default function MessageDetail({ messageId, canManage, onClose, onRetry }
             </div>
 
             <div className="space-y-1 text-sm">
-              <p className="text-slate">To: <span className="text-ink">{msg.recipientSummary}</span></p>
-              <p className="text-slate">Sent by: <span className="text-ink">{msg.sender.email}</span></p>
+              <p className="text-slate">To: <span className="text-foreground">{msg.recipientSummary}</span></p>
+              <p className="text-slate">Sent by: <span className="text-foreground">{msg.sender.email}</span></p>
               <p className="text-slate">
                 {msg.scheduledAt ? "Scheduled: " : "Sent: "}
-                <span className="text-ink">{new Date(msg.scheduledAt ?? msg.createdAt).toLocaleString()}</span>
+                <span className="text-foreground">{new Date(msg.scheduledAt ?? msg.createdAt).toLocaleString()}</span>
               </p>
             </div>
 
             {/* Body */}
             <div>
               <p className="text-xs font-medium text-slate uppercase tracking-wide mb-1">Message</p>
-              <pre className="whitespace-pre-wrap text-sm text-ink bg-paper rounded-lg p-3 border border-line font-sans">
+              <pre className="whitespace-pre-wrap text-sm text-foreground bg-background rounded-lg p-3 border border-border font-sans">
                 {msg.body}
               </pre>
             </div>
@@ -111,7 +111,7 @@ export default function MessageDetail({ messageId, canManage, onClose, onRetry }
                 Attachment:{" "}
                 {msg.attachmentUrl
                   ? <a href={msg.attachmentUrl} className="text-royal underline" target="_blank" rel="noreferrer">{msg.attachmentName}</a>
-                  : <span className="text-ink">{msg.attachmentName}</span>
+                  : <span className="text-foreground">{msg.attachmentName}</span>
                 }
               </p>
             )}
@@ -120,19 +120,19 @@ export default function MessageDetail({ messageId, canManage, onClose, onRetry }
             {msg.logs.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-slate uppercase tracking-wide mb-2">Recipients ({msg.logs.length})</p>
-                <div className="border border-line rounded-lg overflow-hidden">
+                <div className="border border-border rounded-lg overflow-hidden">
                   <table className="w-full text-xs">
-                    <thead className="bg-paper border-b border-line">
+                    <thead className="bg-background border-b border-border">
                       <tr>
                         <th className="text-left px-3 py-2 font-medium text-slate">Name</th>
                         <th className="text-left px-3 py-2 font-medium text-slate">Phone</th>
                         <th className="text-left px-3 py-2 font-medium text-slate">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-line">
+                    <tbody className="divide-y divide-border">
                       {msg.logs.map((l) => (
                         <tr key={l.id} className="hover:bg-royal-50/30">
-                          <td className="px-3 py-2 text-ink">{l.recipientLabel}</td>
+                          <td className="px-3 py-2 text-foreground">{l.recipientLabel}</td>
                           <td className="px-3 py-2 text-slate font-mono">{l.phone}</td>
                           <td className="px-3 py-2">
                             <DeliveryStatusBadge status={l.status} />

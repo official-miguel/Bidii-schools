@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ParentPortalShell from "@/components/parent/ParentPortalShell";
@@ -54,10 +54,10 @@ export default async function ParentLayout({
           >
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
               <p className="text-3xl mb-4">🏫</p>
-              <p className="text-base font-semibold text-ink dark:text-dark-text">
+              <p className="text-base font-semibold text-foreground">
                 Account not fully set up
               </p>
-              <p className="text-sm text-slate dark:text-dark-muted mt-2 max-w-sm">
+              <p className="text-sm text-slate mt-2 max-w-sm">
                 Your account hasn&apos;t been fully linked yet. Please contact the school
                 office to complete setup.
               </p>

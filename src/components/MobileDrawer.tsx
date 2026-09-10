@@ -16,8 +16,8 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import {
   X,
   Home,
@@ -185,14 +185,14 @@ export default function MobileDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
-        className={`absolute left-0 top-0 bottom-0 w-72 flex flex-col bg-white dark:bg-dark-sidebar shadow-xl
+        className={`absolute left-0 top-0 bottom-0 w-72 flex flex-col bg-card shadow-xl
                     ${isClosing ? "drawer-exit" : "drawer-enter"}`}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-line dark:border-dark-border"
+          className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-border"
           style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
         >
           <Link
@@ -202,9 +202,9 @@ export default function MobileDrawer({
             aria-label={`${schoolName ?? "Bidii"} home`}
           >
             <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0">
-              <Image src="/logo.png" alt="Bidii KE" width={32} height={32} className="object-contain" />
+              <Logo height={32} width={32} alt="Bidii KE" className="object-contain" />
             </div>
-            <span className="font-semibold text-sm text-ink dark:text-dark-text truncate max-w-[160px]">
+            <span className="font-semibold text-sm text-foreground truncate max-w-[160px]">
               {schoolName ?? "Bidii"}
             </span>
           </Link>
@@ -213,8 +213,7 @@ export default function MobileDrawer({
             onClick={close}
             aria-label="Close navigation menu"
             className="flex items-center justify-center w-11 h-11 rounded-lg text-slate
-                       hover:bg-teal-50 hover:text-teal transition-colors shrink-0
-                       dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                       hover:bg-teal-50 hover:text-teal transition-colors shrink-0"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -222,7 +221,7 @@ export default function MobileDrawer({
 
         {/* Nav links — only permitted hubs */}
         <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-3 px-3">
-          <p className="px-3 mb-2 text-[10px] font-semibold text-slate/60 uppercase tracking-widest dark:text-dark-muted">
+          <p className="px-3 mb-2 text-[10px] font-semibold text-slate/60 uppercase tracking-widest">
             Navigation
           </p>
           {isParent ? (
@@ -241,7 +240,7 @@ export default function MobileDrawer({
                     text-sm font-medium transition-colors min-h-[44px]
                     ${active
                       ? "bg-teal/10 text-teal dark:bg-teal/15 dark:text-teal"
-                      : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                      : "text-slate hover:bg-teal-50 hover:text-teal"
                     }`}
                 >
                   <span aria-hidden="true"
@@ -284,7 +283,7 @@ export default function MobileDrawer({
                     text-sm font-medium transition-colors min-h-[44px]
                     ${active
                       ? "bg-teal/10 text-teal dark:bg-teal/15 dark:text-teal"
-                      : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                      : "text-slate hover:bg-teal-50 hover:text-teal"
                     }`}
                 >
                   <span aria-hidden="true"
@@ -300,7 +299,7 @@ export default function MobileDrawer({
 
         {/* Footer */}
         <div
-          className="shrink-0 border-t border-line dark:border-dark-border px-4 py-4"
+          className="shrink-0 border-t border-border px-4 py-4"
           style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
         >
           {/* User identity row */}
@@ -311,7 +310,7 @@ export default function MobileDrawer({
                 src={avatarUrl!}
                 alt={roleLabel}
                 onError={() => setImgError(true)}
-                className="w-9 h-9 rounded-full object-cover border border-line shrink-0"
+                className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-teal/10 text-teal flex items-center justify-center
@@ -320,8 +319,8 @@ export default function MobileDrawer({
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-medium text-ink dark:text-dark-text truncate leading-tight">{roleLabel}</p>
-              <p className="text-xs text-slate dark:text-dark-muted truncate leading-tight">{userEmail}</p>
+              <p className="text-sm font-medium text-foreground truncate leading-tight">{roleLabel}</p>
+              <p className="text-xs text-slate truncate leading-tight">{userEmail}</p>
             </div>
           </div>
 
@@ -331,7 +330,7 @@ export default function MobileDrawer({
             onClick={handleNavClick}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl min-h-[44px]
                        text-sm font-medium text-slate hover:bg-teal-50 hover:text-teal
-                       transition-colors dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-teal mb-1"
+                       transition-colors dark:hover:text-teal mb-1"
           >
             <UserCircle2 className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
             My Profile
@@ -343,7 +342,7 @@ export default function MobileDrawer({
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl min-h-[44px]
                        text-sm font-medium text-slate hover:bg-danger/5 hover:text-danger
-                       transition-colors dark:text-dark-muted dark:hover:text-danger"
+                       transition-colors dark:hover:text-danger"
           >
             <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
             Sign out

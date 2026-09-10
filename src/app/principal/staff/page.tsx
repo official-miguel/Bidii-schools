@@ -73,13 +73,13 @@ function TabBar({ active, onChange }: { active: "directory" | "roles"; onChange:
     { id: "roles",     label: "Roles & Permissions" },
   ];
   return (
-    <div className="flex border-b border-line mb-6">
+    <div className="flex border-b border-border mb-6">
       {tabs.map((t) => (
         <button key={t.id} type="button" onClick={() => onChange(t.id)}
           className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
             active === t.id
               ? "border-teal text-teal"
-              : "border-transparent text-slate hover:text-ink hover:bg-paper"
+              : "border-transparent text-slate hover:text-foreground hover:bg-background"
           }`}>
           {t.label}
         </button>
@@ -320,11 +320,11 @@ function DirectoryTab() {
       ) : visibleTeachers.length === 0 ? (
         <EmptyState message="No staff match your search." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5 w-[220px]">Staff member</th>
                   <th className="px-5 py-3.5 w-[100px]">Staff ID</th>
                   <th className="px-5 py-3.5 w-[130px]">Role</th>
@@ -338,19 +338,19 @@ function DirectoryTab() {
                 {visibleTeachers.map((t) => {
                   const { label, variant } = roleLabel(t);
                   return (
-                    <tr key={t.id} className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openStaffDrawer(t.id)}>
+                    <tr key={t.id} className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => openStaffDrawer(t.id)}>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <Avatar name={t.fullName} size="sm" />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-ink group-hover:text-teal transition-colors truncate">{t.fullName}</p>
+                            <p className="text-sm font-medium text-foreground group-hover:text-teal transition-colors truncate">{t.fullName}</p>
                             {t.email && <p className="text-xs text-slate/70 truncate">{t.email}</p>}
                           </div>
                           <ExternalLink className="h-3.5 w-3.5 text-slate/30 group-hover:text-teal transition-colors shrink-0 ml-auto mr-1" />
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">{t.staffId}</span>
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">{t.staffId}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <RoleBadge label={label} variant={variant} />
@@ -433,7 +433,7 @@ function DirectoryTab() {
                           required={!!editing}
                           disabled={!!editing}
                           defaultValue={editing?.staffId ?? nextStaffId ?? ""}
-                          className={`${inputClass} ${editing ? "bg-paper text-slate cursor-not-allowed" : ""}`}
+                          className={`${inputClass} ${editing ? "bg-background text-slate cursor-not-allowed" : ""}`}
                         />
                         {!editing && <p className="text-xs text-slate mt-1.5">Auto-assigned — edit if needed.</p>}
                       </>
@@ -492,7 +492,7 @@ function DirectoryTab() {
                     <div>
                       <label className={labelClass}>Subjects taught</label>
                       <p className="text-xs text-slate mb-2">Select all subjects this teacher can deliver.</p>
-                      <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto rounded-lg border border-line p-3 bg-paper/40">
+                      <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto rounded-lg border border-border p-3 bg-background/40">
                         {subjects.length === 0 && (
                           <p className="text-xs text-slate p-1">No subjects configured yet.</p>
                         )}
@@ -506,7 +506,7 @@ function DirectoryTab() {
                               className={`inline-flex items-center gap-1.5 text-sm rounded-lg border px-2.5 py-1 min-h-[44px] sm:min-h-0 font-medium transition-all duration-100 ${
                                 sel
                                   ? "bg-teal text-white border-teal shadow-xs"
-                                  : "border-line text-ink hover:border-teal/40 hover:bg-teal-50/50"
+                                  : "border-border text-foreground hover:border-teal/40 hover:bg-teal-50/50"
                               }`}
                             >
                               {sel && (
@@ -538,7 +538,7 @@ function DirectoryTab() {
                       return deptNames.length > 0 ? (
                         <div>
                           <label className={labelClass}>Department</label>
-                          <p className={`${inputClass} bg-paper text-slate cursor-default`}>
+                          <p className={`${inputClass} bg-background text-slate cursor-default`}>
                             {deptNames.join(", ")}
                           </p>
                           <p className="text-xs text-slate mt-1.5">
@@ -562,10 +562,10 @@ function DirectoryTab() {
                           className="sr-only peer"
                         />
                         <div className="h-5 w-9 rounded-full bg-line peer-checked:bg-teal transition-colors" />
-                        <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+                        <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform peer-checked:translate-x-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-ink">Eligible for Teacher on Duty</p>
+                        <p className="text-sm font-medium text-foreground">Eligible for Teacher on Duty</p>
                         <p className="text-xs text-slate mt-0.5">Include in automated TOD scheduling rotation.</p>
                       </div>
                     </label>
@@ -605,26 +605,26 @@ function DirectoryTab() {
           onClick={(e) => { if (e.currentTarget === e.target) setArchiveTarget(null); }}
         >
           <div
-            className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl
-                       border border-line shadow-xl flex flex-col max-h-[92dvh] modal-content"
+            className="relative w-full sm:max-w-md bg-card rounded-t-2xl sm:rounded-2xl
+                       border border-border shadow-xl flex flex-col max-h-[92dvh] modal-content"
             role="dialog" aria-modal="true" aria-labelledby="transfer-staff-title"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 rounded-full bg-line" aria-hidden="true" />
             </div>
-            <div className="flex items-start justify-between gap-3 px-6 pt-5 pb-4 border-b border-line shrink-0">
+            <div className="flex items-start justify-between gap-3 px-6 pt-5 pb-4 border-b border-border shrink-0">
               <div>
-                <h2 id="transfer-staff-title" className="text-base font-semibold text-ink">Transfer Staff Member</h2>
+                <h2 id="transfer-staff-title" className="text-base font-semibold text-foreground">Transfer Staff Member</h2>
                 <p className="mt-1 text-sm text-slate">
-                  <span className="font-medium text-ink">{archiveTarget.fullName}</span>
+                  <span className="font-medium text-foreground">{archiveTarget.fullName}</span>
                   {" · "}
                   <span className="font-mono text-xs">ID {archiveTarget.staffId}</span>
                 </p>
               </div>
               <button type="button" onClick={() => setArchiveTarget(null)} aria-label="Close"
                 className="flex items-center justify-center h-11 w-11 sm:h-8 sm:w-8 rounded-lg
-                           text-slate hover:text-ink hover:bg-paper transition-colors shrink-0 -mr-2 -mt-1">
+                           text-slate hover:text-foreground hover:bg-background transition-colors shrink-0 -mr-2 -mt-1">
                 <svg className="h-5 w-5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -653,7 +653,7 @@ function DirectoryTab() {
                 />
               </div>
             </div>
-            <div className="shrink-0 border-t border-line bg-paper px-6 py-4 rounded-b-2xl">
+            <div className="shrink-0 border-t border-border bg-background px-6 py-4 rounded-b-2xl">
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button type="button" disabled={archiveLoading}
                   className={secondaryButtonClass}
@@ -791,10 +791,10 @@ function RolesTab() {
       </WorkspaceToolbar>
 
       {roles === null ? (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm" aria-busy="true">
             <tbody>{Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="border-b border-line last:border-0">
+              <tr key={i} className="border-b border-border last:border-0">
                 <td className="px-5 py-4"><div className="h-3 rounded-md bg-slate-100 animate-pulse w-28" /></td>
                 <td className="px-5 py-4"><div className="h-3 rounded-md bg-slate-100 animate-pulse w-16" /></td>
               </tr>
@@ -806,11 +806,11 @@ function RolesTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
           {/* Role list */}
-          <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             {roles.map((r) => (
               <button key={r.id} onClick={() => setSelectedId(r.id)}
-                className={`w-full text-left px-4 py-3.5 border-b border-line last:border-0 transition-colors ${r.id === selectedId ? "bg-teal-50" : "hover:bg-slate-50"}`}>
-                <p className={`text-sm font-semibold ${r.id === selectedId ? "text-teal" : "text-ink"}`}>{r.name}</p>
+                className={`w-full text-left px-4 py-3.5 border-b border-border last:border-0 transition-colors ${r.id === selectedId ? "bg-teal-50" : "hover:bg-slate-50"}`}>
+                <p className={`text-sm font-semibold ${r.id === selectedId ? "text-teal" : "text-foreground"}`}>{r.name}</p>
                 <p className="text-xs text-slate mt-0.5">{r.totalUsers ?? r._count.users} {(r.totalUsers ?? r._count.users) === 1 ? "person" : "people"}</p>
               </button>
             ))}
@@ -821,7 +821,7 @@ function RolesTab() {
               {error && <ErrorBanner message={error} />}
               <div className="flex items-start justify-between mb-5">
                 <div>
-                  <h2 className="text-base font-semibold text-ink">{selected.name}</h2>
+                  <h2 className="text-base font-semibold text-foreground">{selected.name}</h2>
                   {selected.description && (
                     <p className="text-sm text-slate mt-0.5 leading-relaxed">{selected.description}</p>
                   )}
@@ -834,14 +834,14 @@ function RolesTab() {
                 </button>
               </div>
 
-              <div className="bg-white border border-line rounded-xl overflow-hidden">
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 {/* Column headers */}
-                <div className="grid grid-cols-[1fr_80px_80px] border-b border-line bg-paper/60 px-5 py-3">
+                <div className="grid grid-cols-[1fr_80px_80px] border-b border-border bg-background/60 px-5 py-3">
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide">Module</p>
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide text-center">View</p>
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide text-center">Manage</p>
                 </div>
-                <div className="divide-y divide-line">
+                <div className="divide-y divide-border">
                   {ASSIGNABLE_MODULES.map((m) => {
                     const info = MODULE_INFO[m];
                     const perm = draftPerms[m] || { canView: false, canManage: false };
@@ -849,11 +849,11 @@ function RolesTab() {
                       <div
                         key={m}
                         className={`grid grid-cols-[1fr_80px_80px] px-5 py-3.5 items-center transition-colors ${
-                          perm.canView || perm.canManage ? "bg-teal-50/30" : "hover:bg-paper/60"
+                          perm.canView || perm.canManage ? "bg-teal-50/30" : "hover:bg-background/60"
                         }`}
                       >
                         <div>
-                          <p className="text-sm font-medium text-ink">{info.label}</p>
+                          <p className="text-sm font-medium text-foreground">{info.label}</p>
                           <p className="text-xs text-slate/70 mt-0.5">{info.description}</p>
                         </div>
                         <div className="flex justify-center">
@@ -865,7 +865,7 @@ function RolesTab() {
                             className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-100 ${
                               perm.canView
                                 ? "bg-teal border-teal"
-                                : "border-line hover:border-teal/50"
+                                : "border-border hover:border-teal/50"
                             }`}
                           >
                             {perm.canView && (
@@ -884,7 +884,7 @@ function RolesTab() {
                             className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-100 ${
                               perm.canManage
                                 ? "bg-teal border-teal"
-                                : "border-line hover:border-teal/50"
+                                : "border-border hover:border-teal/50"
                             }`}
                           >
                             {perm.canManage && (

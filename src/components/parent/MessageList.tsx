@@ -67,10 +67,10 @@ function channelBadgeClass(channel: string) {
 export default function MessageList({ messages }: Props) {
   if (messages.length === 0) {
     return (
-      <div className="rounded-xl border border-line bg-card p-10 flex flex-col items-center gap-3 text-center dark:bg-dark-surface dark:border-dark-border">
-        <MessageSquare className="h-10 w-10 text-slate dark:text-dark-muted" />
+      <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center gap-3 text-center">
+        <MessageSquare className="h-10 w-10 text-slate" />
         <div>
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">
+          <p className="text-sm font-semibold text-foreground">
             💬 No messages yet.
           </p>
         </div>
@@ -83,13 +83,12 @@ export default function MessageList({ messages }: Props) {
       {messages.map((msg) => (
         <div
           key={msg.id}
-          className="rounded-xl border border-line bg-card p-4 shadow-xs
-                     dark:bg-dark-surface dark:border-dark-border"
+          className="rounded-xl border border-border bg-card p-4 shadow-xs"
         >
           {/* Header row */}
           <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">
+              <p className="text-sm font-semibold text-foreground">
                 {msg.sender.name ?? "School"}
               </p>
               <span
@@ -98,19 +97,19 @@ export default function MessageList({ messages }: Props) {
                 {msg.channel}
               </span>
             </div>
-            <p className="text-xs text-slate dark:text-dark-muted shrink-0">
+            <p className="text-xs text-slate shrink-0">
               {relativeTime(msg.createdAt)}
             </p>
           </div>
 
           {/* Body */}
-          <p className="text-sm text-ink dark:text-dark-text line-clamp-3 whitespace-pre-wrap">
+          <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">
             {msg.body}
           </p>
 
           {/* Recipient summary */}
           {msg.recipientSummary && (
-            <p className="text-[11px] text-slate dark:text-dark-muted mt-2">
+            <p className="text-[11px] text-slate mt-2">
               To: {msg.recipientSummary}
             </p>
           )}

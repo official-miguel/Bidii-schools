@@ -197,12 +197,12 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
 
           {/* Learning area summary */}
           {data.learningAreaStats && data.learningAreaStats.length > 0 && (
-            <div className="bg-white border border-line rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-ink mb-4">Learning area attainment</h3>
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Learning area attainment</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-line text-slate text-left">
+                    <tr className="border-b border-border text-slate text-left">
                       <th className="pb-2 font-medium">Learning Area</th>
                       <th className="pb-2 font-medium text-center">Sub-strands</th>
                       <th className="pb-2 font-medium text-center">Mean score</th>
@@ -211,8 +211,8 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
                   </thead>
                   <tbody>
                     {data.learningAreaStats.map((a) => (
-                      <tr key={a.learningAreaId} className="border-b border-line last:border-0">
-                        <td className="py-1.5 font-medium text-ink pr-4">{a.learningAreaName}</td>
+                      <tr key={a.learningAreaId} className="border-b border-border last:border-0">
+                        <td className="py-1.5 font-medium text-foreground pr-4">{a.learningAreaName}</td>
                         <td className="py-1.5 text-center text-slate">{a.subStrandCount}</td>
                         <td className="py-1.5 text-center tabular-nums">
                           {a.meanAttainment !== null ? a.meanAttainment.toFixed(2) : "—"}
@@ -228,8 +228,8 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
 
           {/* Sub-strand attainment bars */}
           {data.subStrandStats && data.subStrandStats.length > 0 && (
-            <div className="bg-white border border-line rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-ink mb-1">Attainment by sub-strand</h3>
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Attainment by sub-strand</h3>
               <div className="flex items-center gap-3 mb-4 flex-wrap">
                 {levelLegend}
                 <span className="text-xs text-slate">NYE = not yet entered</span>
@@ -238,7 +238,7 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
                 {data.subStrandStats.map((s) => (
                   <div key={s.subStrandId} className="flex items-center gap-3">
                     <div className="w-44 shrink-0">
-                      <p className="text-xs font-medium text-ink truncate" title={s.subStrandName}>{s.subStrandName}</p>
+                      <p className="text-xs font-medium text-foreground truncate" title={s.subStrandName}>{s.subStrandName}</p>
                       <p className="text-[10px] text-slate">{s.strandName} · {s.learningAreaName}</p>
                     </div>
                     <div className="flex-1">
@@ -258,12 +258,12 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
 
           {/* Student attainment table */}
           {data.studentTable && data.studentTable.length > 0 && data.subStrandColumns && (
-            <div className="bg-white border border-line rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-ink mb-4">Student attainment</h3>
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Student attainment</h3>
               <div className="overflow-x-auto">
                 <table className="text-xs min-w-full">
                   <thead>
-                    <tr className="border-b border-line text-slate text-left">
+                    <tr className="border-b border-border text-slate text-left">
                       <th className="pb-2 pr-3 font-medium whitespace-nowrap">Student</th>
                       {data.subStrandColumns.map((col) => (
                         <th key={col.id} className="pb-2 px-1 font-medium text-center whitespace-nowrap" title={`${col.strandName} › ${col.learningAreaName}`}>
@@ -275,8 +275,8 @@ export default function CbeDashboard({ classes, defaultClassId }: Props) {
                   </thead>
                   <tbody>
                     {data.studentTable.map((row, i) => (
-                      <tr key={row.student.id} className={`border-b border-line last:border-0 ${i % 2 === 0 ? "" : "bg-paper/40"}`}>
-                        <td className="py-1 pr-3 font-medium text-ink whitespace-nowrap">{row.student.fullName}</td>
+                      <tr key={row.student.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-background/40"}`}>
+                        <td className="py-1 pr-3 font-medium text-foreground whitespace-nowrap">{row.student.fullName}</td>
                         {row.cells.map((cell) => (
                           <td key={cell.subStrandId} className="py-1 px-1 text-center">
                             <LvlBadge level={cell.level} />

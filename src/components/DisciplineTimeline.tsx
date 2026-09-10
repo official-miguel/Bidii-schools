@@ -122,13 +122,13 @@ export default function DisciplineTimeline({ studentId }: { studentId: string })
   return (
     <div className="space-y-4">
       {timeline.map((item, index) => (
-        <div key={index} className="border-l-2 border-line pl-4 mb-4">
+        <div key={index} className="border-l-2 border-border pl-4 mb-4">
           <div className="flex items-start gap-3">
             <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium ${item.color}`}>
               {item.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink">{item.title}</p>
+              <p className="text-sm font-medium text-foreground">{item.title}</p>
               {item.className && (
                 <p className="text-xs text-slate">{item.className}</p>
               )}

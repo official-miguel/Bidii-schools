@@ -177,7 +177,7 @@ export default function StaffRolesPage() {
       />
 
       {roles === null ? (
-        <div className="bg-card border border-line rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm" aria-busy="true" aria-label="Loading…">
             <tbody>
               {Array.from({ length: 4 }).map((_, i) => (
@@ -196,11 +196,11 @@ export default function StaffRolesPage() {
               <button
                 key={r.id}
                 onClick={() => setSelectedId(r.id)}
-                className={`w-full text-left px-4 py-3 border-b border-line last:border-0 transition-colors ${
+                className={`w-full text-left px-4 py-3 border-b border-border last:border-0 transition-colors ${
                   r.id === selectedId ? "bg-royal-50" : "hover:bg-royal-50/50"
                 }`}
               >
-                <p className={`text-sm font-medium ${r.id === selectedId ? "text-royal-dark" : "text-ink"}`}>
+                <p className={`text-sm font-medium ${r.id === selectedId ? "text-royal-dark" : "text-foreground"}`}>
                   {r.name}
                 </p>
                 <p className="text-xs text-slate mt-0.5">
@@ -217,7 +217,7 @@ export default function StaffRolesPage() {
 
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg font-semibold text-ink">{selected.name}</h2>
+                  <h2 className="font-display text-lg font-semibold text-foreground">{selected.name}</h2>
                   {selected.description && (
                     <p className="text-sm text-slate mt-0.5">{selected.description}</p>
                   )}
@@ -227,10 +227,10 @@ export default function StaffRolesPage() {
                 </button>
               </div>
 
-              <div className="border border-line rounded-lg overflow-hidden">
+              <div className="border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-line text-left text-slate bg-royal-50/40">
+                    <tr className="border-b border-border text-left text-slate bg-royal-50/40">
                       <th className="px-4 py-2.5 font-medium">Module</th>
                       <th className="px-4 py-2.5 font-medium text-center w-24">View</th>
                       <th className="px-4 py-2.5 font-medium text-center w-24">Manage</th>
@@ -241,15 +241,15 @@ export default function StaffRolesPage() {
                       const info = MODULE_INFO[m];
                       const perm = draftPerms[m] || { canView: false, canManage: false };
                       return (
-                        <tr key={m} className="border-b border-line last:border-0">
+                        <tr key={m} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5">
-                            <p className="text-ink font-medium">{info.label}</p>
+                            <p className="text-foreground font-medium">{info.label}</p>
                             <p className="text-xs text-slate">{info.description}</p>
                           </td>
                           <td className="px-4 py-2.5 text-center">
                             <input
                               type="checkbox"
-                              className="rounded border-line accent-royal h-4 w-4"
+                              className="rounded border-border accent-royal h-4 w-4"
                               checked={perm.canView}
                               onChange={(e) => setPerm(m, "canView", e.target.checked)}
                             />
@@ -257,7 +257,7 @@ export default function StaffRolesPage() {
                           <td className="px-4 py-2.5 text-center">
                             <input
                               type="checkbox"
-                              className="rounded border-line accent-royal h-4 w-4"
+                              className="rounded border-border accent-royal h-4 w-4"
                               checked={perm.canManage}
                               onChange={(e) => setPerm(m, "canManage", e.target.checked)}
                             />

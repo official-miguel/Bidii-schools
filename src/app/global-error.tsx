@@ -26,8 +26,8 @@ export default function GlobalError({
           margin: 0,
           padding: 0,
           fontFamily: "Inter, system-ui, sans-serif",
-          backgroundColor: "#FAFBFC",
-          color: "#1F2933",
+          backgroundColor: "var(--color-background, #FAFBFC)", // semantic token with fallback
+          color: "var(--color-foreground, #1F2933)", // semantic token with fallback
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -58,7 +58,7 @@ export default function GlobalError({
               fontSize: "1.5rem",
               fontWeight: 700,
               margin: "0 0 0.5rem",
-              color: "#1F2933",
+              color: "var(--color-foreground, #1F2933)", // semantic token with fallback
             }}
           >
             Something went wrong
@@ -67,7 +67,7 @@ export default function GlobalError({
           <p
             style={{
               fontSize: "0.9375rem",
-              color: "#667085",
+              color: "var(--color-muted-foreground, #667085)", // semantic token with fallback
               margin: "0 0 2rem",
               lineHeight: 1.6,
             }}
@@ -88,8 +88,8 @@ export default function GlobalError({
               onClick={reset}
               style={{
                 padding: "0.5625rem 1.25rem",
-                backgroundColor: "#2C7F7E",
-                color: "#ffffff",
+                backgroundColor: "var(--color-primary, #2C7F7E)", // brand: logo teal — intentional
+                color: "var(--color-primary-foreground, #ffffff)", // semantic token with fallback
                 border: "none",
                 borderRadius: "8px",
                 fontSize: "0.875rem",
@@ -105,8 +105,8 @@ export default function GlobalError({
               style={{
                 padding: "0.5625rem 1.25rem",
                 backgroundColor: "transparent",
-                color: "#2C7F7E",
-                border: "1.5px solid #2C7F7E",
+                color: "var(--color-primary, #2C7F7E)", // brand: logo teal — intentional
+                border: "1.5px solid var(--color-primary, #2C7F7E)", // brand: logo teal — intentional
                 borderRadius: "8px",
                 fontSize: "0.875rem",
                 fontWeight: 600,
@@ -124,7 +124,7 @@ export default function GlobalError({
               style={{
                 marginTop: "1.5rem",
                 fontSize: "0.75rem",
-                color: "#98A2B3",
+                color: "var(--color-muted-foreground, #98A2B3)", // semantic token with fallback
                 fontFamily: "monospace",
               }}
             >

@@ -9,8 +9,8 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
   Building2,
@@ -52,7 +52,7 @@ export default function SuperAdminSidebar() {
     <aside
       aria-label="Super admin navigation"
       className="fixed top-0 left-0 h-screen w-16 hidden md:flex flex-col z-40
-                 bg-ink dark:bg-dark-sidebar border-r border-ink-light/20"
+                 bg-ink border-r border-ink-light/20"
     >
       {/* Logo */}
       <div className="flex items-center justify-center h-16 shrink-0 border-b border-white/10">
@@ -63,7 +63,7 @@ export default function SuperAdminSidebar() {
           className="flex items-center justify-center h-10 w-10 rounded-lg
                      overflow-hidden hover:opacity-80 transition-opacity"
         >
-          <Image src="/logo.png" alt="Bidii" width={40} height={40} className="object-contain" />
+          <Logo height={40} width={40} alt="Bidii" className="object-contain" />
         </Link>
       </div>
 
@@ -97,7 +97,7 @@ export default function SuperAdminSidebar() {
                 className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
                   ${active
                     ? "bg-teal/20 text-teal-light"
-                    : "text-white/50 hover:bg-white/10 hover:text-white"
+                    : "text-white/50 hover:bg-card/10 hover:text-white"
                   }`}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />

@@ -125,32 +125,32 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
     <div className="fixed inset-0 z-50 bg-ink/30 flex justify-end" onClick={onClose}>
       {/* Panel */}
       <div
-        className="relative w-full max-w-[480px] bg-white h-full shadow-2xl flex flex-col"
+        className="relative w-full max-w-[480px] bg-card h-full shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-line bg-royal-50/40 shrink-0">
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border bg-royal-50/40 shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-royal/70 shrink-0" aria-hidden />
-              <h2 className="font-display text-base font-semibold text-ink">{groupName}</h2>
+              <h2 className="font-display text-base font-semibold text-foreground">{groupName}</h2>
             </div>
             <p className="text-xs text-slate mt-0.5 ml-7">
               {loading ? "Loading…" : `${members.length} member${members.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <button onClick={onClose} className="text-slate hover:text-ink p-1 shrink-0 mt-0.5" aria-label="Close">
+          <button onClick={onClose} className="text-slate hover:text-foreground p-1 shrink-0 mt-0.5" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {/* Add member section */}
-          <div className="p-5 border-b border-line space-y-4">
-            <p className="text-sm font-semibold text-ink">Add a member</p>
+          <div className="p-5 border-b border-border space-y-4">
+            <p className="text-sm font-semibold text-foreground">Add a member</p>
 
             {/* Mode tabs */}
-            <div className="grid grid-cols-3 gap-1 bg-paper rounded-lg p-1">
+            <div className="grid grid-cols-3 gap-1 bg-background rounded-lg p-1">
               {(["external", "staff", "student"] as AddMode[]).map((m) => (
                 <button
                   key={m}
@@ -158,8 +158,8 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                   onClick={() => { setMode(m); setSearch(""); setSearchResults([]); setError(""); }}
                   className={`rounded-md py-1.5 text-xs font-semibold transition-all ${
                     mode === m
-                      ? "bg-white text-royal shadow-sm"
-                      : "text-slate hover:text-ink"
+                      ? "bg-card text-royal shadow-sm"
+                      : "text-slate hover:text-foreground"
                   }`}
                 >
                   {m === "external"
@@ -184,7 +184,7 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                     value={extName}
                     onChange={(e) => setExtName(e.target.value)}
                     placeholder="e.g. John Kamau"
-                    className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
                   />
                 </div>
                 <div>
@@ -194,7 +194,7 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                     value={extPhone}
                     onChange={(e) => setExtPhone(e.target.value)}
                     placeholder="e.g. 0712 345 678"
-                    className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
                   />
                 </div>
                 {error && <p className="text-xs text-danger">{error}</p>}
@@ -218,12 +218,12 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={`Search ${mode === "staff" ? "staff by name or staff ID" : "students by name"}…`}
-                    className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:border-royal focus:outline-none"
                   />
                   {searchResults.length > 0 && (
-                    <ul className="absolute z-10 mt-1 w-full rounded-xl border border-line bg-white shadow-xl max-h-44 overflow-y-auto">
+                    <ul className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card shadow-xl max-h-44 overflow-y-auto">
                       {searchResults.map((r) => (
-                        <li key={r.id} className="border-b border-line last:border-0">
+                        <li key={r.id} className="border-b border-border last:border-0">
                           <button
                             type="button"
                             onClick={() => addSystemMember(r.id)}
@@ -231,7 +231,7 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                             className="w-full text-left px-4 py-2.5 hover:bg-royal-50 flex items-center justify-between gap-2"
                           >
                             <div>
-                              <span className="text-sm font-medium text-ink">{r.name}</span>
+                              <span className="text-sm font-medium text-foreground">{r.name}</span>
                               <span className="ml-2 text-xs text-slate">{r.sub}</span>
                             </div>
                             <span className="text-xs text-royal shrink-0">+ Add</span>
@@ -259,7 +259,7 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                 ))}
               </div>
             ) : members.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center">
+              <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
                 <p className="text-sm text-slate">No members yet — add some above.</p>
               </div>
             ) : (
@@ -267,11 +267,11 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
                 {members.map((m) => {
                   const { name, sub } = memberLabel(m);
                   return (
-                    <li key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 py-3">
+                    <li key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="shrink-0"><MemberIcon m={m} /></span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">{name}</p>
+                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
                           {sub && <p className="text-xs text-slate truncate">{sub}</p>}
                         </div>
                       </div>
@@ -291,10 +291,10 @@ export default function GroupMemberPanel({ groupId, groupName, onClose, onChange
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-line bg-paper shrink-0">
+        <div className="px-5 py-4 border-t border-border bg-background shrink-0">
           <button
             onClick={onClose}
-            className="w-full rounded-lg border border-line text-sm font-semibold py-2.5 text-ink hover:bg-white transition-colors"
+            className="w-full rounded-lg border border-border text-sm font-semibold py-2.5 text-foreground hover:bg-card transition-colors"
           >
             Done
           </button>

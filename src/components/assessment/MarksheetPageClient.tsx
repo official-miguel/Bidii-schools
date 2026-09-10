@@ -60,10 +60,10 @@ export default function MarksheetPageClient({
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink dark:text-dark-text">
+          <h1 className="font-display text-xl font-semibold text-foreground">
             Mark Sheets
           </h1>
-          <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">
+          <p className="text-sm text-slate mt-0.5">
             {isHOD
               ? "Select an assignment from your classes or manage your department's mark sheets."
               : "Select an assignment below to open its mark sheet."}
@@ -72,14 +72,14 @@ export default function MarksheetPageClient({
 
         {/* HOD Tab Switch */}
         {isHOD && (
-          <div className="flex gap-0.5 rounded-xl border border-line bg-paper p-1 w-fit">
+          <div className="flex gap-0.5 rounded-xl border border-border bg-background p-1 w-fit">
             <button
               type="button"
               onClick={() => setLandingTab("my_classes")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 landingTab === "my_classes"
-                  ? "bg-white shadow-sm text-ink dark:bg-dark-surface dark:text-dark-text"
-                  : "text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                  ? "bg-card shadow-sm text-foreground"
+                  : "text-slate hover:text-foreground"
               }`}
             >
               <Users className="w-4 h-4 shrink-0" />
@@ -90,8 +90,8 @@ export default function MarksheetPageClient({
               onClick={() => setLandingTab("my_department")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 landingTab === "my_department"
-                  ? "bg-white shadow-sm text-ink dark:bg-dark-surface dark:text-dark-text"
-                  : "text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                  ? "bg-card shadow-sm text-foreground"
+                  : "text-slate hover:text-foreground"
               }`}
             >
               <Building2 className="w-4 h-4 shrink-0" />

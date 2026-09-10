@@ -20,8 +20,8 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import {
   Home,
   Users,
@@ -180,13 +180,12 @@ export default function HubSidebar({
       <aside
         aria-label="Main navigation"
         className="fixed top-0 left-0 h-screen w-16 hidden md:flex flex-col z-40
-                   bg-white border-r border-line
-                   dark:bg-dark-sidebar dark:border-dark-border"
+                   bg-card border-r border-border"
       >
         {/* Logo */}
         <div
           className="flex items-center justify-center shrink-0
-                      border-b border-line dark:border-dark-border"
+                      border-b border-border"
           style={{
             height: "calc(4rem + env(safe-area-inset-top, 0px))",
             paddingTop: "env(safe-area-inset-top, 0px)",
@@ -199,7 +198,7 @@ export default function HubSidebar({
             className="flex items-center justify-center h-10 w-10 rounded-lg
                        overflow-hidden hover:opacity-80 transition-opacity"
           >
-            <Image src="/logo.png" alt="Bidii KE" width={40} height={40} className="object-contain" />
+            <Logo height={40} width={40} alt="Bidii KE" className="object-contain" />
           </Link>
         </div>
 
@@ -230,7 +229,7 @@ export default function HubSidebar({
                     className={`relative flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
                       ${active
                         ? "bg-teal/10 text-teal"
-                        : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                        : "text-slate hover:bg-teal-50 hover:text-teal"
                       }`}
                   >
                     <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
@@ -252,7 +251,7 @@ export default function HubSidebar({
                     className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2
                                whitespace-nowrap rounded-md shadow-md bg-ink text-white text-xs font-medium
                                px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100
-                               z-50 dark:bg-dark-text dark:text-ink"
+                               z-50"
                   >
                     {label}
                     {hasBadge && unreadCount > 0 && (
@@ -283,7 +282,7 @@ export default function HubSidebar({
                     className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
                       ${active
                         ? "bg-teal/10 text-teal"
-                        : "text-slate hover:bg-teal-50 hover:text-teal dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text"
+                        : "text-slate hover:bg-teal-50 hover:text-teal"
                       }`}
                   >
                     <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
@@ -294,7 +293,7 @@ export default function HubSidebar({
                     className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2
                                whitespace-nowrap rounded-md shadow-md bg-ink text-white text-xs font-medium
                                px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100
-                               z-50 dark:bg-dark-text dark:text-ink"
+                               z-50"
                   >
                     {label}
                   </span>
@@ -305,7 +304,7 @@ export default function HubSidebar({
         </nav>
 
         {/* Bottom: avatar (links to profile) + logout */}
-        <div className="flex flex-col items-center gap-1 py-3 border-t border-line dark:border-dark-border">
+        <div className="flex flex-col items-center gap-1 py-3 border-t border-border">
           {/* Avatar — photo or initials, links to My Profile */}
           <div className="relative w-full flex justify-center group">
             <Link
@@ -335,7 +334,7 @@ export default function HubSidebar({
               className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2
                          whitespace-nowrap rounded-md shadow-md bg-ink text-white text-xs font-medium
                          px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100
-                         z-50 dark:bg-dark-text dark:text-ink"
+                         z-50"
             >
               My Profile
             </span>
@@ -348,8 +347,7 @@ export default function HubSidebar({
             aria-label="Sign out"
             title="Sign out"
             className="flex items-center justify-center w-11 h-11 rounded-lg text-slate
-                       hover:bg-danger/10 hover:text-danger transition-colors duration-100
-                       dark:text-dark-muted dark:hover:bg-danger/10 dark:hover:text-danger"
+                       hover:bg-danger/10 hover:text-danger transition-colors duration-100 dark:hover:bg-danger/10 dark:hover:text-danger"
           >
             <LogOut className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
           </button>

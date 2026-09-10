@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
@@ -46,7 +46,7 @@ export default async function TeacherAttendancePage() {
       <div>
         <ContextNavigation items={navItems} />
         <PageHeader title="Attendance" />
-        <p className="text-slate text-sm dark:text-dark-muted">
+        <p className="text-slate text-sm">
           Attendance is available once you have been assigned to teach a class.
           You aren&apos;t assigned to any class yet — ask the principal to assign you one first.
         </p>
@@ -72,7 +72,7 @@ export default async function TeacherAttendancePage() {
       <div className="space-y-8">
         {/* ── Overview strip at the top ──────────────────────────────── */}
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">
+          <h2 className="text-base font-semibold text-foreground mb-3">
             Today at a glance
           </h2>
           <TeacherAttendanceOverview
@@ -83,7 +83,7 @@ export default async function TeacherAttendancePage() {
 
         {/* ── Attendance submission / review tabs ───────────────────── */}
         <div>
-          <h2 className="text-base font-semibold text-ink mb-3 dark:text-dark-text">
+          <h2 className="text-base font-semibold text-foreground mb-3">
             {isClassTeacher ? "Take or receive attendance" : "Review attendance"}
           </h2>
           <AttendancePageTabs
@@ -95,10 +95,10 @@ export default async function TeacherAttendancePage() {
 
         {/* ── Analytics below attendance ────────────────────────────── */}
         <div>
-          <h2 className="text-base font-semibold text-ink mb-1 dark:text-dark-text">
+          <h2 className="text-base font-semibold text-foreground mb-1">
             Attendance analytics
           </h2>
-          <p className="text-slate text-sm mb-3 dark:text-dark-muted">
+          <p className="text-slate text-sm mb-3">
             Analyse attendance trends for your classes over a selected period.
           </p>
           <AttendanceAnalytics classIds={taughtClassIds} />

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
@@ -46,7 +46,7 @@ export default function DiaryFilters({ activeType }: DiaryFiltersProps) {
           className={`px-3 py-1 rounded-full text-xs font-medium transition-colors min-h-[32px]
             ${active === value
               ? "bg-teal text-white"
-              : "bg-line text-slate hover:bg-teal/10 hover:text-teal dark:bg-dark-border dark:text-dark-muted dark:hover:bg-teal/20 dark:hover:text-teal"
+              : "bg-line text-slate hover:bg-teal/10 hover:text-teal dark:hover:bg-teal/20 dark:hover:text-teal"
             }`}
         >
           {label}

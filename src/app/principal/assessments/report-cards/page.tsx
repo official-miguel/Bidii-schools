@@ -35,7 +35,7 @@ export default async function ReportCardsPage({
   if (allClasses.length === 0) {
     return (
       <div>
-        <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
           No classes found. Add classes first.
         </div>
       </div>
@@ -84,7 +84,7 @@ export default async function ReportCardsPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">Report Cards</h1>
+          <h1 className="font-display text-xl font-semibold text-foreground">Report Cards</h1>
           <p className="text-sm text-slate mt-0.5">
             Select a class and period to view individual student reports.
           </p>
@@ -138,10 +138,10 @@ export default async function ReportCardsPage({
             </Link>
           </div>
 
-          <div className="bg-white border border-line rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-paper text-left text-xs text-slate">
+                <tr className="border-b border-border bg-background text-left text-xs text-slate">
                   <th className="px-4 py-3 font-medium">Adm. No.</th>
                   <th className="px-4 py-3 font-medium">Student</th>
                   <th className="px-4 py-3 font-medium text-right">Action</th>
@@ -151,12 +151,12 @@ export default async function ReportCardsPage({
                 {students.map((s) => {
                   const canView = canGenerateReportCard(actor, classId);
                   return (
-                    <tr key={s.id} className="border-b border-line last:border-0 hover:bg-paper/40">
+                    <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background/40">
                       <td className="px-4 py-3 text-slate tabular-nums">{s.admissionNumber}</td>
                       <td className="px-4 py-3 font-medium">
                         <Link
                           href={`/principal/students/${s.id}`}
-                          className="text-ink hover:text-royal hover:underline"
+                          className="text-foreground hover:text-royal hover:underline"
                         >
                           {s.fullName}
                         </Link>

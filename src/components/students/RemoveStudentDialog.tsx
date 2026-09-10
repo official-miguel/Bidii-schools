@@ -130,8 +130,8 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
       {/* Dialog panel */}
       <div
         className="relative w-full sm:max-w-md
-                   bg-white rounded-t-2xl sm:rounded-2xl
-                   border border-line shadow-xl
+                   bg-card rounded-t-2xl sm:rounded-2xl
+                   border border-border shadow-xl
                    flex flex-col max-h-[92dvh]
                    modal-content"
         role="dialog"
@@ -146,14 +146,14 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-3 px-6 pt-5 pb-4
-                        border-b border-line shrink-0">
+                        border-b border-border shrink-0">
           <div>
             <h2 id="remove-dialog-title"
-                className="text-base font-semibold text-ink leading-snug">
+                className="text-base font-semibold text-foreground leading-snug">
               Remove Student
             </h2>
             <p className="mt-1 text-sm text-slate">
-              <span className="font-medium text-ink">{student.fullName}</span>
+              <span className="font-medium text-foreground">{student.fullName}</span>
               {" · "}
               <span className="font-mono text-xs">{student.admissionNumber}</span>
               {student.className && <>{" · "}{student.className}</>}
@@ -164,7 +164,7 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
             onClick={onClose}
             aria-label="Close"
             className="flex items-center justify-center h-11 w-11 sm:h-8 sm:w-8
-                       rounded-lg text-slate hover:text-ink hover:bg-paper
+                       rounded-lg text-slate hover:text-foreground hover:bg-background
                        transition-colors shrink-0 -mr-2 -mt-1"
           >
             <X className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -195,8 +195,8 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
                 type="button"
                 onClick={handleTransfer}
                 disabled={loading}
-                className="w-full group flex items-start gap-4 rounded-xl border border-line
-                           bg-white hover:border-teal/40 hover:bg-teal-50/30
+                className="w-full group flex items-start gap-4 rounded-xl border border-border
+                           bg-card hover:border-teal/40 hover:bg-teal-50/30
                            px-4 py-4 text-left transition-all duration-100
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -205,7 +205,7 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
                   <ArrowLeftRight className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-ink group-hover:text-teal
+                  <p className="text-sm font-semibold text-foreground group-hover:text-teal
                                 transition-colors">
                     Transfer Student
                   </p>
@@ -224,8 +224,8 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
                 type="button"
                 onClick={() => { setError(null); setStep("expel"); }}
                 disabled={loading}
-                className="w-full group flex items-start gap-4 rounded-xl border border-line
-                           bg-white hover:border-danger/30 hover:bg-danger-bg/20
+                className="w-full group flex items-start gap-4 rounded-xl border border-border
+                           bg-card hover:border-danger/30 hover:bg-danger-bg/20
                            px-4 py-4 text-left transition-all duration-100
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -234,7 +234,7 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
                   <UserX className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-ink group-hover:text-danger
+                  <p className="text-sm font-semibold text-foreground group-hover:text-danger
                                 transition-colors">
                     Expel Student
                   </p>
@@ -296,7 +296,7 @@ export default function RemoveStudentDialog({ student, onClose, onSuccess }: Pro
         </div>
 
         {/* ── Footer ── */}
-        <div className="shrink-0 border-t border-line bg-paper px-6 py-4
+        <div className="shrink-0 border-t border-border bg-background px-6 py-4
                         rounded-b-2xl sm:rounded-b-2xl">
           {step === "choose" ? (
             <button

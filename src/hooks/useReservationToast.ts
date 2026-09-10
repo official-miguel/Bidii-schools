@@ -40,8 +40,8 @@ function showReservationToast(payload: ReservationActivatedPayload, durationMs =
     "right:1.5rem",
     "z-index:9999",
     "max-width:22rem",
-    "background:var(--color-surface,#fff)",
-    "border:1px solid var(--color-border,#e5e7eb)",
+    "background:var(--color-card,#FFFFFF)",
+    "border:1px solid var(--color-border,#E8EDF2)",
     "border-radius:0.75rem",
     "box-shadow:0 4px 24px rgba(0,0,0,0.10)",
     "padding:0.875rem 1rem",
@@ -53,16 +53,16 @@ function showReservationToast(payload: ReservationActivatedPayload, durationMs =
   ].join(";");
 
   const title = document.createElement("div");
-  title.style.cssText = "font-weight:600;font-size:0.875rem;color:var(--color-text,#111827)";
+  title.style.cssText = "font-weight:600;font-size:0.875rem;color:var(--color-card-foreground,#1F2933)";
   title.textContent = "Book Ready for Pickup";
 
   const desc = document.createElement("div");
-  desc.style.cssText = "font-size:0.8125rem;color:var(--color-text-muted,#6b7280)";
+  desc.style.cssText = "font-size:0.8125rem;color:var(--color-muted-foreground,#667085)";
   desc.textContent = `"${payload.title}" is now reserved for ${payload.studentName ?? "a waiting patron"}.`;
 
   const link = document.createElement("a");
   link.href = "/staff/library/reservations";
-  link.style.cssText = "font-size:0.8125rem;font-weight:500;color:var(--color-primary,#2563eb);text-decoration:none;margin-top:0.25rem";
+  link.style.cssText = "font-size:0.8125rem;font-weight:500;color:var(--color-primary,#2C7F7E);text-decoration:none;margin-top:0.25rem";
   link.textContent = "View reservations →";
 
   const closeBtn = document.createElement("button");

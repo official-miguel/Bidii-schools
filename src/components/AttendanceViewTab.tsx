@@ -96,7 +96,7 @@ export default function AttendanceViewTab({
   if (!selected) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-slate dark:text-dark-muted">
+        <p className="text-sm text-slate">
           Select a class to view its attendance records.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,15 +108,15 @@ export default function AttendanceViewTab({
               className={`flex items-center gap-3 p-5 rounded-xl border text-left transition-all duration-150 hover:border-teal/40 hover:shadow-sm
                 ${
                   cls.id === classTeacherOfId
-                    ? "bg-teal/5 border-teal/30 dark:bg-teal/10"
-                    : "bg-white border-line dark:bg-dark-surface dark:border-dark-border"
+                    ? "bg-teal/5 border-teal/30"
+                    : "bg-card border-border"
                 }`}
             >
               <div className="w-10 h-10 rounded-lg bg-teal/10 text-teal flex items-center justify-center shrink-0">
                 <Users className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {cls.name}
                 </p>
                 {cls.id === classTeacherOfId && (
@@ -148,13 +148,13 @@ export default function AttendanceViewTab({
           All classes
         </button>
         <span className="text-slate">/</span>
-        <span className="text-sm font-semibold text-ink dark:text-dark-text">{selected.name}</span>
+        <span className="text-sm font-semibold text-foreground">{selected.name}</span>
       </div>
 
       {/* Daily register */}
-      <div className="bg-white dark:bg-dark-surface border border-line dark:border-dark-border rounded-xl p-5 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h3 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Calendar className="h-4 w-4 text-teal" />
             Daily Register
           </h3>
@@ -163,7 +163,7 @@ export default function AttendanceViewTab({
             value={date}
             max={today()}
             onChange={(e) => setDate(e.target.value)}
-            className="text-sm border border-line rounded-lg px-3 py-1.5 text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+            className="text-sm border border-border rounded-lg px-3 py-1.5 text-foreground"
           />
         </div>
 
@@ -174,7 +174,7 @@ export default function AttendanceViewTab({
         {rosterLoading ? (
           <p className="text-sm text-slate">Loading…</p>
         ) : roster.length === 0 ? (
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             No attendance recorded for this date.
           </p>
         ) : (
@@ -184,10 +184,10 @@ export default function AttendanceViewTab({
               <span className="text-danger font-semibold">{absentCount} absent</span>
               <span className="text-slate">{roster.length} total</span>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-line dark:border-dark-border">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-sm min-w-[400px]">
                 <thead>
-                  <tr className="border-b border-line dark:border-dark-border bg-slate-50/80 dark:bg-dark-border/40 text-xs font-semibold text-slate uppercase tracking-wide">
+                  <tr className="border-b border-border bg-slate-50/80/40 text-xs font-semibold text-slate uppercase tracking-wide">
                     <th className="px-4 py-3 text-left w-[120px]">Adm. No.</th>
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left w-[100px]">Status</th>
@@ -197,15 +197,15 @@ export default function AttendanceViewTab({
                   {roster.map((r) => (
                     <tr
                       key={r.studentId}
-                      className={`border-b border-line dark:border-dark-border last:border-0
+                      className={`border-b border-border last:border-0
                         ${r.present ? "" : "bg-danger-bg/20 dark:bg-danger/5"}`}
                     >
                       <td className="px-4 py-3">
-                        <span className="text-xs font-mono text-slate bg-slate-50 dark:bg-dark-border border border-line dark:border-dark-border rounded px-1.5 py-0.5">
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
                           {r.admissionNumber}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-ink dark:text-dark-text">
+                      <td className="px-4 py-3 font-medium text-foreground">
                         {r.fullName}
                       </td>
                       <td className="px-4 py-3">
@@ -225,9 +225,9 @@ export default function AttendanceViewTab({
       </div>
 
       {/* Trend chart */}
-      <div className="bg-white dark:bg-dark-surface border border-line dark:border-dark-border rounded-xl p-5 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h3 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-teal" />
             Attendance Trend
           </h3>
@@ -237,7 +237,7 @@ export default function AttendanceViewTab({
               value={trendFrom}
               max={trendTo}
               onChange={(e) => setTrendFrom(e.target.value)}
-              className="border border-line rounded px-2 py-1 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="border border-border rounded px-2 py-1"
             />
             <span>to</span>
             <input
@@ -245,7 +245,7 @@ export default function AttendanceViewTab({
               value={trendTo}
               max={today()}
               onChange={(e) => setTrendTo(e.target.value)}
-              className="border border-line rounded px-2 py-1 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+              className="border border-border rounded px-2 py-1"
             />
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function AttendanceViewTab({
         {trendLoading ? (
           <p className="text-sm text-slate">Loading trend…</p>
         ) : trend.length === 0 ? (
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             No attendance data for this range.
           </p>
         ) : (

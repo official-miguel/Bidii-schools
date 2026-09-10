@@ -20,7 +20,7 @@ const DOW = ["M", "T", "W", "T", "F", "S", "S"] as const;
 function DayCell({ status }: { status: AttendanceDay["status"] | null; day?: number }) {
   if (!status) {
     return (
-      <div className="w-8 h-8 flex items-center justify-center text-[11px] text-slate/30 dark:text-dark-muted/30">
+      <div className="w-8 h-8 flex items-center justify-center text-[11px] text-slate/30/30">
         –
       </div>
     );
@@ -30,7 +30,7 @@ function DayCell({ status }: { status: AttendanceDay["status"] | null; day?: num
 
   if (status === "NO_SCHOOL") {
     return (
-      <div className={`${base} text-slate/30 dark:text-dark-muted/30`} title="No school">
+      <div className={`${base} text-slate/30/30`} title="No school">
         –
       </div>
     );
@@ -108,11 +108,10 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
   return (
     <section
       aria-labelledby="att-calendar-heading"
-      className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                 dark:border-dark-border shadow-xs overflow-hidden"
+      className="rounded-2xl bg-card border border-border shadow-xs overflow-hidden"
     >
       <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
-        <h2 id="att-calendar-heading" className="text-sm sm:text-base font-semibold text-ink dark:text-dark-text">
+        <h2 id="att-calendar-heading" className="text-sm sm:text-base font-semibold text-foreground">
           Attendance – Last 30 days
         </h2>
         <Link href={viewHref} className="text-xs font-medium text-teal hover:underline whitespace-nowrap">
@@ -145,8 +144,8 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-x-3 gap-y-2 mt-3 pt-3 border-t border-line dark:border-dark-border">
-          <span className="flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted">
+        <div className="flex flex-wrap gap-x-3 gap-y-2 mt-3 pt-3 border-t border-border">
+          <span className="flex items-center gap-1.5 text-xs text-slate">
             <span className="w-5 h-5 rounded-full bg-[#EDFAF4] text-[#17B26A] flex items-center justify-center">
               <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6.5l3 3 6-6" />
@@ -154,7 +153,7 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
             </span>
             Present
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted">
+          <span className="flex items-center gap-1.5 text-xs text-slate">
             <span className="w-5 h-5 rounded-full bg-[#FEF3F2] text-[#F04438] flex items-center justify-center">
               <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" d="M2 2l8 8M10 2L2 10" />
@@ -162,7 +161,7 @@ export default function AttendanceCalendarGrid({ days, viewHref }: Props) {
             </span>
             Absent
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-slate dark:text-dark-muted">
+          <span className="flex items-center gap-1.5 text-xs text-slate">
             <span className="text-slate/30">–</span>
             No school
           </span>

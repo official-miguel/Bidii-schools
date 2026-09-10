@@ -113,7 +113,7 @@ export default function Modal({
           ref={contentRef}
           className={`
             relative w-full ${sizeClasses[size]} rounded-2xl
-            bg-card border border-line shadow-xl flex flex-col
+            bg-card border border-border shadow-xl flex flex-col
             ${isClosing ? "opacity-0 scale-95" : "modal-content"}
             transition-[opacity,transform] duration-200
           `}
@@ -139,7 +139,7 @@ export default function Modal({
           ref={contentRef}
           className={`
             relative w-full rounded-t-2xl
-            bg-card border-t border-line shadow-xl flex flex-col
+            bg-card border-t border-border shadow-xl flex flex-col
             max-h-[92dvh]
             ${isClosing ? "sheet-exit" : "sheet-enter"}
           `}
@@ -156,7 +156,7 @@ export default function Modal({
             onTouchEnd={onHandleTouchEnd}
             aria-hidden="true"
           >
-            <div className="w-10 h-1 rounded-full bg-line dark:bg-dark-border" />
+            <div className="w-10 h-1 rounded-full bg-line" />
           </div>
 
           <ModalInner
@@ -192,16 +192,16 @@ function ModalInner({
     <>
       {/* Header */}
       <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4
-                      border-b border-line shrink-0 dark:border-dark-border">
+                      border-b border-border shrink-0">
         <div className="min-w-0">
           <h2
             id="modal-title"
-            className="text-base font-semibold text-ink leading-snug dark:text-dark-text"
+            className="text-base font-semibold text-foreground leading-snug"
           >
             {title}
           </h2>
           {description && (
-            <p className="mt-1 text-sm text-slate leading-relaxed dark:text-dark-muted">
+            <p className="mt-1 text-sm text-slate leading-relaxed">
               {description}
             </p>
           )}
@@ -211,9 +211,9 @@ function ModalInner({
           onClick={onClose}
           aria-label="Close"
           className="flex items-center justify-center h-11 w-11 sm:h-8 sm:w-8
-                     rounded-lg text-slate hover:text-ink hover:bg-paper
+                     rounded-lg text-slate hover:text-foreground hover:bg-background
                      transition-colors shrink-0 -mr-2 -mt-1
-                     dark:hover:bg-dark-border dark:hover:text-dark-text"
+                    "
         >
           <X className="h-5 w-5 sm:h-4 sm:w-4" />
         </button>
@@ -226,8 +226,8 @@ function ModalInner({
 
       {/* Footer (sticky) */}
       {footer && (
-        <div className="shrink-0 border-t border-line bg-paper px-6 py-4
-                        rounded-b-2xl dark:border-dark-border dark:bg-dark-bg">
+        <div className="shrink-0 border-t border-border bg-background px-6 py-4
+                        rounded-b-2xl">
           {footer}
         </div>
       )}

@@ -5,20 +5,10 @@
 
 import React from 'react';
 import { View, Text, ViewStyle, TextStyle } from 'react-native';
-import { Colors, Radius, Typography } from '@/constants';
+import { Radius, Typography } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 export type BadgeVariant = 'success' | 'warn' | 'danger' | 'info' | 'default';
-
-const VARIANT_STYLES: Record<
-  BadgeVariant,
-  { bg: string; text: string; border: string }
-> = {
-  success: { bg: Colors.successBg, text: Colors.success,   border: Colors.success },
-  warn:    { bg: Colors.warnBg,    text: Colors.warn,       border: Colors.warn },
-  danger:  { bg: Colors.dangerBg,  text: Colors.danger,     border: Colors.danger },
-  info:    { bg: Colors.infoBg,    text: Colors.info,       border: Colors.info },
-  default: { bg: Colors.line,      text: Colors.slateText,  border: Colors.line },
-};
 
 interface BadgeProps {
   label: string;
@@ -29,17 +19,29 @@ interface BadgeProps {
 }
 
 export function Badge({ label, variant = 'default', size = 'md', style, textStyle }: BadgeProps) {
-  const colors = VARIANT_STYLES[variant];
+  const { colors } = useTheme();
+
+  // Variant colors — semantic status tokens where available, static brand tokens for info
+  const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
+    success: { bg: colors.success,     text: colors.successForeground,     border: colors.successForeground },
+    warn:    { bg: colors.warn,        text: colors.warnForeground,        border: colors.warnForeground },
+    danger:  { bg: colors.destructive + '15', text: colors.destructive,    border: colors.destructive },
+    // info: uses primary as accent on muted surface — adapts correctly in both themes
+    info:    { bg: colors.muted,        text: colors.primary,               border: colors.primary },
+    default: { bg: colors.muted,       text: colors.mutedForeground,       border: colors.border },
+  };
+
+  const badgeColors = VARIANT_STYLES[variant];
   const isSmall = size === 'sm';
 
   return (
     <View
       style={[
         {
-          backgroundColor: colors.bg,
+          backgroundColor: badgeColors.bg,
           borderRadius: Radius.full,
           borderWidth: 1,
-          borderColor: colors.border + '40', // 25% opacity border
+          borderColor: badgeColors.border + '40', // 25% opacity border
           paddingHorizontal: isSmall ? 6 : 8,
           paddingVertical: isSmall ? 1 : 2,
           alignSelf: 'flex-start',
@@ -50,8 +52,8 @@ export function Badge({ label, variant = 'default', size = 'md', style, textStyl
       <Text
         style={[
           {
-            color: colors.text,
-            fontSize: isSmall ? Typography.fontSize.xs : Typography.fontSize.xs,
+            color: badgeColors.text,
+            fontSize: Typography.fontSize.xs,
             fontWeight: Typography.fontWeight.semibold,
           },
           textStyle,

@@ -26,13 +26,15 @@ import {
   ScreenHeader, Card, StatCard, ErrorBanner, Badge, EmptyState,
 } from '@/components/ui';
 import { api, LibraryAnalytics } from '@/services/api';
-import { Colors, Spacing, Typography, Radius, ConditionColors } from '@/constants';
+import { Spacing, Typography, Radius, ConditionColors } from '@/constants';
 import { formatCurrency, truncate, conditionLabel } from '@/lib/utils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useTheme();
 
   const [data,      setData]      = useState<LibraryAnalytics | null>(null);
   const [loading,   setLoading]   = useState(true);
@@ -53,58 +55,58 @@ export default function AnalyticsScreen() {
   const o = data?.overview;
 
   return (
-    <View style={{ flex:1, backgroundColor: Colors.paper }}>
+    <View style={{ flex:1, backgroundColor: colors.background }}>
       <ScreenHeader
         title="Analytics"
         subtitle="Library performance"
         right={
           <TouchableOpacity onPress={() => { setRefreshing(true); load(); }} style={{ padding: Spacing[1] }}>
-            <RefreshCw size={20} color={Colors.white} />
+            <RefreshCw size={20} color={'#FFFFFF'} />
           </TouchableOpacity>
         }
       />
 
       {loading && !refreshing ? (
         <View style={{ flex:1, alignItems:'center', justifyContent:'center' }}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ScrollView
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
           contentContainerStyle={{ padding: Spacing[4], gap: Spacing[4], paddingBottom: insets.bottom + Spacing[8] }}
         >
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
           {/* ── Overview stats ──────────────────────────────────────── */}
           <View>
-            <SectionTitle icon={<BookOpen size={14} color={Colors.teal} />}>Collection</SectionTitle>
+            <SectionTitle icon={<BookOpen size={14} color={colors.primary} />} colors={colors}>Collection</SectionTitle>
             <View style={{ flexDirection:'row', flexWrap:'wrap', gap: Spacing[2] }}>
               <StatCard label="Titles" value={o?.totalTitles ?? 0} icon={<BookOpen />} style={{ minWidth: '47%' }} loading={loading} />
               <StatCard label="Copies" value={o?.totalCopies ?? 0} icon={<BookOpen />} style={{ minWidth: '47%' }} loading={loading} />
-              <StatCard label="Available" value={o?.availableCopies ?? 0} icon={<BookOpen />} color={Colors.success} style={{ minWidth: '47%' }} loading={loading} />
-              <StatCard label="Borrowed" value={o?.borrowedCopies ?? 0} icon={<BookOpen />} color={Colors.info} style={{ minWidth: '47%' }} loading={loading} />
-              <StatCard label="Reserved" value={o?.reservedCopies ?? 0} icon={<BookOpen />} color={Colors.warn} style={{ minWidth: '47%' }} loading={loading} />
-              <StatCard label="Overdue" value={o?.overdueCount ?? 0} icon={<AlertTriangle />} color={Colors.danger} style={{ minWidth: '47%' }} loading={loading} />
+              <StatCard label="Available" value={o?.availableCopies ?? 0} icon={<BookOpen />} color={colors.successForeground} style={{ minWidth: '47%' }} loading={loading} />
+              <StatCard label="Borrowed" value={o?.borrowedCopies ?? 0} icon={<BookOpen />} color={'#2E90FA'} style={{ minWidth: '47%' }} loading={loading} />
+              <StatCard label="Reserved" value={o?.reservedCopies ?? 0} icon={<BookOpen />} color={colors.warnForeground} style={{ minWidth: '47%' }} loading={loading} />
+              <StatCard label="Overdue" value={o?.overdueCount ?? 0} icon={<AlertTriangle />} color={colors.destructive} style={{ minWidth: '47%' }} loading={loading} />
             </View>
           </View>
 
           {/* ── Borrower stats ──────────────────────────────────────── */}
           <View>
-            <SectionTitle icon={<Users size={14} color={Colors.teal} />}>Borrowers</SectionTitle>
+            <SectionTitle icon={<Users size={14} color={colors.primary} />} colors={colors}>Borrowers</SectionTitle>
             <View style={{ flexDirection:'row', gap: Spacing[2] }}>
               <StatCard label="Active Cards" value={o?.activeCards ?? 0} icon={<Users />} style={{ flex:1 }} loading={loading} />
-              <StatCard label="Active Borrowers" value={o?.activeBorrowers ?? 0} icon={<Users />} color={Colors.teal} style={{ flex:1 }} loading={loading} />
+              <StatCard label="Active Borrowers" value={o?.activeBorrowers ?? 0} icon={<Users />} color={colors.primary} style={{ flex:1 }} loading={loading} />
             </View>
           </View>
 
           {/* ── Fine KPIs ───────────────────────────────────────────── */}
           <View>
-            <SectionTitle icon={<DollarSign size={14} color={Colors.teal} />}>Fine KPIs</SectionTitle>
+            <SectionTitle icon={<DollarSign size={14} color={colors.primary} />} colors={colors}>Fine KPIs</SectionTitle>
             <View style={{ gap: Spacing[2] }}>
               <View style={{ flexDirection:'row', gap: Spacing[2] }}>
-                <FineKpiCard label="Generated" amount={data?.fineKpis.totalGenerated ?? 0} color={Colors.danger} />
-                <FineKpiCard label="Outstanding" amount={data?.fineKpis.totalOutstanding ?? 0} color={Colors.warn} />
-                <FineKpiCard label="Collected" amount={data?.fineKpis.totalPaid ?? 0} color={Colors.success} />
+                <FineKpiCard label="Generated" amount={data?.fineKpis.totalGenerated ?? 0} color={colors.destructive} colors={colors} />
+                <FineKpiCard label="Outstanding" amount={data?.fineKpis.totalOutstanding ?? 0} color={colors.warnForeground} colors={colors} />
+                <FineKpiCard label="Collected" amount={data?.fineKpis.totalPaid ?? 0} color={colors.successForeground} colors={colors} />
               </View>
             </View>
           </View>
@@ -112,13 +114,14 @@ export default function AnalyticsScreen() {
           {/* ── Borrow trend (last 30 days) ─────────────────────────── */}
           {data?.borrowTrend && data.borrowTrend.length > 0 && (
             <View>
-              <SectionTitle icon={<TrendingUp size={14} color={Colors.teal} />}>
+              <SectionTitle icon={<TrendingUp size={14} color={colors.primary} />} colors={colors}>
                 Borrow Trend (last {data.borrowTrend.length} days)
               </SectionTitle>
               <Card padding="none">
                 <MiniBarChart
                   data={data.borrowTrend.map(d => ({ label: d.date.slice(5), value: d.borrows }))}
-                  color={Colors.teal}
+                  color={colors.primary}
+                  mutedColor={colors.mutedForeground}
                 />
               </Card>
             </View>
@@ -127,29 +130,29 @@ export default function AnalyticsScreen() {
           {/* ── Top 10 borrowers ────────────────────────────────────── */}
           {data?.topBorrowers && data.topBorrowers.length > 0 && (
             <View>
-              <SectionTitle icon={<Award size={14} color={Colors.teal} />}>Top Borrowers</SectionTitle>
+              <SectionTitle icon={<Award size={14} color={colors.primary} />} colors={colors}>Top Borrowers</SectionTitle>
               <Card padding="none">
                 {data.topBorrowers.map((b, i) => (
                   <View key={b.studentId} style={{
                     flexDirection:'row', alignItems:'center', gap: Spacing[3],
                     padding: Spacing[3],
                     borderBottomWidth: i < data.topBorrowers.length - 1 ? 1 : 0,
-                    borderBottomColor: Colors.line,
+                    borderBottomColor: colors.border,
                   }}>
-                    <View style={{ width: 28, height: 28, borderRadius: Radius.full, backgroundColor: i < 3 ? Colors.teal50 : Colors.line, alignItems:'center', justifyContent:'center' }}>
-                      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: i < 3 ? Colors.teal : Colors.slateText }}>{i + 1}</Text>
+                    <View style={{ width: 28, height: 28, borderRadius: Radius.full, backgroundColor: i < 3 ? colors.primary + '15' : colors.border, alignItems:'center', justifyContent:'center' }}>
+                      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: i < 3 ? colors.primary : colors.mutedForeground }}>{i + 1}</Text>
                     </View>
                     <View style={{ flex:1 }}>
-                      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.ink }} numberOfLines={1}>{b.studentName}</Text>
-                      <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>{b.admissionNumber}</Text>
+                      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: colors.foreground }} numberOfLines={1}>{b.studentName}</Text>
+                      <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>{b.admissionNumber}</Text>
                     </View>
                     <View style={{ alignItems:'flex-end' }}>
-                      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.bold, color: Colors.teal }}>{b.borrowCount}</Text>
-                      <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted }}>borrows</Text>
+                      <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.bold, color: colors.primary }}>{b.borrowCount}</Text>
+                      <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>borrows</Text>
                     </View>
                     {b.averageGrade != null && (
-                      <View style={{ backgroundColor: Colors.successBg, paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full }}>
-                        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.success }}>
+                      <View style={{ backgroundColor: colors.success, paddingHorizontal: Spacing[2], paddingVertical:1, borderRadius: Radius.full }}>
+                        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.successForeground }}>
                           {b.averageGrade.toFixed(0)}%
                         </Text>
                       </View>
@@ -164,14 +167,14 @@ export default function AnalyticsScreen() {
           <View style={{ flexDirection:'row', gap: Spacing[3] }}>
             {data?.mostPopularTitles && data.mostPopularTitles.length > 0 && (
               <View style={{ flex:1 }}>
-                <SectionTitle icon={<TrendingUp size={14} color={Colors.teal} />}>Most Popular</SectionTitle>
-                <TitleList titles={data.mostPopularTitles} />
+                <SectionTitle icon={<TrendingUp size={14} color={colors.primary} />} colors={colors}>Most Popular</SectionTitle>
+                <TitleList titles={data.mostPopularTitles} colors={colors} />
               </View>
             )}
             {data?.leastPopularTitles && data.leastPopularTitles.length > 0 && (
               <View style={{ flex:1 }}>
-                <SectionTitle icon={<BarChart3 size={14} color={Colors.slateText} />}>Least Popular</SectionTitle>
-                <TitleList titles={data.leastPopularTitles} dim />
+                <SectionTitle icon={<BarChart3 size={14} color={colors.mutedForeground} />} colors={colors}>Least Popular</SectionTitle>
+                <TitleList titles={data.leastPopularTitles} dim colors={colors} />
               </View>
             )}
           </View>
@@ -180,8 +183,8 @@ export default function AnalyticsScreen() {
           {data?.neverBorrowedCount != null && (
             <Card>
               <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                <Text style={{ fontSize: Typography.fontSize.sm, color: Colors.ink }}>Never-borrowed titles</Text>
-                <Text style={{ fontSize: Typography.fontSize.xl, fontWeight: Typography.fontWeight.bold, color: Colors.slateText }}>
+                <Text style={{ fontSize: Typography.fontSize.sm, color: colors.foreground }}>Never-borrowed titles</Text>
+                <Text style={{ fontSize: Typography.fontSize.xl, fontWeight: Typography.fontWeight.bold, color: colors.mutedForeground }}>
                   {data.neverBorrowedCount}
                 </Text>
               </View>
@@ -191,19 +194,19 @@ export default function AnalyticsScreen() {
           {/* ── Condition distribution ───────────────────────────────── */}
           {data?.conditionDistribution && data.conditionDistribution.length > 0 && (
             <View>
-              <SectionTitle icon={<BookOpen size={14} color={Colors.teal} />}>Copy Condition</SectionTitle>
+              <SectionTitle icon={<BookOpen size={14} color={colors.primary} />} colors={colors}>Copy Condition</SectionTitle>
               <Card>
                 {data.conditionDistribution.map(c => {
                   const total = data.conditionDistribution.reduce((s, x) => s + x.count, 0);
                   const pct   = total > 0 ? (c.count / total) * 100 : 0;
-                  const cols  = ConditionColors[c.condition] || { bg: Colors.line, text: Colors.slateText };
+                  const cols  = ConditionColors[c.condition] || { bg: colors.border, text: colors.mutedForeground };
                   return (
                     <View key={c.condition} style={{ marginBottom: Spacing[3] }}>
                       <View style={{ flexDirection:'row', justifyContent:'space-between', marginBottom: Spacing[1] }}>
-                        <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>{conditionLabel(c.condition)}</Text>
-                        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }}>{c.count} ({pct.toFixed(0)}%)</Text>
+                        <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>{conditionLabel(c.condition)}</Text>
+                        <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }}>{c.count} ({pct.toFixed(0)}%)</Text>
                       </View>
-                      <View style={{ height: 6, borderRadius: Radius.full, backgroundColor: Colors.line, overflow:'hidden' }}>
+                      <View style={{ height: 6, borderRadius: Radius.full, backgroundColor: colors.border, overflow:'hidden' }}>
                         <View style={{ height: 6, width: `${pct}%`, borderRadius: Radius.full, backgroundColor: cols.text }} />
                       </View>
                     </View>
@@ -220,21 +223,23 @@ export default function AnalyticsScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: string }) {
+import type { ColorTokens } from '@/constants';
+
+function SectionTitle({ icon, children, colors }: { icon?: React.ReactNode; children: string; colors: ColorTokens }) {
   return (
     <View style={{ flexDirection:'row', alignItems:'center', gap: Spacing[2], marginBottom: Spacing[2] }}>
       {icon}
-      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform:'uppercase', letterSpacing:0.8 }}>
+      <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform:'uppercase', letterSpacing:0.8 }}>
         {children}
       </Text>
     </View>
   );
 }
 
-function FineKpiCard({ label, amount, color }: { label: string; amount: number; color: string }) {
+function FineKpiCard({ label, amount, color, colors }: { label: string; amount: number; color: string; colors: ColorTokens }) {
   return (
-    <View style={{ flex:1, backgroundColor: Colors.card, borderRadius: Radius.card, borderWidth:1, borderColor: Colors.line, padding: Spacing[3], alignItems:'center' }}>
-      <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText, marginBottom: Spacing[1] }}>{label}</Text>
+    <View style={{ flex:1, backgroundColor: colors.card, borderRadius: Radius.card, borderWidth:1, borderColor: colors.border, padding: Spacing[3], alignItems:'center' }}>
+      <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginBottom: Spacing[1] }}>{label}</Text>
       <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.bold, color }} numberOfLines={1}>
         {formatCurrency(amount)}
       </Text>
@@ -242,7 +247,7 @@ function FineKpiCard({ label, amount, color }: { label: string; amount: number; 
   );
 }
 
-function MiniBarChart({ data, color }: { data: { label: string; value: number }[]; color: string }) {
+function MiniBarChart({ data, color, mutedColor }: { data: { label: string; value: number }[]; color: string; mutedColor: string }) {
   const max = Math.max(...data.map(d => d.value), 1);
   const last7 = data.slice(-14); // show last 14 days for readability
   return (
@@ -256,7 +261,7 @@ function MiniBarChart({ data, color }: { data: { label: string; value: number }[
       </View>
       <View style={{ flexDirection:'row', marginTop: Spacing[1] }}>
         {last7.map((d, i) => (
-          <Text key={i} style={{ flex:1, fontSize: 8, color: Colors.muted, textAlign:'center' }} numberOfLines={1}>
+          <Text key={i} style={{ flex:1, fontSize: 8, color: mutedColor, textAlign:'center' }} numberOfLines={1}>
             {d.label.slice(3)}
           </Text>
         ))}
@@ -265,7 +270,7 @@ function MiniBarChart({ data, color }: { data: { label: string; value: number }[
   );
 }
 
-function TitleList({ titles, dim = false }: { titles: { catalogueId: string; title: string; borrowCount: number }[]; dim?: boolean }) {
+function TitleList({ titles, dim = false, colors }: { titles: { catalogueId: string; title: string; borrowCount: number }[]; dim?: boolean; colors: ColorTokens }) {
   return (
     <Card padding="none">
       {titles.slice(0, 5).map((t, i) => (
@@ -273,12 +278,12 @@ function TitleList({ titles, dim = false }: { titles: { catalogueId: string; tit
           flexDirection:'row', alignItems:'center', gap: Spacing[2],
           padding: Spacing[3],
           borderBottomWidth: i < Math.min(titles.length, 5) - 1 ? 1 : 0,
-          borderBottomColor: Colors.line,
+          borderBottomColor: colors.border,
         }}>
-          <Text style={{ flex:1, fontSize: Typography.fontSize.xs, color: dim ? Colors.slateText : Colors.ink }} numberOfLines={2}>
+          <Text style={{ flex:1, fontSize: Typography.fontSize.xs, color: dim ? colors.mutedForeground : colors.foreground }} numberOfLines={2}>
             {t.title}
           </Text>
-          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: dim ? Colors.muted : Colors.teal }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.bold, color: dim ? colors.mutedForeground : colors.primary }}>
             {t.borrowCount}
           </Text>
         </View>

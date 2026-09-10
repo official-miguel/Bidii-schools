@@ -45,7 +45,7 @@ export default function StudentAnalyticsPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Student Reading Analytics</h1>
+          <h1 className="text-xl font-bold text-foreground">Student Reading Analytics</h1>
           <p className="text-sm text-slate mt-0.5">Active borrowers, reading frequency, overdue patterns and never-borrowed students.</p>
         </div>
         <WindowSelector value={days} onChange={setDays} />
@@ -76,7 +76,7 @@ export default function StudentAnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Section title="Most Active Students (Detailed)"
               action={<button className={secondaryButtonClass + " text-xs"} onClick={() => exportToCSV(data.borrowing.topStudents.map(s => ({ name: s.fullName, admissionNumber: s.admissionNumber, class: s.className, borrows: s.count })), "active-students.csv")}>Export CSV</button>}>
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topStudents.map((s, i) => (
                   <RankRow key={s.studentId} rank={i+1} primary={s.fullName}
                     secondary={`${s.admissionNumber} · ${s.className}`}
@@ -87,7 +87,7 @@ export default function StudentAnalyticsPage() {
 
             <Section title="Repeat Overdue Borrowers" description="Students with 2+ unreturned overdue books.">
               {data.students.repeatOffenders.length === 0
-                ? <p className="text-sm text-slate py-8 text-center rounded-xl border border-line bg-white">No repeat offenders — great discipline!</p>
+                ? <p className="text-sm text-slate py-8 text-center rounded-xl border border-border bg-card">No repeat offenders — great discipline!</p>
                 : (
                   <div className="rounded-xl border border-danger/20 bg-danger-bg/10 overflow-hidden">
                     {data.students.repeatOffenders.map((s, i) => (
@@ -101,7 +101,7 @@ export default function StudentAnalyticsPage() {
           </div>
 
           <Section title="Class Reading Rankings">
-            <div className="rounded-xl border border-line bg-white overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
               {data.borrowing.topClasses.map((c, i) => (
                 <RankRow key={c.classId} rank={i+1} primary={c.className} value={c.count} valueLabel="borrows" highlight={i===0} />
               ))}

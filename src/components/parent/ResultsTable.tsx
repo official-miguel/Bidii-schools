@@ -16,10 +16,10 @@ interface ResultsTableProps {
 export default function ResultsTable({ results }: ResultsTableProps) {
   if (results.length === 0) {
     return (
-      <div className="bg-card border border-line rounded-xl p-8 text-center dark:bg-dark-surface dark:border-dark-border">
+      <div className="bg-card border border-border rounded-xl p-8 text-center">
         <p className="text-3xl mb-3">📊</p>
-        <p className="text-sm font-medium text-ink dark:text-dark-text">No results yet</p>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <p className="text-sm font-medium text-foreground">No results yet</p>
+        <p className="text-sm text-slate mt-1">
           Results and report cards will appear here.
         </p>
       </div>
@@ -31,15 +31,15 @@ export default function ResultsTable({ results }: ResultsTableProps) {
       {results.map(({ period, items, stats }) => (
         <div
           key={period.id}
-          className="bg-card border border-line rounded-xl shadow-xs overflow-hidden dark:bg-dark-surface dark:border-dark-border"
+          className="bg-card border border-border rounded-xl shadow-xs overflow-hidden"
         >
           {/* Period header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-line dark:border-dark-border">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div>
-              <h3 className="text-sm font-semibold text-ink dark:text-dark-text">
+              <h3 className="text-sm font-semibold text-foreground">
                 {period.name}
               </h3>
-              <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+              <p className="text-xs text-slate mt-0.5">
                 {period.academicYear}
                 {period.term != null ? ` · Term ${period.term}` : ""}
               </p>
@@ -49,8 +49,8 @@ export default function ResultsTable({ results }: ResultsTableProps) {
             {stats != null && (
               <div className="flex items-center gap-3 text-right">
                 <div>
-                  <p className="text-xs text-slate dark:text-dark-muted">Mean</p>
-                  <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                  <p className="text-xs text-slate">Mean</p>
+                  <p className="text-sm font-semibold text-foreground">
                     {stats.mean}
                   </p>
                 </div>
@@ -72,12 +72,12 @@ export default function ResultsTable({ results }: ResultsTableProps) {
           {/* Items table */}
           {items.length === 0 ? (
             <div className="px-5 py-6 text-center">
-              <p className="text-sm text-slate dark:text-dark-muted">
+              <p className="text-sm text-slate">
                 No results recorded yet.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-line dark:divide-dark-border">
+            <div className="divide-y divide-border ">
               {items.map((item) => (
                 <div
                   key={item.id}
@@ -85,11 +85,11 @@ export default function ResultsTable({ results }: ResultsTableProps) {
                 >
                   {/* Subject name */}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-ink dark:text-dark-text truncate">
+                    <p className="text-sm text-foreground truncate">
                       {item.subject?.name ?? "—"}
                     </p>
                     {item.comment && (
-                      <p className="text-xs text-slate dark:text-dark-muted mt-0.5 truncate">
+                      <p className="text-xs text-slate mt-0.5 truncate">
                         {item.comment}
                       </p>
                     )}
@@ -148,7 +148,7 @@ function ResultBadge({ item }: { item: ItemShape }) {
     );
   }
 
-  return <span className="text-xs text-slate dark:text-dark-muted">—</span>;
+  return <span className="text-xs text-slate">—</span>;
 }
 
 function formatPerformanceLevel(level: string): string {

@@ -1,11 +1,12 @@
 /**
- * Card — white card surface with border and optional shadow.
- * Matches web's `bg-card border border-line rounded-xl` pattern.
+ * Card — themed card surface with border and optional shadow.
+ * Matches web's `bg-card border border-border rounded-xl` pattern.
  */
 
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
-import { Colors, Radius, Shadows, Spacing } from '@/constants';
+import { Radius, Shadows, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface CardProps {
   children: React.ReactNode;
@@ -22,14 +23,16 @@ export function Card({
   shadow = false,
   borderless = false,
 }: CardProps) {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
         {
-          backgroundColor: Colors.card,
+          backgroundColor: colors.card,
           borderRadius: Radius.card,
           padding: padding === 'none' ? 0 : (typeof padding === 'number' ? padding : Spacing[4]),
-          ...(borderless ? {} : { borderWidth: 1, borderColor: Colors.line }),
+          ...(borderless ? {} : { borderWidth: 1, borderColor: colors.border }),
           ...(shadow ? Shadows.sm : {}),
         },
         style,

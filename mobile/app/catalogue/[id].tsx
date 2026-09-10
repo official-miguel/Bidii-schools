@@ -21,14 +21,16 @@ import {
 } from '@/components/ui';
 import { BookListItem } from '@/components/library';
 import { api, CatalogueWithCopies, CopyRecord } from '@/services/api';
-import { Colors, Spacing, Typography, Radius, CopyStatusColors } from '@/constants';
+import { Spacing, Typography, Radius, CopyStatusColors } from '@/constants';
 import { isLibrarian, isPrincipal } from '@/lib/auth';
 import { formatDate, copyStatusLabel, conditionLabel } from '@/lib/utils';
+import { useTheme } from '@/lib/ThemeContext';
 
 export default function CatalogueDetailScreen() {
   const { id }     = useLocalSearchParams<{ id: string }>();
   const router     = useRouter();
   const { toastProps, show: showToast } = useToast();
+  const { colors } = useTheme();
   const canManage  = isLibrarian() || isPrincipal();
 
   const [catalogue, setCatalogue] = useState<CatalogueWithCopies | null>(null);
@@ -65,10 +67,10 @@ export default function CatalogueDetailScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenHeader title="Book Details" showBack />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={Colors.teal} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -76,7 +78,7 @@ export default function CatalogueDetailScreen() {
 
   if (error || !catalogue) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenHeader title="Book Details" showBack />
         <ErrorBanner message={error || 'Book not found'} style={{ margin: Spacing[4] }} />
       </View>
@@ -84,7 +86,7 @@ export default function CatalogueDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader
         title={catalogue.title}
         subtitle={catalogue.author ? `by ${catalogue.author}` : undefined}
@@ -95,81 +97,81 @@ export default function CatalogueDetailScreen() {
               onPress={() => router.push({ pathname: '/catalogue/new', params: { editId: id } })}
               style={{
                 width: 36, height: 36, borderRadius: Radius.button,
-                backgroundColor: Colors.white + '20',
+                backgroundColor: 'rgba(255,255,255,0.2)',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Edit2 size={18} color={Colors.white} />
+              <Edit2 size={18} color={'#FFFFFF'} />
             </TouchableOpacity>
           ) : undefined
         }
       />
 
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ padding: Spacing[4], gap: Spacing[4] }}
       >
         {/* ── Metadata card ─────────────────────────────────────────── */}
         <Card>
-          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.slateText, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
+          <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing[3] }}>
             Book Details
           </Text>
 
           <View style={{ gap: Spacing[3] }}>
-            <MetaRow icon={<BookOpen size={14} color={Colors.slateText} />} label="Title">
+            <MetaRow icon={<BookOpen size={14} color={colors.mutedForeground} />} label="Title" colors={colors}>
               {catalogue.title}
             </MetaRow>
 
             {catalogue.author && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Author">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Author" colors={colors}>
                 {catalogue.author}
               </MetaRow>
             )}
 
             {catalogue.edition && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Edition">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Edition" colors={colors}>
                 {catalogue.edition}
               </MetaRow>
             )}
 
             {catalogue.isbn && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="ISBN">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="ISBN" colors={colors}>
                 {catalogue.isbn}
               </MetaRow>
             )}
 
             {catalogue.subject && (
-              <MetaRow icon={<BookOpen size={14} color={Colors.slateText} />} label="Subject">
+              <MetaRow icon={<BookOpen size={14} color={colors.mutedForeground} />} label="Subject" colors={colors}>
                 {catalogue.subject}
               </MetaRow>
             )}
 
             {catalogue.form && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Form / Level">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Form / Level" colors={colors}>
                 Form {catalogue.form}
               </MetaRow>
             )}
 
             {catalogue.publisher && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Publisher">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Publisher" colors={colors}>
                 {catalogue.publisher}
               </MetaRow>
             )}
 
             {catalogue.shelf && (
-              <MetaRow icon={<MapPin size={14} color={Colors.slateText} />} label="Shelf">
+              <MetaRow icon={<MapPin size={14} color={colors.mutedForeground} />} label="Shelf" colors={colors}>
                 {catalogue.shelf}{catalogue.shelfRow ? ` · Row ${catalogue.shelfRow}` : ''}
               </MetaRow>
             )}
 
             {catalogue.bookNumber && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Book No.">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Book No." colors={colors}>
                 {catalogue.bookNumber}
               </MetaRow>
             )}
 
             {catalogue.category && (
-              <MetaRow icon={<Tag size={14} color={Colors.slateText} />} label="Category">
+              <MetaRow icon={<Tag size={14} color={colors.mutedForeground} />} label="Category" colors={colors}>
                 {catalogue.category}
               </MetaRow>
             )}
@@ -178,17 +180,17 @@ export default function CatalogueDetailScreen() {
 
         {/* ── Copy stats row ─────────────────────────────────────────── */}
         <View style={{ flexDirection: 'row', gap: Spacing[2], flexWrap: 'wrap' }}>
-          <StatPill label="Available" value={available} color={Colors.success} />
-          <StatPill label="Borrowed"  value={borrowed}  color={Colors.info} />
-          <StatPill label="Reserved"  value={reserved}  color={Colors.warn} />
-          {repair   > 0 && <StatPill label="Repair"  value={repair}   color={Colors.warn} />}
-          {archived > 0 && <StatPill label="Archived" value={archived} color={Colors.slateText} />}
+          <StatPill label="Available" value={available} color={colors.successForeground} colors={colors} />
+          <StatPill label="Borrowed"  value={borrowed}  color={'#2E90FA' /* info blue — chart series color */} colors={colors} />
+          <StatPill label="Reserved"  value={reserved}  color={colors.warnForeground} colors={colors} />
+          {repair   > 0 && <StatPill label="Repair"  value={repair}   color={colors.warnForeground} colors={colors} />}
+          {archived > 0 && <StatPill label="Archived" value={archived} color={colors.mutedForeground} colors={colors} />}
         </View>
 
         {/* ── Copies list ────────────────────────────────────────────── */}
         <View style={{ gap: Spacing[2] }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: Colors.ink }}>
+            <Text style={{ fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.semibold, color: colors.foreground }}>
               Physical Copies ({copies.length})
             </Text>
 
@@ -199,11 +201,11 @@ export default function CatalogueDetailScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: Spacing[1],
                   paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
                   borderRadius: Radius.button,
-                  backgroundColor: Colors.teal,
+                  backgroundColor: colors.primary,
                 }}
               >
-                <Plus size={14} color={Colors.white} />
-                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: Colors.white }}>
+                <Plus size={14} color={'#FFFFFF'} />
+                <Text style={{ fontSize: Typography.fontSize.xs, fontWeight: Typography.fontWeight.semibold, color: '#FFFFFF' }}>
                   Add Copy
                 </Text>
               </TouchableOpacity>
@@ -214,7 +216,7 @@ export default function CatalogueDetailScreen() {
             <EmptyState
               title="No copies yet"
               description={canManage ? 'Tap "Add Copy" to register the first physical copy' : 'No copies have been registered'}
-              icon={<BookOpen size={32} color={Colors.slateText} />}
+              icon={<BookOpen size={32} color={colors.mutedForeground} />}
             />
           ) : (
             copies.map(copy => (
@@ -240,28 +242,30 @@ export default function CatalogueDetailScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+import type { ColorTokens } from '@/constants';
+
+function MetaRow({ icon, label, children, colors }: { icon: React.ReactNode; label: string; children: React.ReactNode; colors: ColorTokens }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: Spacing[2] }}>
       <View style={{ marginTop: 2 }}>{icon}</View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.muted, marginBottom: 1 }}>{label}</Text>
-        <Text style={{ fontSize: Typography.fontSize.sm, color: Colors.ink }}>{String(children)}</Text>
+        <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground, marginBottom: 1 }}>{label}</Text>
+        <Text style={{ fontSize: Typography.fontSize.sm, color: colors.foreground }}>{String(children)}</Text>
       </View>
     </View>
   );
 }
 
-function StatPill({ label, value, color }: { label: string; value: number; color: string }) {
+function StatPill({ label, value, color, colors }: { label: string; value: number; color: string; colors: ColorTokens }) {
   return (
     <View style={{
       paddingHorizontal: Spacing[3], paddingVertical: Spacing[2],
-      borderRadius: Radius.button, backgroundColor: Colors.card,
-      borderWidth: 1, borderColor: Colors.line,
+      borderRadius: Radius.button, backgroundColor: colors.card,
+      borderWidth: 1, borderColor: colors.border,
       alignItems: 'center', minWidth: 72,
     }}>
       <Text style={{ fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold, color }}>{value}</Text>
-      <Text style={{ fontSize: Typography.fontSize.xs, color: Colors.slateText }}>{label}</Text>
+      <Text style={{ fontSize: Typography.fontSize.xs, color: colors.mutedForeground }}>{label}</Text>
     </View>
   );
 }

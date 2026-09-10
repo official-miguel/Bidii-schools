@@ -63,19 +63,18 @@ export default function PageLayout({
     <div className="min-h-screen flex flex-col">
       {/* ── Sticky Page Header ─────────────────────────────────────────── */}
       <header
-        className="sticky top-16 z-20 bg-white border-b border-line
-                   dark:bg-dark-bg dark:border-dark-border"
+        className="sticky top-16 z-20 bg-card border-b border-border"
       >
         <div className={`mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:px-10 ${MAX_WIDTH_MAP[maxWidth]}`}>
 
           {/* Title row — stacks on mobile, side-by-side on sm+ */}
           <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-3 mb-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-semibold text-ink leading-tight dark:text-dark-text">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
                 {title}
               </h1>
               {description && (
-                <p className="text-sm text-slate mt-1 sm:mt-1.5 dark:text-dark-muted leading-relaxed">
+                <p className="text-sm text-slate mt-1 sm:mt-1.5 leading-relaxed">
                   {description}
                 </p>
               )}
@@ -104,12 +103,10 @@ export default function PageLayout({
                     placeholder={searchPlaceholder}
                     value={searchValue ?? ""}
                     onChange={(e) => onSearchChange?.(e.target.value)}
-                    className="w-full h-11 sm:h-9 px-3.5 rounded-lg border border-line
-                               bg-white text-sm text-ink placeholder:text-slate
+                    className="w-full h-11 sm:h-9 px-3.5 rounded-lg border border-border
+                               bg-card text-sm text-foreground placeholder:text-slate
                                focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal
-                               transition-colors
-                               dark:bg-dark-surface dark:border-dark-border dark:text-dark-text
-                               dark:placeholder:text-dark-muted"
+                               transition-colors"
                   />
                 </div>
               )}
@@ -172,14 +169,12 @@ function ActionButton({
       shadow-sm
     `,
     secondary: `
-      bg-white text-slate border border-line
+      bg-card text-slate border border-border
       hover:bg-teal-50 hover:text-teal hover:border-teal/40
-      dark:bg-dark-surface dark:text-dark-muted dark:border-dark-border
-      dark:hover:bg-dark-border dark:hover:text-dark-text
+     
     `,
     ghost: `
       text-slate hover:bg-teal-50 hover:text-teal
-      dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text
     `,
   };
 

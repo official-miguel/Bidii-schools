@@ -42,7 +42,7 @@ export default async function EntryDetailPage({
     <div className="max-w-3xl mx-auto space-y-4">
       <Link
         href="/teacher/diary"
-        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-ink transition-colors dark:text-dark-muted dark:hover:text-dark-text"
+        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-foreground transition-colors"
       >
         <ChevronLeft className="h-4 w-4" />
         Back to Diary

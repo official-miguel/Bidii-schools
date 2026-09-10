@@ -74,7 +74,7 @@ function DeadlineRow({ item, calendarHref }: { item: DeadlineItem; calendarHref:
   return (
     <Link
       href={calendarHref}
-      className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-paper dark:hover:bg-dark-surface/60 transition-colors group"
+      className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-background/60 transition-colors group"
     >
       {/* Left — icon + title */}
       <div className="flex items-center gap-2 min-w-0">
@@ -82,10 +82,10 @@ function DeadlineRow({ item, calendarHref }: { item: DeadlineItem; calendarHref:
           ? <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" />
           : <CalendarClock className="h-3.5 w-3.5 shrink-0 text-warn" />
         }
-        <span className="text-sm text-ink dark:text-dark-text truncate group-hover:underline">
+        <span className="text-sm text-foreground truncate group-hover:underline">
           {item.title}
         </span>
-        <span className="text-xs text-slate dark:text-dark-muted shrink-0 hidden sm:inline">
+        <span className="text-xs text-slate shrink-0 hidden sm:inline">
           · {dueDateLabel}
         </span>
       </div>
@@ -113,13 +113,13 @@ export default function DeadlineCountdownBanner({ deadlines, calendarHref }: Pro
   return (
     <section
       aria-label="Active deadlines"
-      className="bg-card border border-line rounded-xl overflow-hidden dark:bg-dark-surface dark:border-dark-border"
+      className="bg-card border border-border rounded-xl overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-line dark:border-dark-border">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-slate dark:text-dark-muted" />
-          <span className="text-sm font-medium text-ink dark:text-dark-text">
+          <CalendarClock className="h-4 w-4 text-slate" />
+          <span className="text-sm font-medium text-foreground">
             Deadlines
           </span>
           <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-danger/15 text-danger text-[10px] font-bold">
@@ -135,7 +135,7 @@ export default function DeadlineCountdownBanner({ deadlines, calendarHref }: Pro
       </div>
 
       {/* Rows */}
-      <div className="divide-y divide-line dark:divide-dark-border">
+      <div className="divide-y divide-border ">
         {deadlines.map((d) => (
           <DeadlineRow key={d.id} item={d} calendarHref={calendarHref} />
         ))}

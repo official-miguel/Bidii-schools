@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/schools/new — School Onboarding form
@@ -32,7 +32,7 @@ const PLAN_BUNDLES: Record<PlanTier, string[]> = {
 };
 
 const PLAN_COLORS: Record<PlanTier, string> = {
-  FREE:         "bg-slate-100 text-slate border-line",
+  FREE:         "bg-slate-100 text-slate border-border",
   STARTER:      "bg-teal-50 text-teal border-teal/20",
   GROWTH:       "bg-info-bg text-info border-info/20",
   PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
@@ -132,8 +132,8 @@ export default function SchoolOnboardingPage() {
         <div className="flex items-center justify-center h-16 w-16 rounded-full bg-success-bg">
           <CheckCircle2 className="h-8 w-8 text-success" strokeWidth={2} />
         </div>
-        <p className="text-lg font-semibold text-ink dark:text-dark-text">School created!</p>
-        <p className="text-sm text-slate dark:text-dark-muted">Redirecting to school details…</p>
+        <p className="text-lg font-semibold text-foreground">School created!</p>
+        <p className="text-sm text-slate">Redirecting to school details…</p>
       </div>
     );
   }
@@ -143,8 +143,8 @@ export default function SchoolOnboardingPage() {
       {/* Back link */}
       <Link
         href="/super-admin/schools"
-        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-ink dark:text-dark-muted
-                   dark:hover:text-dark-text transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-slate hover:text-foreground
+                   transition-colors"
       >
         <ChevronLeft className="h-4 w-4" aria-hidden /> Back to Schools
       </Link>
@@ -158,12 +158,12 @@ export default function SchoolOnboardingPage() {
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* ── School info ───────────────────────────────────────────── */}
-        <Card className="dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line dark:border-dark-border">
+        <Card className="">
+          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-border">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-teal-50">
               <Building2 className="h-4 w-4 text-teal" aria-hidden />
             </div>
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">School Information</h2>
+            <h2 className="text-sm font-semibold text-foreground">School Information</h2>
           </div>
 
           <div className="space-y-4">
@@ -232,12 +232,12 @@ export default function SchoolOnboardingPage() {
         </Card>
 
         {/* ── Plan tier ─────────────────────────────────────────────── */}
-        <Card className="dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line dark:border-dark-border">
+        <Card className="">
+          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-border">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-warn-bg">
               <Shield className="h-4 w-4 text-warn" aria-hidden />
             </div>
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Plan &amp; Quota</h2>
+            <h2 className="text-sm font-semibold text-foreground">Plan &amp; Quota</h2>
           </div>
 
           {/* Plan tier selector */}
@@ -253,7 +253,7 @@ export default function SchoolOnboardingPage() {
                               transition-all duration-100
                               ${form.planTier === tier
                                 ? "border-teal bg-teal-50 text-teal shadow-sm"
-                                : "border-line hover:border-teal/40 text-slate"
+                                : "border-border hover:border-teal/40 text-slate"
                               }`}
                 >
                   {tier}
@@ -262,8 +262,8 @@ export default function SchoolOnboardingPage() {
             </div>
 
             {/* Module bundle preview */}
-            <div className="rounded-lg bg-paper dark:bg-dark-bg border border-line dark:border-dark-border p-3">
-              <p className="text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide mb-2">
+            <div className="rounded-lg bg-background border border-border p-3">
+              <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">
                 Included modules
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -297,12 +297,12 @@ export default function SchoolOnboardingPage() {
         </Card>
 
         {/* ── First admin account ───────────────────────────────────── */}
-        <Card className="dark:bg-dark-surface dark:border-dark-border">
-          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line dark:border-dark-border">
+        <Card className="">
+          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-border">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-bg">
               <User className="h-4 w-4 text-success" aria-hidden />
             </div>
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text">First School Admin (Principal)</h2>
+            <h2 className="text-sm font-semibold text-foreground">First School Admin (Principal)</h2>
           </div>
 
           <div className="space-y-4">

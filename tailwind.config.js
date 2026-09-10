@@ -72,6 +72,26 @@ const config = {
         "dark-gold":    "#3A9998",
         "dark-sidebar": "#0A1520",
         "dark-royal":   "#3A9998",
+
+        // ── Semantic tokens (Req 2.1, 2.2) — CSS variable references ───
+        // These drive bg-background, text-foreground, bg-card, etc. and
+        // automatically switch between :root and html.dark values.
+        background:                  "var(--color-background)",
+        foreground:                  "var(--color-foreground)",
+        card:                        "var(--color-card)",
+        "card-foreground":           "var(--color-card-foreground)",
+        border:                      "var(--color-border)",
+        input:                       "var(--color-input)",
+        muted:                       "var(--color-muted)",
+        "muted-foreground":          "var(--color-muted-foreground)",
+        primary:                     "var(--color-primary)",
+        "primary-foreground":        "var(--color-primary-foreground)",
+        destructive:                 "var(--color-destructive)",
+        "destructive-foreground":    "var(--color-destructive-foreground)",
+        success:                     "var(--color-success)",
+        "success-foreground":        "var(--color-success-foreground)",
+        warn:                        "var(--color-warn)",
+        "warn-foreground":           "var(--color-warn-foreground)",
       },
 
       fontFamily: {

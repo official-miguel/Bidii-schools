@@ -190,7 +190,7 @@ function FormulaCalculator({
       displayRef.current.scrollLeft = displayRef.current.scrollWidth;
   }, [expr]);
 
-  const digitBtn = "flex items-center justify-center h-10 w-10 rounded-lg bg-white border border-line text-sm font-medium text-ink hover:bg-teal-50 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
+  const digitBtn = "flex items-center justify-center h-10 w-10 rounded-lg bg-card border border-border text-sm font-medium text-foreground hover:bg-teal-50 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
   const opBtn    = "flex items-center justify-center h-10 w-10 rounded-lg bg-teal-50 border border-teal/20 text-sm font-semibold text-teal hover:bg-teal-100 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
   const paperBtn = "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-teal text-white text-xs font-medium hover:bg-teal-dark active:bg-teal-dark transition-colors focus:outline-none focus:ring-2 focus:ring-teal/40 select-none shrink-0";
 
@@ -199,14 +199,14 @@ function FormulaCalculator({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden flex flex-col max-h-[90dvh]">
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-line shrink-0">
+      <div className="bg-card rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-ink">% Formula</h2>
+            <h2 className="text-base font-semibold text-foreground">% Formula</h2>
             <p className="text-xs text-slate mt-0.5">Build how the percentage is calculated.</p>
           </div>
           <button type="button" onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate hover:text-ink hover:bg-slate-100 transition-colors">
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate hover:text-foreground hover:bg-muted transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -214,7 +214,7 @@ function FormulaCalculator({
           {/* Display bar */}
           <div className="relative">
             <div ref={displayRef}
-              className="min-h-[2.75rem] w-full rounded-lg border border-line bg-slate-50 px-3 py-2 text-sm font-mono text-ink overflow-x-auto whitespace-nowrap scrollbar-none">
+              className="min-h-[2.75rem] w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm font-mono text-foreground overflow-x-auto whitespace-nowrap scrollbar-none">
               {expr || <span className="text-slate/50 font-sans italic text-xs">Tap paper names and operators…</span>}
             </div>
             {expr.trim() && (
@@ -225,7 +225,7 @@ function FormulaCalculator({
           <div>
             <p className="text-xs font-medium text-slate mb-2 uppercase tracking-wide">Papers</p>
             {hasVirtuals && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 leading-relaxed">
+              <p className="text-xs text-warn-foreground bg-warn border border-warn/30 rounded-lg px-3 py-2 mb-2 leading-relaxed">
                 <span className="font-semibold">Note:</span> Papers shown with a dashed border haven&apos;t been added to the marksheet yet.
                 The formula will only calculate once those papers exist and have scores entered.
               </p>
@@ -277,11 +277,11 @@ function FormulaCalculator({
           </div>
           {/* Preview */}
           {expr.trim() && (
-            <div className="rounded-lg border border-line bg-slate-50 px-3 py-2.5">
+            <div className="rounded-lg border border-border bg-muted px-3 py-2.5">
               <p className="text-xs font-medium text-slate uppercase tracking-wide mb-1">Sample preview</p>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate">Using max marks as sample input</span>
-                <span className={`font-medium tabular-nums ${previewResult === null ? "text-slate/50" : "text-ink"}`}>
+                <span className={`font-medium tabular-nums ${previewResult === null ? "text-slate/50" : "text-foreground"}`}>
                   {previewResult === null ? "Invalid formula" : `${Math.round(previewResult * 10) / 10}%`}
                 </span>
               </div>
@@ -290,14 +290,14 @@ function FormulaCalculator({
           {/* Tip */}
           <p className="text-xs text-slate/70 leading-relaxed">
             Example:{" "}
-            <span className="font-mono bg-slate-100 px-1 rounded">
+            <span className="font-mono bg-muted px-1 rounded">
               {realPapers.length >= 2
                 ? `(${realPapers[0].name} / ${realPapers[0].maxMarks}) * 40 + (${realPapers[1].name} / ${realPapers[1].maxMarks}) * 60`
                 : `(Paper 1 / 80) * 40 + (Paper 2 / 100) * 60`}
             </span>
           </p>
           {/* Actions */}
-          <div className="flex items-center gap-2 border-t border-line sticky bottom-0 bg-white -mx-5 px-5 py-3 mt-0">
+          <div className="flex items-center gap-2 border-t border-border sticky bottom-0 bg-card -mx-5 px-5 py-3 mt-0">
             {formula && (
               <button type="button" onClick={() => { onApply(""); onClose(); }}
                 className="text-xs text-slate hover:text-danger underline underline-offset-2 transition-colors mr-auto">
@@ -351,7 +351,7 @@ function SubjectFormulaCard({
   ).length;
 
   return (
-    <div className="rounded-xl border border-line bg-white overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
       {/* Header */}
       <button
         type="button"
@@ -363,7 +363,7 @@ function SubjectFormulaCard({
             <BookOpen className="w-4 h-4 text-royal" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-ink text-sm truncate">{subject.name}</p>
+            <p className="font-semibold text-foreground text-sm truncate">{subject.name}</p>
             <p className="text-xs text-slate mt-0.5">
               {subject.code} · {forms.map((f) => schoolFormLabels[f] ?? `Form ${f}`).join(", ")}
             </p>
@@ -384,14 +384,14 @@ function SubjectFormulaCard({
 
       {/* Body */}
       {open && (
-        <div className="border-t border-line">
+        <div className="border-t border-border">
           {kcseFrameworks.length === 0 && (
             <div className="px-5 py-4 text-sm text-slate italic">
               No active 8-4-4 frameworks found. The principal must create a framework first.
             </div>
           )}
           {kcseFrameworks.length > 0 && (
-            <div className="divide-y divide-line">
+            <div className="divide-y divide-border">
               {forms.map((form) => (
                 <FormFormulaRow
                   key={form}
@@ -515,7 +515,7 @@ function FormFormulaRow({
       <div className="flex flex-wrap items-center gap-3">
         {/* Form label */}
         <div className="shrink-0 w-20">
-          <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 text-ink text-xs font-semibold px-2.5 py-1.5 w-full">
+          <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 text-foreground text-xs font-semibold px-2.5 py-1.5 w-full">
             {formLabel}
           </span>
         </div>
@@ -525,7 +525,7 @@ function FormFormulaRow({
           <select
             value={selectedFrameworkId}
             onChange={(e) => setSelectedFrameworkId(e.target.value)}
-            className="w-full appearance-none rounded-lg border border-line bg-white pl-3 pr-7 py-2 text-xs text-ink focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/20 transition-colors"
+            className="w-full appearance-none rounded-lg border border-border bg-card pl-3 pr-7 py-2 text-xs text-foreground focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/20 transition-colors"
           >
             {frameworks.map((fw) => (
               <option key={fw.id} value={fw.id}>
@@ -540,12 +540,12 @@ function FormFormulaRow({
         <div className="flex-1 min-w-[160px]">
           {hasFormula ? (
             <div className="rounded-lg border border-teal/30 bg-teal/5 px-3 py-2">
-              <p className="text-xs font-mono text-ink truncate" title={currentFormula}>
+              <p className="text-xs font-mono text-foreground truncate" title={currentFormula}>
                 {currentFormula}
               </p>
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-line px-3 py-2">
+            <div className="rounded-lg border border-dashed border-border px-3 py-2">
               <p className="text-xs text-slate italic">
                 No formula — uses raw score as percentage
               </p>
@@ -606,7 +606,7 @@ function FormFormulaRow({
 function FrameworksTab({ frameworks }: { frameworks: Framework[] }) {
   if (frameworks.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
         No active frameworks yet. The principal must create a framework first.
       </div>
     );
@@ -622,7 +622,7 @@ function FrameworksTab({ frameworks }: { frameworks: Framework[] }) {
         {frameworks.map((fw) => (
           <div
             key={fw.id}
-            className="flex items-center gap-3 rounded-xl border border-line bg-white px-5 py-4 shadow-sm"
+            className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-sm"
           >
             <span
               className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -632,7 +632,7 @@ function FrameworksTab({ frameworks }: { frameworks: Framework[] }) {
               {FRAMEWORK_TYPE_LABELS[fw.type] ?? fw.type}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-ink text-sm">{fw.label}</p>
+              <p className="font-semibold text-foreground text-sm">{fw.label}</p>
               <p className="text-xs text-slate mt-0.5">Academic year {fw.academicYear}</p>
             </div>
             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-success-bg text-success text-xs font-medium px-2.5 py-1">
@@ -682,7 +682,7 @@ export default function HODFormulaSettings({
   return (
     <div>
       {/* ── Tab bar — same style as ExamSetupTabs ── */}
-      <div className="flex gap-1 mb-8 border-b border-line">
+      <div className="flex gap-1 mb-8 border-b border-border">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -691,7 +691,7 @@ export default function HODFormulaSettings({
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               activeTab === tab.id
                 ? "border-royal text-royal"
-                : "border-transparent text-slate hover:text-ink"
+                : "border-transparent text-slate hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -703,7 +703,7 @@ export default function HODFormulaSettings({
       {activeTab === "formulas" && (
         <div className="space-y-5">
           <div className="mb-2">
-            <h2 className="text-base font-semibold text-ink mb-1">
+            <h2 className="text-base font-semibold text-foreground mb-1">
               Mark Calculation Formulas
             </h2>
             <p className="text-sm text-slate">
@@ -716,7 +716,7 @@ export default function HODFormulaSettings({
           </div>
 
           {subjects.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+            <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
               No subjects in this department yet. The principal must add subjects to{" "}
               {department.name}.
             </div>
@@ -743,7 +743,7 @@ export default function HODFormulaSettings({
       {activeTab === "frameworks" && (
         <div>
           <div className="mb-6">
-            <h2 className="text-base font-semibold text-ink mb-1">
+            <h2 className="text-base font-semibold text-foreground mb-1">
               Assessment Frameworks
             </h2>
             <p className="text-sm text-slate">

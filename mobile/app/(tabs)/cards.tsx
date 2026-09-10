@@ -18,9 +18,10 @@ import {
 } from '@/components/ui';
 import { StudentListItem } from '@/components/library';
 import { api, StudentHit } from '@/services/api';
-import { Colors, Spacing, Typography, Radius } from '@/constants';
+import { Spacing, Typography, Radius } from '@/constants';
 import { useDebounce } from '@/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 const STATUS_FILTERS = ['ALL', 'ACTIVE', 'SUSPENDED', 'ALUMNI', 'TRANSFERRED'] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
@@ -28,6 +29,7 @@ type StatusFilter = typeof STATUS_FILTERS[number];
 export default function CardsScreen() {
   const router  = useRouter();
   const insets  = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const [query,      setQuery]      = useState('');
   const [statusFilter, setStatus]   = useState<StatusFilter>('ALL');
@@ -61,11 +63,11 @@ export default function CardsScreen() {
   const handleRefresh = () => { setRefreshing(true); search(debouncedQuery); };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Library Cards" subtitle="All student cards" />
 
       {/* Search + filter */}
-      <View style={{ backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.line, padding: Spacing[4], gap: Spacing[3] }}>
+      <View style={{ backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, padding: Spacing[4], gap: Spacing[3] }}>
         <SearchBar
           value={query}
           onChangeText={setQuery}
@@ -82,14 +84,14 @@ export default function CardsScreen() {
               style={{
                 paddingHorizontal: Spacing[3], paddingVertical: Spacing[1.5],
                 borderRadius: Radius.full, borderWidth: 1,
-                borderColor: statusFilter === s ? Colors.teal : Colors.line,
-                backgroundColor: statusFilter === s ? Colors.teal50 : Colors.card,
+                borderColor: statusFilter === s ? colors.primary : colors.border,
+                backgroundColor: statusFilter === s ? colors.primary + '15' : colors.card,
               }}
             >
               <Text style={{
                 fontSize: Typography.fontSize.xs,
                 fontWeight: Typography.fontWeight.medium,
-                color: statusFilter === s ? Colors.teal : Colors.slateText,
+                color: statusFilter === s ? colors.primary : colors.mutedForeground,
               }}>
                 {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
               </Text>
@@ -107,7 +109,7 @@ export default function CardsScreen() {
           padding: Spacing[4], gap: Spacing[2],
           paddingBottom: insets.bottom + Spacing[8],
         }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.teal} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
         renderItem={({ item }) => (
           <StudentListItem
             student={item}
@@ -119,7 +121,7 @@ export default function CardsScreen() {
             <EmptyState
               title={debouncedQuery ? 'No students found' : 'Search for a student'}
               description={debouncedQuery ? `No results for "${debouncedQuery}"` : 'Type a name or admission number above'}
-              icon={<CreditCard size={40} color={Colors.slateText} />}
+              icon={<CreditCard size={40} color={colors.mutedForeground} />}
             />
           ) : null
         }

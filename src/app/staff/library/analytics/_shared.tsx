@@ -55,7 +55,7 @@ interface KpiProps {
 
 export function KpiCard({ label, value, sub, icon, variant = "default", trend }: KpiProps) {
   const colorMap = {
-    default: { bg: "bg-teal/10",    text: "text-teal",    border: "border-line" },
+    default: { bg: "bg-teal/10",    text: "text-teal",    border: "border-border" },
     success: { bg: "bg-success/10", text: "text-success", border: "border-success/20" },
     warn:    { bg: "bg-warn/10",    text: "text-warn",    border: "border-warn/20" },
     danger:  { bg: "bg-danger/10",  text: "text-danger",  border: "border-danger/20" },
@@ -63,7 +63,7 @@ export function KpiCard({ label, value, sub, icon, variant = "default", trend }:
   }[variant];
 
   return (
-    <div className={`rounded-xl border ${colorMap.border} bg-white p-4 dark:bg-dark-surface dark:border-dark-border`}>
+    <div className={`rounded-xl border ${colorMap.border} bg-card p-4`}>
       <div className="flex items-start justify-between gap-2">
         <div className={`h-10 w-10 rounded-lg ${colorMap.bg} ${colorMap.text} flex items-center justify-center shrink-0`}>
           {icon}
@@ -74,9 +74,9 @@ export function KpiCard({ label, value, sub, icon, variant = "default", trend }:
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-ink mt-3 leading-none dark:text-dark-text">{value}</p>
-      <p className="text-sm text-slate mt-1 dark:text-dark-muted">{label}</p>
-      {sub && <p className="text-xs text-slate/60 mt-0.5 dark:text-dark-muted/60">{sub}</p>}
+      <p className="text-2xl font-bold text-foreground mt-3 leading-none">{value}</p>
+      <p className="text-sm text-slate mt-1">{label}</p>
+      {sub && <p className="text-xs text-slate/60 mt-0.5/60">{sub}</p>}
     </div>
   );
 }
@@ -90,8 +90,8 @@ export function Section({ title, description, children, action }: {
     <div className="mb-8">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-base font-semibold text-ink dark:text-dark-text">{title}</h2>
-          {description && <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">{description}</p>}
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
+          {description && <p className="text-sm text-slate mt-0.5">{description}</p>}
         </div>
         {action}
       </div>
@@ -106,8 +106,8 @@ export function ChartCard({ title, children, className = "" }: {
   title: string; children: ReactNode; className?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-line bg-white p-5 dark:bg-dark-surface dark:border-dark-border ${className}`}>
-      <p className="text-sm font-semibold text-ink mb-4 dark:text-dark-text">{title}</p>
+    <div className={`rounded-xl border border-border bg-card p-5 ${className}`}>
+      <p className="text-sm font-semibold text-foreground mb-4">{title}</p>
       {children}
     </div>
   );
@@ -122,13 +122,32 @@ export function TrendLineChart({ data, dataKey, color = CHART_COLORS.primary, he
   height?: number;
 }) {
   if (!data.length) return <p className="text-xs text-slate text-center py-8">No data</p>;
+
+  // Read CSS variable values for dark-mode-aware chart chrome (Req 5.1, 12.2)
+  const tooltipBg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#FFFFFF'
+    : '#FFFFFF';
+  const tooltipFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card-foreground').trim() || '#1F2933'
+    : '#1F2933';
+  const gridColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#E8EDF2')
+    : '#E8EDF2';
+  const tickColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#667085')
+    : '#667085';
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} tickLine={false} axisLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: tickColor }} tickLine={false} axisLine={false} />
+        <Tooltip
+          contentStyle={{ fontSize: 12, borderRadius: 8, background: tooltipBg, border: '1px solid var(--color-border)' }}
+          labelStyle={{ color: tooltipFg }}
+          itemStyle={{ color: tooltipFg }}
+        />
         <Line type="monotone" dataKey={dataKey ?? "value"} stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
       </LineChart>
     </ResponsiveContainer>
@@ -141,14 +160,36 @@ export function TrendBarChart({ data, bars, height = 200 }: {
   height?: number;
 }) {
   if (!data.length) return <p className="text-xs text-slate text-center py-8">No data</p>;
+
+  // Read CSS variable values for dark-mode-aware chart chrome (Req 5.1, 12.2, 12.5)
+  const tooltipBg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#FFFFFF'
+    : '#FFFFFF';
+  const tooltipFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card-foreground').trim() || '#1F2933'
+    : '#1F2933';
+  const legendFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-foreground').trim() || '#1F2933'
+    : '#1F2933';
+  const gridColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#E8EDF2')
+    : '#E8EDF2';
+  const tickColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#667085')
+    : '#667085';
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }} />
-        {bars.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} tickLine={false} axisLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: tickColor }} tickLine={false} axisLine={false} />
+        <Tooltip
+          contentStyle={{ fontSize: 12, borderRadius: 8, background: tooltipBg, border: '1px solid var(--color-border)' }}
+          labelStyle={{ color: tooltipFg }}
+          itemStyle={{ color: tooltipFg }}
+        />
+        {bars.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: legendFg }} />}
         {bars.map(b => <Bar key={b.key} dataKey={b.key} name={b.label ?? b.key} fill={b.color} radius={[3, 3, 0, 0]} />)}
       </BarChart>
     </ResponsiveContainer>
@@ -160,6 +201,18 @@ export function DonutChart({ data, height = 200 }: {
   height?: number;
 }) {
   if (!data.length) return <p className="text-xs text-slate text-center py-8">No data</p>;
+
+  // Read CSS variable values for dark-mode-aware chart chrome (Req 5.1, 12.2, 12.5)
+  const tooltipBg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#FFFFFF'
+    : '#FFFFFF';
+  const tooltipFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-card-foreground').trim() || '#1F2933'
+    : '#1F2933';
+  const legendFg = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-foreground').trim() || '#1F2933'
+    : '#1F2933';
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
@@ -167,9 +220,13 @@ export function DonutChart({ data, height = 200 }: {
           dataKey="value" nameKey="name" paddingAngle={2}>
           {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
         </Pie>
-        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
-          formatter={(value: number, name: string) => [value.toLocaleString(), name]} />
-        <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={10} />
+        <Tooltip
+          contentStyle={{ fontSize: 12, borderRadius: 8, background: tooltipBg, border: '1px solid var(--color-border)' }}
+          labelStyle={{ color: tooltipFg }}
+          itemStyle={{ color: tooltipFg }}
+          formatter={(value: number, name: string) => [value.toLocaleString(), name]}
+        />
+        <Legend wrapperStyle={{ fontSize: 11, color: legendFg }} iconType="circle" iconSize={10} />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -182,14 +239,14 @@ export function RankRow({ rank, primary, secondary, value, valueLabel, highlight
   value: string | number; valueLabel?: string; highlight?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 border-b border-line last:border-0 ${highlight ? "bg-teal-50/30" : "hover:bg-slate-50/40"} transition-colors`}>
+    <div className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 ${highlight ? "bg-teal-50/30" : "hover:bg-slate-50/40"} transition-colors`}>
       <span className="text-xs font-bold text-slate w-5 shrink-0">#{rank}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-ink truncate dark:text-dark-text">{primary}</p>
+        <p className="text-sm font-medium text-foreground truncate">{primary}</p>
         {secondary && <p className="text-xs text-slate truncate">{secondary}</p>}
       </div>
       <div className="text-right shrink-0">
-        <p className={`text-sm font-bold ${highlight ? "text-teal" : "text-ink"}`}>{value}</p>
+        <p className={`text-sm font-bold ${highlight ? "text-teal" : "text-foreground"}`}>{value}</p>
         {valueLabel && <p className="text-[10px] text-slate">{valueLabel}</p>}
       </div>
     </div>
@@ -202,10 +259,10 @@ export function WindowSelector({ value, onChange }: {
   value: string; onChange: (v: string) => void;
 }) {
   return (
-    <div className="inline-flex rounded-lg border border-line bg-paper overflow-hidden">
+    <div className="inline-flex rounded-lg border border-border bg-background overflow-hidden">
       {[["30","30d"],["90","90d"],["180","6m"],["365","1y"]].map(([v, l]) => (
         <button key={v} onClick={() => onChange(v)}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${value === v ? "bg-teal text-white" : "text-slate hover:text-ink"}`}>
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${value === v ? "bg-teal text-white" : "text-slate hover:text-foreground"}`}>
           {l}
         </button>
       ))}

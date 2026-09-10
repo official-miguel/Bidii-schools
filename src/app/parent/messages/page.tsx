@@ -49,19 +49,19 @@ export default async function ParentMessagesPage() {
     <div className="space-y-6">
       {/* Heading */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Messages</h1>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Messages</h1>
+        <p className="text-sm text-slate mt-1">
           School announcements and messages sent to parents.
         </p>
       </div>
 
       {messages.length === 0 ? (
         /* Empty state — matches spec wording exactly */
-        <div className="rounded-xl border border-line bg-card p-10 flex flex-col items-center gap-3 text-center dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">
+        <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm font-semibold text-foreground">
             💬 No messages
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             School announcements and messages will appear here.
           </p>
         </div>

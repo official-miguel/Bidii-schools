@@ -102,10 +102,10 @@ function EmptyState({
         <Sparkles className="w-7 h-7 text-white" />
       </div>
 
-      <h2 className="text-lg font-semibold text-ink dark:text-dark-text mb-1.5">
+      <h2 className="text-lg font-semibold text-foreground mb-1.5">
         {title}
       </h2>
-      <p className="text-sm text-slate dark:text-dark-muted max-w-xs leading-relaxed mb-8">
+      <p className="text-sm text-slate max-w-xs leading-relaxed mb-8">
         {subtitle}
       </p>
 
@@ -117,9 +117,8 @@ function EmptyState({
             type="button"
             onClick={() => onSuggest(q)}
             className="w-full text-left px-4 py-3 rounded-xl text-sm
-                       border border-line hover:border-teal/40 hover:bg-teal-50
-                       text-ink/80 dark:text-dark-text/80
-                       dark:border-dark-border dark:hover:border-teal/40 dark:hover:bg-teal/10
+                       border border-border hover:border-teal/40 hover:bg-teal-50
+                       text-foreground/80/80 dark:hover:border-teal/40 dark:hover:bg-teal/10
                        transition-colors duration-100 leading-snug"
           >
             {q}
@@ -221,7 +220,7 @@ function MessageBubble({
             ? "bg-teal text-white rounded-tr-sm"
             : message.error
               ? "bg-danger-bg border border-danger/20 text-danger dark:bg-danger/10 dark:border-danger/20 dark:text-red-400 rounded-tl-sm"
-              : "bg-white border border-line text-ink dark:bg-dark-surface dark:border-dark-border dark:text-dark-text rounded-tl-sm"
+              : "bg-card border border-border text-foreground rounded-tl-sm"
           }`}
       >
         {isUser ? (
@@ -266,7 +265,7 @@ function MessageBubble({
 
       {/* Timestamp */}
       <span
-        className={`text-[11px] text-slate/60 dark:text-dark-muted/60 px-1
+        className={`text-[11px] text-slate/60/60 px-1
                     transition-opacity duration-150
                     ${actionsVisible ? "opacity-100" : "opacity-0"}`}
         aria-hidden="true"
@@ -286,8 +285,7 @@ function MessageBubble({
             onClick={onCopy}
             aria-label="Copy message"
             className="flex items-center gap-1 px-2 py-1 rounded-md text-xs
-                       text-slate hover:text-ink hover:bg-paper
-                       dark:text-dark-muted dark:hover:text-dark-text dark:hover:bg-dark-border
+                       text-slate hover:text-foreground hover:bg-background
                        transition-colors"
           >
             {message.copied ? (
@@ -305,8 +303,7 @@ function MessageBubble({
               onClick={onRegenerate}
               aria-label="Regenerate response"
               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs
-                         text-slate hover:text-ink hover:bg-paper
-                         dark:text-dark-muted dark:hover:text-dark-text dark:hover:bg-dark-border
+                         text-slate hover:text-foreground hover:bg-background
                          transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
@@ -352,8 +349,7 @@ function SuggestionChips({
           }}
           className="px-3 py-1.5 rounded-full text-xs font-medium
                      border border-teal/30 text-teal bg-teal-50
-                     hover:bg-teal hover:text-white hover:border-teal
-                     dark:bg-teal/10 dark:border-teal/30 dark:text-teal-light
+                     hover:bg-teal hover:text-white hover:border-teal dark:border-teal/30 dark:text-teal-light
                      dark:hover:bg-teal dark:hover:text-white
                      transition-colors duration-100"
         >
@@ -398,11 +394,9 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label="Scroll to bottom"
       className="absolute bottom-20 right-4 w-9 h-9 rounded-full
-                 bg-white border border-line shadow-md
+                 bg-card border border-border shadow-md
                  flex items-center justify-center
-                 hover:bg-paper text-slate hover:text-ink
-                 dark:bg-dark-surface dark:border-dark-border
-                 dark:text-dark-muted dark:hover:text-dark-text
+                 hover:bg-background text-slate hover:text-foreground
                  transition-all duration-150 animate-fade-in z-10"
     >
       <ChevronDown className="w-4 h-4" />
@@ -520,13 +514,13 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-label="Soma AI Assistant"
       aria-modal="true"
-      className="flex flex-col h-full bg-paper dark:bg-dark-bg overflow-hidden"
+      className="flex flex-col h-full bg-background overflow-hidden"
     >
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-3 px-4 h-14 shrink-0
-                   border-b border-line dark:border-dark-border
-                   bg-white dark:bg-dark-sidebar"
+                   border-b border-border
+                   bg-card"
       >
         {/* Brand mark */}
         <div
@@ -537,10 +531,10 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text leading-none">
+          <p className="text-sm font-semibold text-foreground leading-none">
             Soma AI
           </p>
-          <p className="text-[11px] text-slate dark:text-dark-muted mt-0.5 leading-none">
+          <p className="text-[11px] text-slate mt-0.5 leading-none">
             {isStreaming ? (
               <span className="text-teal animate-pulse">Thinking…</span>
             ) : (
@@ -554,7 +548,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
           <div className="relative">
             {showClearConfirm ? (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-slate dark:text-dark-muted">Clear?</span>
+                <span className="text-xs text-slate">Clear?</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -568,7 +562,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={() => setShowClearConfirm(false)}
-                  className="text-xs text-slate dark:text-dark-muted hover:underline"
+                  className="text-xs text-slate hover:underline"
                 >
                   No
                 </button>
@@ -579,8 +573,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
                 onClick={() => setShowClearConfirm(true)}
                 aria-label="Clear conversation"
                 className="w-8 h-8 flex items-center justify-center rounded-lg
-                           text-slate hover:bg-paper hover:text-ink
-                           dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text
+                           text-slate hover:bg-background hover:text-foreground
                            transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -595,8 +588,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           aria-label="Close Soma AI"
           className="w-8 h-8 flex items-center justify-center rounded-lg
-                     text-slate hover:bg-paper hover:text-ink
-                     dark:text-dark-muted dark:hover:bg-dark-border dark:hover:text-dark-text
+                     text-slate hover:bg-background hover:text-foreground
                      transition-colors"
         >
           <X className="w-4 h-4" />
@@ -649,8 +641,8 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
       {/* ── Input area ──────────────────────────────────────────────────── */}
       <div
         className="shrink-0 px-4 pb-4 pt-3
-                   border-t border-line dark:border-dark-border
-                   bg-white dark:bg-dark-sidebar"
+                   border-t border-border
+                   bg-card"
       >
         {/* Stop streaming button */}
         {isStreaming && (
@@ -673,8 +665,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
         {/* Textarea + send */}
         <div
           className="flex items-end gap-2 rounded-xl
-                     border border-line bg-paper
-                     dark:border-dark-border dark:bg-dark-surface
+                     border border-border bg-background
                      focus-within:border-teal/60 focus-within:ring-1 focus-within:ring-teal/20
                      transition-colors duration-100 px-3 py-2.5"
         >
@@ -687,9 +678,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
             rows={1}
             disabled={isStreaming}
             aria-label="Message input"
-            className="flex-1 resize-none bg-transparent text-sm text-ink
-                       dark:text-dark-text placeholder:text-slate/60
-                       dark:placeholder:text-dark-muted/60
+            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-slate/60
                        focus:outline-none leading-relaxed
                        disabled:opacity-50 max-h-40 min-h-[1.5rem]"
             style={{ height: "auto" }}
@@ -711,7 +700,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Keyboard hint */}
-        <p className="text-[11px] text-slate/50 dark:text-dark-muted/50 text-center mt-2">
+        <p className="text-[11px] text-slate/50/50 text-center mt-2">
           Enter to send · Shift+Enter for new line · Esc to close
         </p>
       </div>

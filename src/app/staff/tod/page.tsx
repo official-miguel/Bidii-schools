@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+﻿import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function TeacherOnDutyPage() {
@@ -7,10 +7,10 @@ export default async function TeacherOnDutyPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-ink dark:text-dark-text mb-2">
+      <h1 className="text-2xl font-semibold text-foreground mb-2">
         Teacher on Duty
       </h1>
-      <p className="text-sm text-slate dark:text-dark-muted">
+      <p className="text-sm text-slate">
         Teacher-on-duty roster management is coming soon.
       </p>
     </div>

@@ -184,7 +184,7 @@ function ScoreCell({
 
   if (readOnly) {
     return (
-      <span className="text-sm text-ink tabular-nums">
+      <span className="text-sm text-foreground tabular-nums">
         {value === null ? <span className="text-slate/50">—</span> : value}
       </span>
     );
@@ -201,7 +201,7 @@ function ScoreCell({
       className={`w-16 rounded-md border px-2 py-1 text-sm tabular-nums text-center focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-colors ${
         error
           ? "border-danger bg-danger-bg/30 text-danger"
-          : "border-line bg-white text-ink hover:border-teal/40"
+          : "border-border bg-card text-foreground hover:border-teal/40"
       }`}
       placeholder="—"
     />
@@ -299,8 +299,8 @@ function EditableMaxMarks({
         disabled={saving}
         className={`w-14 rounded-md border px-1 py-0 text-xs text-center focus:outline-none focus:ring-2 focus:ring-teal/20 ${
           error
-            ? "border-danger text-danger bg-red-50"
-            : "border-teal/40 text-ink bg-white"
+            ? "border-danger text-danger bg-destructive/10"
+            : "border-teal/40 text-foreground bg-card"
         }`}
       />
     </span>
@@ -371,7 +371,7 @@ function DeletePaperButton({
         <button
           type="button"
           onClick={() => setPhase("idle")}
-          className="text-xs px-1.5 py-0.5 rounded border border-line text-slate hover:bg-paper transition-colors focus:outline-none focus:ring-1 focus:ring-slate/40"
+          className="text-xs px-1.5 py-0.5 rounded border border-border text-slate hover:bg-background transition-colors focus:outline-none focus:ring-1 focus:ring-slate/40"
         >
           No
         </button>
@@ -390,7 +390,7 @@ function DeletePaperButton({
       <button
         type="button"
         onClick={() => setPhase("idle")}
-        className="text-xs text-slate underline hover:text-ink"
+        className="text-xs text-slate underline hover:text-foreground"
       >
         Dismiss
       </button>
@@ -477,7 +477,7 @@ function FormulaCalculator({
 
   // ── button style helpers ─────────────────────────────────────────────────
   const digitBtn =
-    "flex items-center justify-center h-10 w-10 rounded-lg bg-white border border-line text-sm font-medium text-ink hover:bg-teal-50 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
+    "flex items-center justify-center h-10 w-10 rounded-lg bg-card border border-border text-sm font-medium text-foreground hover:bg-teal-50 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
   const opBtn =
     "flex items-center justify-center h-10 w-10 rounded-lg bg-teal-50 border border-teal/20 text-sm font-semibold text-teal hover:bg-teal-100 hover:border-teal/40 active:bg-teal-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 select-none";
   const paperBtn =
@@ -488,12 +488,12 @@ function FormulaCalculator({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden animate-scale-in flex flex-col max-h-[90dvh]">
+      <div className="bg-card rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md mx-0 sm:mx-4 overflow-hidden animate-scale-in flex flex-col max-h-[90dvh]">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-line shrink-0">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-ink leading-tight">
+            <h2 className="text-base font-semibold text-foreground leading-tight">
               % Formula
             </h2>
             <p className="text-xs text-slate mt-0.5">
@@ -503,7 +503,7 @@ function FormulaCalculator({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate hover:text-ink hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30"
             aria-label="Close"
           >
             <X className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
@@ -516,7 +516,7 @@ function FormulaCalculator({
           <div className="relative">
             <div
               ref={displayRef}
-              className="min-h-[2.75rem] w-full rounded-lg border border-line bg-slate-50 px-3 py-2 text-sm font-mono text-ink overflow-x-auto whitespace-nowrap scrollbar-none"
+              className="min-h-[2.75rem] w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm font-mono text-foreground overflow-x-auto whitespace-nowrap scrollbar-none"
             >
               {expr || <span className="text-slate/50 font-sans italic text-xs">Tap paper names and operators to build a formula…</span>}
             </div>
@@ -534,7 +534,7 @@ function FormulaCalculator({
           <div>
             <p className="text-xs font-medium text-slate mb-2 uppercase tracking-wide">Papers</p>
             {papers.some((p) => p.id.startsWith("__virtual_")) && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 leading-relaxed">
+              <p className="text-xs text-warn bg-warn/10 border border-warn/30 rounded-lg px-3 py-2 mb-2 leading-relaxed">
                 Papers with a dashed border haven&apos;t been added yet. The formula won&apos;t calculate until they exist with scores entered.
               </p>
             )}
@@ -614,7 +614,7 @@ function FormulaCalculator({
 
           {/* ── Live preview ── */}
           {expr.trim() && (
-            <div className="rounded-lg border border-line bg-slate-50 px-3 py-2.5">
+            <div className="rounded-lg border border-border bg-muted px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-xs font-medium text-slate uppercase tracking-wide">Preview</p>
                 {preview.some((r) => r.isSample) && (
@@ -624,7 +624,7 @@ function FormulaCalculator({
               {preview.map((p, i) => (
                 <div key={i} className="flex items-center justify-between text-xs py-0.5">
                   <span className="text-slate truncate max-w-[60%]">{p.name}</span>
-                  <span className={`font-medium tabular-nums ${p.result === null ? "text-slate/50" : "text-ink"}`}>
+                  <span className={`font-medium tabular-nums ${p.result === null ? "text-slate/50" : "text-foreground"}`}>
                     {p.result === null ? "—" : `${Math.round(p.result * 10) / 10}%`}
                   </span>
                 </div>
@@ -647,7 +647,7 @@ function FormulaCalculator({
           </p>
 
           {/* ── Actions ── */}
-          <div className="flex items-center gap-2 pt-1 pb-1 border-t border-line sticky bottom-0 bg-white -mx-5 px-5 py-3 mt-0">
+          <div className="flex items-center gap-2 pt-1 pb-1 border-t border-border sticky bottom-0 bg-card -mx-5 px-5 py-3 mt-0">
             {formula && (
               <button
                 type="button"
@@ -723,14 +723,14 @@ function AddPaperModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-sm mx-4 p-6">
-        <h2 className="text-base font-semibold text-ink mb-1">Add paper</h2>
+      <div className="bg-card rounded-xl shadow-lg w-full max-w-sm mx-4 p-6">
+        <h2 className="text-base font-semibold text-foreground mb-1">Add paper</h2>
         <p className="text-xs text-slate mb-5">
           Teachers enter raw marks; the system converts them to a percentage automatically.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+          <div className="mb-4 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -739,7 +739,7 @@ function AddPaperModal({
           {/* Paper name — shown read-only so teachers know what they're adding */}
           <div>
             <label className={labelClass}>Paper name</label>
-            <div className="flex items-center gap-2 rounded-lg border border-line bg-slate-50 px-3 py-2 text-sm text-ink">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground">
               <span className="font-medium">{defaultName}</span>
               <span className="text-xs text-slate ml-auto">(auto-named)</span>
             </div>
@@ -1128,11 +1128,11 @@ export default function MarksheetGrid({
             </p>
           )}
 
-          <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="border-b border-line bg-slate-50/80 text-left text-xs text-slate font-semibold uppercase tracking-wide">
+                  <tr className="border-b border-border bg-muted/60 text-left text-xs text-slate font-semibold uppercase tracking-wide">
                     <th className="px-4 py-3 w-32 whitespace-nowrap">Adm. No.</th>
                     <th className="px-4 py-3 whitespace-nowrap">Student</th>
 
@@ -1203,16 +1203,16 @@ export default function MarksheetGrid({
                     return (
                       <tr
                         key={row.student.id}
-                        className={`border-b border-line last:border-0 transition-colors ${
-                          i % 2 === 0 ? "bg-white hover:bg-slate-50/30" : "bg-slate-50/20 hover:bg-slate-50/40"
+                        className={`border-b border-border last:border-0 transition-colors ${
+                          i % 2 === 0 ? "bg-card hover:bg-muted/30" : "bg-muted/20 hover:bg-muted/40"
                         }`}
                       >
                         <td className="px-4 py-3">
-                          <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+                          <span className="text-xs font-mono text-slate bg-muted border border-border rounded px-1.5 py-0.5">
                             {row.student.admissionNumber}
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-medium text-ink">{row.student.fullName}</td>
+                        <td className="px-4 py-3 font-medium text-foreground">{row.student.fullName}</td>
 
                         {data.papers.map((p, pi) => (
                           <td key={p.id} className="px-4 py-3 text-center">
@@ -1228,7 +1228,7 @@ export default function MarksheetGrid({
                         {/* Empty cell under the + button column */}
                         {canManagePapers && !readOnly && <td />}
 
-                        <td className="px-4 py-3 text-center tabular-nums text-ink">
+                        <td className="px-4 py-3 text-center tabular-nums text-foreground">
                           {pct !== null ? (
                             <span className="text-sm font-medium">{Math.round(pct * 10) / 10}%</span>
                           ) : (
@@ -1248,10 +1248,10 @@ export default function MarksheetGrid({
 
           {/* ---- Save bar ---- */}
           {!readOnly && (
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-line">
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
               <p className="text-sm">
                 {hasEdits ? (
-                  <span className="text-amber-700 font-medium">
+                  <span className="text-warn font-medium">
                     {edits.size} unsaved change{edits.size !== 1 ? "s" : ""}
                   </span>
                 ) : (

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * AttendanceDotGrid
@@ -31,7 +31,7 @@ export default function AttendanceDotGrid({ records }: AttendanceDotGridProps) {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide mb-2">
+      <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">
         Last 90 days
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -51,7 +51,7 @@ export default function AttendanceDotGrid({ records }: AttendanceDotGridProps) {
           } else if (record.status === "ABSENT") {
             colorClass = "bg-danger-bg text-danger";
           } else {
-            colorClass = "bg-line dark:bg-dark-border text-slate dark:text-dark-muted";
+            colorClass = "bg-line text-slate";
           }
 
           return (

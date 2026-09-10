@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * /super-admin/storage — Storage & Usage
@@ -69,9 +69,9 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 // ── Stacked type bar ──────────────────────────────────────────────────────────
 
 function StackedTypeBar({ byType, usedGb }: { byType: Record<string, string>; usedGb: number }) {
-  if (usedGb === 0) return <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-dark-border" />;
+  if (usedGb === 0) return <div className="h-2 w-full rounded-full bg-slate-100" />;
   return (
-    <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100 dark:bg-dark-border">
+    <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
       {TYPE_ORDER.map(type => {
         const gb  = bytesToGb(byType[type]);
         const pct = (gb / usedGb) * 100;
@@ -101,14 +101,14 @@ function TrendIndicator({ pct }: { pct: number }) {
 
 function PlanBadge({ tier }: { tier: string }) {
   const map: Record<string, string> = {
-    FREE:         "bg-slate-100 text-slate border-line",
+    FREE:         "bg-slate-100 text-slate border-border",
     STARTER:      "bg-teal-50 text-teal border-teal/20",
     GROWTH:       "bg-info-bg text-info border-info/20",
     PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
     ENTERPRISE:   "bg-danger-bg text-danger border-danger/20",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-line"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-border"}`}>
       {tier.slice(0, 3)}
     </span>
   );
@@ -123,36 +123,36 @@ function SystemSummary({ totalUsedGb, totalQuotaGb }: { totalUsedGb: number; tot
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {/* Total used */}
-      <Card className="dark:bg-dark-surface dark:border-dark-border">
+      <Card className="">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-teal-50 shrink-0">
             <HardDrive className="h-5 w-5 text-teal" strokeWidth={1.8} aria-hidden />
           </div>
           <div>
-            <p className="text-2xl font-semibold text-ink dark:text-dark-text tabular-nums">{fmtGb(totalUsedGb)}</p>
-            <p className="text-xs text-slate dark:text-dark-muted">Total used</p>
+            <p className="text-2xl font-semibold text-foreground tabular-nums">{fmtGb(totalUsedGb)}</p>
+            <p className="text-xs text-slate">Total used</p>
           </div>
         </div>
         <ProgressBar value={pct} max={100} size="md" variant={variant} animated showLabel />
-        <p className="text-xs text-slate dark:text-dark-muted mt-1.5">{fmtGb(totalQuotaGb)} total quota across all schools</p>
+        <p className="text-xs text-slate mt-1.5">{fmtGb(totalQuotaGb)} total quota across all schools</p>
       </Card>
 
       {/* Breakdown by type — system-wide */}
-      <Card className="sm:col-span-2 dark:bg-dark-surface dark:border-dark-border">
-        <h3 className="text-sm font-semibold text-ink dark:text-dark-text mb-3">System-wide Breakdown by Type</h3>
+      <Card className="sm:col-span-2">
+        <h3 className="text-sm font-semibold text-foreground mb-3">System-wide Breakdown by Type</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {TYPE_ORDER.map(type => (
             <div key={type}
-              className="rounded-lg bg-paper dark:bg-dark-bg border border-line dark:border-dark-border p-3">
+              className="rounded-lg bg-background border border-border p-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${TYPE_COLORS[type]}`} aria-hidden />
-                <span className="text-xs text-slate dark:text-dark-muted capitalize font-medium">{type}</span>
+                <span className="text-xs text-slate capitalize font-medium">{type}</span>
               </div>
-              <p className="text-sm font-semibold text-ink dark:text-dark-text">—</p>
+              <p className="text-sm font-semibold text-foreground">—</p>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-slate dark:text-dark-muted mt-3">
+        <p className="text-[10px] text-slate mt-3">
           Per-school breakdown visible in each school&apos;s detail row below.
         </p>
       </Card>
@@ -200,8 +200,8 @@ export default function StoragePage() {
     ? rows.filter(r => r.schoolName.toLowerCase().includes(q.toLowerCase()))
     : rows;
 
-  const th = "px-5 py-3.5 text-left text-xs font-semibold text-slate dark:text-dark-muted uppercase tracking-wide select-none";
-  const thS = `${th} cursor-pointer hover:text-ink dark:hover:text-dark-text`;
+  const th = "px-5 py-3.5 text-left text-xs font-semibold text-slate uppercase tracking-wide select-none";
+  const thS = `${th} cursor-pointer hover:text-foreground`;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -211,7 +211,7 @@ export default function StoragePage() {
           description="Per-school storage consumption against quota."
         />
         <button onClick={load}
-          className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-ink transition-colors mt-1">
+          className="shrink-0 flex items-center gap-1.5 text-xs text-slate hover:text-foreground transition-colors mt-1">
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
       </div>
@@ -231,7 +231,7 @@ export default function StoragePage() {
           )}
 
           {/* Type legend */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate dark:text-dark-muted">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-slate">
             {TYPE_ORDER.map(type => (
               <div key={type} className="flex items-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-full ${TYPE_COLORS[type]}`} aria-hidden />
@@ -244,22 +244,21 @@ export default function StoragePage() {
           <div className="relative max-w-sm">
             <input type="search" value={q} onChange={e => setQ(e.target.value)}
               placeholder="Filter schools…"
-              className="w-full rounded-xl border border-line bg-white dark:bg-dark-surface dark:border-dark-border
-                         pl-4 pr-4 py-2.5 text-sm text-ink dark:text-dark-text placeholder:text-slate-light
+              className="w-full rounded-xl border border-border bg-card
+                         pl-4 pr-4 py-2.5 text-sm text-foreground placeholder:text-slate-light
                          focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs" />
           </div>
 
           {/* Table */}
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center rounded-xl border border-dashed border-line
-                            dark:border-dark-border py-16 text-sm text-slate dark:text-dark-muted">
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border py-16 text-sm text-slate">
               No schools match your filter
             </div>
           ) : (
-            <div className="rounded-xl border border-line dark:border-dark-border overflow-hidden shadow-xs">
+            <div className="rounded-xl border border-border overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-line dark:divide-dark-border">
-                  <thead className="bg-slate-50/80 dark:bg-dark-surface">
+                <table className="min-w-full divide-y divide-border ">
+                  <thead className="bg-slate-50/80">
                     <tr>
                       <th className={thS} onClick={() => toggleSort("schoolName")}>
                         <span className="inline-flex items-center gap-1">
@@ -286,7 +285,7 @@ export default function StoragePage() {
                       <th className={th}>Trend</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line dark:divide-dark-border bg-white dark:bg-dark-surface">
+                  <tbody className="divide-y divide-border bg-card">
                     {filtered.map((row, idx) => {
                       const isTop5    = idx < 5;
                       const isExpanded = expanded === row.schoolId;
@@ -302,13 +301,13 @@ export default function StoragePage() {
                             className={`cursor-pointer transition-colors
                               ${isExpanded
                                 ? "bg-teal-50/40 dark:bg-teal/5"
-                                : "hover:bg-slate-50/50 dark:hover:bg-dark-border/30"
+                                : "hover:bg-slate-50/50/30"
                               }
                               ${isTop5 ? "border-l-2 border-l-teal" : ""}`}
                           >
                             <td className="px-5 py-3.5">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-ink dark:text-dark-text">
+                                <p className="text-sm font-medium text-foreground">
                                   {row.schoolName}
                                 </p>
                                 {isTop5 && (
@@ -322,10 +321,10 @@ export default function StoragePage() {
                             <td className="px-5 py-3.5 hidden sm:table-cell">
                               <PlanBadge tier={row.planTier} />
                             </td>
-                            <td className="px-5 py-3.5 text-sm font-semibold text-ink dark:text-dark-text tabular-nums whitespace-nowrap">
+                            <td className="px-5 py-3.5 text-sm font-semibold text-foreground tabular-nums whitespace-nowrap">
                               {fmtGb(row.usedGb)}
                             </td>
-                            <td className="px-5 py-3.5 text-sm text-slate dark:text-dark-muted tabular-nums whitespace-nowrap">
+                            <td className="px-5 py-3.5 text-sm text-slate tabular-nums whitespace-nowrap">
                               {fmtGb(row.quotaGb)}
                             </td>
                             <td className="px-5 py-3.5 min-w-[180px]">
@@ -338,7 +337,7 @@ export default function StoragePage() {
                                   className="flex-1"
                                 />
                                 <span className={`text-xs font-semibold tabular-nums w-10 text-right
-                                  ${pctVariant === "danger" ? "text-danger" : pctVariant === "warn" ? "text-warn" : "text-slate dark:text-dark-muted"}`}>
+                                  ${pctVariant === "danger" ? "text-danger" : pctVariant === "warn" ? "text-warn" : "text-slate"}`}>
                                   {row.pct.toFixed(0)}%
                                 </span>
                               </div>
@@ -362,14 +361,13 @@ export default function StoragePage() {
                                     const pct = row.usedGb > 0 ? (gb / row.usedGb) * 100 : 0;
                                     return (
                                       <div key={type}
-                                        className="rounded-lg bg-white dark:bg-dark-surface border border-line
-                                                   dark:border-dark-border p-3 shadow-xs">
+                                        className="rounded-lg bg-card border border-border p-3 shadow-xs">
                                         <div className="flex items-center gap-1.5 mb-2">
                                           <span className={`h-2 w-2 rounded-full ${TYPE_COLORS[type]}`} aria-hidden />
-                                          <span className="text-xs text-slate dark:text-dark-muted capitalize font-medium">{type}</span>
+                                          <span className="text-xs text-slate capitalize font-medium">{type}</span>
                                         </div>
-                                        <p className="text-base font-semibold text-ink dark:text-dark-text">{fmtGb(gb)}</p>
-                                        <p className="text-[10px] text-slate dark:text-dark-muted mt-0.5">{pct.toFixed(1)}% of used</p>
+                                        <p className="text-base font-semibold text-foreground">{fmtGb(gb)}</p>
+                                        <p className="text-[10px] text-slate mt-0.5">{pct.toFixed(1)}% of used</p>
                                         <ProgressBar value={pct} max={100} size="sm" variant="teal" className="mt-2" />
                                       </div>
                                     );
@@ -395,7 +393,7 @@ export default function StoragePage() {
           )}
 
           {/* Footer note */}
-          <p className="text-xs text-slate dark:text-dark-muted">
+          <p className="text-xs text-slate">
             Click a row to expand per-type breakdown. Top 5 schools by usage are highlighted with a teal left border.
           </p>
         </>

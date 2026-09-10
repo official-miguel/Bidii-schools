@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * /staff/library/inventory/[id]/qr
@@ -52,6 +52,7 @@ function QRSticker({ copy }: { copy: CopyQrRecord }) {
     }).catch(() => setError(true));
   }, [copy.qrToken]);
 
+  // print: status indicator colors on white sticker — intentional (print context)
   const statusColor =
     copy.status === "AVAILABLE"  ? "#0f766e" :
     copy.status === "BORROWED"   ? "#0369a1" :
@@ -69,7 +70,7 @@ function QRSticker({ copy }: { copy: CopyQrRecord }) {
       padding: "6px",
       width: "100%",
       boxSizing: "border-box",
-      backgroundColor: "#fff",
+      backgroundColor: "#fff", // print: sticker background must be white for print output
       pageBreakInside: "avoid",
       breakInside: "avoid",
     }}>
@@ -86,15 +87,15 @@ function QRSticker({ copy }: { copy: CopyQrRecord }) {
 
       {/* Text info */}
       <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-        <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, fontFamily: "monospace", color: "#111827", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, fontFamily: "monospace", color: "#111827", /* print: dark ink on white sticker — intentional */ lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {copy.bookNumber ?? copy.accessionNumber}
         </p>
         {copy.bookNumber && (
-          <p style={{ margin: "2px 0 0", fontSize: "9px", fontFamily: "monospace", color: "#6b7280" }}>
+          <p style={{ margin: "2px 0 0", fontSize: "9px", fontFamily: "monospace", color: "#6b7280" /* print: muted ink on white sticker — intentional */ }}>
             {copy.accessionNumber}
           </p>
         )}
-        <p style={{ margin: "4px 0 0", fontSize: "9px", color: "#374151", lineHeight: 1.3 }}>
+        <p style={{ margin: "4px 0 0", fontSize: "9px", color: "#374151", /* print: dark ink on white sticker — intentional */ lineHeight: 1.3 }}>
           {shortTitle}
         </p>
         <p style={{ margin: "4px 0 0", fontSize: "8px", fontWeight: 600, color: statusColor, textTransform: "uppercase", letterSpacing: "0.04em" }}>
@@ -179,8 +180,8 @@ export default function QRStickerPage() {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           <div>
-            <h1 className="text-lg font-bold text-ink dark:text-dark-text">{title}</h1>
-            <p className="text-sm text-slate dark:text-dark-muted">
+            <h1 className="text-lg font-bold text-foreground">{title}</h1>
+            <p className="text-sm text-slate">
               {loading ? "Loading…" : `${copies.length} sticker${copies.length !== 1 ? "s" : ""} ready to print`}
               {skipped > 0 && ` · ${skipped} cop${skipped > 1 ? "ies" : "y"} missing QR token`}
             </p>

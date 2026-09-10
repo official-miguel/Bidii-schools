@@ -39,7 +39,7 @@ export default function StudentAttendanceHistory({ studentId }: { studentId: str
   }
 
   const cards = [
-    { label: "Days recorded", value: String(history.totalDays), cls: "text-ink" },
+    { label: "Days recorded", value: String(history.totalDays), cls: "text-foreground" },
     { label: "Present", value: String(history.present), cls: "text-success" },
     { label: "Absent", value: String(history.absent), cls: "text-danger" },
     {
@@ -53,16 +53,16 @@ export default function StudentAttendanceHistory({ studentId }: { studentId: str
     <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {cards.map((c) => (
-          <div key={c.label} className="bg-white border border-line rounded-xl p-4">
+          <div key={c.label} className="bg-card border border-border rounded-xl p-4">
             <p className={`text-xl font-display font-semibold ${c.cls}`}>{c.value}</p>
             <p className="text-slate text-xs mt-0.5">{c.label}</p>
           </div>
         ))}
       </div>
-      <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm max-h-64 overflow-y-auto">
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm max-h-64 overflow-y-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-white">
-            <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+          <thead className="sticky top-0 z-10 bg-card">
+            <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
               <th className="px-5 py-3">Date</th>
               <th className="px-5 py-3">Class</th>
               <th className="px-5 py-3 w-[110px]">Status</th>
@@ -70,8 +70,8 @@ export default function StudentAttendanceHistory({ studentId }: { studentId: str
           </thead>
           <tbody>
             {history.records.map((r) => (
-              <tr key={r.date + r.className} className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors">
-                <td className="px-5 py-3 text-ink text-sm">{r.date}</td>
+              <tr key={r.date + r.className} className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors">
+                <td className="px-5 py-3 text-foreground text-sm">{r.date}</td>
                 <td className="px-5 py-3 text-slate text-sm">{r.className}</td>
                 <td className="px-5 py-3">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${

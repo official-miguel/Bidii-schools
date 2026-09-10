@@ -63,17 +63,16 @@ function WorkspaceSearch({ value, onChange, placeholder = "Search…", className
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-line bg-white pl-9 pr-9
-                   py-2.5 sm:py-2 text-sm text-ink placeholder:text-slate-light
+        className="w-full rounded-lg border border-border bg-card pl-9 pr-9
+                   py-2.5 sm:py-2 text-sm text-foreground placeholder:text-slate-light
                    focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15
-                   transition-colors dark:bg-dark-surface dark:border-dark-border
-                   dark:text-dark-text dark:placeholder:text-dark-muted"
+                   transition-colors"
       />
       {value && (
         <button
           onClick={() => onChange("")}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full
-                     flex items-center justify-center text-slate hover:text-ink
+                     flex items-center justify-center text-slate hover:text-foreground
                      hover:bg-slate-100 transition-colors"
           aria-label="Clear search"
         >
@@ -109,11 +108,10 @@ function WorkspaceFilter({ label, value, options, onChange, icon, className = ""
         onChange={(e) => onChange(e.target.value)}
         className={`appearance-none rounded-lg border pr-8 py-2.5 sm:py-2 text-sm
                     transition-colors focus:outline-none focus:ring-2 focus:ring-teal/15
-                    dark:bg-dark-surface dark:border-dark-border dark:text-dark-text
                     ${icon ? "pl-8" : "pl-3"}
                     ${isActive
                       ? "border-teal/50 bg-teal-50 text-teal font-medium focus:border-teal"
-                      : "border-line bg-white text-ink focus:border-teal dark:text-dark-text"
+                      : "border-border bg-card text-foreground focus:border-teal"
                     }`}
         aria-label={label}
       >
@@ -148,7 +146,7 @@ function WorkspaceFilterButton({ onClick, active = false, count, label = "Filter
                   focus:ring-teal/15 min-h-[44px] sm:min-h-0
                   ${active
                     ? "border-teal/50 bg-teal-50 text-teal"
-                    : "border-line bg-white text-ink hover:bg-slate-50 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border"
+                    : "border-border bg-card text-foreground hover:bg-slate-50"
                   }`}
     >
       <SlidersHorizontal className="h-4 w-4" />
@@ -180,7 +178,7 @@ function WorkspaceSortButton({ label = "Sort", active = false, onClick }: SortBu
       className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal/15 ${
         active
           ? "border-teal/50 bg-teal-50 text-teal"
-          : "border-line bg-white text-ink hover:bg-slate-50"
+          : "border-border bg-card text-foreground hover:bg-slate-50"
       }`}
     >
       <ArrowUpDown className="h-4 w-4" />
@@ -204,11 +202,10 @@ function WorkspaceExportButton({ onClick, label = "Export", loading = false }: E
     <button
       onClick={onClick}
       disabled={loading}
-      className="inline-flex items-center gap-2 rounded-lg border border-line bg-white
-                 px-3 py-2.5 sm:py-2 text-sm font-medium text-ink hover:bg-slate-50
+      className="inline-flex items-center gap-2 rounded-lg border border-border bg-card
+                 px-3 py-2.5 sm:py-2 text-sm font-medium text-foreground hover:bg-slate-50
                  transition-colors focus:outline-none focus:ring-2 focus:ring-teal/15
-                 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0
-                 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border"
+                 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
     >
       <Download className="h-4 w-4 text-slate/70" />
       {loading ? "Exporting…" : label}
@@ -229,11 +226,10 @@ function WorkspacePrintButton({ onClick, label = "Print" }: PrintButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-lg border border-line bg-white
-                 px-3 py-2.5 sm:py-2 text-sm font-medium text-ink hover:bg-slate-50
+      className="inline-flex items-center gap-2 rounded-lg border border-border bg-card
+                 px-3 py-2.5 sm:py-2 text-sm font-medium text-foreground hover:bg-slate-50
                  transition-colors focus:outline-none focus:ring-2 focus:ring-teal/15
-                 min-h-[44px] sm:min-h-0
-                 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-border"
+                 min-h-[44px] sm:min-h-0"
     >
       <Printer className="h-4 w-4 text-slate/70" />
       {label}
@@ -258,10 +254,9 @@ function WorkspaceRefreshButton({ onClick, loading = false }: RefreshButtonProps
       aria-label="Refresh"
       title="Refresh"
       className="inline-flex items-center justify-center h-11 w-11 sm:h-9 sm:w-9
-                 rounded-lg border border-line bg-white text-slate hover:text-ink
+                 rounded-lg border border-border bg-card text-slate hover:text-foreground
                  hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2
-                 focus:ring-teal/15 disabled:opacity-50
-                 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:bg-dark-border"
+                 focus:ring-teal/15 disabled:opacity-50"
     >
       <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
     </button>
@@ -298,7 +293,7 @@ function WorkspaceViewSwitcher({
   modes = ["table", "list"],
 }: ViewSwitcherProps) {
   return (
-    <div className="inline-flex rounded-lg border border-line bg-white overflow-hidden">
+    <div className="inline-flex rounded-lg border border-border bg-card overflow-hidden">
       {modes.map((mode) => (
         <button
           key={mode}
@@ -308,7 +303,7 @@ function WorkspaceViewSwitcher({
           className={`inline-flex items-center justify-center h-9 w-9 transition-colors focus:outline-none focus:ring-inset focus:ring-2 focus:ring-teal/15 ${
             value === mode
               ? "bg-teal text-white"
-              : "text-slate hover:bg-slate-50 hover:text-ink"
+              : "text-slate hover:bg-slate-50 hover:text-foreground"
           }`}
         >
           {VIEW_ICONS[mode]}
@@ -349,7 +344,7 @@ function WorkspaceColumnVisibility({ columns, visible, onChange }: ColumnVisibil
         className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal/15 ${
           hiddenCount > 0
             ? "border-teal/50 bg-teal-50 text-teal"
-            : "border-line bg-white text-ink hover:bg-slate-50"
+            : "border-border bg-card text-foreground hover:bg-slate-50"
         }`}
       >
         <Table2 className="h-4 w-4" />
@@ -363,7 +358,7 @@ function WorkspaceColumnVisibility({ columns, visible, onChange }: ColumnVisibil
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-line bg-white shadow-lg py-1.5 animate-scale-in origin-top-right">
+        <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-border bg-card shadow-lg py-1.5 animate-scale-in origin-top-right">
           <p className="px-3 py-1.5 text-[10px] font-semibold text-slate uppercase tracking-wide">
             Toggle columns
           </p>
@@ -373,11 +368,11 @@ function WorkspaceColumnVisibility({ columns, visible, onChange }: ColumnVisibil
               <button
                 key={col.key}
                 onClick={() => onChange(col.key, !isVisible)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-slate-50 transition-colors"
               >
                 <span
                   className={`h-4 w-4 rounded flex items-center justify-center border transition-colors ${
-                    isVisible ? "bg-teal border-teal text-white" : "border-line"
+                    isVisible ? "bg-teal border-teal text-white" : "border-border"
                   }`}
                 >
                   {isVisible && <Check className="h-3 w-3" />}
@@ -406,8 +401,7 @@ function WorkspaceBulkActionBar({ count, onClear, children }: BulkActionBarProps
   if (count === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-teal/30
-                    bg-teal-50 px-4 py-2.5 mb-4 animate-fade-in
-                    dark:bg-teal/10 dark:border-teal/20">
+                    bg-teal-50 px-4 py-2.5 mb-4 animate-fade-in dark:border-teal/20">
       <span className="text-sm font-medium text-teal">
         {count} selected
       </span>
@@ -415,7 +409,7 @@ function WorkspaceBulkActionBar({ count, onClear, children }: BulkActionBarProps
       <button
         onClick={onClear}
         className="sm:ml-auto inline-flex items-center gap-1.5 text-sm text-slate
-                   hover:text-ink transition-colors min-h-[44px] sm:min-h-0 px-1"
+                   hover:text-foreground transition-colors min-h-[44px] sm:min-h-0 px-1"
       >
         <X className="h-3.5 w-3.5" />
         Clear
@@ -440,13 +434,13 @@ function WorkspaceResultCount({ count, total, label = "result" }: ResultCountPro
     <span className="text-sm text-slate tabular-nums">
       {total !== undefined && total !== count ? (
         <>
-          <span className="font-medium text-ink">{count}</span>
+          <span className="font-medium text-foreground">{count}</span>
           {" / "}
           {total} {plural}
         </>
       ) : (
         <>
-          <span className="font-medium text-ink">{count}</span> {plural}
+          <span className="font-medium text-foreground">{count}</span> {plural}
         </>
       )}
     </span>
@@ -527,12 +521,12 @@ function WorkspaceFilterPanel({ open, onClose, children }: FilterPanelProps) {
   if (!open) return null;
 
   return (
-    <div className="w-full mb-4 p-4 bg-white border border-line rounded-xl shadow-sm animate-fade-in">
+    <div className="w-full mb-4 p-4 bg-card border border-border rounded-xl shadow-sm animate-fade-in">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-ink">Advanced filters</h3>
+        <h3 className="text-sm font-semibold text-foreground">Advanced filters</h3>
         <button
           onClick={onClose}
-          className="h-7 w-7 rounded-md flex items-center justify-center text-slate hover:text-ink hover:bg-slate-100 transition-colors"
+          className="h-7 w-7 rounded-md flex items-center justify-center text-slate hover:text-foreground hover:bg-slate-100 transition-colors"
           aria-label="Close filters"
         >
           <X className="h-4 w-4" />

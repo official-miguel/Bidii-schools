@@ -176,7 +176,7 @@ function ReconcileItem({
   }
 
   return (
-    <div className="bg-card border border-line rounded-xl p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       {/* Transaction details */}
       <div className="flex items-center gap-2 mb-3">
         <span className="font-mono text-sm font-semibold text-foreground">
@@ -201,7 +201,7 @@ function ReconcileItem({
       </div>
 
       {/* Match section */}
-      <div className="border-t border-line pt-4">
+      <div className="border-t border-border pt-4">
         <p className="text-xs font-medium text-slate mb-2">
           Match to student
         </p>
@@ -249,7 +249,7 @@ function ReconcileItem({
               onFocus={() => { if (results.length) setOpen(true); }}
               onBlur={() => setTimeout(() => setOpen(false), 150)}
               placeholder="Type student name or admission number…"
-              className="w-full rounded-lg border border-line bg-background pl-9 pr-9 py-2 text-sm text-foreground
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground
                          placeholder:text-slate outline-none transition-colors
                          focus:border-teal/50 focus:ring-2 focus:ring-teal/20"
             />
@@ -268,7 +268,7 @@ function ReconcileItem({
               <ul
                 ref={listRef}
                 role="listbox"
-                className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-line bg-card shadow-xl overflow-auto"
+                className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border bg-card shadow-xl overflow-auto"
                 style={{ maxHeight: "240px" }}
               >
                 {results.length === 0 ? (
@@ -283,7 +283,7 @@ function ReconcileItem({
                     onMouseDown={() => pick(s)}
                     onMouseEnter={() => setActiveIdx(idx)}
                     className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors
-                      ${idx < results.length - 1 ? "border-b border-line/60/60" : ""}
+                      ${idx < results.length - 1 ? "border-b border-border/60/60" : ""}
                       ${idx === activeIdx ? "bg-teal/5" : "hover:bg-background/40"}`}
                   >
                     <div className="h-7 w-7 rounded-full bg-teal flex items-center justify-center shrink-0 text-[10px] font-bold text-white">
@@ -323,7 +323,7 @@ function ReconcileItem({
               type="button"
               onClick={autoMatch}
               disabled={confirming}
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-background px-4 py-2 text-sm
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm
                          font-medium text-foreground hover:bg-background/80 disabled:opacity-50 disabled:cursor-not-allowed
                          transition-colors"
             >

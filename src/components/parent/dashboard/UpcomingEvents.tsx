@@ -26,7 +26,7 @@ export default function UpcomingEvents({ events, calendarHref }: Props) {
   return (
     <section aria-labelledby="events-heading" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="events-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+        <h2 id="events-heading" className="text-base font-semibold text-foreground">
           Upcoming events
         </h2>
         <Link href={calendarHref} className="text-xs font-medium text-teal hover:underline">
@@ -39,8 +39,8 @@ export default function UpcomingEvents({ events, calendarHref }: Props) {
           <Link
             key={event.id}
             href={calendarHref}
-            className="flex items-center gap-4 bg-white dark:bg-dark-surface
-                       border border-line dark:border-dark-border rounded-2xl px-4 py-3.5 shadow-xs
+            className="flex items-center gap-4 bg-card
+                       border border-border rounded-2xl px-4 py-3.5 shadow-xs
                        hover:border-teal/40 hover:shadow-sm transition-all group"
           >
             {/* Date chip */}
@@ -54,10 +54,10 @@ export default function UpcomingEvents({ events, calendarHref }: Props) {
 
             {/* Info */}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink dark:text-dark-text truncate group-hover:text-teal transition-colors">
+              <p className="text-sm font-semibold text-foreground truncate group-hover:text-teal transition-colors">
                 {event.title}
               </p>
-              <p className="text-xs text-slate dark:text-dark-muted truncate">{event.dateLabel}</p>
+              <p className="text-xs text-slate truncate">{event.dateLabel}</p>
             </div>
           </Link>
         ))}

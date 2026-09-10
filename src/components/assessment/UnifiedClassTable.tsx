@@ -58,18 +58,18 @@ export default function UnifiedClassTable({ rows, role }: UnifiedClassTableProps
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-slate">
+      <div className="rounded-xl border border-dashed border-border px-4 py-12 text-center text-sm text-slate">
         No classes found.
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+            <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
               <th className="px-5 py-3.5">Class</th>
               <th className="px-5 py-3.5 w-[110px]">Framework</th>
               <th className="px-5 py-3.5 w-[160px]">Mean grade</th>
@@ -79,10 +79,10 @@ export default function UnifiedClassTable({ rows, role }: UnifiedClassTableProps
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id} className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors">
+              <tr key={row.id} className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors">
                 {/* Class name */}
                 <td className="px-5 py-3.5">
-                  <p className="text-sm font-semibold text-ink">{row.name}</p>
+                  <p className="text-sm font-semibold text-foreground">{row.name}</p>
                   <p className="text-xs text-slate/60">Form {row.form}</p>
                 </td>
 
@@ -110,7 +110,7 @@ export default function UnifiedClassTable({ rows, role }: UnifiedClassTableProps
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       href={`${base}/assessments/marksheet?classId=${row.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate border border-line hover:border-teal/50 hover:text-teal hover:bg-teal-50 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate border border-border hover:border-teal/50 hover:text-teal hover:bg-teal-50 transition-colors"
                       title="Open marksheet"
                     >
                       <FileSpreadsheet className="h-3.5 w-3.5" />
@@ -118,7 +118,7 @@ export default function UnifiedClassTable({ rows, role }: UnifiedClassTableProps
                     </Link>
                     <Link
                       href={`${base}/assessments/dashboard?classId=${row.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate border border-line hover:border-teal/50 hover:text-teal hover:bg-teal-50 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate border border-border hover:border-teal/50 hover:text-teal hover:bg-teal-50 transition-colors"
                       title="Open dashboard"
                     >
                       <BarChart2 className="h-3.5 w-3.5" />

@@ -71,8 +71,8 @@ export default async function TeacherAcademicsHub() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink mb-1 dark:text-dark-text">Academics</h1>
-      <p className="text-slate text-sm mb-6 dark:text-dark-muted">
+      <h1 className="text-2xl font-semibold text-foreground mb-1">Academics</h1>
+      <p className="text-slate text-sm mb-6">
         Departments, classes, subjects, timetable, attendance, and assessments.
         {isClassTeacher && (
           <span className="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal/10 text-teal text-xs font-medium">
@@ -91,9 +91,8 @@ export default async function TeacherAcademicsHub() {
             <a
               key={item.href}
               href={item.href}
-              className="group flex flex-col gap-3 bg-white border border-line rounded-xl p-5
-                         hover:border-teal/50 hover:shadow-md transition-all duration-150
-                         dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/40"
+              className="group flex flex-col gap-3 bg-card border border-border rounded-xl p-5
+                         hover:border-teal/50 hover:shadow-md transition-all duration-150 dark:hover:border-teal/40"
             >
               {Icon && (
                 <span
@@ -104,11 +103,11 @@ export default async function TeacherAcademicsHub() {
                 </span>
               )}
               <div>
-                <h2 className="text-sm font-semibold text-ink dark:text-dark-text">
+                <h2 className="text-sm font-semibold text-foreground">
                   {item.label}
                 </h2>
                 {meta?.description && (
-                  <p className="mt-0.5 text-xs text-slate leading-relaxed dark:text-dark-muted">
+                  <p className="mt-0.5 text-xs text-slate leading-relaxed">
                     {meta.description}
                   </p>
                 )}

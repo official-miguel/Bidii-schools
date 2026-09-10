@@ -64,7 +64,7 @@ export default function StaffTimetablePage() {
             <div className="flex-1 min-w-0">
               {published ? (
                 <>
-                  <p className="text-sm font-semibold text-ink">
+                  <p className="text-sm font-semibold text-foreground">
                     Live — {published.name}
                   </p>
                   <p className="text-xs text-slate mt-0.5">
@@ -74,14 +74,14 @@ export default function StaffTimetablePage() {
                   </p>
                 </>
               ) : (
-                <p className="text-sm font-semibold text-ink">
+                <p className="text-sm font-semibold text-foreground">
                   No timetable published yet.
                 </p>
               )}
             </div>
             <button
               onClick={load}
-              className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors"
+              className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors"
             >
               <RefreshCw
                 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -117,9 +117,8 @@ export default function StaffTimetablePage() {
             <Link
               key={card.href}
               href={card.href}
-              className="group bg-white border border-line rounded-xl p-5 flex flex-col gap-3
-                         hover:border-teal/40 hover:shadow-sm transition-all duration-150
-                         dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+              className="group bg-card border border-border rounded-xl p-5 flex flex-col gap-3
+                         hover:border-teal/40 hover:shadow-sm transition-all duration-150 dark:hover:border-teal/30"
             >
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${card.accent}`}
@@ -127,7 +126,7 @@ export default function StaffTimetablePage() {
                 {card.icon}
               </div>
               <div>
-                <p className="text-sm font-semibold text-ink group-hover:text-teal transition-colors">
+                <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors">
                   {card.title}
                 </p>
                 <p className="text-xs text-slate mt-1 leading-relaxed">{card.desc}</p>

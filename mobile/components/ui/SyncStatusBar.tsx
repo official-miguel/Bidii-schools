@@ -6,13 +6,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react-native';
-import { Colors, Spacing, Typography } from '@/constants';
+import { Spacing, Typography } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useNetworkState } from '@/hooks/useNetworkState';
 
 export function SyncStatusBar() {
   const { status, pendingCount, triggerSync } = useSyncStatus();
   const { isOnline } = useNetworkState();
+  const { colors } = useTheme();
 
   // Nothing to show when online and idle with nothing pending
   if (isOnline && status === 'idle' && pendingCount === 0) return null;
@@ -22,23 +24,24 @@ export function SyncStatusBar() {
   const hasError  = status === 'error';
   const hasPending = pendingCount > 0;
 
-  let bgColor = Colors.warnBg;
-  let textColor = Colors.warn;
+  let bgColor = colors.warn;
+  let textColor = colors.warnForeground;
   let message = '';
 
   if (isOffline) {
-    bgColor = Colors.dangerBg; textColor = Colors.danger;
+    bgColor = colors.destructive + '15'; textColor = colors.destructive;
     message = hasPending
       ? `Offline — ${pendingCount} action${pendingCount !== 1 ? 's' : ''} queued`
       : 'You are offline — changes will sync when reconnected';
   } else if (isSyncing) {
-    bgColor = Colors.infoBg; textColor = Colors.info;
+    // info: using primary colors for syncing state — intentional
+    bgColor = colors.primary + '15'; textColor = colors.primary;
     message = 'Syncing…';
   } else if (hasError) {
-    bgColor = Colors.dangerBg; textColor = Colors.danger;
+    bgColor = colors.destructive + '15'; textColor = colors.destructive;
     message = 'Sync failed — tap to retry';
   } else if (hasPending) {
-    bgColor = Colors.warnBg; textColor = Colors.warn;
+    bgColor = colors.warn; textColor = colors.warnForeground;
     message = `${pendingCount} action${pendingCount !== 1 ? 's' : ''} pending sync`;
   }
 

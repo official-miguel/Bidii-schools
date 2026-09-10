@@ -62,8 +62,8 @@ function ToggleRow({
   return (
     <label className="flex items-start justify-between gap-4 py-4 cursor-pointer">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-ink dark:text-dark-text">{label}</p>
-        <p className="text-xs text-slate mt-0.5 leading-relaxed dark:text-dark-muted">{description}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-slate mt-0.5 leading-relaxed">{description}</p>
       </div>
       <button
         type="button"
@@ -71,10 +71,10 @@ function ToggleRow({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:ring-offset-2 ${
-          checked ? "bg-teal" : "bg-line dark:bg-dark-border"
+          checked ? "bg-teal" : "bg-line"
         }`}
       >
-        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out ${
           checked ? "translate-x-5" : "translate-x-0"
         }`} />
       </button>
@@ -88,17 +88,17 @@ function SectionCard({
   icon: Icon, title, description, children,
 }: { icon: typeof Settings; title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border overflow-hidden">
-      <div className="flex items-start gap-3 p-5 border-b border-line dark:border-dark-border bg-slate-50/60 dark:bg-dark-border/20">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-start gap-3 p-5 border-b border-border bg-slate-50/60/20">
         <div className="rounded-lg bg-teal/10 p-2 shrink-0">
           <Icon className="h-4 w-4 text-teal" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">{title}</p>
-          <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">{description}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-xs text-slate mt-0.5">{description}</p>
         </div>
       </div>
-      <div className="px-5 divide-y divide-line dark:divide-dark-border">{children}</div>
+      <div className="px-5 divide-y divide-border ">{children}</div>
     </div>
   );
 }
@@ -158,7 +158,7 @@ export default function AccommodationSettingsPage() {
         <ContextNavigation items={NAV_ITEMS} />
         <div className="space-y-4 mt-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-40 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />
+            <div key={i} className="h-40 rounded-xl bg-line/40/40 animate-pulse" />
           ))}
         </div>
       </div>
@@ -184,14 +184,14 @@ export default function AccommodationSettingsPage() {
           <div className="py-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium text-slate dark:text-dark-muted mb-1">Boarding type</p>
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                <p className="text-xs font-medium text-slate mb-1">Boarding type</p>
+                <p className="text-sm font-semibold text-foreground">
                   {BOARDING_LABEL[schoolPolicy.boardingType] ?? schoolPolicy.boardingType ?? "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-slate dark:text-dark-muted mb-1">Gender admission policy</p>
-                <p className="text-sm font-semibold text-ink dark:text-dark-text">
+                <p className="text-xs font-medium text-slate mb-1">Gender admission policy</p>
+                <p className="text-sm font-semibold text-foreground">
                   {GENDER_POLICY_LABEL[schoolPolicy.genderPolicy] ?? schoolPolicy.genderPolicy ?? "—"}
                 </p>
               </div>
@@ -244,7 +244,7 @@ export default function AccommodationSettingsPage() {
                   onChange={(e) => patch({ occupancyWarningPct: parseInt(e.target.value) })}
                   className="flex-1 accent-teal"
                 />
-                <span className="text-sm font-semibold text-ink tabular-nums w-10 text-right dark:text-dark-text">
+                <span className="text-sm font-semibold text-foreground tabular-nums w-10 text-right">
                   {settings.occupancyWarningPct}%
                 </span>
               </div>
@@ -276,9 +276,9 @@ export default function AccommodationSettingsPage() {
         </SectionCard>
 
         {/* Note */}
-        <div className="rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border p-4 flex items-start gap-3">
+        <div className="rounded-lg border border-border bg-background p-4 flex items-start gap-3">
           <ArrowRight className="h-4 w-4 text-slate mt-0.5 shrink-0" />
-          <p className="text-xs text-slate leading-relaxed dark:text-dark-muted">
+          <p className="text-xs text-slate leading-relaxed">
             Dorm-specific settings (structure, bed types, cubicle layouts, per-dorm allocation policies) are
             configured individually on each dormitory&rsquo;s registration page — not here.
           </p>
@@ -286,7 +286,7 @@ export default function AccommodationSettingsPage() {
 
         <div className="flex items-center justify-between gap-4 pt-2">
           {settings.updatedAt && (
-            <p className="text-xs text-slate dark:text-dark-muted">
+            <p className="text-xs text-slate">
               Last saved {new Date(settings.updatedAt).toLocaleDateString()}
             </p>
           )}

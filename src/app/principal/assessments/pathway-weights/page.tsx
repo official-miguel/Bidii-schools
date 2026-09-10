@@ -24,7 +24,7 @@ export default async function PathwayWeightsPage() {
           title="Pathway Weights"
           description="Configure SBA and exam weighting for senior CBE pathway subjects."
         />
-        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-sm text-slate">
+        <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
           No active CBE framework found. Create one before configuring pathway weights.
         </div>
       </div>

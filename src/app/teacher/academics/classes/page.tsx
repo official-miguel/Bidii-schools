@@ -134,7 +134,7 @@ export default function TeacherClassesPage() {
       {ctx.isClassTeacher && ctx.classTeacherOf && (
         <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-teal/5 border border-teal/20">
           <Star className="h-4 w-4 text-teal shrink-0" />
-          <p className="text-sm text-ink">
+          <p className="text-sm text-foreground">
             <span className="font-semibold text-teal">{ctx.classTeacherOf.name}</span>
             {" "}is your class. Click it to assign subject teachers.
           </p>
@@ -180,11 +180,11 @@ export default function TeacherClassesPage() {
       ) : visibleClasses.length === 0 ? (
         <EmptyState message="No classes match your filters." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Class</th>
                   <th className="px-5 py-3.5 w-[80px]">Form</th>
                   <th className="px-5 py-3.5 w-[110px]">Framework</th>
@@ -199,7 +199,7 @@ export default function TeacherClassesPage() {
                     <tr
                       key={c.id}
                       onClick={() => handleRowClick(c)}
-                      className={`group border-b border-line last:border-0 transition-colors cursor-pointer
+                      className={`group border-b border-border last:border-0 transition-colors cursor-pointer
                         ${mine
                           ? "bg-teal-50/40 hover:bg-teal-50/70"
                           : "hover:bg-slate-50/50"
@@ -210,7 +210,7 @@ export default function TeacherClassesPage() {
                         <div className="flex items-center gap-2">
                           <div>
                             <p className={`text-sm font-semibold transition-colors
-                              ${mine ? "text-teal" : "text-ink group-hover:text-teal"}`}>
+                              ${mine ? "text-teal" : "text-foreground group-hover:text-teal"}`}>
                               {c.name}
                             </p>
                             {c.stream && (
@@ -240,7 +240,7 @@ export default function TeacherClassesPage() {
                       {/* Class teacher */}
                       <td className="px-5 py-3.5">
                         {c.classTeacher ? (
-                          <span className="text-sm text-ink">{c.classTeacher.fullName}</span>
+                          <span className="text-sm text-foreground">{c.classTeacher.fullName}</span>
                         ) : (
                           <span className="text-xs text-slate/50 italic">Not assigned</span>
                         )}

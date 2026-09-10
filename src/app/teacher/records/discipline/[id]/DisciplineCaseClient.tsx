@@ -117,12 +117,12 @@ function CloseCasePanel({
   return (
     <div className="rounded-xl border border-success/30 bg-success-bg/30 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-ink flex items-center gap-2">
+        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-success" />
           Close this case
         </p>
         <button type="button" onClick={onCancel}
-          className="h-6 w-6 flex items-center justify-center rounded text-slate hover:text-ink">
+          className="h-6 w-6 flex items-center justify-center rounded text-slate hover:text-foreground">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -208,9 +208,9 @@ export default function DisciplineCaseClient({
     <div className="space-y-5">
 
       {/* ── Case details card ──────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-line bg-card overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         {/* Card header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line bg-paper/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-background/60">
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
               STATUS_BADGE[record.status] ?? "bg-line text-slate"
@@ -232,7 +232,7 @@ export default function DisciplineCaseClient({
 
         {/* Close case panel */}
         {canManage && showClosePanel && (
-          <div className="px-5 py-4 border-b border-line">
+          <div className="px-5 py-4 border-b border-border">
             <CloseCasePanel
               recordId={record.id}
               studentId={record.student.id}
@@ -244,7 +244,7 @@ export default function DisciplineCaseClient({
         )}
 
         {/* Detail grid */}
-        <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 divide-y divide-line sm:divide-y-0 sm:divide-x">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 divide-y divide-border sm:divide-y-0 sm:divide-x">
           {[
             { label: "Offence",         value: record.offence },
             { label: "Date of offence", value: new Date(record.dateOfOffence).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" }) },
@@ -254,31 +254,31 @@ export default function DisciplineCaseClient({
           ].map(({ label, value }) => (
             <div key={label} className="px-5 py-4">
               <dt className="text-xs font-medium text-slate mb-1">{label}</dt>
-              <dd className="text-sm text-ink leading-relaxed">{value}</dd>
+              <dd className="text-sm text-foreground leading-relaxed">{value}</dd>
             </div>
           ))}
           {record.description && (
-            <div className="px-5 py-4 sm:col-span-2 lg:col-span-3 border-t border-line">
+            <div className="px-5 py-4 sm:col-span-2 lg:col-span-3 border-t border-border">
               <dt className="text-xs font-medium text-slate mb-1">Description</dt>
-              <dd className="text-sm text-ink leading-relaxed whitespace-pre-wrap">{record.description}</dd>
+              <dd className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{record.description}</dd>
             </div>
           )}
         </dl>
       </div>
 
       {/* ── Timeline ───────────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-line bg-card overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-line bg-paper/60">
-          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border bg-background/60">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Clock className="h-4 w-4 text-slate" />
             Timeline
           </h3>
         </div>
         <div className="px-5 py-4">
-          <ol className="relative border-l border-line ml-2 space-y-4 py-1">
+          <ol className="relative border-l border-border ml-2 space-y-4 py-1">
             <li className="ml-5">
-              <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-white bg-teal dark:border-dark-bg" />
-              <p className="text-xs font-semibold text-ink">Case opened</p>
+              <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-white bg-teal" />
+              <p className="text-xs font-semibold text-foreground">Case opened</p>
               <p className="text-xs text-slate mt-0.5">
                 {new Date(record.createdAt).toLocaleDateString("en-KE", {
                   day: "numeric", month: "long", year: "numeric",
@@ -286,8 +286,8 @@ export default function DisciplineCaseClient({
               </p>
             </li>
             <li className="ml-5">
-              <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-white bg-teal/40 dark:border-dark-bg" />
-              <p className="text-xs font-semibold text-ink">Class / Form</p>
+              <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-white bg-teal/40" />
+              <p className="text-xs font-semibold text-foreground">Class / Form</p>
               <p className="text-xs text-slate mt-0.5">
                 {record.student.schoolClass.name}
                 <span className="ml-1.5 text-slate/60">(Form {record.student.schoolClass.form})</span>
@@ -298,9 +298,9 @@ export default function DisciplineCaseClient({
       </div>
 
       {/* ── Case Notes ─────────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-line bg-card overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line bg-paper/60">
-          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-background/60">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-slate" />
             Case Notes
             {notes.length > 0 && (
@@ -322,7 +322,7 @@ export default function DisciplineCaseClient({
 
         <div className="px-5 py-4 space-y-3">
           {canManage && showNoteForm && (
-            <form onSubmit={handleAddNote} className="space-y-2 pb-3 border-b border-line">
+            <form onSubmit={handleAddNote} className="space-y-2 pb-3 border-b border-border">
               <textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
@@ -350,8 +350,8 @@ export default function DisciplineCaseClient({
             <ul className="space-y-2.5">
               {notes.map((n) => (
                 <li key={n.id}
-                  className="rounded-lg border border-line bg-white dark:bg-dark-surface px-4 py-3">
-                  <p className="text-sm text-ink leading-relaxed">{n.body}</p>
+                  className="rounded-lg border border-border bg-card px-4 py-3">
+                  <p className="text-sm text-foreground leading-relaxed">{n.body}</p>
                   <p className="text-xs text-slate mt-1.5">
                     {new Date(n.createdAt).toLocaleString()} · {formatCreator(n.createdBy)}
                   </p>
@@ -364,9 +364,9 @@ export default function DisciplineCaseClient({
 
       {/* ── Attached Files ─────────────────────────────────────────────────── */}
       {files.length > 0 && (
-        <div className="rounded-xl border border-line bg-card overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-line bg-paper/60">
-            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border bg-background/60">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate" />
               Attached Files
               <span className="text-xs font-medium text-slate bg-line rounded-full px-2 py-0.5">
@@ -377,23 +377,23 @@ export default function DisciplineCaseClient({
           <div className="px-5 py-4 flex flex-wrap gap-3">
             {files.map((f) => (
               <div key={f.id}
-                className="flex items-center gap-3 rounded-xl border border-line bg-white dark:bg-dark-surface px-4 py-3 max-w-xs">
+                className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 max-w-xs">
                 {f.mimeType.startsWith("image/") ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={`/api/student-files/${f.id}`}
                     alt={f.fileName}
-                    className="w-14 h-14 object-cover rounded-lg border border-line shrink-0"
+                    className="w-14 h-14 object-cover rounded-lg border border-border shrink-0"
                     loading="lazy"
                     onError={(e) => { e.currentTarget.src = "/placeholder.svg"; }}
                   />
                 ) : (
-                  <div className="w-14 h-14 flex items-center justify-center rounded-lg border border-line bg-paper shrink-0">
+                  <div className="w-14 h-14 flex items-center justify-center rounded-lg border border-border bg-background shrink-0">
                     <FileText className="h-6 w-6 text-slate" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{f.fileName}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{f.fileName}</p>
                   <p className="text-xs text-slate">{(f.size / 1024).toFixed(1)} KB</p>
                   <a
                     href={`/api/student-files/${f.id}`}

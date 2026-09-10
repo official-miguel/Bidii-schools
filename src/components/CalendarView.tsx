@@ -427,14 +427,14 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <button
-            className="text-ink hover:text-royal transition-colors text-xl leading-none"
+            className="text-foreground hover:text-royal transition-colors text-xl leading-none"
             onClick={() => goToMonth(-1)}
             title="Previous month"
           >
             &lt;
           </button>
           <button
-            className="flex items-center gap-2 text-ink hover:text-royal transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-foreground hover:text-royal transition-colors cursor-pointer"
             onClick={() => setMonthPickerOpen(!monthPickerOpen)}
             title="Navigate to month/year"
           >
@@ -444,7 +444,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
             </h2>
           </button>
           <button
-            className="text-ink hover:text-royal transition-colors text-xl leading-none"
+            className="text-foreground hover:text-royal transition-colors text-xl leading-none"
             onClick={() => goToMonth(1)}
             title="Next month"
           >
@@ -463,14 +463,14 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
 
       {/* Month/year picker */}
       {monthPickerOpen && (
-        <div className="mb-4 p-4 bg-card border border-line rounded-lg">
+        <div className="mb-4 p-4 bg-card border border-border rounded-lg">
           <div className="grid grid-cols-4 gap-2 mb-4">
             {MONTH_NAMES.map((m, i) => (
               <button
                 key={m}
                 onClick={() => { setMonth(i + 1); setMonthPickerOpen(false); }}
                 className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
-                  month === i + 1 ? "bg-teal text-white" : "bg-paper text-ink hover:bg-line"
+                  month === i + 1 ? "bg-teal text-white" : "bg-background text-foreground hover:bg-line"
                 }`}
               >
                 {m.slice(0, 3)}
@@ -498,8 +498,8 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
       {showLoading ? (
         <p className="text-slate text-sm">Loading…</p>
       ) : (
-        <div className="bg-card border border-line rounded-lg overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-line text-xs font-medium text-slate">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-border text-xs font-medium text-slate">
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
               <div key={d} className="px-2 py-2 text-center">{d}</div>
             ))}
@@ -507,7 +507,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
           <div className="grid grid-cols-7">
             {cells.map((date, i) => {
               if (!date) return (
-                <div key={`blank-${i}`} className="border-b border-r border-line min-h-[92px]" />
+                <div key={`blank-${i}`} className="border-b border-r border-border min-h-[92px]" />
               );
               const dayEvents = eventsByDate.get(date) ?? [];
               const isToday   = date === ymd(todayDate);
@@ -516,7 +516,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                 <button
                   key={date}
                   onClick={() => openDay(date)}
-                  className={`text-left border-b border-r border-line min-h-[92px] p-1.5 hover:bg-paper transition-colors ${
+                  className={`text-left border-b border-r border-border min-h-[92px] p-1.5 hover:bg-background transition-colors ${
                     isToday ? "bg-royal-50/50" : ""
                   }`}
                 >
@@ -529,7 +529,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                     {dayEvents.slice(0, 2).map((e) => (
                       <div key={e.id} className="flex items-center gap-1 truncate">
                         <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${TYPE_DOT[e.type]}`} />
-                        <span className="text-[11px] text-ink truncate">{e.title}</span>
+                        <span className="text-[11px] text-foreground truncate">{e.title}</span>
                         {/* Deadline indicator */}
                         {e.source === "SCHOOL" && e.closingDate &&
                           e.type !== "HOLIDAY" && e.type !== "EXAM" &&
@@ -562,10 +562,10 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
           ) : (
             <ul className="space-y-3 mb-4">
               {selectedDayEvents.map((e) => (
-                <li key={e.id} className="border border-line rounded-md p-3">
+                <li key={e.id} className="border border-border rounded-md p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-medium text-ink flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
                         <span className={`h-2 w-2 rounded-full ${TYPE_DOT[e.type]}`} />
                         {e.title}
                       </p>
@@ -593,7 +593,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                     </div>
                     {canManage && e.source === "SCHOOL" && (
                       <div className="flex gap-2 shrink-0 whitespace-nowrap">
-                        <button className="text-sm text-ink hover:underline" onClick={() => openEdit(e)}>
+                        <button className="text-sm text-foreground hover:underline" onClick={() => openEdit(e)}>
                           Edit
                         </button>
                         <button className={dangerLinkClass} onClick={() => handleDelete(e)}>
@@ -657,7 +657,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
 
             {/* ── Deadline toggle (only for non-range event types) ── */}
             {formType !== "HOLIDAY" && formType !== "EXAM" && (
-              <div className="rounded-lg border border-line bg-paper px-4 py-3 space-y-1.5">
+              <div className="rounded-lg border border-border bg-background px-4 py-3 space-y-1.5">
                 <label className="flex items-center gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -666,9 +666,9 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
                       setFormIsDeadline(ev.target.checked);
                       if (ev.target.checked) setFormAudience("STAFF_ONLY");
                     }}
-                    className="h-4 w-4 rounded border-line text-teal focus:ring-teal"
+                    className="h-4 w-4 rounded border-border text-teal focus:ring-teal"
                   />
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                     <Clock className="h-4 w-4 text-warn" />
                     Set as deadline for all teachers
                   </span>

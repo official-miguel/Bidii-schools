@@ -39,7 +39,7 @@ const TYPE_CONFIG: Record<string, {
   HOMEWORK:     { label: "Homework",     Icon: BookOpen,   badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
   REVISION:     { label: "Revision",     Icon: RotateCcw,  badge: "bg-warn-bg text-warn" },
   PROJECT:      { label: "Project",      Icon: FolderOpen, badge: "bg-success-bg text-success" },
-  ANNOUNCEMENT: { label: "Announcement", Icon: Megaphone,  badge: "bg-slate/10 text-slate dark:bg-dark-border dark:text-dark-muted" },
+  ANNOUNCEMENT: { label: "Announcement", Icon: Megaphone,  badge: "bg-slate/10 text-slate" },
 };
 
 // ---------------------------------------------------------------------------
@@ -77,10 +77,10 @@ function EntryCard({ entry }: { entry: RecipientEntry }) {
     status === "PENDING" && entry.diaryEntry.dueDate &&
       new Date(entry.diaryEntry.dueDate).getTime() - Date.now() < 86_400_000 * 2
       ? "text-warn"
-      : "text-slate dark:text-dark-muted";
+      : "text-slate";
 
   return (
-    <div className="bg-card border border-line rounded-xl p-4 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {/* Type badge + subject */}
@@ -89,13 +89,13 @@ function EntryCard({ entry }: { entry: RecipientEntry }) {
               <cfg.Icon className="h-3 w-3" aria-hidden="true" />
               {cfg.label}
             </span>
-            <span className="text-[11px] font-semibold text-slate dark:text-dark-muted">
+            <span className="text-[11px] font-semibold text-slate">
               {entry.diaryEntry.subject.name}
             </span>
           </div>
 
           {/* Title */}
-          <p className="text-sm font-semibold text-ink dark:text-dark-text leading-snug">
+          <p className="text-sm font-semibold text-foreground leading-snug">
             {entry.diaryEntry.title}
           </p>
 
@@ -128,9 +128,9 @@ function EntryCard({ entry }: { entry: RecipientEntry }) {
 
 function SectionHeading({ title, count }: { title: string; count: number }) {
   return (
-    <h2 className="text-xs font-semibold text-slate uppercase tracking-widest dark:text-dark-muted mb-2 flex items-center gap-2">
+    <h2 className="text-xs font-semibold text-slate uppercase tracking-widest mb-2 flex items-center gap-2">
       {title}
-      <span className="text-ink dark:text-dark-text font-bold tracking-normal">
+      <span className="text-foreground font-bold tracking-normal">
         {count}
       </span>
     </h2>
@@ -166,10 +166,10 @@ export default function StudentDiaryView({ entries }: StudentDiaryViewProps) {
         <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center mb-3">
           <CheckCircle2 className="h-7 w-7 text-success" aria-hidden="true" />
         </div>
-        <p className="text-sm font-semibold text-ink dark:text-dark-text">
+        <p className="text-sm font-semibold text-foreground">
           You&apos;re all caught up!
         </p>
-        <p className="text-xs text-slate dark:text-dark-muted mt-1">
+        <p className="text-xs text-slate mt-1">
           New assignments and updates will appear here.
         </p>
       </div>

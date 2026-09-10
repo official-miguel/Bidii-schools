@@ -71,7 +71,7 @@ export function SkeletonTableRow({
   hasAvatar?: boolean;
 }) {
   return (
-    <tr style={{ height }} aria-hidden="true" className="border-b border-line last:border-0">
+    <tr style={{ height }} aria-hidden="true" className="border-b border-border last:border-0">
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-5 py-4">
           {i === 0 && hasAvatar ? (
@@ -108,7 +108,7 @@ export function SkeletonTableRow({
 /** A stat card skeleton (for dashboard overview). */
 export function SkeletonStatCard() {
   return (
-    <div className="rounded-xl border border-line bg-white p-5 space-y-3" aria-hidden="true">
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3" aria-hidden="true">
       <SkeletonBar width="45%" height="1.75rem" />
       <SkeletonBar width="65%" height="0.75rem" />
       <SkeletonBar width="40%" height="0.625rem" />
@@ -119,7 +119,7 @@ export function SkeletonStatCard() {
 /** A message card skeleton for the messaging list. */
 export function SkeletonMessageCard() {
   return (
-    <div className="rounded-xl border border-line bg-white px-4 py-3.5 space-y-2.5 animate-pulse" aria-hidden="true">
+    <div className="rounded-xl border border-border bg-card px-4 py-3.5 space-y-2.5 animate-pulse" aria-hidden="true">
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1.5">
           <SkeletonBar width="56px" height="0.625rem" className="rounded-full" />
@@ -144,9 +144,9 @@ export function SkeletonTable({
   hasAvatar?: boolean;
 }) {
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
       {/* Fake header row */}
-      <div className="border-b border-line bg-slate-50/60 px-5 py-3.5 flex items-center gap-6" aria-hidden="true">
+      <div className="border-b border-border bg-slate-50/60 px-5 py-3.5 flex items-center gap-6" aria-hidden="true">
         {Array.from({ length: cols }).map((_, i) => (
           <SkeletonBar
             key={i}

@@ -80,7 +80,7 @@ export default function TimetableSettings({ basePath }: TimetableSettingsProps) 
             <Link
               key={section.href}
               href={section.href}
-              className={`group flex flex-col gap-4 bg-white border border-line rounded-xl p-5
+              className={`group flex flex-col gap-4 bg-card border border-border rounded-xl p-5
                 transition-all duration-150 shadow-sm hover:shadow-md ${colors.ring}`}
             >
               {/* Icon + title row */}
@@ -90,7 +90,7 @@ export default function TimetableSettings({ basePath }: TimetableSettingsProps) 
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-sm font-semibold text-ink">{section.title}</h2>
+                    <h2 className="text-sm font-semibold text-foreground">{section.title}</h2>
                     <ChevronRight
                       className="h-4 w-4 text-slate/40 shrink-0 transition-transform
                                  group-hover:translate-x-0.5 group-hover:text-slate/70"

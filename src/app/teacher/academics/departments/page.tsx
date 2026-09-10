@@ -34,11 +34,11 @@ export default async function TeacherDepartmentsPage() {
       {departments.length === 0 ? (
         <EmptyState message="No departments have been set up yet." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Department</th>
                   <th className="px-5 py-3.5">Head of department</th>
                   <th className="px-5 py-3.5 w-[110px]">Subjects</th>
@@ -49,14 +49,14 @@ export default async function TeacherDepartmentsPage() {
                 {departments.map((d) => (
                   <tr
                     key={d.id}
-                    className="border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors"
+                    className="border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors"
                   >
                     <td className="px-5 py-3.5">
-                      <span className="font-semibold text-ink">{d.name}</span>
+                      <span className="font-semibold text-foreground">{d.name}</span>
                     </td>
                     <td className="px-5 py-3.5">
                       {d.headTeacher ? (
-                        <span className="text-sm text-ink">{d.headTeacher.fullName}</span>
+                        <span className="text-sm text-foreground">{d.headTeacher.fullName}</span>
                       ) : (
                         <span className="text-xs text-slate/50 italic">Not assigned</span>
                       )}

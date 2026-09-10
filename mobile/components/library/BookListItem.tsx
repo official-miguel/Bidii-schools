@@ -5,7 +5,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { ChevronRight, BookOpen } from 'lucide-react-native';
-import { Colors, Radius, Typography, Spacing } from '@/constants';
+import { Radius, Typography, Spacing } from '@/constants';
+import { useTheme } from '@/lib/ThemeContext';
 import { Badge, type BadgeVariant } from '@/components/ui';
 import { copyStatusLabel, conditionLabel } from '@/lib/utils';
 import { CopyStatusColors, ConditionColors } from '@/constants/theme';
@@ -33,6 +34,8 @@ export function BookListItem({
   subtitle,
   showChevron = true,
 }: BookListItemProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -42,9 +45,9 @@ export function BookListItem({
           flexDirection: 'row',
           alignItems: 'center',
           gap: Spacing[3],
-          backgroundColor: Colors.card,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: Colors.line,
+          borderColor: colors.border,
           borderRadius: Radius.button,
           padding: Spacing[3],
         },
@@ -57,12 +60,12 @@ export function BookListItem({
           width: 40,
           height: 40,
           borderRadius: Radius.sm,
-          backgroundColor: Colors.teal50,
+          backgroundColor: colors.primary + '20',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <BookOpen size={20} color={Colors.teal} />
+        <BookOpen size={20} color={colors.primary} />
       </View>
 
       {/* Content */}
@@ -71,7 +74,7 @@ export function BookListItem({
           style={{
             fontSize: Typography.fontSize.sm,
             fontWeight: Typography.fontWeight.semibold,
-            color: Colors.ink,
+            color: colors.foreground,
           }}
           numberOfLines={1}
         >
@@ -82,7 +85,7 @@ export function BookListItem({
           <Text
             style={{
               fontSize: Typography.fontSize.xs,
-              color: Colors.slateText,
+              color: colors.mutedForeground,
             }}
             numberOfLines={1}
           >
@@ -103,14 +106,14 @@ export function BookListItem({
                   paddingHorizontal: Spacing[2],
                   paddingVertical: 1,
                   borderRadius: Radius.full,
-                  backgroundColor: CopyStatusColors[status]?.bg || Colors.line,
+                  backgroundColor: CopyStatusColors[status]?.bg || colors.muted,
                 }}
               >
                 <Text
                   style={{
                     fontSize: Typography.fontSize.xs,
                     fontWeight: Typography.fontWeight.semibold,
-                    color: CopyStatusColors[status]?.text || Colors.slateText,
+                    color: CopyStatusColors[status]?.text || colors.mutedForeground,
                   }}
                 >
                   {copyStatusLabel(status)}
@@ -124,14 +127,14 @@ export function BookListItem({
                   paddingHorizontal: Spacing[2],
                   paddingVertical: 1,
                   borderRadius: Radius.full,
-                  backgroundColor: ConditionColors[condition]?.bg || Colors.line,
+                  backgroundColor: ConditionColors[condition]?.bg || colors.muted,
                 }}
               >
                 <Text
                   style={{
                     fontSize: Typography.fontSize.xs,
                     fontWeight: Typography.fontWeight.semibold,
-                    color: ConditionColors[condition]?.text || Colors.slateText,
+                    color: ConditionColors[condition]?.text || colors.mutedForeground,
                   }}
                 >
                   {conditionLabel(condition)}
@@ -143,7 +146,7 @@ export function BookListItem({
       </View>
 
       {/* Chevron */}
-      {showChevron && <ChevronRight size={18} color={Colors.muted} />}
+      {showChevron && <ChevronRight size={18} color={colors.mutedForeground} />}
     </TouchableOpacity>
   );
 }

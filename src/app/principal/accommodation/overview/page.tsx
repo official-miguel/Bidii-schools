@@ -65,7 +65,7 @@ const STATUS_META: Record<string, { label: string; icon: typeof CheckCircle2; co
 function OccupancyBar({ pct, isAlmostFull }: { pct: number; isAlmostFull: boolean }) {
   const color = isAlmostFull ? "bg-warn" : pct >= 100 ? "bg-danger" : "bg-teal";
   return (
-    <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden mt-2">
+    <div className="w-full h-1.5 rounded-full bg-line overflow-hidden mt-2">
       <div
         className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(pct, 100)}%` }}
@@ -131,7 +131,7 @@ export default function AccommodationOverviewPage() {
             <button
               onClick={() => load(true)}
               disabled={refreshing}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-line bg-white text-slate hover:text-ink hover:bg-paper disabled:opacity-50 transition-all dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:text-dark-text"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border bg-card text-slate hover:text-foreground hover:bg-background disabled:opacity-50 transition-all"
               aria-label="Refresh"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
@@ -150,11 +150,11 @@ export default function AccommodationOverviewPage() {
       {/* ── Day-only state ────────────────────────────────────────────── */}
       {!loading && isDayOnly && (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <div className="rounded-full bg-slate-100 dark:bg-dark-surface p-5">
+          <div className="rounded-full bg-slate-100 p-5">
             <Home className="h-10 w-10 text-slate" />
           </div>
-          <p className="text-ink font-medium dark:text-dark-text">Boarding is not enabled</p>
-          <p className="text-slate text-sm max-w-sm dark:text-dark-muted">
+          <p className="text-foreground font-medium">Boarding is not enabled</p>
+          <p className="text-slate text-sm max-w-sm">
             Go to Accommodation Settings and change the boarding type to start using this module.
           </p>
           <Link
@@ -171,12 +171,12 @@ export default function AccommodationOverviewPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />
+              <div key={i} className="h-28 rounded-xl bg-line/40/40 animate-pulse" />
             ))}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-40 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />
+              <div key={i} className="h-40 rounded-xl bg-line/40/40 animate-pulse" />
             ))}
           </div>
         </div>
@@ -187,13 +187,13 @@ export default function AccommodationOverviewPage() {
           {/* ── Stat cards ─────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {summary.settings?.boardingType === "DAY_AND_BOARDING" && (
-              <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+              <div className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-2xl font-semibold text-ink dark:text-dark-text tabular-nums">
+                    <p className="text-2xl font-semibold text-foreground tabular-nums">
                       {summary.boardingStudents}
                     </p>
-                    <p className="text-slate text-sm mt-1 dark:text-dark-muted">Boarding students</p>
+                    <p className="text-slate text-sm mt-1">Boarding students</p>
                   </div>
                   <div className="rounded-lg bg-teal/10 p-2">
                     <Users className="h-5 w-5 text-teal" />
@@ -202,14 +202,14 @@ export default function AccommodationOverviewPage() {
               </div>
             )}
 
-            <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-2xl font-semibold text-ink dark:text-dark-text tabular-nums">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {summary.totalDormitories}
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Dormitories</p>
-                  <p className="text-slate/60 text-xs dark:text-dark-muted/60">
+                  <p className="text-slate text-sm mt-1">Dormitories</p>
+                  <p className="text-slate/60 text-xs/60">
                     {summary.activeDormitories} active
                     {summary.maintenanceDormitories > 0 ? `, ${summary.maintenanceDormitories} maintenance` : ""}
                   </p>
@@ -220,14 +220,14 @@ export default function AccommodationOverviewPage() {
               </div>
             </div>
 
-            <div className={`rounded-xl border p-5 ${summary.availablePositions === 0 && summary.totalSleepingPositions > 0 ? "border-danger/30 bg-danger-bg/40 dark:bg-danger/10" : "border-line bg-card dark:bg-dark-surface dark:border-dark-border"}`}>
+            <div className={`rounded-xl border p-5 ${summary.availablePositions === 0 && summary.totalSleepingPositions > 0 ? "border-danger/30 bg-danger-bg/40 dark:bg-danger/10" : "border-border bg-card"}`}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className={`text-2xl font-semibold tabular-nums ${summary.availablePositions === 0 && summary.totalSleepingPositions > 0 ? "text-danger" : "text-ink dark:text-dark-text"}`}>
+                  <p className={`text-2xl font-semibold tabular-nums ${summary.availablePositions === 0 && summary.totalSleepingPositions > 0 ? "text-danger" : "text-foreground"}`}>
                     {summary.availablePositions}
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Available spaces</p>
-                  <p className="text-slate/60 text-xs dark:text-dark-muted/60">
+                  <p className="text-slate text-sm mt-1">Available spaces</p>
+                  <p className="text-slate/60 text-xs/60">
                     of {summary.totalSleepingPositions} total
                   </p>
                 </div>
@@ -237,14 +237,14 @@ export default function AccommodationOverviewPage() {
               </div>
             </div>
 
-            <div className={`rounded-xl border p-5 ${summary.occupancyPct >= 90 ? "border-warn/30 bg-warn-bg/40 dark:bg-warn/10" : "border-line bg-card dark:bg-dark-surface dark:border-dark-border"}`}>
+            <div className={`rounded-xl border p-5 ${summary.occupancyPct >= 90 ? "border-warn/30 bg-warn-bg/40 dark:bg-warn/10" : "border-border bg-card"}`}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className={`text-2xl font-semibold tabular-nums ${summary.occupancyPct >= 90 ? "text-warn" : "text-ink dark:text-dark-text"}`}>
+                  <p className={`text-2xl font-semibold tabular-nums ${summary.occupancyPct >= 90 ? "text-warn" : "text-foreground"}`}>
                     {summary.occupancyPct}%
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Occupancy rate</p>
-                  <p className="text-slate/60 text-xs dark:text-dark-muted/60">
+                  <p className="text-slate text-sm mt-1">Occupancy rate</p>
+                  <p className="text-slate/60 text-xs/60">
                     {summary.occupiedPositions} occupied
                   </p>
                 </div>
@@ -258,7 +258,7 @@ export default function AccommodationOverviewPage() {
 
           {/* ── Dorm cards ──────────────────────────────────────────────── */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">All Dormitories</h2>
+            <h2 className="text-base font-semibold text-foreground">All Dormitories</h2>
           </div>
 
           <WorkspaceToolbar>
@@ -279,11 +279,11 @@ export default function AccommodationOverviewPage() {
 
           {filteredDorms.length === 0 && !search && (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-              <div className="rounded-full bg-slate-100 dark:bg-dark-surface p-5">
+              <div className="rounded-full bg-slate-100 p-5">
                 <Building2 className="h-9 w-9 text-slate" />
               </div>
-              <p className="text-ink font-medium dark:text-dark-text">No dormitories yet</p>
-              <p className="text-slate text-sm max-w-sm dark:text-dark-muted">
+              <p className="text-foreground font-medium">No dormitories yet</p>
+              <p className="text-slate text-sm max-w-sm">
                 Register your first dormitory to start managing boarding accommodation.
               </p>
               <Link
@@ -296,7 +296,7 @@ export default function AccommodationOverviewPage() {
           )}
 
           {filteredDorms.length === 0 && search && (
-            <p className="text-slate text-sm py-8 text-center dark:text-dark-muted">
+            <p className="text-slate text-sm py-8 text-center">
               No dormitories match &ldquo;{search}&rdquo;
             </p>
           )}
@@ -309,12 +309,12 @@ export default function AccommodationOverviewPage() {
                 <Link
                   key={dorm.id}
                   href={`/principal/accommodation/dormitories/${dorm.id}`}
-                  className="group rounded-xl border border-line bg-card p-5 hover:border-teal/40 hover:shadow-md transition-all dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+                  className="group rounded-xl border border-border bg-card p-5 hover:border-teal/40 hover:shadow-md transition-all dark:hover:border-teal/30"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-ink group-hover:text-teal transition-colors dark:text-dark-text dark:group-hover:text-teal truncate">
+                        <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors dark:group-hover:text-teal truncate">
                           {dorm.name}
                         </p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${GENDER_COLOR[dorm.genderPolicy]}`}>
@@ -322,7 +322,7 @@ export default function AccommodationOverviewPage() {
                         </span>
                       </div>
                       {dorm.boardingMasterName && (
-                        <p className="text-xs text-slate mt-0.5 dark:text-dark-muted truncate">
+                        <p className="text-xs text-slate mt-0.5 truncate">
                           {dorm.boardingMasterName}
                         </p>
                       )}
@@ -334,7 +334,7 @@ export default function AccommodationOverviewPage() {
                   </div>
 
                   <div className="flex items-end justify-between gap-2 mb-1">
-                    <p className="text-xs text-slate dark:text-dark-muted">
+                    <p className="text-xs text-slate">
                       {dorm.occupied} / {dorm.capacity} spaces
                     </p>
                     <p className={`text-xs font-semibold tabular-nums ${dorm.isAlmostFull ? "text-warn" : dorm.occupancyPct >= 100 ? "text-danger" : "text-teal"}`}>
@@ -343,20 +343,20 @@ export default function AccommodationOverviewPage() {
                   </div>
                   <OccupancyBar pct={dorm.occupancyPct} isAlmostFull={dorm.isAlmostFull} />
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-line/60 dark:border-dark-border/60">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60/60">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-slate dark:text-dark-muted">
+                      <span className="text-xs text-slate">
                         {dorm.structure === "CUBICLE_BASED" ? "Cubicle-based" : "Open hall"}
                       </span>
-                      <span className="text-xs text-slate dark:text-dark-muted">
+                      <span className="text-xs text-slate">
                         {dorm.available > 0
                           ? `${dorm.available} free`
                           : dorm.capacity > 0 && dorm.occupancyPct >= 100
                             ? <span className="text-danger font-medium">Full</span>
-                            : <span className="text-slate dark:text-dark-muted">—</span>}
+                            : <span className="text-slate">—</span>}
                       </span>
                     </div>
-                    <ArrowRight className="h-3.5 w-3.5 text-slate group-hover:text-teal group-hover:translate-x-0.5 transition-all dark:text-dark-muted" />
+                    <ArrowRight className="h-3.5 w-3.5 text-slate group-hover:text-teal group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </Link>
               );
@@ -375,16 +375,16 @@ export default function AccommodationOverviewPage() {
               { href: "/principal/accommodation/settings",     icon: Settings,       label: "Settings",            desc: "Module preferences and default policies" },
             ].map(({ href, icon: Icon, label, desc }) => (
               <Link key={href} href={href}
-                className="group rounded-xl border border-line bg-card dark:bg-dark-surface dark:border-dark-border p-4 hover:border-teal/40 hover:shadow-md transition-all">
+                className="group rounded-xl border border-border bg-card p-4 hover:border-teal/40 hover:shadow-md transition-all">
                 <div className="flex items-start gap-3">
                   <div className="rounded-lg bg-teal/10 p-2.5 shrink-0 group-hover:bg-teal/15 transition-colors">
                     <Icon className="h-4 w-4 text-teal" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-ink dark:text-dark-text group-hover:text-teal transition-colors mb-0.5">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors mb-0.5">
                       {label}
                     </p>
-                    <p className="text-xs text-slate dark:text-dark-muted leading-relaxed">
+                    <p className="text-xs text-slate leading-relaxed">
                       {desc}
                     </p>
                   </div>

@@ -26,9 +26,9 @@ interface FinancialTermName {
 // ── Financial Academic Term Names Section ──────────────────────────────────
 
 const rowInputCls =
-  "flex-1 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink " +
+  "flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground " +
   "focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal " +
-  "dark:bg-dark-surface dark:border-dark-border dark:text-dark-text";
+  "";
 
 function TermNamesSection() {
   const [termNames,    setTermNames]    = useState<FinancialTermName[]>([]);
@@ -105,13 +105,13 @@ function TermNamesSection() {
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl p-5 space-y-4 dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-teal" aria-hidden="true" />
           Financial Academic Terms
         </h2>
-        <p className="text-xs text-slate dark:text-dark-muted hidden sm:block">
+        <p className="text-xs text-slate hidden sm:block">
           Define the term labels used across the finance module, e.g. &quot;Term 1&quot;, &quot;Term 2&quot;.
         </p>
       </div>
@@ -124,13 +124,13 @@ function TermNamesSection() {
 
       {/* Existing term names */}
       {loading ? (
-        <div className="text-sm text-slate dark:text-dark-muted">Loading…</div>
+        <div className="text-sm text-slate">Loading…</div>
       ) : termNames.length === 0 ? (
-        <p className="text-sm text-slate dark:text-dark-muted">
+        <p className="text-sm text-slate">
           No term names yet. Add your first one below.
         </p>
       ) : (
-        <ul className="divide-y divide-line dark:divide-dark-border">
+        <ul className="divide-y divide-border ">
           {termNames.map(tn => (
             <li key={tn.id} className="py-2.5 flex items-center gap-2">
               {editingId === tn.id ? (
@@ -158,7 +158,7 @@ function TermNamesSection() {
                   <button
                     type="button"
                     onClick={() => setEditingId(null)}
-                    className="shrink-0 text-slate hover:text-ink dark:text-dark-muted"
+                    className="shrink-0 text-slate hover:text-foreground"
                     aria-label="Cancel"
                   >
                     <X className="h-4 w-4" />
@@ -166,7 +166,7 @@ function TermNamesSection() {
                 </>
               ) : (
                 <>
-                  <span className="flex-1 text-sm text-ink dark:text-dark-text">{tn.name}</span>
+                  <span className="flex-1 text-sm text-foreground">{tn.name}</span>
                   <button
                     type="button"
                     onClick={() => startEdit(tn)}
@@ -310,9 +310,9 @@ function PaybillsSection() {
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl p-5 space-y-4 dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink dark:text-dark-text">M-Pesa Paybills</h2>
+        <h2 className="text-sm font-semibold text-foreground">M-Pesa Paybills</h2>
         <button
           type="button"
           onClick={() => setShowForm(v => !v)}
@@ -326,11 +326,11 @@ function PaybillsSection() {
       {sectionErr && <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-lg px-3 py-2">{sectionErr}</p>}
 
       {loading ? (
-        <p className="text-sm text-slate dark:text-dark-muted">Loading…</p>
+        <p className="text-sm text-slate">Loading…</p>
       ) : paybills.length === 0 && !showForm ? (
-        <p className="text-sm text-slate dark:text-dark-muted">No paybills configured yet. Add your first one above.</p>
+        <p className="text-sm text-slate">No paybills configured yet. Add your first one above.</p>
       ) : (
-        <ul className="divide-y divide-line dark:divide-dark-border">
+        <ul className="divide-y divide-border ">
           {paybills.map(p => (
             <li key={p.id} className="py-3 space-y-2">
               {editingId === p.id ? (
@@ -340,15 +340,15 @@ function PaybillsSection() {
                   <input type="password" value={editSecret} onChange={e => setEditSecret(e.target.value)} placeholder="New webhook secret (leave blank to keep)" className={rowInputCls} autoComplete="new-password" />
                   <div className="flex gap-2">
                     <button type="button" onClick={() => handleEdit(p.id)} className="text-xs text-teal font-medium hover:underline">Save</button>
-                    <button type="button" onClick={() => setEditingId(null)} className="text-xs text-slate hover:text-ink">Cancel</button>
+                    <button type="button" onClick={() => setEditingId(null)} className="text-xs text-slate hover:text-foreground">Cancel</button>
                   </div>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink dark:text-dark-text">{p.label}</p>
-                      <p className="text-xs font-mono text-slate dark:text-dark-muted">{p.paybillNumber}</p>
+                      <p className="text-sm font-medium text-foreground">{p.label}</p>
+                      <p className="text-xs font-mono text-slate">{p.paybillNumber}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button type="button" onClick={() => startEdit(p)} className="text-slate hover:text-teal transition-colors" aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></button>
@@ -356,13 +356,13 @@ function PaybillsSection() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    <code className="flex-1 text-[10px] font-mono bg-paper border border-line rounded px-2 py-1 text-ink truncate dark:bg-dark-border/30 dark:border-dark-border dark:text-dark-text">
+                    <code className="flex-1 text-[10px] font-mono bg-background border border-border rounded px-2 py-1 text-foreground truncate/30">
                       {typeof window !== "undefined" ? `${window.location.origin}/api/finance/c2b/${p.webhookUrl}` : `/api/finance/c2b/${p.webhookUrl}`}
                     </code>
                     <button
                       type="button"
                       onClick={() => copyUrl(p.webhookUrl)}
-                      className="shrink-0 inline-flex items-center gap-1 rounded border border-line bg-white px-2 py-1 text-xs text-slate hover:text-ink dark:bg-dark-surface dark:border-dark-border"
+                      className="shrink-0 inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-1 text-xs text-slate hover:text-foreground"
                     >
                       {copied === p.webhookUrl ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                       {copied === p.webhookUrl ? "Copied" : "Copy"}
@@ -377,7 +377,7 @@ function PaybillsSection() {
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="border-t border-line dark:border-dark-border pt-4 space-y-2">
+        <form onSubmit={handleAdd} className="border-t border-border pt-4 space-y-2">
           {formErr && <p className="text-xs text-danger">{formErr}</p>}
           <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Label e.g. Main Fees Paybill" className={rowInputCls} required />
           <input type="text" value={newPaybillNumber} onChange={e => setNewPaybillNumber(e.target.value)} placeholder="Paybill / Till number e.g. 522533" className={rowInputCls} required />
@@ -390,7 +390,7 @@ function PaybillsSection() {
               className={rowInputCls + " pr-10"}
               autoComplete="new-password"
             />
-            <button type="button" onClick={() => setShowNewSecret(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+            <button type="button" onClick={() => setShowNewSecret(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-foreground">
               {showNewSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             </button>
           </div>
@@ -400,7 +400,7 @@ function PaybillsSection() {
               {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               {adding ? "Adding…" : "Add paybill"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-2 text-sm text-slate hover:text-ink">Cancel</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-2 text-sm text-slate hover:text-foreground">Cancel</button>
           </div>
         </form>
       )}
@@ -472,7 +472,7 @@ export default function FinanceSettingsPage() {
         <PageHeader title="Finance Settings" description="Configure thresholds, prefixes, term names, and M-Pesa integration." />
         <div className="space-y-3 max-w-2xl">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-xl border border-line bg-paper animate-pulse" />
+            <div key={i} className="h-14 rounded-xl border border-border bg-background animate-pulse" />
           ))}
         </div>
       </div>
@@ -498,8 +498,8 @@ export default function FinanceSettingsPage() {
 
         {/* ── General finance settings form ── */}
         <form onSubmit={save} className="space-y-6">
-          <div className="bg-white border border-line rounded-xl p-5 space-y-4 dark:bg-dark-surface dark:border-dark-border">
-            <h2 className="text-sm font-semibold text-ink dark:text-dark-text flex items-center gap-2">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Settings className="h-4 w-4 text-teal" aria-hidden="true" />
               General
             </h2>

@@ -154,7 +154,7 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
         className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
           active
             ? "bg-royal border-royal text-white shadow-sm"
-            : "border-line bg-white text-slate hover:border-royal hover:text-royal hover:bg-royal-50"
+            : "border-border bg-card text-slate hover:border-royal hover:text-royal hover:bg-royal-50"
         }`}
       >
         {label}
@@ -172,7 +172,7 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
         className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
           active
             ? "bg-royal border-royal text-white shadow-sm"
-            : "border-line bg-white text-slate hover:border-royal hover:text-royal hover:bg-royal-50"
+            : "border-border bg-card text-slate hover:border-royal hover:text-royal hover:bg-royal-50"
         }`}
       >
         {label}
@@ -247,33 +247,33 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search student or staff name…"
-            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-royal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-royal focus:outline-none"
           />
           {searching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border-2 border-royal border-t-transparent animate-spin" />
           )}
           {!searching && query && (
             <button type="button" onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-ink">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-foreground">
               <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
               </svg>
             </button>
           )}
           {results.length > 0 && (
-            <ul className="absolute z-20 mt-1 w-full rounded-xl border border-line bg-white shadow-xl max-h-52 overflow-y-auto">
+            <ul className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-card shadow-xl max-h-52 overflow-y-auto">
               {results.map((r) => {
                 const key = `${r.type}:${r.id}`;
                 const already = valueKeys.has(key);
                 return (
-                  <li key={r.id} className="border-b border-line last:border-0">
+                  <li key={r.id} className="border-b border-border last:border-0">
                     <button
                       type="button"
                       onClick={() => addSearchResult(r)}
                       className={`w-full text-left px-4 py-3 hover:bg-royal-50 flex items-center justify-between gap-2 ${already ? "opacity-50" : ""}`}
                     >
                       <div>
-                        <span className="text-sm font-medium text-ink">{r.displayName}</span>
+                        <span className="text-sm font-medium text-foreground">{r.displayName}</span>
                         <span className="ml-2 text-xs text-slate">{r.subtitle}</span>
                       </div>
                       {already

@@ -67,7 +67,7 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
 
         {/* ── Published status banner ───────────────────────────────── */}
         {loading ? (
-          <div className="rounded-xl border border-line bg-paper p-5 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse">
+          <div className="rounded-xl border border-border bg-background p-5 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse">
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <div className="h-5 w-5 rounded-full bg-line shrink-0 mt-0.5" />
               <div className="min-w-0 space-y-2">
@@ -87,7 +87,7 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
               <div className="min-w-0">
                 {published ? (
                   <>
-                    <p className="text-sm font-semibold text-ink">Live — {published.name}</p>
+                    <p className="text-sm font-semibold text-foreground">Live — {published.name}</p>
                     <p className="text-xs text-slate mt-0.5">
                       {published.slotCount} lessons
                       {published.academicYear ? ` · ${published.academicYear}` : ""}
@@ -97,7 +97,7 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-semibold text-ink">No timetable published</p>
+                    <p className="text-sm font-semibold text-foreground">No timetable published</p>
                     <p className="text-xs text-slate mt-0.5">
                       Generate and publish a timetable so teachers can see their schedules.
                     </p>
@@ -108,7 +108,7 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
             <div className="flex gap-2 shrink-0">
               {published
                 ? <Link href={`${basePath}/builder`}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-white border border-line text-ink hover:border-teal hover:text-teal transition-colors">
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-card border border-border text-foreground hover:border-teal hover:text-teal transition-colors">
                     Edit <ArrowRight className="h-3 w-3" />
                   </Link>
                 : <Link href={`${basePath}/generate`}
@@ -116,7 +116,7 @@ export default function TimetableDashboard({ basePath }: TimetableDashboardProps
                     <Zap className="h-3 w-3" /> Generate now
                   </Link>}
               <button onClick={load} title="Refresh"
-                className="p-2 rounded-lg border border-line text-slate hover:text-teal hover:border-teal transition-colors">
+                className="p-2 rounded-lg border border-border text-slate hover:text-teal hover:border-teal transition-colors">
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
@@ -158,17 +158,17 @@ function NavCard({
     blue:   "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
     amber:  "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
     purple: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
-    slate:  "bg-paper text-slate group-hover:bg-line",
+    slate:  "bg-background text-slate group-hover:bg-line",
   };
   return (
     <Link href={href}
-      className="group bg-white border border-line rounded-xl p-5 flex flex-col gap-3
+      className="group bg-card border border-border rounded-xl p-5 flex flex-col gap-3
                  hover:border-teal/40 hover:shadow-sm transition-all duration-150">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${bg[accent] ?? bg.teal}`}>
         {icon}
       </div>
       <div>
-        <p className="text-sm font-semibold text-ink group-hover:text-teal transition-colors flex items-center gap-1">
+        <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors flex items-center gap-1">
           {title}
           <ChevronRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
         </p>

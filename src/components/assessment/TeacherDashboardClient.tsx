@@ -90,14 +90,14 @@ function ClassTileCard({
     <button
       type="button"
       onClick={() => onDrill(tile.classId, tile.className, subjectId, tile.frameworkType)}
-      className="group bg-white border border-line rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-left w-full"
+      className="group bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-left w-full"
     >
       <div className="flex items-center gap-3 px-4 py-3.5">
         <div className="shrink-0 w-9 h-9 rounded-lg bg-royal/10 flex items-center justify-center">
           <GraduationCap className="w-4.5 h-4.5 text-royal" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-ink text-sm">{tile.className}</p>
+          <p className="font-semibold text-foreground text-sm">{tile.className}</p>
           {tile.subjects.length > 0 && (
             <p className="text-xs text-slate mt-0.5 truncate">
               {tile.subjects.map((s) => s.name).join(" · ")}
@@ -147,7 +147,7 @@ export default function TeacherDashboardClient({
   return (
     <div className="space-y-5">
       {/* Top-level tab bar */}
-      <div className="flex gap-0.5 rounded-xl border border-line bg-paper p-1 w-fit">
+      <div className="flex gap-0.5 rounded-xl border border-border bg-background p-1 w-fit">
         {topTabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -158,8 +158,8 @@ export default function TeacherDashboardClient({
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               topTab === key
-                ? "bg-white shadow-sm text-ink"
-                : "text-slate hover:text-ink"
+                ? "bg-card shadow-sm text-foreground"
+                : "text-slate hover:text-foreground"
             }`}
           >
             <Icon className="w-4 h-4 shrink-0" />
@@ -185,16 +185,16 @@ export default function TeacherDashboardClient({
                   Back to My Classes
                 </button>
                 <span className="text-slate text-sm">/</span>
-                <span className="text-sm font-semibold text-ink">{drill.className}</span>
+                <span className="text-sm font-semibold text-foreground">{drill.className}</span>
               </div>
 
               <p className="text-xs text-slate">
                 Showing full analysis for{" "}
-                <span className="font-medium text-ink">{drill.className}</span>
+                <span className="font-medium text-foreground">{drill.className}</span>
                 {drill.subjectId && subjects.find((s) => s.id === drill.subjectId) && (
                   <>
                     {" — "}
-                    <span className="font-medium text-ink">
+                    <span className="font-medium text-foreground">
                       {subjects.find((s) => s.id === drill.subjectId)?.name}
                     </span>
                   </>
@@ -225,7 +225,7 @@ export default function TeacherDashboardClient({
               </p>
 
               {tiles.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center text-sm text-slate">
+                <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-slate">
                   No class assignments found.
                 </div>
               ) : (
@@ -255,7 +255,7 @@ export default function TeacherDashboardClient({
 
           {/* Framework sub-tabs when school has both 8-4-4 and CBE */}
           {hasBoth && (
-            <div className="flex gap-1 border-b border-line">
+            <div className="flex gap-1 border-b border-border">
               {[
                 { key: "844" as const, label: `8-4-4 (${kcseClasses.length})` },
                 { key: "cbe" as const, label: `CBE (${cbeClasses.length})` },
@@ -266,8 +266,8 @@ export default function TeacherDashboardClient({
                   onClick={() => setFwTab(key)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     fwTab === key
-                      ? "border-ink text-ink"
-                      : "border-transparent text-slate hover:text-ink"
+                      ? "border-ink text-foreground"
+                      : "border-transparent text-slate hover:text-foreground"
                   }`}
                 >
                   {label}

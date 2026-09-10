@@ -106,13 +106,13 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-white border border-line rounded-xl overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-paper/40 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-background/40 transition-colors"
       >
-        <span className="text-sm font-semibold text-ink flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground flex items-center gap-2">
           {title}
           {badge}
         </span>
@@ -123,7 +123,7 @@ function Section({
           }
         </span>
       </button>
-      {open && <div className="px-5 pb-5 border-t border-line">{children}</div>}
+      {open && <div className="px-5 pb-5 border-t border-border">{children}</div>}
     </div>
   );
 }
@@ -220,7 +220,7 @@ export default function AssessmentAiPanel({
     <div className="mt-6 space-y-4">
       {/* Panel header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-semibold text-ink flex items-center gap-2">
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
           AI Insights
           <AiLabel />
         </h2>
@@ -229,7 +229,7 @@ export default function AssessmentAiPanel({
             type="button"
             onClick={() => fetchInsights()}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-xs text-slate hover:text-ink disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-slate hover:text-foreground disabled:opacity-50 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.8} aria-hidden="true" />
             Refresh
@@ -237,7 +237,7 @@ export default function AssessmentAiPanel({
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="text-xs text-slate hover:text-ink"
+            className="text-xs text-slate hover:text-foreground"
           >
             Hide
           </button>
@@ -247,7 +247,7 @@ export default function AssessmentAiPanel({
       {error && <ErrorBanner message={error} />}
 
       {loading && (
-        <div className="bg-white border border-line rounded-xl p-5 text-sm text-slate">
+        <div className="bg-card border border-border rounded-xl p-5 text-sm text-slate">
           Running AI analysis…
         </div>
       )}
@@ -291,7 +291,7 @@ export default function AssessmentAiPanel({
                   >
                     <SeverityBadge severity={s.severity} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink">{s.studentName}</p>
+                      <p className="text-sm font-medium text-foreground">{s.studentName}</p>
                       <p className="text-xs text-slate mt-0.5">{s.reason}</p>
                     </div>
                   </div>
@@ -328,7 +328,7 @@ export default function AssessmentAiPanel({
                     }`}
                   >
                     <SeverityBadge severity={f.severity} />
-                    <p className="text-xs text-ink flex-1">{f.description}</p>
+                    <p className="text-xs text-foreground flex-1">{f.description}</p>
                   </div>
                 ))}
               </div>
@@ -346,10 +346,10 @@ export default function AssessmentAiPanel({
               ) : (
                 <div className="space-y-3 mt-3">
                   {data.recommendations.value.map((r, i) => (
-                    <div key={i} className="rounded-lg bg-paper border border-line px-4 py-3">
-                      <p className="text-sm font-semibold text-ink">{r.area}</p>
+                    <div key={i} className="rounded-lg bg-background border border-border px-4 py-3">
+                      <p className="text-sm font-semibold text-foreground">{r.area}</p>
                       <p className="text-xs text-slate mt-0.5">{r.issue}</p>
-                      <p className="text-xs text-ink mt-1 flex items-start gap-1.5">
+                      <p className="text-xs text-foreground mt-1 flex items-start gap-1.5">
                         <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-px text-warn" strokeWidth={1.8} aria-hidden="true" />
                         {r.suggestion}
                       </p>
@@ -373,7 +373,7 @@ export default function AssessmentAiPanel({
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder={`e.g. "Which ${framework === "CBE" ? "learning area" : "subject"} needs the most attention?"`}
-                className="flex-1 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-royal focus:outline-none"
+                className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-royal focus:outline-none"
                 maxLength={500}
               />
               <button
@@ -387,9 +387,9 @@ export default function AssessmentAiPanel({
 
             {/* Current answer */}
             {data.nlAnswer?.value?.answer && (
-              <div className="mb-3 rounded-lg bg-paper border border-line px-4 py-3">
+              <div className="mb-3 rounded-lg bg-background border border-border px-4 py-3">
                 {asked && <p className="text-xs font-medium text-slate mb-1">Q: {asked}</p>}
-                <p className="text-sm text-ink">{data.nlAnswer.value.answer}</p>
+                <p className="text-sm text-foreground">{data.nlAnswer.value.answer}</p>
                 {data.nlAnswer.value.relatedNumbers?.length > 0 && (
                   <p className="mt-2 text-xs text-slate">
                     Key figures: {data.nlAnswer.value.relatedNumbers.join(" · ")}
@@ -403,8 +403,8 @@ export default function AssessmentAiPanel({
               <div className="space-y-2">
                 <p className="text-xs font-medium text-slate">Recent questions</p>
                 {qaHistory.slice(1).map((qa, i) => (
-                  <div key={i} className="rounded-lg border border-line px-3 py-2 bg-white">
-                    <p className="text-xs font-medium text-ink">Q: {qa.q}</p>
+                  <div key={i} className="rounded-lg border border-border px-3 py-2 bg-card">
+                    <p className="text-xs font-medium text-foreground">Q: {qa.q}</p>
                     <p className="text-xs text-slate">A: {qa.a}</p>
                   </div>
                 ))}

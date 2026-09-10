@@ -2,6 +2,7 @@
 module.exports = {
   // NOTE: This file extends the parent web app's tailwind.config.ts to inherit
   // the exact same design tokens, ensuring visual consistency across platforms.
+  darkMode: 'media',
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
@@ -64,6 +65,25 @@ module.exports = {
         "dark-border":  "#1E3347",
         "dark-text":    "#E8EDF2",
         "dark-muted":   "#667085",
+
+        // ── Semantic tokens (dark-mode-system-sync, Req 9.1) ───────────
+        background:             "#FAFBFC",
+        foreground:             "#1F2933",
+        // card already exists above as "#FFFFFF" — redeclare so semantic key is present
+        border:                 "#E8EDF2",
+        input:                  "#FAFBFC",
+        muted:                  "#F4F6F8",
+        "muted-foreground":     "#667085",
+        primary:                "#2C7F7E",
+        "primary-foreground":   "#FFFFFF",
+        destructive:            "#C62828",
+        "destructive-foreground": "#FFFFFF",
+        // success & warn: override the object variants defined above with flat strings
+        success:                "#ECFDF3",
+        "success-foreground":   "#0D4D2D",
+        warn:                   "#FFFAEB",
+        "warn-foreground":      "#7A3D00",
+        "card-foreground":      "#1F2933",
       },
 
       fontFamily: {

@@ -53,7 +53,7 @@ export default function TodaysAssignments({ items, viewHref }: Props) {
   return (
     <section aria-labelledby="assignments-heading" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="assignments-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+        <h2 id="assignments-heading" className="text-base font-semibold text-foreground">
           Today&apos;s assignments
         </h2>
         <Link href={viewHref} className="text-xs font-medium text-teal hover:underline">
@@ -62,27 +62,25 @@ export default function TodaysAssignments({ items, viewHref }: Props) {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                        dark:border-dark-border px-5 py-6 text-center">
-          <p className="text-sm text-slate dark:text-dark-muted">No assignments due soon.</p>
+        <div className="rounded-2xl bg-card border border-border px-5 py-6 text-center">
+          <p className="text-sm text-slate">No assignments due soon.</p>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                        dark:border-dark-border overflow-hidden shadow-xs divide-y divide-line
-                        dark:divide-dark-border">
+        <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-xs divide-y divide-border
+                        ">
           {items.map((item) => (
             <Link
               key={item.id}
               href={viewHref}
               className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F9FAFB]
-                         dark:hover:bg-dark-border transition-colors group"
+                         transition-colors group"
             >
               <SubjectIcon subject={item.subject} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {item.subject}
                 </p>
-                <p className="text-xs text-slate dark:text-dark-muted truncate">
+                <p className="text-xs text-slate truncate">
                   {item.description}
                 </p>
               </div>
@@ -90,7 +88,7 @@ export default function TodaysAssignments({ items, viewHref }: Props) {
                 className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-lg whitespace-nowrap
                             ${item.urgent
                               ? "text-[#F04438] bg-[#FEF3F2]"
-                              : "text-slate dark:text-dark-muted"
+                              : "text-slate"
                             }`}
               >
                 {item.dueLabel}

@@ -44,8 +44,8 @@ function GapTooltip({
   if (!active || !payload?.length) return null;
   const gap = payload[0].value;
   return (
-    <div className="bg-white border border-line rounded-lg shadow-md px-3 py-2 text-xs">
-      <p className="font-medium text-ink mb-1">{label}</p>
+    <div className="bg-card border border-border rounded-lg shadow-md px-3 py-2 text-xs">
+      <p className="font-medium text-foreground mb-1">{label}</p>
       <p className={gap >= 0 ? "text-teal font-semibold" : "text-danger font-semibold"}>
         {gap >= 0 ? "+" : ""}
         {gap.toFixed(2)} pts
@@ -68,13 +68,24 @@ export default function DeptGapBar({ data, deptName }: DeptGapBarProps) {
       gap: Math.round((p.deptMean! - p.schoolMean!) * 100) / 100,
     }));
 
+  // The GapTooltip already uses bg-card/border-border/text-foreground (semantic tokens).
+  // No additional Tooltip contentStyle override needed.
+
   if (chartData.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-slate">
+      <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
         Not enough data to compute gap yet.
       </div>
     );
   }
+
+  // Read theme-aware grid color from CSS variable
+  const gridColor = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e5e7eb'
+    : '#e5e7eb';
+  const tickColor = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground').trim() || '#667085')
+    : '#667085';
 
   return (
     <div>
@@ -85,19 +96,21 @@ export default function DeptGapBar({ data, deptName }: DeptGapBarProps) {
       </p>
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+          {/* chart series — intentional */}
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: tickColor }} />
           <YAxis
             tickFormatter={(v) => (v > 0 ? `+${v}` : String(v))}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: tickColor }}
           />
+          {/* chart series — intentional */}
           <ReferenceLine y={0} stroke="#667085" strokeWidth={1.5} />
           <Tooltip content={<GapTooltip deptName={deptName} />} />
           <Bar dataKey="gap" radius={[4, 4, 0, 0]} maxBarSize={48}>
             {chartData.map((entry, i) => (
               <Cell
                 key={i}
-                fill={entry.gap >= 0 ? "#2C7F7E" : "#F04438"}
+                fill={entry.gap >= 0 ? "#2C7F7E" : "#F04438"} /* chart series — intentional */
                 fillOpacity={0.85}
               />
             ))}

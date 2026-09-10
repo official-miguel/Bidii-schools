@@ -11,15 +11,15 @@ import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from "lucide-react"
 // ── Form primitives ───────────────────────────────────────────────────────────
 
 export const inputClass =
-  "w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink " +
+  "w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-base sm:text-sm text-foreground " +
   "placeholder:text-slate-light " +
   "focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 " +
   "hover:border-slate-light " +
-  "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-paper " +
+  "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-background " +
   "transition-colors duration-100";
 
 export const labelClass =
-  "block text-sm font-medium text-ink mb-1.5 leading-none";
+  "block text-sm font-medium text-foreground mb-1.5 leading-none";
 
 export const helperClass =
   "mt-1.5 text-xs text-slate leading-relaxed";
@@ -44,8 +44,8 @@ export const primaryButtonClass =
 /** Outlined secondary */
 export const secondaryButtonClass =
   "inline-flex items-center justify-center gap-2 " +
-  "rounded-lg border border-line bg-white text-sm font-medium px-4 py-2.5 min-h-[44px] sm:min-h-0 text-ink " +
-  "hover:bg-paper hover:border-slate-light active:scale-[0.98] transition-all duration-100 " +
+  "rounded-lg border border-border bg-card text-sm font-medium px-4 py-2.5 min-h-[44px] sm:min-h-0 text-foreground " +
+  "hover:bg-background hover:border-slate-light active:scale-[0.98] transition-all duration-100 " +
   "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 " +
   "focus:outline-none focus:ring-2 focus:ring-teal/20 focus:ring-offset-2";
 
@@ -67,7 +67,7 @@ export const royalButtonClass = primaryButtonClass;
 
 /** Card shell used by principal-portal sections */
 export const royalCardClass =
-  "bg-white border border-line rounded-xl shadow-sm";
+  "bg-card border border-border rounded-xl shadow-sm";
 
 // ── FormField ─────────────────────────────────────────────────────────────────
 // Wraps label + input + helper/error text as a single composable unit.
@@ -187,7 +187,7 @@ export function Badge({
   className?: string;
 }) {
   const variantClasses: Record<BadgeVariant, string> = {
-    default: "bg-line text-ink",
+    default: "bg-line text-foreground",
     teal:    "bg-teal-50 text-teal-dark",
     success: "bg-success-bg text-success",
     warn:    "bg-warn-bg text-warn",
@@ -218,9 +218,9 @@ export function PageHeader({
   return (
     <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-3 mb-6">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight dark:text-dark-text">{title}</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">{title}</h1>
         {description && (
-          <p className="text-slate text-sm mt-1 leading-relaxed dark:text-dark-muted">{description}</p>
+          <p className="text-slate text-sm mt-1 leading-relaxed">{description}</p>
         )}
       </div>
       {action && <div className="xs:shrink-0">{action}</div>}
@@ -242,7 +242,7 @@ export function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-4 mb-4">
       <div>
-        <h2 className="text-base font-semibold text-ink">{title}</h2>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
         {description && <p className="text-slate text-sm mt-0.5">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -263,7 +263,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`bg-card border border-line rounded-xl shadow-sm ${padding ? "p-5" : ""} ${className}`}
+      className={`bg-card border border-border rounded-xl shadow-sm ${padding ? "p-5" : ""} ${className}`}
     >
       {children}
     </div>
@@ -410,9 +410,9 @@ export function EmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-line px-6 py-14 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border px-6 py-14 text-center">
       {icon && (
-        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-paper text-slate">
+        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-background text-slate">
           {icon}
         </div>
       )}
@@ -440,13 +440,13 @@ export function Divider({ className = "", label }: { className?: string; label?:
   if (label) {
     return (
       <div className={`flex items-center gap-3 my-4 ${className}`}>
-        <hr className="flex-1 border-line" />
+        <hr className="flex-1 border-border" />
         <span className="text-xs text-slate font-medium">{label}</span>
-        <hr className="flex-1 border-line" />
+        <hr className="flex-1 border-border" />
       </div>
     );
   }
-  return <hr className={`border-line my-4 ${className}`} />;
+  return <hr className={`border-border my-4 ${className}`} />;
 }
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ export function StatCard({
 }) {
   const inner = (
     <>
-      <p className={`text-2xl font-semibold ${highlight ? "text-danger" : "text-ink"}`}>
+      <p className={`text-2xl font-semibold ${highlight ? "text-danger" : "text-foreground"}`}>
         {value}
       </p>
       <p className="text-slate text-xs mt-1">{label}</p>
@@ -475,7 +475,7 @@ export function StatCard({
   );
 
   const base = `rounded-xl border p-4 transition-all duration-150 ${
-    highlight ? "border-danger/20 bg-danger-bg/40" : "bg-card border-line"
+    highlight ? "border-danger/20 bg-danger-bg/40" : "bg-card border-border"
   }`;
 
   if (href) {
@@ -495,7 +495,7 @@ export const tableClass =
   "w-full text-sm border-collapse";
 
 export const theadClass =
-  "border-b border-line text-left text-xs font-semibold text-slate uppercase tracking-wide bg-paper/60";
+  "border-b border-border text-left text-xs font-semibold text-slate uppercase tracking-wide bg-background/60";
 
 export const thClass =
   "px-4 py-3 font-semibold";
@@ -504,15 +504,15 @@ export const tdClass =
   "px-4 py-3";
 
 export const trClass =
-  "border-b border-line last:border-0 hover:bg-paper/50 transition-colors";
+  "border-b border-border last:border-0 hover:bg-background/50 transition-colors";
 
 // ── Premium Table Components ──────────────────────────────────────────────────
 
 export const premiumTableContainerClass =
-  "bg-white border border-line rounded-xl overflow-hidden shadow-sm";
+  "bg-card border border-border rounded-xl overflow-hidden shadow-sm";
 
 export const premiumTheadClass =
-  "sticky top-0 z-10 bg-white border-b border-line text-left text-xs font-semibold text-slate uppercase tracking-wide";
+  "sticky top-0 z-10 bg-card border-b border-border text-left text-xs font-semibold text-slate uppercase tracking-wide";
 
 export const premiumThClass =
   "px-5 py-4 font-semibold whitespace-nowrap";
@@ -521,7 +521,7 @@ export const premiumTdClass =
   "px-5 py-4";
 
 export const premiumTrClass =
-  "border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors";
+  "border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors";
 
 // ── Avatar Component ──────────────────────────────────────────────────────────
 
@@ -556,14 +556,14 @@ export function Avatar({
         src={photoUrl}
         alt={name}
         title={name}
-        className={`${sizeClasses[size]} rounded-full object-cover border border-line shrink-0 ${className}`}
+        className={`${sizeClasses[size]} rounded-full object-cover border border-border shrink-0 ${className}`}
       />
     );
   }
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-teal/10 to-royal/10 border border-line flex items-center justify-center font-semibold text-ink shrink-0 ${className}`}
+      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-teal/10 to-royal/10 border border-border flex items-center justify-center font-semibold text-foreground shrink-0 ${className}`}
       title={name}
     >
       {initials}
@@ -624,7 +624,7 @@ export function ActionIconButton({
   const variantClasses =
     variant === "danger"
       ? "text-slate hover:text-danger hover:bg-danger-bg/40"
-      : "text-slate hover:text-ink hover:bg-slate-50";
+      : "text-slate hover:text-foreground hover:bg-slate-50";
 
   return (
     <button
@@ -764,14 +764,14 @@ export function Toggle({
         }`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
+          className={`inline-block h-4 w-4 transform rounded-full bg-card shadow transition-transform duration-200 ${
             checked ? "translate-x-4" : "translate-x-0"
           }`}
         />
       </button>
       {(label || description) && (
         <div className="min-w-0">
-          {label && <p className="text-sm font-medium text-ink leading-none">{label}</p>}
+          {label && <p className="text-sm font-medium text-foreground leading-none">{label}</p>}
           {description && <p className="text-xs text-slate mt-0.5 leading-relaxed">{description}</p>}
         </div>
       )}
@@ -810,11 +810,11 @@ export function CredentialBox({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-xs text-success/70 font-medium uppercase tracking-wide mb-1">Email</p>
-          <p className="font-mono text-xs bg-white/60 rounded-md px-2 py-1.5 break-all">{email}</p>
+          <p className="font-mono text-xs bg-card/60 rounded-md px-2 py-1.5 break-all">{email}</p>
         </div>
         <div>
           <p className="text-xs text-success/70 font-medium uppercase tracking-wide mb-1">Temporary password</p>
-          <p className="font-mono text-xs bg-white/60 rounded-md px-2 py-1.5 break-all">{password}</p>
+          <p className="font-mono text-xs bg-card/60 rounded-md px-2 py-1.5 break-all">{password}</p>
         </div>
       </div>
       <p className="text-xs text-success/70 leading-relaxed">

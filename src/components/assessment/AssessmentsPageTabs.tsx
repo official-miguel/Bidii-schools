@@ -41,14 +41,14 @@ export default function AssessmentsPageTabs({
 
       {/* Tab bar — only shown when both tabs are available */}
       {showMySubjects && showMyDept && (
-        <div className="flex gap-1 border-b border-line dark:border-dark-border">
+        <div className="flex gap-1 border-b border-border">
           <button
             type="button"
             onClick={() => setTab("my_subjects")}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === "my_subjects"
                 ? "border-teal text-teal"
-                : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                : "border-transparent text-slate hover:text-foreground"
             }`}
           >
             My Subjects
@@ -59,7 +59,7 @@ export default function AssessmentsPageTabs({
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === "my_department"
                 ? "border-teal text-teal"
-                : "border-transparent text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text"
+                : "border-transparent text-slate hover:text-foreground"
             }`}
           >
             My Department
@@ -86,8 +86,8 @@ export default function AssessmentsPageTabs({
 function PageHeading() {
   return (
     <div>
-      <h1 className="text-xl font-semibold text-ink dark:text-dark-text">Exams &amp; Analysis</h1>
-      <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">
+      <h1 className="text-xl font-semibold text-foreground">Exams &amp; Analysis</h1>
+      <p className="text-sm text-slate mt-0.5">
         Your assignments, marks progress, and class performance for the current period.
       </p>
     </div>

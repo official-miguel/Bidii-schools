@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardShell — server component.
  *
  * Wraps every role layout with the correct shell (sidebar + top bar) while
@@ -65,7 +65,7 @@ export default function DashboardShell({
   return (
     <MobileDrawerProvider>
       <SomaAIProvider role={role} schoolName={schoolName}>
-        <div className="min-h-screen bg-paper dark:bg-dark-bg">
+        <div className="min-h-screen bg-background">
           {/*
            * ConditionalHubSidebar is a client component that reads the current
            * pathname and hides itself on routes that use their own sidebar
@@ -97,7 +97,7 @@ export default function DashboardShell({
           <ShellContentWrapper showBottomNav={BOTTOM_NAV_ROLES.has(role)}>
             {/* School motto banner */}
             {motto && (
-              <div className="bg-teal/5 border-b border-teal/10 dark:bg-teal/10 dark:border-teal/20">
+              <div className="bg-teal/5 border-b border-teal/10 dark:border-teal/20">
                 <p className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-1.5 text-xs text-center font-medium text-teal/80 dark:text-teal/70 italic tracking-wide">
                   {motto}
                 </p>

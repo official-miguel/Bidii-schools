@@ -54,7 +54,7 @@ export default function BorrowingAnalyticsPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Borrowing Analytics</h1>
+          <h1 className="text-xl font-bold text-foreground">Borrowing Analytics</h1>
           <p className="text-sm text-slate mt-0.5">Trends, patterns, and top borrowers.</p>
         </div>
         <WindowSelector value={days} onChange={setDays} />
@@ -94,7 +94,7 @@ export default function BorrowingAnalyticsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             <Section title="Top Students">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topStudents.map((s,i) => (
                   <RankRow key={s.studentId} rank={i+1} primary={s.fullName}
                     secondary={`${s.admissionNumber} · ${s.className}`}
@@ -107,7 +107,7 @@ export default function BorrowingAnalyticsPage() {
             </Section>
 
             <Section title="Top Classes">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topClasses.map((c,i) => (
                   <RankRow key={c.classId} rank={i+1} primary={c.className} value={c.count} valueLabel="borrows" highlight={i===0} />
                 ))}
@@ -115,7 +115,7 @@ export default function BorrowingAnalyticsPage() {
             </Section>
 
             <Section title="Top Teachers (Classroom Loans)">
-              <div className="rounded-xl border border-line bg-white overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.borrowing.topTeachers.length === 0
                   ? <p className="text-sm text-slate px-4 py-6 text-center">No classroom loans recorded</p>
                   : data.borrowing.topTeachers.map((t,i) => (

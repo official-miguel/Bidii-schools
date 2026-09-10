@@ -238,11 +238,11 @@ export default function SubjectsPage() {
       ) : subjects.length === 0 ? (
         <EmptyState message="No subjects yet. Add the subjects your school offers." />
       ) : (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-4 py-3.5">Subject</th>
                   <th className="px-4 py-3.5 w-[80px] hidden sm:table-cell">Code</th>
                   <th className="px-4 py-3.5 w-[100px]">Type</th>
@@ -270,12 +270,12 @@ export default function SubjectsPage() {
                   .map((s) => (
                   <tr
                     key={s.id}
-                    className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                    className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors cursor-pointer"
                     onClick={() => openSubjDrawer(s.id)}
                   >
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-ink group-hover:text-teal transition-colors">{s.name}</span>
+                        <span className="font-semibold text-foreground group-hover:text-teal transition-colors">{s.name}</span>
                         {s.isGroupMember && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                             📦 Group Member
@@ -291,14 +291,14 @@ export default function SubjectsPage() {
                       )}
                       {/* On mobile, show code + forms inline under the name */}
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5 sm:hidden">
-                        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1 py-0.5">{s.code}</span>
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1 py-0.5">{s.code}</span>
                         {(s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
                           <Chip key={f} variant="default" size="xs">{formLabels.get(f) ?? `Form ${f}`}</Chip>
                         ))}
                       </div>
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell">
-                      <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">{s.code}</span>
+                      <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">{s.code}</span>
                     </td>
                     <td className="px-4 py-3.5">
                       <Chip variant={s.type === "CORE" ? "success" : "warn"} size="xs">
@@ -350,7 +350,7 @@ export default function SubjectsPage() {
                     </td>
                     {/* Sticky actions cell — always visible */}
                     <td
-                      className="px-4 py-3.5 sticky right-0 bg-white group-hover:bg-slate-50/50 transition-colors"
+                      className="px-4 py-3.5 sticky right-0 bg-card group-hover:bg-slate-50/50 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-0.5">
@@ -460,7 +460,7 @@ export default function SubjectsPage() {
                       className={`text-sm rounded-lg border px-3 py-2 transition-colors text-left ${
                         active
                           ? "bg-teal text-white border-teal"
-                          : "border-line text-ink hover:bg-paper"
+                          : "border-border text-foreground hover:bg-background"
                       }`}
                     >
                       <span className="font-medium block">
@@ -501,7 +501,7 @@ export default function SubjectsPage() {
                           className={`text-sm rounded-md border px-3 py-1.5 min-h-[44px] sm:min-h-0 transition-colors ${
                             selectedForms.includes(f)
                               ? "bg-teal text-white border-teal"
-                              : "border-line text-ink hover:bg-paper"
+                              : "border-border text-foreground hover:bg-background"
                           }`}
                         >
                           {label}
@@ -509,7 +509,7 @@ export default function SubjectsPage() {
                       ))}
                   </div>
                   <p className="text-xs text-slate mt-1.5">
-                    Select the specific forms this subject applies to. Leave all unselected to make it appear in <span className="font-medium text-ink">all classes</span> of the chosen framework(s).
+                    Select the specific forms this subject applies to. Leave all unselected to make it appear in <span className="font-medium text-foreground">all classes</span> of the chosen framework(s).
                   </p>
                 </>
               )}

@@ -385,13 +385,12 @@ export default async function ParentDashboard() {
           studentName="your child"
           alerts={[]}
         />
-        <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                        dark:border-dark-border p-8 text-center shadow-xs">
+        <div className="rounded-2xl bg-card border border-border p-8 text-center shadow-xs">
           <p className="text-2xl mb-3">🏫</p>
-          <p className="text-base font-semibold text-ink dark:text-dark-text">
+          <p className="text-base font-semibold text-foreground">
             No student linked yet
           </p>
-          <p className="text-sm text-slate dark:text-dark-muted mt-2 max-w-sm mx-auto">
+          <p className="text-sm text-slate mt-2 max-w-sm mx-auto">
             Contact the school office to link your child&apos;s record to your account.
           </p>
         </div>
@@ -414,7 +413,7 @@ export default async function ParentDashboard() {
       {/* Quick overview — 4 tiles */}
       <section aria-labelledby="overview-heading">
         <div className="flex items-center justify-between mb-3">
-          <h2 id="overview-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+          <h2 id="overview-heading" className="text-base font-semibold text-foreground">
             Quick overview
           </h2>
           <a href="/parent/attendance" className="text-xs font-medium text-teal hover:underline">
@@ -443,16 +442,15 @@ export default async function ParentDashboard() {
           {recentDiscipline.length > 0 && (
             <section aria-labelledby="discipline-heading">
               <div className="flex items-center justify-between mb-3">
-                <h2 id="discipline-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+                <h2 id="discipline-heading" className="text-base font-semibold text-foreground">
                   Behaviour &amp; discipline
                 </h2>
                 <Link href="/parent/behaviour" className="text-xs font-medium text-teal hover:underline">
                   View all →
                 </Link>
               </div>
-              <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                              dark:border-dark-border shadow-xs overflow-hidden divide-y divide-line
-                              dark:divide-dark-border">
+              <div className="rounded-2xl bg-card border border-border shadow-xs overflow-hidden divide-y divide-border
+                              ">
                 {recentDiscipline.map((d) => {
                   const isOpen = d.status === "OPEN";
                   return (
@@ -460,20 +458,20 @@ export default async function ParentDashboard() {
                       key={d.id}
                       href="/parent/behaviour"
                       className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F9FAFB]
-                                 dark:hover:bg-dark-border transition-colors group"
+                                 transition-colors group"
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0
-                                       ${isOpen ? "bg-[#FFF3E8]" : "bg-[#F5F7FA] dark:bg-dark-border"}`}>
+                                       ${isOpen ? "bg-[#FFF3E8]" : "bg-[#F5F7FA]"}`}>
                         <ShieldAlert
-                          className={`h-4.5 w-4.5 ${isOpen ? "text-[#F79009]" : "text-slate dark:text-dark-muted"}`}
+                          className={`h-4.5 w-4.5 ${isOpen ? "text-[#F79009]" : "text-slate"}`}
                           strokeWidth={1.8}
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {d.offence}
                         </p>
-                        <p className="text-xs text-slate dark:text-dark-muted">
+                        <p className="text-xs text-slate">
                           {new Date(d.dateOfOffence).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
                           {" · "}
                           <span className={isOpen ? "text-[#F79009] font-medium" : "text-[#17B26A] font-medium"}>
@@ -493,31 +491,30 @@ export default async function ParentDashboard() {
           {recentAchievements.length > 0 && (
             <section aria-labelledby="achievements-heading">
               <div className="flex items-center justify-between mb-3">
-                <h2 id="achievements-heading" className="text-base font-semibold text-ink dark:text-dark-text">
+                <h2 id="achievements-heading" className="text-base font-semibold text-foreground">
                   Recent achievements
                 </h2>
                 <Link href="/parent/achievements" className="text-xs font-medium text-teal hover:underline">
                   View all →
                 </Link>
               </div>
-              <div className="rounded-2xl bg-white dark:bg-dark-surface border border-line
-                              dark:border-dark-border shadow-xs overflow-hidden divide-y divide-line
-                              dark:divide-dark-border">
+              <div className="rounded-2xl bg-card border border-border shadow-xs overflow-hidden divide-y divide-border
+                              ">
                 {recentAchievements.map((a) => (
                   <Link
                     key={a.id}
                     href="/parent/achievements"
                     className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F9FAFB]
-                               dark:hover:bg-dark-border transition-colors group"
+                               transition-colors group"
                   >
                     <div className="w-9 h-9 rounded-xl bg-[#EDFAF4] flex items-center justify-center shrink-0">
                       <Award className="h-4.5 w-4.5 text-[#17B26A]" strokeWidth={1.8} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {a.title}
                       </p>
-                      <p className="text-xs text-slate dark:text-dark-muted">
+                      <p className="text-xs text-slate">
                         {a.category}
                         {" · "}
                         {new Date(a.achievementDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}

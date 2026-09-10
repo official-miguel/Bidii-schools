@@ -57,7 +57,7 @@ export default function DashboardRecentActivity({ items, viewHref }: Props) {
       <div className="flex items-center justify-between mb-3">
         <h2
           id="recent-activity-heading"
-          className="text-base font-semibold text-ink dark:text-dark-text"
+          className="text-base font-semibold text-foreground"
         >
           Recent activity
         </h2>
@@ -67,14 +67,12 @@ export default function DashboardRecentActivity({ items, viewHref }: Props) {
       </div>
 
       {items.length === 0 ? (
-        <div className="bg-card border border-line rounded-xl px-4 py-6 text-center shadow-xs
-                        dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm text-slate dark:text-dark-muted">No recent activity.</p>
+        <div className="bg-card border border-border rounded-xl px-4 py-6 text-center shadow-xs">
+          <p className="text-sm text-slate">No recent activity.</p>
         </div>
       ) : (
-        <div className="bg-card border border-line rounded-xl shadow-xs overflow-hidden
-                        dark:bg-dark-surface dark:border-dark-border
-                        divide-y divide-line dark:divide-dark-border">
+        <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden
+                        divide-y divide-border ">
           {items.map((item) => {
             const cfg = TYPE_CONFIG[item.type];
             const Row = (
@@ -86,17 +84,17 @@ export default function DashboardRecentActivity({ items, viewHref }: Props) {
 
                 {/* Text */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {item.title}
                   </p>
-                  <p className="text-xs text-slate dark:text-dark-muted truncate mt-0.5">
+                  <p className="text-xs text-slate truncate mt-0.5">
                     {item.meta}
                   </p>
                 </div>
 
                 {/* Time + chevron */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-slate dark:text-dark-muted whitespace-nowrap">
+                  <span className="text-xs text-slate whitespace-nowrap">
                     {item.timeLabel}
                   </span>
                   <ChevronRight
@@ -112,7 +110,7 @@ export default function DashboardRecentActivity({ items, viewHref }: Props) {
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="block hover:bg-[#F9FAFB] dark:hover:bg-dark-border transition-colors"
+                  className="block hover:bg-[#F9FAFB] transition-colors"
                 >
                   {Row}
                 </Link>

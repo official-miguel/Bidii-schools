@@ -108,21 +108,21 @@ export default function TeacherAccommodationView({
           title="Accommodation"
           description="Boarding dormitories and occupancy overview."
           action={
-            <div className="h-10 w-10 rounded-lg bg-line/40 dark:bg-dark-border/40 animate-pulse" />
+            <div className="h-10 w-10 rounded-lg bg-line/40/40 animate-pulse" />
           }
         />
         
         {/* Skeleton stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div key={i} className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
-                  <div className="h-8 w-16 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
-                  <div className="h-4 w-24 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
-                  <div className="h-3 w-20 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
+                  <div className="h-8 w-16 bg-line/40/40 rounded animate-pulse" />
+                  <div className="h-4 w-24 bg-line/40/40 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-line/40/40 rounded animate-pulse" />
                 </div>
-                <div className="w-9 h-9 bg-line/40 dark:bg-dark-border/40 rounded-lg animate-pulse" />
+                <div className="w-9 h-9 bg-line/40/40 rounded-lg animate-pulse" />
               </div>
             </div>
           ))}
@@ -130,32 +130,32 @@ export default function TeacherAccommodationView({
 
         {/* Skeleton dorm list header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="h-6 w-24 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
+          <div className="h-6 w-24 bg-line/40/40 rounded animate-pulse" />
         </div>
 
         {/* Skeleton search bar */}
         <div className="mb-6">
-          <div className="h-10 w-80 bg-line/40 dark:bg-dark-border/40 rounded-lg animate-pulse" />
+          <div className="h-10 w-80 bg-line/40/40 rounded-lg animate-pulse" />
         </div>
 
         {/* Skeleton dorm cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div key={i} className="rounded-xl border border-border bg-card p-5">
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-2 flex-1">
-                    <div className="h-5 w-32 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
-                    <div className="h-3 w-24 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
+                    <div className="h-5 w-32 bg-line/40/40 rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-line/40/40 rounded animate-pulse" />
                   </div>
-                  <div className="h-4 w-12 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
+                  <div className="h-4 w-12 bg-line/40/40 rounded animate-pulse" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <div className="h-3 w-20 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
-                    <div className="h-3 w-8 bg-line/40 dark:bg-dark-border/40 rounded animate-pulse" />
+                    <div className="h-3 w-20 bg-line/40/40 rounded animate-pulse" />
+                    <div className="h-3 w-8 bg-line/40/40 rounded animate-pulse" />
                   </div>
-                  <div className="w-full h-1.5 bg-line/40 dark:bg-dark-border/40 rounded-full animate-pulse" />
+                  <div className="w-full h-1.5 bg-line/40/40 rounded-full animate-pulse" />
                 </div>
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function TeacherAccommodationView({
         action={
           <button
             onClick={() => load(true)}
-            className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-line bg-white text-slate hover:text-ink hover:bg-paper transition-all dark:bg-dark-surface dark:border-dark-border"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border bg-card text-slate hover:text-foreground hover:bg-background transition-all"
             aria-label="Refresh accommodation data"
           >
             <RefreshCw className="h-4 w-4" />
@@ -202,20 +202,20 @@ export default function TeacherAccommodationView({
       {isDayOnly ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
           <Building2 className="h-10 w-10 text-slate" />
-          <p className="text-ink font-medium dark:text-dark-text">
+          <p className="text-foreground font-medium">
             Boarding is not enabled for this school.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-2xl font-semibold text-ink tabular-nums dark:text-dark-text">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {summary?.boardingStudents || 0}
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Boarding students</p>
+                  <p className="text-slate text-sm mt-1">Boarding students</p>
                 </div>
                 <div className="rounded-lg bg-teal/10 p-2">
                   <Users className="h-5 w-5 text-teal" />
@@ -223,14 +223,14 @@ export default function TeacherAccommodationView({
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-2xl font-semibold text-ink tabular-nums dark:text-dark-text">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {summary?.totalDormitories || 0}
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Dormitories</p>
-                  <p className="text-slate/60 text-xs dark:text-dark-muted/60">
+                  <p className="text-slate text-sm mt-1">Dormitories</p>
+                  <p className="text-slate/60 text-xs/60">
                     {summary?.activeDormitories || 0} active
                   </p>
                 </div>
@@ -240,14 +240,14 @@ export default function TeacherAccommodationView({
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-2xl font-semibold text-ink tabular-nums dark:text-dark-text">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {summary?.availablePositions || 0}
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Available spaces</p>
-                  <p className="text-slate/60 text-xs dark:text-dark-muted/60">
+                  <p className="text-slate text-sm mt-1">Available spaces</p>
+                  <p className="text-slate/60 text-xs/60">
                     of {summary?.totalSleepingPositions || 0} total
                   </p>
                 </div>
@@ -257,13 +257,13 @@ export default function TeacherAccommodationView({
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-card p-5 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-2xl font-semibold text-ink tabular-nums dark:text-dark-text">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {summary?.occupancyPct || 0}%
                   </p>
-                  <p className="text-slate text-sm mt-1 dark:text-dark-muted">Occupancy rate</p>
+                  <p className="text-slate text-sm mt-1">Occupancy rate</p>
                 </div>
                 <div className="rounded-lg bg-teal/10 p-2">
                   <TrendingUp className="h-5 w-5 text-teal" />
@@ -275,11 +275,11 @@ export default function TeacherAccommodationView({
           {/* Dormitory list */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-ink dark:text-dark-text">Dormitories</h2>
+              <h2 className="text-base font-semibold text-foreground">Dormitories</h2>
               <div className="flex items-center gap-2">
                 <Link
                   href="/teacher/accommodation-details/analytics"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-teal transition-colors border border-line rounded-lg px-3 py-2 bg-white hover:border-teal/40 hover:bg-teal/5 dark:bg-dark-surface dark:border-dark-border dark:text-dark-muted dark:hover:border-teal/30 dark:hover:text-teal"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-teal transition-colors border border-border rounded-lg px-3 py-2 bg-card hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30 dark:hover:text-teal"
                 >
                   <BarChart2 className="h-3.5 w-3.5" /> Analytics
                 </Link>
@@ -288,7 +288,7 @@ export default function TeacherAccommodationView({
                   placeholder="Search dorms..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal/20 dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                  className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal/20"
                 />
               </div>
             </div>
@@ -296,7 +296,7 @@ export default function TeacherAccommodationView({
             {filtered.length === 0 && (
               <div className="text-center py-12">
                 <Building2 className="h-8 w-8 text-slate/50 mx-auto mb-2" />
-                <p className="text-slate text-sm dark:text-dark-muted">
+                <p className="text-slate text-sm">
                   {search ? "No dormitories match your search." : "No dormitories registered yet."}
                 </p>
               </div>
@@ -314,18 +314,18 @@ export default function TeacherAccommodationView({
                   <Link
                     key={dorm.id}
                     href={`/teacher/accommodation-details/dormitories/${dorm.id}`}
-                    className="group rounded-xl border border-line bg-card p-5 hover:border-teal/40 hover:shadow-sm transition-all dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/30"
+                    className="group rounded-xl border border-border bg-card p-5 hover:border-teal/40 hover:shadow-sm transition-all dark:hover:border-teal/30"
                   >
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-ink group-hover:text-teal transition-colors truncate dark:text-dark-text dark:group-hover:text-teal">
+                        <h3 className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors truncate dark:group-hover:text-teal">
                           {dorm.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-slate dark:text-dark-muted">
+                          <span className="text-xs text-slate">
                             {GENDER_LABEL[dorm.genderPolicy]}
                           </span>
-                          <span className="text-xs text-slate/40 dark:text-dark-muted/40">•</span>
+                          <span className="text-xs text-slate/40/40">•</span>
                           <span className={`text-xs ${STATUS_COLOR[dorm.status]}`}>
                             {dorm.status === "ACTIVE"
                               ? "Active"
@@ -335,22 +335,22 @@ export default function TeacherAccommodationView({
                           </span>
                         </div>
                         {dorm.boardingMasterName && (
-                          <p className="text-xs text-slate mt-1 dark:text-dark-muted">
+                          <p className="text-xs text-slate mt-1">
                             {dorm.boardingMasterName}
                           </p>
                         )}
                       </div>
-                      <ArrowRight className="h-4 w-4 text-slate/40 group-hover:text-teal group-hover:translate-x-0.5 transition-all shrink-0 dark:text-dark-muted/40" />
+                      <ArrowRight className="h-4 w-4 text-slate/40 group-hover:text-teal group-hover:translate-x-0.5 transition-all shrink-0/40" />
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate dark:text-dark-muted">Occupancy</span>
-                        <span className="font-medium text-ink tabular-nums dark:text-dark-text">
+                        <span className="text-slate">Occupancy</span>
+                        <span className="font-medium text-foreground tabular-nums">
                           {dorm.occupied}/{dorm.capacity}
                         </span>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+                      <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${occupancyColor}`}
                           style={{ width: `${Math.min(dorm.occupancyPct, 100)}%` }}

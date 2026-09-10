@@ -1,4 +1,4 @@
-/**
+﻿/**
  * /parent/calendar
  *
  * Server component that displays the school calendar to the authenticated
@@ -63,10 +63,10 @@ export default async function ParentCalendarPage() {
     <div className="space-y-6">
       {/* Heading */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
           School Calendar
         </h1>
-        <p className="text-sm text-slate dark:text-dark-muted mt-1">
+        <p className="text-sm text-slate mt-1">
           Upcoming events and important dates for your school.
         </p>
       </div>
@@ -76,7 +76,7 @@ export default async function ParentCalendarPage() {
 
       {/* Full event list grouped by month */}
       <div>
-        <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">
+        <p className="text-sm font-semibold text-foreground mb-3">
           All events
         </p>
         <CalendarEventList events={allEvents} />

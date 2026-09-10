@@ -75,8 +75,8 @@ export default async function LibrarianDashboard({ user }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Library — Circulation Desk</h1>
-        <p className="text-slate text-sm mt-1 dark:text-dark-muted">
+        <h1 className="text-2xl font-semibold text-foreground">Library — Circulation Desk</h1>
+        <p className="text-slate text-sm mt-1">
           {today.toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -103,13 +103,13 @@ export default async function LibrarianDashboard({ user }: Props) {
       </div>
 
       {/* Active borrows */}
-      <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text">Recent borrows</p>
+          <p className="text-sm font-semibold text-foreground">Recent borrows</p>
           <Link href="/staff/library?filter=out" className="text-xs text-teal hover:underline">View all {booksOut}</Link>
         </div>
         {recentBorrows.length === 0 ? (
-          <p className="text-sm text-slate dark:text-dark-muted">No books currently out.</p>
+          <p className="text-sm text-slate">No books currently out.</p>
         ) : (
           <div className="space-y-2">
             {recentBorrows.map((b) => {
@@ -117,13 +117,13 @@ export default async function LibrarianDashboard({ user }: Props) {
               return (
                 <div key={b.id} className="flex items-center justify-between text-sm gap-3">
                   <div className="min-w-0">
-                    <p className="text-ink dark:text-dark-text truncate">{b.book?.title ?? "—"}</p>
-                    <p className="text-xs text-slate dark:text-dark-muted">
+                    <p className="text-foreground truncate">{b.book?.title ?? "—"}</p>
+                    <p className="text-xs text-slate">
                       {b.card.student?.fullName} · #{b.card.student?.admissionNumber}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-xs font-medium ${isOverdue ? "text-danger" : "text-slate dark:text-dark-muted"}`}>
+                    <p className={`text-xs font-medium ${isOverdue ? "text-danger" : "text-slate"}`}>
                       Due {new Date(b.dueAt).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
                     </p>
                     {isOverdue && <span className="text-[10px] bg-danger-bg text-danger px-1.5 py-0.5 rounded-full">Overdue</span>}
@@ -145,8 +145,8 @@ export default async function LibrarianDashboard({ user }: Props) {
               return (
                 <div key={b.id} className="flex items-center justify-between text-sm">
                   <div className="min-w-0">
-                    <p className="text-ink dark:text-dark-text truncate">{b.book?.title ?? "—"}</p>
-                    <p className="text-xs text-slate dark:text-dark-muted">{b.card.student?.fullName}</p>
+                    <p className="text-foreground truncate">{b.book?.title ?? "—"}</p>
+                    <p className="text-xs text-slate">{b.card.student?.fullName}</p>
                   </div>
                   <span className="text-xs font-semibold text-danger shrink-0">{daysLate}d overdue</span>
                 </div>

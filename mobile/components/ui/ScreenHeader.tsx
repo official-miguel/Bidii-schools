@@ -4,11 +4,12 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ViewStyle, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { Colors, Typography, Spacing } from '@/constants';
+import { Spacing, Typography } from '@/constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface ScreenHeaderProps {
   title: string;
@@ -17,7 +18,7 @@ interface ScreenHeaderProps {
   onBack?: () => void;
   right?: React.ReactNode;
   style?: ViewStyle;
-  /** Override background colour — defaults to teal */
+  /** Override background colour — defaults to teal (brand color, intentional) */
   color?: string;
 }
 
@@ -32,7 +33,9 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const bgColor = color || Colors.teal;
+  const { colors } = useTheme();
+  // brand: teal header — intentional, brand primary color, contrast ≥ 4.5:1 for white text
+  const bgColor = color || colors.primary;
 
   const handleBack = onBack || (() => router.back());
 
@@ -56,7 +59,7 @@ export function ScreenHeader({
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
             style={{ marginRight: Spacing[2] }}
           >
-            <ChevronLeft size={24} color={Colors.white} />
+            <ChevronLeft size={24} color={'#FFFFFF'} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 24 + Spacing[2] }} />
@@ -66,7 +69,7 @@ export function ScreenHeader({
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              color: Colors.white,
+              color: '#FFFFFF',
               fontSize: Typography.fontSize.xl,
               fontWeight: Typography.fontWeight.bold,
               textAlign: showBack ? 'center' : 'left',
@@ -78,7 +81,7 @@ export function ScreenHeader({
           {subtitle && (
             <Text
               style={{
-                color: Colors.white + 'CC',
+              color: 'rgba(255,255,255,0.8)',
                 fontSize: Typography.fontSize.sm,
                 marginTop: 2,
                 textAlign: showBack ? 'center' : 'left',

@@ -26,9 +26,8 @@ export default function AnalysisPage() {
           <Link
             key={tile.href}
             href={tile.href}
-            className="group flex items-start gap-4 rounded-xl border border-line bg-white p-5
-                       hover:border-teal/40 hover:shadow-sm transition-all duration-150
-                       dark:bg-dark-surface dark:border-dark-border dark:hover:border-teal/40"
+            className="group flex items-start gap-4 rounded-xl border border-border bg-card p-5
+                       hover:border-teal/40 hover:shadow-sm transition-all duration-150 dark:hover:border-teal/40"
           >
             <div
               className="h-12 w-12 rounded-xl bg-teal/10 text-teal flex items-center justify-center
@@ -38,10 +37,10 @@ export default function AnalysisPage() {
               {tile.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-ink dark:text-dark-text">
+              <p className="text-base font-semibold text-foreground">
                 {tile.label}
               </p>
-              <p className="text-sm text-slate mt-1 leading-snug dark:text-dark-muted">
+              <p className="text-sm text-slate mt-1 leading-snug">
                 {tile.desc}
               </p>
             </div>

@@ -67,16 +67,15 @@ function TrendZigzag({
   // Flat / no data — simple grey dash
   if (!trend || trend === "FLAT" || delta === null) {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 text-slate">
         <svg width={24} height={14} viewBox="0 0 24 14" fill="none">
-          <line x1={2} y1={7} x2={22} y2={7} stroke="#94a3b8" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1={2} y1={7} x2={22} y2={7} stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
         </svg>
       </div>
     );
   }
 
   const isUp   = trend === "UP";
-  const colour = isUp ? "#16a34a" : "#dc2626";
   const label  = `${isUp ? "+" : ""}${delta.toFixed(2)}`;
 
   // Zigzag: two segments making a "Z" shape — goes opposite direction to the trend
@@ -90,10 +89,10 @@ function TrendZigzag({
   return (
     <div className="flex items-center gap-1.5">
       {/* Compact zigzag SVG */}
-      <svg width={24} height={14} viewBox="0 0 24 14" fill="none" className="shrink-0">
+      <svg width={24} height={14} viewBox="0 0 24 14" fill="none" className={`shrink-0 ${isUp ? "text-success" : "text-danger"}`}>
         <polyline
           points={pts}
-          stroke={colour}
+          stroke="currentColor"
           strokeWidth={1.8}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -114,7 +113,7 @@ function TrendZigzag({
 // ── Legend strip ──────────────────────────────────────────────────────────
 function Legend() {
   return (
-    <div className="flex flex-wrap items-center gap-4 px-5 py-2.5 bg-slate-50/70 border-b border-line text-[11px] text-slate">
+    <div className="flex flex-wrap items-center gap-4 px-5 py-2.5 bg-slate-50/70 border-b border-border text-[11px] text-slate">
       <span className="flex items-center gap-1.5">
         <span className="inline-block w-2 h-2 rounded-full bg-success" />
         Present today
@@ -127,16 +126,16 @@ function Legend() {
         <span className="inline-block w-2 h-2 rounded-full bg-slate/30" />
         Not recorded
       </span>
-      <span className="flex items-center gap-2 ml-2 pl-2 border-l border-line">
-        <svg width={24} height={14} viewBox="0 0 24 14" fill="none">
-          <polyline points="2,10 8,4 14,10 22,4" stroke="#16a34a" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <span className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+        <svg width={24} height={14} viewBox="0 0 24 14" fill="none" className="text-success">
+          <polyline points="2,10 8,4 14,10 22,4" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
         <span className="text-success font-semibold">+pts</span>
         <span>improved</span>
       </span>
       <span className="flex items-center gap-2">
-        <svg width={24} height={14} viewBox="0 0 24 14" fill="none">
-          <polyline points="2,4 8,10 14,4 22,10" stroke="#dc2626" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <svg width={24} height={14} viewBox="0 0 24 14" fill="none" className="text-danger">
+          <polyline points="2,4 8,10 14,4 22,10" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
         <span className="text-danger font-semibold">−pts</span>
         <span>declined</span>
@@ -148,7 +147,7 @@ function Legend() {
 // ── Skeleton row ──────────────────────────────────────────────────────────
 function SkeletonRow() {
   return (
-    <tr className="border-b border-line last:border-0 animate-pulse">
+    <tr className="border-b border-border last:border-0 animate-pulse">
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-slate-100 shrink-0" />
@@ -225,11 +224,11 @@ export default function TileStudentsPage() {
       <div className="mb-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text leading-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
               {tileTitle}
             </h1>
             {tileSubTitle && (
-              <p className="text-sm text-slate mt-0.5 dark:text-dark-muted">{tileSubTitle}</p>
+              <p className="text-sm text-slate mt-0.5">{tileSubTitle}</p>
             )}
           </div>
 
@@ -272,11 +271,9 @@ export default function TileStudentsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or admission number…"
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-line bg-white text-sm
-                     text-ink placeholder:text-slate/40 focus:outline-none focus:border-teal
-                     focus:ring-2 focus:ring-teal/15 transition-colors
-                     dark:bg-dark-surface dark:border-dark-border dark:text-dark-text
-                     dark:placeholder:text-dark-muted/50"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm
+                     text-foreground placeholder:text-slate/40 focus:outline-none focus:border-teal
+                     focus:ring-2 focus:ring-teal/15 transition-colors"
         />
         {search && (
           <button
@@ -293,15 +290,15 @@ export default function TileStudentsPage() {
 
       {/* ── Result count ───────────────────────────────────────────────── */}
       {!loading && !error && (
-        <p className="text-xs text-slate mb-3 dark:text-dark-muted">
+        <p className="text-xs text-slate mb-3">
           {search ? (
             <>
-              <span className="font-medium text-ink dark:text-dark-text">{visible.length}</span>
+              <span className="font-medium text-foreground">{visible.length}</span>
               {" / "}{students.length} student{students.length !== 1 ? "s" : ""}
             </>
           ) : (
             <>
-              <span className="font-medium text-ink dark:text-dark-text">{students.length}</span>
+              <span className="font-medium text-foreground">{students.length}</span>
               {" "}student{students.length !== 1 ? "s" : ""}
             </>
           )}
@@ -317,14 +314,12 @@ export default function TileStudentsPage() {
 
       {/* ── Table ──────────────────────────────────────────────────────── */}
       {!error && (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm
-                        dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <Legend />
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide
-                               dark:bg-dark-border/40 dark:border-dark-border dark:text-dark-muted">
+                <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide/40">
                   <th className="px-5 py-3.5">Student</th>
                   <th className="px-5 py-3.5 w-[120px]">Adm. No.</th>
                   <th className="px-5 py-3.5 w-[60px]">Today</th>
@@ -353,8 +348,8 @@ export default function TileStudentsPage() {
                   visible.map((s) => (
                     <tr
                       key={s.id}
-                      className="group border-b border-line last:border-0 hover:bg-slate-50/60
-                                 transition-colors dark:hover:bg-dark-border/20"
+                      className="group border-b border-border last:border-0 hover:bg-slate-50/60
+                                 transition-colors/20"
                     >
                       {/* Student name + parent */}
                       <td className="px-5 py-3.5">
@@ -364,12 +359,12 @@ export default function TileStudentsPage() {
                         >
                           <Avatar name={s.fullName} size="sm" />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-ink group-hover:text-teal
-                                         transition-colors truncate dark:text-dark-text">
+                            <p className="text-sm font-medium text-foreground group-hover:text-teal
+                                         transition-colors truncate">
                               {s.fullName}
                             </p>
                             {s.parentName && (
-                              <p className="text-xs text-slate/60 truncate dark:text-dark-muted">
+                              <p className="text-xs text-slate/60 truncate">
                                 {s.parentName}
                               </p>
                             )}
@@ -379,9 +374,8 @@ export default function TileStudentsPage() {
 
                       {/* Admission number */}
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-mono text-slate bg-slate-50 border border-line
-                                         rounded px-1.5 py-0.5 dark:bg-dark-border dark:border-dark-border
-                                         dark:text-dark-muted">
+                        <span className="text-xs font-mono text-slate bg-slate-50 border border-border
+                                         rounded px-1.5 py-0.5">
                           {s.admissionNumber}
                         </span>
                       </td>

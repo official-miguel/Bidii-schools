@@ -16,9 +16,9 @@ function SummaryTile({
   accent?: string;
 }) {
   return (
-    <div className="bg-white border border-line rounded-xl p-4 shadow-sm">
+    <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
       <p className="text-xs text-slate mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${accent ?? "text-ink"}`}>{value}</p>
+      <p className={`text-2xl font-bold ${accent ?? "text-foreground"}`}>{value}</p>
       {sub && <p className="text-xs text-slate mt-0.5">{sub}</p>}
     </div>
   );
@@ -89,7 +89,7 @@ export default function HodHome({ departmentId }: HodHomeProps) {
 
       {/* Class table */}
       <div>
-        <h2 className="text-sm font-semibold text-ink mb-3">Classes in Department</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-3">Classes in Department</h2>
         <UnifiedClassTable rows={data.classes} role="hod" />
       </div>
     </div>

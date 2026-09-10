@@ -61,10 +61,10 @@ export default function ContinueWorking({ max = STRIP_MAX }: ContinueWorkingProp
     <section aria-labelledby="continue-working-heading" className="w-full">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-slate dark:text-dark-muted" />
+          <Clock className="h-4 w-4 text-slate" />
           <h2
             id="continue-working-heading"
-            className="text-sm font-semibold text-ink dark:text-dark-text"
+            className="text-sm font-semibold text-foreground"
           >
             Continue Working
           </h2>
@@ -73,7 +73,7 @@ export default function ContinueWorking({ max = STRIP_MAX }: ContinueWorkingProp
           type="button"
           onClick={() => useProductivityStore.getState().clearRecents()}
           className="flex items-center gap-1 text-xs text-slate hover:text-danger
-                     transition-colors dark:text-dark-muted dark:hover:text-danger"
+                     transition-colors dark:hover:text-danger"
           aria-label="Clear recent history"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -91,9 +91,8 @@ export default function ContinueWorking({ max = STRIP_MAX }: ContinueWorkingProp
               type="button"
               onClick={() => navigate(page)}
               className="flex flex-col items-start gap-2 p-3 rounded-xl
-                         border border-line bg-white min-w-[160px] max-w-[200px]
+                         border border-border bg-card min-w-[160px] max-w-[200px]
                          hover:border-teal/40 hover:shadow-sm transition-all
-                         dark:bg-dark-surface dark:border-dark-border
                          dark:hover:border-teal/40"
             >
               <div
@@ -103,10 +102,10 @@ export default function ContinueWorking({ max = STRIP_MAX }: ContinueWorkingProp
                 <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
               </div>
               <div className="text-left min-w-0 w-full">
-                <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {page.label}
                 </p>
-                <p className="text-xs text-slate dark:text-dark-muted mt-0.5">
+                <p className="text-xs text-slate mt-0.5">
                   {relTime(page.visitedAt)}
                 </p>
               </div>
@@ -136,8 +135,8 @@ export function RecentActivityList({ max = 8, onNavigate }: ListProps) {
   if (items.length === 0) {
     return (
       <div className="px-4 py-8 text-center">
-        <Clock className="h-8 w-8 mx-auto text-slate/30 dark:text-dark-muted/30 mb-2" />
-        <p className="text-sm text-slate dark:text-dark-muted">
+        <Clock className="h-8 w-8 mx-auto text-slate/30/30 mb-2" />
+        <p className="text-sm text-slate">
           No recent activity yet
         </p>
       </div>
@@ -152,24 +151,23 @@ export function RecentActivityList({ max = 8, onNavigate }: ListProps) {
   return (
     <div>
       <div className="flex items-center justify-between px-4 py-2
-                      border-b border-line dark:border-dark-border">
+                      border-b border-border">
         <div className="flex items-center gap-2">
-          <Clock className="h-3.5 w-3.5 text-slate dark:text-dark-muted" />
-          <span className="text-xs font-semibold text-slate uppercase tracking-wider dark:text-dark-muted">
+          <Clock className="h-3.5 w-3.5 text-slate" />
+          <span className="text-xs font-semibold text-slate uppercase tracking-wider">
             Recent
           </span>
         </div>
         <button
           type="button"
           onClick={() => useProductivityStore.getState().clearRecents()}
-          className="text-xs text-slate/60 hover:text-danger transition-colors
-                     dark:text-dark-muted/60 dark:hover:text-danger"
+          className="text-xs text-slate/60 hover:text-danger transition-colors/60 dark:hover:text-danger"
         >
           Clear
         </button>
       </div>
 
-      <div className="py-1 divide-y divide-line dark:divide-dark-border">
+      <div className="py-1 divide-y divide-border ">
         {items.map((page) => {
           const Icon = getLucideIcon(page.icon);
 
@@ -179,22 +177,21 @@ export function RecentActivityList({ max = 8, onNavigate }: ListProps) {
               type="button"
               onClick={() => go(page.href)}
               className="w-full flex items-center gap-3 px-4 py-2.5
-                         hover:bg-paper transition-colors text-left
-                         dark:hover:bg-dark-border/50"
+                         hover:bg-background transition-colors text-left
+                        /50"
             >
               <div
-                className="shrink-0 w-8 h-8 rounded-lg bg-paper text-slate
-                           flex items-center justify-center
-                           dark:bg-dark-border dark:text-dark-muted"
+                className="shrink-0 w-8 h-8 rounded-lg bg-background text-slate
+                           flex items-center justify-center"
               >
                 <Icon className="h-4 w-4" strokeWidth={1.8} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink dark:text-dark-text truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {page.label}
                 </p>
               </div>
-              <span className="text-[11px] text-slate/60 dark:text-dark-muted/60 shrink-0">
+              <span className="text-[11px] text-slate/60/60 shrink-0">
                 {relTime(page.visitedAt)}
               </span>
             </button>
@@ -228,8 +225,7 @@ export function RemoveRecentButton({ href }: { href: string }) {
         });
       }}
       aria-label="Remove from recents"
-      className="text-slate/40 hover:text-danger transition-colors
-                 dark:text-dark-muted/40 dark:hover:text-danger"
+      className="text-slate/40 hover:text-danger transition-colors/40 dark:hover:text-danger"
     >
       <X className="h-3 w-3" />
     </button>

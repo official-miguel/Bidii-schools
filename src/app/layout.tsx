@@ -35,7 +35,7 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className="font-sans antialiased bg-paper dark:bg-dark-bg text-ink dark:text-dark-text">
+      <body className="font-sans antialiased bg-background text-foreground">
         <ThemeProvider>
           <SuppressRechartsWarnings />
           <ProductivityProvider>{children}</ProductivityProvider>

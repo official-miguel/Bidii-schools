@@ -107,13 +107,13 @@ export default async function StaffRolesPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Shield className="h-5 w-5 text-teal" />
-            <h1 className="text-2xl font-semibold text-ink dark:text-dark-text">Staff Roles &amp; Permissions</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Staff Roles &amp; Permissions</h1>
           </div>
-          <p className="text-slate text-sm dark:text-dark-muted">
+          <p className="text-slate text-sm">
             Create and configure roles. Permissions take effect immediately — no log-out required.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate dark:text-dark-muted">
+        <div className="flex items-center gap-2 text-sm text-slate">
           <Users className="h-4 w-4" />
           <span>
             {staffUsers.filter((u) => u.role === "ADMIN_STAFF").length} admin
@@ -131,14 +131,13 @@ export default async function StaffRolesPage() {
         {roles.map((role) => (
           <div
             key={role.id}
-            className="bg-card border border-line rounded-xl p-4 shadow-xs
-                       dark:bg-dark-surface dark:border-dark-border"
+            className="bg-card border border-border rounded-xl p-4 shadow-xs"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-semibold text-ink dark:text-dark-text text-sm truncate">{role.name}</p>
+                <p className="font-semibold text-foreground text-sm truncate">{role.name}</p>
                 {role.description && (
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5 line-clamp-2">{role.description}</p>
+                  <p className="text-xs text-slate mt-0.5 line-clamp-2">{role.description}</p>
                 )}
               </div>
               <span className="shrink-0 text-xs bg-teal-50 text-teal px-2 py-0.5 rounded-full font-medium dark:bg-teal/15">
@@ -146,7 +145,7 @@ export default async function StaffRolesPage() {
               </span>
             </div>
             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-              <span className="text-[10px] text-slate dark:text-dark-muted">
+              <span className="text-[10px] text-slate">
                 {role.permissions.filter((p) => p.canView || p.canManage).length}/{ALL_MODULES.length} modules
               </span>
               {role.permissions.some((p) => p.canManage) && (
@@ -171,7 +170,7 @@ export default async function StaffRolesPage() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-slate" />
-            <h2 className="text-base font-semibold text-ink dark:text-dark-text">Permission audit log</h2>
+            <h2 className="text-base font-semibold text-foreground">Permission audit log</h2>
           </div>
           <AuditLogTable entries={auditData} />
         </div>

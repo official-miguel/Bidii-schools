@@ -103,11 +103,11 @@ export default function ResponsiveTable<T>({
   return (
     <>
       {/* ── Desktop table (md+) ──────────────────────────────────────── */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-line">
-        <table className="min-w-full divide-y divide-line">
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-border">
+        <table className="min-w-full divide-y divide-border">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-dark-surface text-left text-xs font-semibold text-slate uppercase tracking-wide">
+            <tr className="bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -116,7 +116,7 @@ export default function ResponsiveTable<T>({
                     px-5 py-3.5 select-none
                     ${col.width ?? ""}
                     ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                    ${col.sortable && onSort ? "cursor-pointer hover:text-ink dark:hover:text-dark-text transition-colors" : ""}
+                    ${col.sortable && onSort ? "cursor-pointer hover:text-foreground transition-colors" : ""}
                   `}
                   onClick={col.sortable && onSort && col.sortKey ? () => onSort(col.sortKey!) : undefined}
                   aria-sort={
@@ -135,14 +135,14 @@ export default function ResponsiveTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line bg-white dark:bg-dark-surface">
+          <tbody className="divide-y divide-border bg-card">
             {data.map((row, i) => (
               <tr
                 key={keyExtractor(row, i)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={`
-                  border-b border-line last:border-0 transition-colors
-                  ${onRowClick ? "cursor-pointer hover:bg-slate-50/50 dark:hover:bg-dark-border/30" : ""}
+                  border-b border-border last:border-0 transition-colors
+                  ${onRowClick ? "cursor-pointer hover:bg-slate-50/50/30" : ""}
                   ${rowClassName?.(row) ?? ""}
                 `}
               >
@@ -178,7 +178,7 @@ export default function ResponsiveTable<T>({
             <div
               key={keyExtractor(row, i)}
               className={`
-                rounded-xl border border-line bg-white dark:bg-dark-surface
+                rounded-xl border border-border bg-card
                 shadow-xs overflow-hidden
                 ${rowClassName?.(row) ?? ""}
               `}
@@ -195,12 +195,12 @@ export default function ResponsiveTable<T>({
                 onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") onRowClick(row); } : undefined}
               >
                 {primaryCol && (
-                  <div className="text-sm font-medium text-ink dark:text-dark-text mb-0.5">
+                  <div className="text-sm font-medium text-foreground mb-0.5">
                     {primaryCol.render(row, i)}
                   </div>
                 )}
                 {secondaryCol && (
-                  <div className="text-xs text-slate dark:text-dark-muted">
+                  <div className="text-xs text-slate">
                     {secondaryCol.render(row, i)}
                   </div>
                 )}
@@ -208,15 +208,13 @@ export default function ResponsiveTable<T>({
 
               {/* Body fields — label/value pairs */}
               {bodyColumns.length > 0 && (
-                <dl className="px-4 pb-3 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-line/60 pt-3
-                                dark:border-dark-border/60">
+                <dl className="px-4 pb-3 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-border/60 pt-3/60">
                   {bodyColumns.map((col) => (
                     <div key={col.key} className="min-w-0">
-                      <dt className="text-[10px] font-semibold text-slate uppercase tracking-wide mb-0.5
-                                     dark:text-dark-muted">
+                      <dt className="text-[10px] font-semibold text-slate uppercase tracking-wide mb-0.5">
                         {col.header}
                       </dt>
-                      <dd className="text-sm text-ink dark:text-dark-text truncate">
+                      <dd className="text-sm text-foreground truncate">
                         {col.render(row, i)}
                       </dd>
                     </div>
@@ -226,8 +224,7 @@ export default function ResponsiveTable<T>({
 
               {/* Mobile action buttons */}
               {hasActions && (
-                <div className="px-4 pb-4 pt-2 flex items-center gap-2 flex-wrap border-t border-line/60
-                                dark:border-dark-border/60">
+                <div className="px-4 pb-4 pt-2 flex items-center gap-2 flex-wrap border-t border-border/60/60">
                   {mobileActions!(row)}
                 </div>
               )}

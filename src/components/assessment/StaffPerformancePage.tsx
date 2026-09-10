@@ -67,7 +67,7 @@ function OwnRankCard({ row, context }: { row: TeacherRankResult; context: "schoo
     row.trendDirection === -1 ? "text-danger"    : "text-slate";
 
   return (
-    <div className="bg-white border border-royal/20 rounded-xl p-5 shadow-sm flex items-start gap-5">
+    <div className="bg-card border border-royal/20 rounded-xl p-5 shadow-sm flex items-start gap-5">
       {/* Rank icon */}
       <div className="shrink-0 flex flex-col items-center gap-1">
         <RankIcon rank={row.rank} size={48} />
@@ -97,20 +97,20 @@ function OwnRankCard({ row, context }: { row: TeacherRankResult; context: "schoo
         </div>
 
         <div className="grid grid-cols-3 gap-3 text-xs text-slate pt-1">
-          <div className="rounded-lg border border-line bg-paper/60 p-2 text-center">
-            <p className="font-semibold text-ink text-sm tabular-nums">
+          <div className="rounded-lg border border-border bg-background/60 p-2 text-center">
+            <p className="font-semibold text-foreground text-sm tabular-nums">
               {Math.round(row.completionScore * 100)}%
             </p>
             <p className="mt-0.5">Mark entry</p>
           </div>
-          <div className="rounded-lg border border-line bg-paper/60 p-2 text-center">
-            <p className="font-semibold text-ink text-sm tabular-nums">
+          <div className="rounded-lg border border-border bg-background/60 p-2 text-center">
+            <p className="font-semibold text-foreground text-sm tabular-nums">
               {row.absoluteMean?.toFixed(1) ?? "—"}
             </p>
             <p className="mt-0.5">Mean pts</p>
           </div>
-          <div className="rounded-lg border border-line bg-paper/60 p-2 text-center">
-            <p className="font-semibold text-ink text-sm tabular-nums">
+          <div className="rounded-lg border border-border bg-background/60 p-2 text-center">
+            <p className="font-semibold text-foreground text-sm tabular-nums">
               {row.prevMean?.toFixed(1) ?? "—"}
             </p>
             <p className="mt-0.5">Prev period</p>
@@ -133,7 +133,7 @@ interface TabBarProps {
 
 function TabBar({ tabs, active, onChange }: TabBarProps) {
   return (
-    <div className="flex gap-1 overflow-x-auto pb-1 border-b border-line">
+    <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border">
       {tabs.map((t) => (
         <button
           key={t.id ?? "__school__"}
@@ -141,7 +141,7 @@ function TabBar({ tabs, active, onChange }: TabBarProps) {
           className={`shrink-0 px-3 py-1.5 rounded-t-md text-sm font-medium transition-colors ${
             active === t.id
               ? "bg-royal text-white"
-              : "text-slate hover:text-ink hover:bg-paper"
+              : "text-slate hover:text-foreground hover:bg-background"
           }`}
         >
           {t.label}
@@ -262,7 +262,7 @@ export default function StaffPerformancePage({
             <select
               value={periodId}
               onChange={(e) => setPeriodId(e.target.value)}
-              className="appearance-none rounded-lg border border-line bg-white pl-3 pr-8 py-2 text-sm text-ink focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/15 transition-colors"
+              className="appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2 text-sm text-foreground focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/15 transition-colors"
             >
               {periods.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -276,13 +276,13 @@ export default function StaffPerformancePage({
 
         {/* Teacher / HOD: School | My Department toggle */}
         {isTeacherOrHod && propDeptId && (
-          <div className="flex rounded-lg border border-line overflow-hidden text-sm">
+          <div className="flex rounded-lg border border-border overflow-hidden text-sm">
             <button
               onClick={() => setView("school")}
               className={`px-4 py-2 transition-colors font-medium ${
                 view === "school"
                   ? "bg-royal text-white"
-                  : "text-slate hover:bg-paper hover:text-ink"
+                  : "text-slate hover:bg-background hover:text-foreground"
               }`}
             >
               School
@@ -292,7 +292,7 @@ export default function StaffPerformancePage({
               className={`px-4 py-2 transition-colors font-medium ${
                 view === "dept"
                   ? "bg-royal text-white"
-                  : "text-slate hover:bg-paper hover:text-ink"
+                  : "text-slate hover:bg-background hover:text-foreground"
               }`}
             >
               My Department
@@ -308,7 +308,7 @@ export default function StaffPerformancePage({
               <select
                 value={selectedDeptId}
                 onChange={(e) => setSelectedDeptId(e.target.value)}
-                className="appearance-none rounded-lg border border-line bg-white pl-3 pr-8 py-2 text-sm text-ink focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/15 transition-colors"
+                className="appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2 text-sm text-foreground focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/15 transition-colors"
               >
                 {teacherDepartments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
@@ -361,7 +361,7 @@ export default function StaffPerformancePage({
                 <>
                   {/* School top performers */}
                   <div>
-                    <h3 className="text-sm font-semibold text-ink mb-3">School Top Performers</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">School Top Performers</h3>
                     <Top3Leaderboard
                       top3={data.top3}
                       highlightTeacherId={currentTeacherId}
@@ -371,7 +371,7 @@ export default function StaffPerformancePage({
                   {/* Your ranking */}
                   {data.ownRow ? (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="school" />
                     </div>
                   ) : (
@@ -381,7 +381,7 @@ export default function StaffPerformancePage({
                   {/* Full school ranking */}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Full School Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Full School Ranking</h3>
                       <StaffRankTable
                         rows={data.fullList}
                         highlightTeacherId={currentTeacherId}
@@ -407,7 +407,7 @@ export default function StaffPerformancePage({
                   {/* Your ranking */}
                   {data.ownRow ? (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="dept" />
                     </div>
                   ) : (
@@ -417,7 +417,7 @@ export default function StaffPerformancePage({
                   {/* Full department ranking */}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">
                         Full {activeDeptName} Ranking
                       </h3>
                       <StaffRankTable
@@ -440,18 +440,18 @@ export default function StaffPerformancePage({
               {view === "school" ? (
                 <>
                   <div>
-                    <h3 className="text-sm font-semibold text-ink mb-3">School Top Performers</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">School Top Performers</h3>
                     <Top3Leaderboard top3={data.top3} highlightTeacherId={currentTeacherId} />
                   </div>
                   {data.ownRow && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="school" />
                     </div>
                   )}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Full School Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Full School Ranking</h3>
                       <StaffRankTable
                         rows={data.fullList}
                         highlightTeacherId={currentTeacherId}
@@ -469,13 +469,13 @@ export default function StaffPerformancePage({
                   />
                   {data.ownRow && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="dept" />
                     </div>
                   )}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">
                         Full {activeDeptName} Ranking
                       </h3>
                       <StaffRankTable
@@ -501,18 +501,18 @@ export default function StaffPerformancePage({
                 /* School tab */
                 <>
                   <div>
-                    <h3 className="text-sm font-semibold text-ink mb-3">School Top Performers</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">School Top Performers</h3>
                     <Top3Leaderboard top3={data.top3} highlightTeacherId={currentTeacherId} />
                   </div>
                   {data.ownRow && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="school" />
                     </div>
                   )}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Full School Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Full School Ranking</h3>
                       <StaffRankTable
                         rows={data.fullList}
                         highlightTeacherId={currentTeacherId}
@@ -531,13 +531,13 @@ export default function StaffPerformancePage({
                   />
                   {data.ownRow && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">Your Ranking</h3>
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Ranking</h3>
                       <OwnRankCard row={data.ownRow} context="dept" />
                     </div>
                   )}
                   {data.fullList.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-ink mb-3">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">
                         {activeDeptName} Department Ranking
                       </h3>
                       <StaffRankTable
@@ -549,8 +549,8 @@ export default function StaffPerformancePage({
                   )}
 
                   {data.schoolTop3 && data.schoolTop3.length > 0 && (
-                    <details className="rounded-xl border border-line bg-paper/50">
-                      <summary className="px-4 py-3 text-sm font-medium text-ink cursor-pointer select-none">
+                    <details className="rounded-xl border border-border bg-background/50">
+                      <summary className="px-4 py-3 text-sm font-medium text-foreground cursor-pointer select-none">
                         School-wide Top Performers (reference)
                       </summary>
                       <div className="px-4 pb-4 pt-2">

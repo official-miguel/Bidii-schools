@@ -5,7 +5,7 @@ export default function RecordsLayout({ children }: { children: React.ReactNode 
   return (
     <div>
       {/* Sub-module tab strip */}
-      <div className="border-b border-line mb-6">
+      <div className="border-b border-border mb-6">
         <ContextNavigation
           items={[
             {

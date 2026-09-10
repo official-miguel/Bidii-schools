@@ -83,7 +83,7 @@ function PolicyForm({ initial, onSave, onCancel, saving, error, availablePatronT
         </FormField>
       </div>
 
-      <fieldset className="rounded-xl border border-line p-4">
+      <fieldset className="rounded-xl border border-border p-4">
         <legend className="text-xs font-semibold text-slate px-1">Borrowing Limits</legend>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
@@ -99,7 +99,7 @@ function PolicyForm({ initial, onSave, onCancel, saving, error, availablePatronT
         </div>
       </fieldset>
 
-      <fieldset className="rounded-xl border border-line p-4">
+      <fieldset className="rounded-xl border border-border p-4">
         <legend className="text-xs font-semibold text-slate px-1">Fine Configuration</legend>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
@@ -121,8 +121,8 @@ function PolicyForm({ initial, onSave, onCancel, saving, error, availablePatronT
             { k: "reservationsAllowed", l: "Allow reservations" },
             { k: "isActive",       l: "Policy is active" },
           ].map(fi => (
-            <label key={fi.k} className="flex items-center gap-2 cursor-pointer text-sm text-ink">
-              <input type="checkbox" checked={!!(f as Record<string,unknown>)[fi.k]} onChange={e => set(fi.k, e.target.checked)} className="rounded border-line accent-teal" />
+            <label key={fi.k} className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+              <input type="checkbox" checked={!!(f as Record<string,unknown>)[fi.k]} onChange={e => set(fi.k, e.target.checked)} className="rounded border-border accent-teal" />
               {fi.l}
             </label>
           ))}
@@ -219,10 +219,10 @@ export default function PoliciesPage() {
       {saveOk && <SuccessBanner message="Policy saved successfully." />}
 
       {/* Tab bar */}
-      <div className="flex gap-0 border-b border-line mb-6 overflow-x-auto">
+      <div className="flex gap-0 border-b border-border mb-6 overflow-x-auto">
         {[["policies","Policies"],["pauses","Fine Pauses"],["audit","Audit Log"]].map(([v,l]) => (
           <button key={v} onClick={() => setTab(v as typeof tab)}
-            className={`px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tab === v ? "border-teal text-teal" : "border-transparent text-slate hover:text-ink"}`}>
+            className={`px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tab === v ? "border-teal text-teal" : "border-transparent text-slate hover:text-foreground"}`}>
             {l}
           </button>
         ))}
@@ -242,19 +242,19 @@ export default function PoliciesPage() {
           {loading && <div className="space-y-2">{[...Array(3)].map((_,i) => <div key={i} className="h-20 rounded-xl bg-line/40 animate-pulse" />)}</div>}
 
           {(showCreate || editPolicy) && (
-            <div className="mb-6 rounded-xl border border-line bg-white p-5 dark:bg-dark-surface dark:border-dark-border animate-slide-down">
-              <p className="text-sm font-semibold text-ink mb-4">{editPolicy ? `Edit — ${PATRON_LABELS[editPolicy.patronType]}` : "New Policy"}</p>
+            <div className="mb-6 rounded-xl border border-border bg-card p-5 animate-slide-down">
+              <p className="text-sm font-semibold text-foreground mb-4">{editPolicy ? `Edit — ${PATRON_LABELS[editPolicy.patronType]}` : "New Policy"}</p>
               <PolicyForm initial={editPolicy ?? {}} onSave={handleSavePolicy} onCancel={() => { setShowCreate(false); setEditPolicy(null); setSaveErr(null); }} saving={saving} error={saveErr} availablePatronTypes={availablePatronTypes} />
             </div>
           )}
 
           <div className="space-y-3">
             {policies.map(p => (
-              <div key={p.id} className="rounded-xl border border-line bg-white p-4 dark:bg-dark-surface dark:border-dark-border">
+              <div key={p.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-ink">{PATRON_LABELS[p.patronType]}</p>
+                      <p className="font-semibold text-foreground">{PATRON_LABELS[p.patronType]}</p>
                       {!p.isActive && <Badge variant="default">Inactive</Badge>}
                     </div>
                     {p.label && <p className="text-xs text-slate mt-0.5">{p.label}</p>}
@@ -270,8 +270,8 @@ export default function PoliciesPage() {
                     { l: "Renewals",   v: p.maxRenewals },
                     { l: "Block at",   v: p.fineBlockThreshold > 0 ? `KES ${p.fineBlockThreshold}` : "Any fine" },
                   ].map(s => (
-                    <div key={s.l} className="rounded-lg border border-line p-2">
-                      <p className="text-sm font-bold text-ink">{s.v}</p>
+                    <div key={s.l} className="rounded-lg border border-border p-2">
+                      <p className="text-sm font-bold text-foreground">{s.v}</p>
                       <p className="text-[10px] text-slate">{s.l}</p>
                     </div>
                   ))}
@@ -307,9 +307,9 @@ export default function PoliciesPage() {
 
           <div className="space-y-2">
             {pauses.map(p => (
-              <div key={p.id} className={`rounded-xl border p-4 flex items-center gap-4 ${p.isActive ? "border-warn/30 bg-warn-bg/20" : "border-line bg-paper opacity-70"}`}>
+              <div key={p.id} className={`rounded-xl border p-4 flex items-center gap-4 ${p.isActive ? "border-warn/30 bg-warn-bg/20" : "border-border bg-background opacity-70"}`}>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2"><p className="font-medium text-ink">{p.label}</p><Badge variant={p.isActive ? "warn" : "default"}>{p.isActive ? "Active" : "Ended"}</Badge></div>
+                  <div className="flex items-center gap-2"><p className="font-medium text-foreground">{p.label}</p><Badge variant={p.isActive ? "warn" : "default"}>{p.isActive ? "Active" : "Ended"}</Badge></div>
                   <p className="text-xs text-slate mt-0.5">{p.scope} · {fmt(p.startDate)}{p.endDate ? ` → ${fmt(p.endDate)}` : " → open-ended"}</p>
                   {p.reason && <p className="text-xs text-slate/70 mt-0.5">{p.reason}</p>}
                 </div>
@@ -325,14 +325,14 @@ export default function PoliciesPage() {
         <div>
           {auditRows.length === 0 && !loading && <p className="text-slate text-sm text-center py-12">No fine audit events yet.</p>}
           {auditRows.length > 0 && (
-            <div className="bg-white border border-line rounded-xl overflow-hidden dark:bg-dark-surface dark:border-dark-border">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               <table className="w-full text-xs">
-                <thead><tr className="border-b border-line bg-slate-50/80 text-left text-[10px] font-semibold text-slate uppercase tracking-wide">
+                <thead><tr className="border-b border-border bg-slate-50/80 text-left text-[10px] font-semibold text-slate uppercase tracking-wide">
                   <th className="px-4 py-3">Event</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Balance after</th><th className="px-4 py-3 hidden sm:table-cell">Reason</th><th className="px-4 py-3">Date</th>
                 </tr></thead>
                 <tbody>
                   {auditRows.map(r => (
-                    <tr key={r.id} className="border-b border-line last:border-0 hover:bg-slate-50/40">
+                    <tr key={r.id} className="border-b border-border last:border-0 hover:bg-slate-50/40">
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 font-medium ${r.eventType === "CLEAR" ? "text-success" : r.eventType === "CHARGE" ? "text-danger" : "text-slate"}`}>
                           {r.eventType === "CLEAR" ? <CheckCircle2 className="h-3.5 w-3.5" /> : r.eventType === "CHARGE" ? <AlertTriangle className="h-3.5 w-3.5" /> : null}

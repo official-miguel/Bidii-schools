@@ -89,7 +89,7 @@ function FrameworkChip({ type }: { type?: string }) {
 // ---------------------------------------------------------------------------
 
 const TABLE_HEADER = (
-  <tr className="border-b border-line bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+  <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
     <th className="px-5 py-3.5 w-[260px]">Student</th>
     <th className="px-5 py-3.5 w-[130px]">Adm. No.</th>
     <th className="px-5 py-3.5 w-[130px]">Class</th>
@@ -126,7 +126,7 @@ const StudentRow = React.memo(function StudentRow({
     .filter(Boolean) as string[];
 
   return (
-    <tr className="group border-b border-line last:border-0 hover:bg-slate-50/50 transition-colors">
+    <tr className="group border-b border-border last:border-0 hover:bg-slate-50/50 transition-colors">
       {/* Student name + avatar */}
       <td className="px-5 py-3.5">
         <button
@@ -136,7 +136,7 @@ const StudentRow = React.memo(function StudentRow({
         >
           <Avatar name={s.fullName} size="sm" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-ink group-hover/name:text-teal transition-colors truncate">
+            <p className="text-sm font-medium text-foreground group-hover/name:text-teal transition-colors truncate">
               {s.fullName}
             </p>
             {s.parentName && (
@@ -148,7 +148,7 @@ const StudentRow = React.memo(function StudentRow({
 
       {/* Admission number */}
       <td className="px-5 py-3.5">
-        <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+        <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
           {s.admissionNumber}
         </span>
       </td>
@@ -161,11 +161,11 @@ const StudentRow = React.memo(function StudentRow({
             onClick={() => onOpenClass(cls.id)}
             className="flex items-center gap-1.5 group/cls text-left"
           >
-            <span className="text-sm text-ink group-hover/cls:text-teal transition-colors">{cls.name}</span>
+            <span className="text-sm text-foreground group-hover/cls:text-teal transition-colors">{cls.name}</span>
             <FrameworkChip type={cls.frameworkType} />
           </button>
         ) : (
-          <span className="text-sm text-ink">—</span>
+          <span className="text-sm text-foreground">—</span>
         )}
       </td>
 
@@ -231,7 +231,7 @@ const MobileStudentCard = React.memo(function MobileStudentCard({
   onOpenClass,
 }: MobileStudentCardProps) {
   return (
-    <div className="rounded-xl border border-line bg-white shadow-xs overflow-hidden">
+    <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
       {/* Tappable header — navigates to student profile */}
       <button
         type="button"
@@ -241,7 +241,7 @@ const MobileStudentCard = React.memo(function MobileStudentCard({
       >
         <Avatar name={s.fullName} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-ink truncate leading-tight">{s.fullName}</p>
+          <p className="text-sm font-medium text-foreground truncate leading-tight">{s.fullName}</p>
           {s.parentName && (
             <p className="text-xs text-slate/70 truncate leading-tight mt-0.5">{s.parentName}</p>
           )}
@@ -251,13 +251,13 @@ const MobileStudentCard = React.memo(function MobileStudentCard({
 
       {/* Detail fields */}
       <dl className="px-4 pb-3 grid grid-cols-2 gap-x-4 gap-y-2.5
-                     border-t border-line/60 pt-3">
+                     border-t border-border/60 pt-3">
         <div>
           <dt className="text-[10px] font-semibold text-slate uppercase tracking-wide mb-0.5">
             Adm. No.
           </dt>
           <dd>
-            <span className="text-xs font-mono text-slate bg-slate-50 border border-line rounded px-1.5 py-0.5">
+            <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1.5 py-0.5">
               {s.admissionNumber}
             </span>
           </dd>
@@ -273,11 +273,11 @@ const MobileStudentCard = React.memo(function MobileStudentCard({
                 onClick={() => onOpenClass(cls.id)}
                 className="flex items-center gap-1.5 flex-wrap text-left"
               >
-                <span className="text-sm text-ink hover:text-teal transition-colors">{cls.name}</span>
+                <span className="text-sm text-foreground hover:text-teal transition-colors">{cls.name}</span>
                 <FrameworkChip type={cls.frameworkType} />
               </button>
             ) : (
-              <span className="text-sm text-ink">—</span>
+              <span className="text-sm text-foreground">—</span>
             )}
           </dd>
         </div>
@@ -297,13 +297,13 @@ const MobileStudentCard = React.memo(function MobileStudentCard({
 
       {/* Action row */}
       <div className="px-4 pb-4 pt-2 flex items-center gap-2
-                      border-t border-line/60">
+                      border-t border-border/60">
         <button
           type="button"
           onClick={() => onEdit(s)}
           aria-label="Edit student"
           className="flex-1 flex items-center justify-center gap-2 min-h-[44px]
-                     rounded-lg border border-line bg-white text-sm font-medium
+                     rounded-lg border border-border bg-card text-sm font-medium
                      text-slate hover:bg-teal-50 hover:text-teal hover:border-teal/40
                      transition-colors"
         >
@@ -714,7 +714,7 @@ export default function StudentsPage() {
           {/* Desktop virtual scroll */}
           <div
             ref={parentRef}
-            className="hidden md:block bg-white border border-line rounded-xl overflow-auto shadow-sm"
+            className="hidden md:block bg-card border border-border rounded-xl overflow-auto shadow-sm"
             style={{ height: "65vh" }}
           >
             <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
@@ -788,7 +788,7 @@ export default function StudentsPage() {
             })}
           </div>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+          <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[640px]">
                 <thead className="sticky top-0 z-10">
@@ -856,7 +856,7 @@ export default function StudentsPage() {
                       <input
                         disabled
                         defaultValue={editing.admissionNumber}
-                        className={`${inputClass} bg-paper text-slate cursor-not-allowed`}
+                        className={`${inputClass} bg-background text-slate cursor-not-allowed`}
                       />
                       <p className="text-xs text-slate mt-1.5">
                         Admission number cannot be changed.
@@ -887,7 +887,7 @@ export default function StudentsPage() {
                           type="text"
                           value={nextAdmissionNumber ?? "…"}
                           readOnly
-                          className={`${inputClass} bg-paper cursor-not-allowed pr-28`}
+                          className={`${inputClass} bg-background cursor-not-allowed pr-28`}
                         />
                         {nextAdmissionNumber && (
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-success">
@@ -928,7 +928,7 @@ export default function StudentsPage() {
                         <input
                           readOnly
                           value={schoolPolicy.genderPolicy === "BOYS_ONLY" ? "Male" : "Female"}
-                          className={`${inputClass} bg-paper cursor-not-allowed`}
+                          className={`${inputClass} bg-background cursor-not-allowed`}
                         />
                         <p className="text-xs text-slate mt-1.5">
                           Fixed by the school gender policy.
@@ -956,7 +956,7 @@ export default function StudentsPage() {
                           <input
                             readOnly
                             value="Boarding"
-                            className={`${inputClass} bg-paper cursor-not-allowed`}
+                            className={`${inputClass} bg-background cursor-not-allowed`}
                           />
                           <p className="text-xs text-slate mt-1.5">
                             All students board — set by school policy.
@@ -1089,10 +1089,10 @@ export default function StudentsPage() {
                       <img
                         src={editPhotoUrl}
                         alt={editing.fullName}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-line"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal/10 to-royal/10 border border-line flex items-center justify-center text-2xl font-semibold text-ink">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal/10 to-royal/10 border border-border flex items-center justify-center text-2xl font-semibold text-foreground">
                         {editing.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                       </div>
                     )}
@@ -1120,7 +1120,7 @@ export default function StudentsPage() {
                           setPhotoUploading(false);
                         }}
                         aria-label="Remove photo"
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-line flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-danger hover:border-danger hover:text-white text-slate"
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-danger hover:border-danger hover:text-white text-slate"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1201,7 +1201,7 @@ export default function StudentsPage() {
             <div className="form-section">
               <div className="form-section-title">Elective Subjects</div>
               {!selectedClass ? (
-                <div className="flex items-center gap-2 rounded-lg bg-paper border border-line px-4 py-3">
+                <div className="flex items-center gap-2 rounded-lg bg-background border border-border px-4 py-3">
                   <svg className="h-4 w-4 text-slate/50 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
                   </svg>
@@ -1229,7 +1229,7 @@ export default function StudentsPage() {
                           className={`inline-flex items-center gap-1.5 text-sm rounded-lg border px-3 py-2.5 sm:py-1.5 font-medium transition-all duration-100 min-h-[44px] sm:min-h-0 ${
                             selected
                               ? "bg-teal text-white border-teal shadow-xs"
-                              : "border-line text-ink hover:border-teal/40 hover:bg-teal-50/50"
+                              : "border-border text-foreground hover:border-teal/40 hover:bg-teal-50/50"
                           }`}
                         >
                           {selected && (

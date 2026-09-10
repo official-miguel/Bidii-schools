@@ -115,16 +115,16 @@ function Step1Basics({
           <input
             readOnly
             value={lockedLabel}
-            className={`${inputClass} bg-paper cursor-not-allowed opacity-75`}
+            className={`${inputClass} bg-background cursor-not-allowed opacity-75`}
           />
         </FormField>
       ) : (
         // Mixed school — every dorm must be BOYS_ONLY or GIRLS_ONLY; MIXED is not allowed
         <div>
-          <p className="text-sm font-medium text-ink mb-1.5 dark:text-dark-text">
+          <p className="text-sm font-medium text-foreground mb-1.5">
             Gender <span className="text-danger">*</span>
           </p>
-          <p className="text-xs text-slate dark:text-dark-muted mb-3">
+          <p className="text-xs text-slate mb-3">
             This school is mixed. Each dormitory must be dedicated to one gender — boys and girls cannot share a dorm.
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -140,12 +140,12 @@ function Step1Basics({
                   className={`rounded-xl border-2 p-3.5 text-left transition-all ${
                     active
                       ? `${color} ${activeRing}`
-                      : "border-line hover:border-slate-300 dark:border-dark-border dark:hover:border-dark-muted"
+                      : "border-border hover:border-slate-300 dark:hover:border-dark-muted"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className={`h-3 w-3 rounded-full shrink-0 ${active ? dot : "bg-slate-300 dark:bg-dark-border"}`} />
-                    <span className={`text-sm font-semibold ${active ? "text-ink dark:text-dark-text" : "text-slate dark:text-dark-muted"}`}>
+                    <span className={`h-3 w-3 rounded-full shrink-0 ${active ? dot : "bg-slate-300"}`} />
+                    <span className={`text-sm font-semibold ${active ? "text-foreground" : "text-slate"}`}>
                       {label}
                     </span>
                     {active && <Check className="h-4 w-4 ml-auto text-teal shrink-0" />}
@@ -200,7 +200,7 @@ function Step1Basics({
 function Step2Structure({ data, onChange }: { data: WizardData; onChange: (p: Partial<WizardData>) => void }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate dark:text-dark-muted leading-relaxed">
+      <p className="text-sm text-slate leading-relaxed">
         Choose how this dormitory is physically organised. You can always add beds and cubicles after registration.
       </p>
       <div className="grid grid-cols-1 gap-3">
@@ -222,19 +222,19 @@ function Step2Structure({ data, onChange }: { data: WizardData; onChange: (p: Pa
           return (
             <button key={value} type="button" onClick={() => onChange({ structure: value })}
               className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-                active ? "border-teal bg-teal/5 dark:bg-teal/10" : "border-line hover:border-teal/40 dark:border-dark-border"
+                active ? "border-teal bg-teal/5" : "border-border hover:border-teal/40"
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className={`rounded-lg p-2 shrink-0 ${active ? "bg-teal/15" : "bg-slate-100 dark:bg-dark-border"}`}>
+                <div className={`rounded-lg p-2 shrink-0 ${active ? "bg-teal/15" : "bg-slate-100"}`}>
                   <Icon className={`h-5 w-5 ${active ? "text-teal" : "text-slate"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className={`text-sm font-semibold ${active ? "text-teal" : "text-ink dark:text-dark-text"}`}>{label}</p>
+                    <p className={`text-sm font-semibold ${active ? "text-teal" : "text-foreground"}`}>{label}</p>
                     {active && <Check className="h-4 w-4 text-teal shrink-0" />}
                   </div>
-                  <p className="text-xs text-slate mt-1 leading-relaxed dark:text-dark-muted">{desc}</p>
+                  <p className="text-xs text-slate mt-1 leading-relaxed">{desc}</p>
                 </div>
               </div>
             </button>
@@ -254,7 +254,7 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
   };
   return (
     <div className="space-y-5">
-      <p className="text-sm text-slate dark:text-dark-muted leading-relaxed">
+      <p className="text-sm text-slate leading-relaxed">
         Control which students may be allocated to this dormitory.
       </p>
       <div className="grid grid-cols-1 gap-3">
@@ -266,19 +266,19 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
           return (
             <button key={value} type="button" onClick={() => onChange({ allocationPolicy: value })}
               className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-                active ? "border-teal bg-teal/5 dark:bg-teal/10" : "border-line hover:border-teal/40 dark:border-dark-border"
+                active ? "border-teal bg-teal/5" : "border-border hover:border-teal/40"
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className={`rounded-lg p-2 shrink-0 ${active ? "bg-teal/15" : "bg-slate-100 dark:bg-dark-border"}`}>
+                <div className={`rounded-lg p-2 shrink-0 ${active ? "bg-teal/15" : "bg-slate-100"}`}>
                   <Icon className={`h-5 w-5 ${active ? "text-teal" : "text-slate"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className={`text-sm font-semibold ${active ? "text-teal" : "text-ink dark:text-dark-text"}`}>{label}</p>
+                    <p className={`text-sm font-semibold ${active ? "text-teal" : "text-foreground"}`}>{label}</p>
                     {active && <Check className="h-4 w-4 text-teal shrink-0" />}
                   </div>
-                  <p className="text-xs text-slate mt-1 leading-relaxed dark:text-dark-muted">{desc}</p>
+                  <p className="text-xs text-slate mt-1 leading-relaxed">{desc}</p>
                 </div>
               </div>
             </button>
@@ -295,7 +295,7 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
               return (
                 <button key={f} type="button" onClick={() => toggleForm(f)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                    on ? "bg-teal text-white border-teal" : "border-line text-slate hover:border-teal/40 dark:border-dark-border dark:text-dark-muted"
+                    on ? "bg-teal text-white border-teal" : "border-border text-slate hover:border-teal/40"
                   }`}
                 >
                   {on && <Check className="h-3 w-3" />} Form {f}
@@ -312,15 +312,15 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
       )}
 
       {data.structure === "CUBICLE_BASED" && (
-        <div className="rounded-lg border border-line bg-paper dark:bg-dark-surface dark:border-dark-border p-4">
+        <div className="rounded-lg border border-border bg-background p-4">
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={data.cubiclesInheritPolicy}
               onChange={(e) => onChange({ cubiclesInheritPolicy: e.target.checked })}
-              className="mt-0.5 h-4 w-4 rounded border-line text-teal focus:ring-teal/30"
+              className="mt-0.5 h-4 w-4 rounded border-border text-teal focus:ring-teal/30"
             />
             <div>
-              <p className="text-sm font-medium text-ink dark:text-dark-text">Cubicles inherit this policy</p>
-              <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">
+              <p className="text-sm font-medium text-foreground">Cubicles inherit this policy</p>
+              <p className="text-xs text-slate mt-0.5">
                 When enabled, all cubicles follow the dorm-level allocation policy. Disable to set individual cubicle policies.
               </p>
             </div>
@@ -443,12 +443,12 @@ function DormWizard({
           {STEP_LABELS.map((label, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                i < step ? "bg-teal text-white" : i === step ? "bg-teal text-white ring-2 ring-teal/30" : "bg-line text-slate dark:bg-dark-border dark:text-dark-muted"
+                i < step ? "bg-teal text-white" : i === step ? "bg-teal text-white ring-2 ring-teal/30" : "bg-line text-slate"
               }`}>
                 {i < step ? <Check className="h-3 w-3" /> : i + 1}
               </div>
-              <span className={`text-xs font-medium hidden sm:block ${i === step ? "text-teal" : "text-slate dark:text-dark-muted"}`}>{label}</span>
-              {i < STEP_LABELS.length - 1 && <div className="w-8 h-px bg-line dark:bg-dark-border" />}
+              <span className={`text-xs font-medium hidden sm:block ${i === step ? "text-teal" : "text-slate"}`}>{label}</span>
+              {i < STEP_LABELS.length - 1 && <div className="w-8 h-px bg-line" />}
             </div>
           ))}
         </div>
@@ -571,24 +571,24 @@ export default function DormitoriesPage() {
       <WorkspaceToolbar>
         <WorkspaceToolbar.Search value={search} onChange={setSearch} placeholder="Search dormitories…" />
         <WorkspaceToolbar.Actions>
-          <span className="text-sm text-slate dark:text-dark-muted">{dorms.length} dormitor{dorms.length !== 1 ? "ies" : "y"}</span>
+          <span className="text-sm text-slate">{dorms.length} dormitor{dorms.length !== 1 ? "ies" : "y"}</span>
         </WorkspaceToolbar.Actions>
       </WorkspaceToolbar>
 
       {loading && (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 rounded-xl bg-line/40 dark:bg-dark-border/40 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-line/40/40 animate-pulse" />
           ))}
         </div>
       )}
 
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <div className="rounded-full bg-slate-100 dark:bg-dark-surface p-5">
+          <div className="rounded-full bg-slate-100 p-5">
             <Building2 className="h-9 w-9 text-slate" />
           </div>
-          <p className="text-ink font-medium dark:text-dark-text">{search ? `No dormitories match "${search}"` : "No dormitories yet"}</p>
+          <p className="text-foreground font-medium">{search ? `No dormitories match "${search}"` : "No dormitories yet"}</p>
           {!search && (
             <button onClick={() => setShowWizard(true)} className={primaryButtonClass}>
               <Plus className="h-4 w-4" /> Register first dormitory
@@ -598,11 +598,11 @@ export default function DormitoriesPage() {
       )}
 
       {!loading && filtered.length > 0 && (
-        <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm dark:bg-dark-surface dark:border-dark-border">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
               <thead>
-                <tr className="border-b border-line bg-slate-50/80 dark:bg-dark-border/30 text-left text-xs font-semibold text-slate uppercase tracking-wide">
+                <tr className="border-b border-border bg-slate-50/80/30 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Dormitory</th>
                   <th className="px-5 py-3.5 w-[100px]">Gender</th>
                   <th className="px-5 py-3.5 w-[110px]">Structure</th>
@@ -617,15 +617,15 @@ export default function DormitoriesPage() {
                   const statusMeta = STATUS_META[dorm.status];
                   const StatusIcon = statusMeta.icon;
                   return (
-                    <tr key={dorm.id} className="border-b border-line last:border-0 hover:bg-slate-50/50 dark:hover:bg-dark-border/20 transition-colors">
+                    <tr key={dorm.id} className="border-b border-border last:border-0 hover:bg-slate-50/50/20 transition-colors">
                       <td className="px-5 py-3.5">
                         <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
-                          className="font-medium text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal">
+                          className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                           {dorm.name}
                         </Link>
                         {dorm.boardingMaster && (
                           <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
-                            className="text-xs text-slate hover:text-teal transition-colors dark:text-dark-muted dark:hover:text-teal block w-fit">
+                            className="text-xs text-slate hover:text-teal transition-colors dark:hover:text-teal block w-fit">
                             {dorm.boardingMaster.fullName}
                           </Link>
                         )}
@@ -636,7 +636,7 @@ export default function DormitoriesPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs text-slate dark:text-dark-muted">
+                        <span className="text-xs text-slate">
                           {dorm.structure === "CUBICLE_BASED" ? "Cubicle-based" : "Open hall"}
                         </span>
                       </td>
@@ -647,13 +647,13 @@ export default function DormitoriesPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 rounded-full bg-line dark:bg-dark-border overflow-hidden">
+                          <div className="flex-1 h-1.5 rounded-full bg-line overflow-hidden">
                             <div className={`h-full rounded-full ${pct >= 90 ? "bg-warn" : "bg-teal"}`}
                               style={{ width: `${Math.min(pct, 100)}%` }} />
                           </div>
-                          <span className="text-xs tabular-nums text-slate dark:text-dark-muted w-8 text-right">{pct}%</span>
+                          <span className="text-xs tabular-nums text-slate w-8 text-right">{pct}%</span>
                         </div>
-                        <p className="text-[11px] text-slate/70 dark:text-dark-muted/70 mt-0.5">
+                        <p className="text-[11px] text-slate/70/70 mt-0.5">
                           {dorm.occupiedCount}/{dorm.totalCapacity}
                         </p>
                       </td>
@@ -710,7 +710,7 @@ export default function DormitoriesPage() {
               </button>
             </div>
           }>
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             This will permanently delete this dormitory and all associated cubicle and bed configurations.
             Active student allocations must be removed first.
           </p>

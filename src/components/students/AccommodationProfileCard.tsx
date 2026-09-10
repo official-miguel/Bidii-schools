@@ -55,8 +55,8 @@ function fmt(dateStr: string) {
 
 const STATUS_STYLE: Record<string, string> = {
   CURRENT:     "bg-success/10 text-success border-success/20",
-  VACATED:     "bg-slate-100 text-slate border-line dark:bg-dark-surface dark:text-dark-muted dark:border-dark-border",
-  TRANSFERRED: "bg-teal/8 text-teal border-teal/20 dark:bg-teal/10",
+  VACATED:     "bg-slate-100 text-slate border-border",
+  TRANSFERRED: "bg-teal/8 text-teal border-teal/20",
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export default function AccommodationProfileCard({
   // Don't render anything while loading to avoid layout shift
   if (loading) {
     return (
-      <div className="bg-white border border-line rounded-xl p-5 dark:bg-dark-surface dark:border-dark-border animate-pulse">
+      <div className="bg-card border border-border rounded-xl p-5 animate-pulse">
         <div className="h-4 w-32 bg-line/60 rounded mb-4" />
         <div className="h-16 bg-line/40 rounded-lg" />
       </div>
@@ -97,7 +97,7 @@ export default function AccommodationProfileCard({
   const history = records.filter((r) => r.status !== "CURRENT");
 
   return (
-    <div className="bg-white border border-line rounded-xl p-5 dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-5">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
@@ -105,7 +105,7 @@ export default function AccommodationProfileCard({
           <div className="rounded-lg bg-teal/10 p-1.5">
             <BedDouble className="h-4 w-4 text-teal" />
           </div>
-          <h2 className="text-sm font-semibold text-ink dark:text-dark-text">Accommodation</h2>
+          <h2 className="text-sm font-semibold text-foreground">Accommodation</h2>
         </div>
         {role === "principal" && (
           <Link
@@ -126,12 +126,12 @@ export default function AccommodationProfileCard({
             <div className="min-w-0">
               <Link
                 href={`/principal/accommodation/dormitories/${current.dorm.id}`}
-                className="text-base font-semibold text-ink hover:text-teal transition-colors dark:text-dark-text dark:hover:text-teal"
+                className="text-base font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal"
               >
                 {current.dorm.name}
               </Link>
               {(current.cubicle || current.bed) && (
-                <p className="text-xs text-slate mt-0.5 dark:text-dark-muted">
+                <p className="text-xs text-slate mt-0.5">
                   {current.cubicle && (
                     <span className="inline-flex items-center gap-1 mr-2">
                       <LayoutGrid className="h-3 w-3" />
@@ -154,12 +154,12 @@ export default function AccommodationProfileCard({
 
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-            <div className="flex items-center gap-1.5 text-slate dark:text-dark-muted">
+            <div className="flex items-center gap-1.5 text-slate">
               <Calendar className="h-3 w-3 shrink-0" />
               <span>Since {fmt(current.allocationDate)}</span>
             </div>
             {current.bed && (
-              <div className="flex items-center gap-1.5 text-slate dark:text-dark-muted">
+              <div className="flex items-center gap-1.5 text-slate">
                 <BedDouble className="h-3 w-3 shrink-0" />
                 <span className="capitalize">
                   {current.bed.bedType === "DOUBLE_DECKER" ? "Bunk bed" :
@@ -168,7 +168,7 @@ export default function AccommodationProfileCard({
               </div>
             )}
             {current.notes && (
-              <div className="col-span-2 flex items-start gap-1.5 text-slate dark:text-dark-muted">
+              <div className="col-span-2 flex items-start gap-1.5 text-slate">
                 <span className="shrink-0 mt-0.5">📝</span>
                 <span className="italic">{current.notes}</span>
               </div>
@@ -176,7 +176,7 @@ export default function AccommodationProfileCard({
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-line dark:border-dark-border bg-paper dark:bg-dark-bg/30 px-4 py-3 text-sm text-slate dark:text-dark-muted">
+        <div className="rounded-lg border border-border bg-background/30 px-4 py-3 text-sm text-slate">
           Not currently allocated to any dormitory.
         </div>
       )}
@@ -187,7 +187,7 @@ export default function AccommodationProfileCard({
           <button
             type="button"
             onClick={() => setShowHistory((s) => !s)}
-            className="flex items-center gap-1.5 text-xs text-slate hover:text-ink dark:text-dark-muted dark:hover:text-dark-text transition-colors font-medium"
+            className="flex items-center gap-1.5 text-xs text-slate hover:text-foreground transition-colors font-medium"
           >
             <Clock className="h-3.5 w-3.5" />
             {history.length} previous allocation{history.length !== 1 ? "s" : ""}
@@ -200,27 +200,27 @@ export default function AccommodationProfileCard({
             <div className="mt-3 space-y-2">
               {history.map((r) => (
                 <div key={r.id}
-                  className="rounded-lg border border-line dark:border-dark-border px-3 py-2.5">
+                  className="rounded-lg border border-border px-3 py-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <Building2 className="h-3 w-3 text-slate shrink-0 dark:text-dark-muted" />
-                        <span className="text-sm font-medium text-ink dark:text-dark-text">{r.dorm.name}</span>
+                        <Building2 className="h-3 w-3 text-slate shrink-0" />
+                        <span className="text-sm font-medium text-foreground">{r.dorm.name}</span>
                         {r.cubicle && (
-                          <span className="text-xs text-slate dark:text-dark-muted">· {r.cubicle.name}</span>
+                          <span className="text-xs text-slate">· {r.cubicle.name}</span>
                         )}
                         {r.bed && (
-                          <span className="text-xs text-slate dark:text-dark-muted">
+                          <span className="text-xs text-slate">
                             · {r.bed.label}{posLabel(r.sleepingPosition)}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate/70 dark:text-dark-muted/70 mt-0.5">
+                      <p className="text-[11px] text-slate/70/70 mt-0.5">
                         {fmt(r.allocationDate)}
                         {r.vacatedDate ? ` → ${fmt(r.vacatedDate)}` : ""}
                       </p>
                       {r.notes && (
-                        <p className="text-[11px] text-slate dark:text-dark-muted mt-0.5 italic">{r.notes}</p>
+                        <p className="text-[11px] text-slate mt-0.5 italic">{r.notes}</p>
                       )}
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${STATUS_STYLE[r.status]}`}>

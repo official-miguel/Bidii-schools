@@ -101,7 +101,7 @@ function StudentPhoto({ fileId, name, size = "md" }: { fileId?: string; name: st
   const sz = size === "sm" ? "h-8 w-8 text-xs" : size === "lg" ? "h-20 w-20 text-2xl" : "h-14 w-14 text-lg";
   const initials = name.trim().split(/\s+/).map(p => p[0]).slice(0,2).join("").toUpperCase();
   if (!fileId) return <div className={`${sz} rounded-full bg-teal/10 border-2 border-teal/20 flex items-center justify-center font-bold text-teal shrink-0`}>{initials}</div>;
-  return <img src={`/api/students/files/${fileId}`} alt={name} className={`${sz} rounded-full object-cover border-2 border-line shrink-0`} onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />; // eslint-disable-line @next/next/no-img-element
+  return <img src={`/api/students/files/${fileId}`} alt={name} className={`${sz} rounded-full object-cover border-2 border-border shrink-0`} onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />; // eslint-disable-line @next/next/no-img-element
 }
 
 // ── Hardware scanner hook ──────────────────────────────────────────────────
@@ -478,7 +478,7 @@ export default function CirculatePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-dark-text">Circulation Desk</h1>
+          <h1 className="text-xl font-bold text-foreground">Circulation Desk</h1>
           <p className="text-sm text-slate mt-0.5">Student → Book → Confirm</p>
         </div>
         {cardData && <button onClick={resetAll} className={secondaryButtonClass}><X className="h-4 w-4" /> Clear</button>}
@@ -490,7 +490,7 @@ export default function CirculatePage() {
         <div className="xl:col-span-2 space-y-4">
 
           {/* Step 1 — Student search (always visible) */}
-          <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border ${phase !== "student" && !cardData ? "opacity-50" : "border-line"}`}>
+          <div className={`rounded-xl border bg-card p-5 ${phase !== "student" && !cardData ? "opacity-50" : "border-border"}`}>
             <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">1</span>
               Identify Student
@@ -500,7 +500,7 @@ export default function CirculatePage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate/50 pointer-events-none" />
                 <input
                   ref={studentRef}
-                  className="w-full rounded-lg border border-line bg-white pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors dark:bg-dark-surface dark:border-dark-border dark:text-dark-text"
+                  className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 transition-colors"
                   placeholder="Name or admission number…"
                   value={studentQuery}
                   onChange={e => onStudentInputChange(e.target.value)}
@@ -512,12 +512,12 @@ export default function CirculatePage() {
             {loadingCard && <div className="mt-2 flex items-center gap-2 text-slate text-sm"><Loader2 className="h-4 w-4 animate-spin" />Loading card…</div>}
             {studentErr && <div className="mt-2"><ErrorBanner message={studentErr} onDismiss={() => setStudentErr(null)} /></div>}
             {searchResults.length > 0 && (
-              <ul className="mt-2 rounded-xl border border-line bg-white shadow-sm divide-y divide-line overflow-hidden">
+              <ul className="mt-2 rounded-xl border border-border bg-card shadow-sm divide-y divide-border overflow-hidden">
                 {searchResults.map(s => (
                   <li key={s.id}>
                     <button onClick={() => selectStudent(s)} className="w-full text-left px-4 py-3 hover:bg-teal-50/40 transition-colors flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-ink dark:text-dark-text">{s.fullName}</p>
+                        <p className="text-sm font-semibold text-foreground">{s.fullName}</p>
                         <p className="text-xs text-slate">{s.admissionNumber} · {s.schoolClass.name}</p>
                       </div>
                       {s.libraryCard?.fineBalance ? <span className="text-xs text-danger font-semibold">KES {s.libraryCard.fineBalance.toFixed(2)}</span> : null}
@@ -535,7 +535,7 @@ export default function CirculatePage() {
                 <StudentPhoto fileId={student.files?.[0]?.id} name={student.fullName} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-ink dark:text-dark-text">{student.fullName}</p>
+                    <p className="font-bold text-foreground">{student.fullName}</p>
                     <Badge variant={cardStatusVariant(card.status)}>{card.status}</Badge>
                   </div>
                   <p className="text-sm text-slate font-mono">{student.admissionNumber}</p>
@@ -551,8 +551,8 @@ export default function CirculatePage() {
                   { label: "Total",    value: card.totalBorrowCount,   hi: false },
                   { label: "Fine (KES)", value: card.fineBalance.toFixed(2), hi: card.fineBalance > 0 },
                 ].map(s => (
-                  <div key={s.label} className={`rounded-lg px-2 py-2 border ${s.hi ? "border-danger/30 bg-danger-bg/40" : "border-line bg-white/70 dark:bg-dark-border/30"}`}>
-                    <p className={`text-base font-bold ${s.hi ? "text-danger" : "text-ink dark:text-dark-text"}`}>{s.value}</p>
+                  <div key={s.label} className={`rounded-lg px-2 py-2 border ${s.hi ? "border-danger/30 bg-danger-bg/40" : "border-border bg-card/70/30"}`}>
+                    <p className={`text-base font-bold ${s.hi ? "text-danger" : "text-foreground"}`}>{s.value}</p>
                     <p className="text-[10px] text-slate">{s.label}</p>
                   </div>
                 ))}
@@ -583,7 +583,7 @@ export default function CirculatePage() {
                   <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">Active ({activeBorrows.length})</p>
                   <div className="space-y-1.5">
                     {activeBorrows.map(b => (
-                      <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30" : "border-line bg-white dark:bg-dark-surface"}`}>
+                      <div key={b.id} className={`flex items-center justify-between text-xs rounded-lg border px-3 py-2 ${isOverdue(b.dueAt, b.returnedAt) ? "border-danger/30 bg-danger-bg/30" : "border-border bg-card"}`}>
                         <span className="truncate font-medium">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
                         <span className={`shrink-0 ml-2 ${isOverdue(b.dueAt, b.returnedAt) ? "text-danger font-bold" : "text-slate"}`}>
                           {isOverdue(b.dueAt, b.returnedAt) ? `${daysSince(b.dueAt)}d overdue` : `Due ${fmt(b.dueAt)}`}
@@ -595,7 +595,7 @@ export default function CirculatePage() {
               )}
 
               {history.length > 0 && (
-                <button onClick={() => setShowHistory(v => !v)} className="flex items-center gap-1 text-xs text-slate hover:text-ink transition-colors">
+                <button onClick={() => setShowHistory(v => !v)} className="flex items-center gap-1 text-xs text-slate hover:text-foreground transition-colors">
                   {showHistory ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   History ({history.length})
                 </button>
@@ -603,8 +603,8 @@ export default function CirculatePage() {
               {showHistory && (
                 <div className="space-y-1">
                   {history.slice(0, 10).map(b => (
-                    <div key={b.id} className="flex items-center justify-between text-xs border border-line rounded-lg px-3 py-2 dark:border-dark-border">
-                      <span className="truncate text-ink dark:text-dark-text">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
+                    <div key={b.id} className="flex items-center justify-between text-xs border border-border rounded-lg px-3 py-2">
+                      <span className="truncate text-foreground">{b.copy?.catalogue?.title ?? b.book?.title ?? "Unknown"}</span>
                       <span className="shrink-0 ml-2 text-slate">{fmt(b.returnedAt!)}</span>
                     </div>
                   ))}
@@ -618,7 +618,7 @@ export default function CirculatePage() {
         <div className="xl:col-span-3 space-y-4">
 
           {/* Step 2 — Book input */}
-          <div className={`rounded-xl border bg-white p-5 dark:bg-dark-surface dark:border-dark-border transition-opacity ${!cardData ? "opacity-40 pointer-events-none" : "border-line"}`}>
+          <div className={`rounded-xl border bg-card p-5 transition-opacity ${!cardData ? "opacity-40 pointer-events-none" : "border-border"}`}>
 
             {/* Header row: label + scan mode switch (always visible) */}
             <div className="flex items-center justify-between mb-3">
@@ -633,7 +633,7 @@ export default function CirculatePage() {
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal bg-teal/10 border border-teal/20 rounded-lg px-2.5 py-1">
                     <Usb className="h-3.5 w-3.5" />Hardware scanner active
                   </span>
-                  <button onClick={() => setBookMode("manual")} className="text-xs text-slate hover:text-ink underline underline-offset-2 transition-colors">
+                  <button onClick={() => setBookMode("manual")} className="text-xs text-slate hover:text-foreground underline underline-offset-2 transition-colors">
                     Type instead
                   </button>
                 </div>
@@ -651,7 +651,7 @@ export default function CirculatePage() {
                     aria-pressed={scanModeOn}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal ${scanModeOn ? "bg-teal" : "bg-slate/30"}`}
                   >
-                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
+                    <span className={`inline-block h-5 w-5 rounded-full bg-card shadow transition-transform duration-200 ${scanModeOn ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </div>
               )}
@@ -659,7 +659,7 @@ export default function CirculatePage() {
 
             {/* Detecting spinner (desktop only, brief) */}
             {bookMode === "detecting" && cardData && phase === "book" && (
-              <div className="mb-3 flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-slate">
+              <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-slate">
                 <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                 Checking for connected scanner…
               </div>
@@ -676,11 +676,11 @@ export default function CirculatePage() {
 
             <form onSubmit={e => { e.preventDefault(); doLookupBook(bookQuery); }}>
               {/* Input with camera icon button always on the right */}
-              <div className={`flex items-center rounded-lg border bg-white transition-colors dark:bg-dark-surface dark:border-dark-border ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-line"} ${bookMode === "hardware" ? "opacity-60" : ""}`}>
+              <div className={`flex items-center rounded-lg border bg-card transition-colors ${scanModeOn ? "border-teal ring-2 ring-teal/15" : "border-border"} ${bookMode === "hardware" ? "opacity-60" : ""}`}>
                 <BookOpen className="ml-3 h-4 w-4 shrink-0 text-slate/50" />
                 <input
                   ref={bookRef}
-                  className="flex-1 bg-transparent px-2.5 py-2.5 text-sm text-ink placeholder:text-slate/50 focus:outline-none dark:text-dark-text"
+                  className="flex-1 bg-transparent px-2.5 py-2.5 text-sm text-foreground placeholder:text-slate/50 focus:outline-none"
                   placeholder={
                     scanModeOn ? "Scanning — point camera at QR code…" :
                     bookMode === "hardware" ? "Or type accession number…" :
@@ -725,7 +725,7 @@ export default function CirculatePage() {
                           bottom: c.includes("b") ? 0 : "auto",
                           left:   c.includes("l") ? 0 : "auto",
                           right:  c.includes("r") ? 0 : "auto",
-                          borderColor: "#0d9488",
+                          borderColor: "#0d9488", /* brand: logo teal — intentional */
                           borderTopWidth:    c.includes("t") ? 3 : 0,
                           borderBottomWidth: c.includes("b") ? 3 : 0,
                           borderLeftWidth:   c.includes("l") ? 3 : 0,
@@ -764,15 +764,15 @@ export default function CirculatePage() {
 
           {/* Step 3 — Policy evaluation + action */}
           {evalResult?.copy && (phase === "eval" || phase === "done") && (
-            <div className="rounded-xl border border-line bg-white p-5 space-y-4 dark:bg-dark-surface dark:border-dark-border">
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
               <p className="text-xs font-semibold text-slate uppercase tracking-wide flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center">3</span>
                 Book Identified
               </p>
 
-              <div className="flex items-start gap-3 p-3 rounded-xl border border-line bg-paper dark:bg-dark-border/20">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-background/20">
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-ink dark:text-dark-text">{evalResult.copy.catalogue?.title ?? "Unknown"}</p>
+                  <p className="font-bold text-foreground">{evalResult.copy.catalogue?.title ?? "Unknown"}</p>
                   <p className="text-xs font-mono text-slate mt-0.5">{evalResult.copy.accessionNumber}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">

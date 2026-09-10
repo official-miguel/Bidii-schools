@@ -145,10 +145,10 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
       {/* Page heading */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
             Diary
           </h1>
-          <p className="text-sm text-slate dark:text-dark-muted mt-0.5">
+          <p className="text-sm text-slate mt-0.5">
             {student.fullName} · {student.schoolClass?.name}
           </p>
         </div>
@@ -182,8 +182,8 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
                 className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left
                             transition-all min-h-[52px] no-underline
                             ${isActive
-                              ? "border-teal/50 bg-teal/5 dark:bg-teal/10 shadow-xs"
-                              : "border-line dark:border-dark-border hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30"
+                              ? "border-teal/50 bg-teal/5 shadow-xs"
+                              : "border-border hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30"
                             }`}
               >
                 <div
@@ -197,10 +197,10 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
                   {initials}
                 </div>
                 <div>
-                  <p className={`text-sm font-medium leading-none ${isActive ? "text-teal" : "text-ink dark:text-dark-text"}`}>
+                  <p className={`text-sm font-medium leading-none ${isActive ? "text-teal" : "text-foreground"}`}>
                     {child.fullName.split(" ")[0]}
                   </p>
-                  <p className="text-xs text-slate dark:text-dark-muted mt-0.5 leading-none">
+                  <p className="text-xs text-slate mt-0.5 leading-none">
                     {child.schoolClass.name}
                   </p>
                 </div>
@@ -227,19 +227,19 @@ export default async function ParentDiaryPage({ searchParams }: Props) {
 function PageHeader() {
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-semibold text-ink dark:text-dark-text">Diary</h1>
+      <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Diary</h1>
     </div>
   );
 }
 
 function EmptyNoChildren() {
   return (
-    <div className="bg-card border border-line rounded-xl p-10 text-center dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-10 text-center">
       <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mx-auto mb-3">
         <Users className="h-6 w-6 text-teal" aria-hidden="true" />
       </div>
-      <p className="text-sm font-semibold text-ink dark:text-dark-text">No children linked</p>
-      <p className="text-sm text-slate dark:text-dark-muted mt-1">
+      <p className="text-sm font-semibold text-foreground">No children linked</p>
+      <p className="text-sm text-slate mt-1">
         Contact the school office to link your child&apos;s record to your account.
       </p>
     </div>
@@ -248,12 +248,12 @@ function EmptyNoChildren() {
 
 function EmptyNoEntries({ studentName }: { studentName?: string | null }) {
   return (
-    <div className="bg-card border border-line rounded-xl p-10 text-center dark:bg-dark-surface dark:border-dark-border">
+    <div className="bg-card border border-border rounded-xl p-10 text-center">
       <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mx-auto mb-3">
         <BookOpen className="h-6 w-6 text-teal" aria-hidden="true" />
       </div>
-      <p className="text-sm font-semibold text-ink dark:text-dark-text">No diary entries yet</p>
-      <p className="text-sm text-slate dark:text-dark-muted mt-1">
+      <p className="text-sm font-semibold text-foreground">No diary entries yet</p>
+      <p className="text-sm text-slate mt-1">
         {studentName
           ? `No assignments or announcements have been posted for ${studentName} yet.`
           : "No assignments or announcements have been posted yet."}

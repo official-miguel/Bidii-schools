@@ -42,11 +42,11 @@ export default function ResultsTrendChart({ results }: ResultsTrendChartProps) {
 
     if (!single) {
       return (
-        <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-          <p className="text-sm font-semibold text-ink dark:text-dark-text mb-1">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <p className="text-sm font-semibold text-foreground mb-1">
             Performance Trend
           </p>
-          <p className="text-sm text-slate dark:text-dark-muted">
+          <p className="text-sm text-slate">
             Not enough data to display a trend chart yet.
           </p>
         </div>
@@ -54,8 +54,8 @@ export default function ResultsTrendChart({ results }: ResultsTrendChartProps) {
     }
 
     return (
-      <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-        <p className="text-sm font-semibold text-ink dark:text-dark-text mb-3">
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        <p className="text-sm font-semibold text-foreground mb-3">
           Performance — {single.name}
         </p>
         <div className="flex items-end gap-3">
@@ -70,7 +70,7 @@ export default function ResultsTrendChart({ results }: ResultsTrendChartProps) {
           >
             {single.percentage}%
           </span>
-          <span className="text-sm text-slate dark:text-dark-muted mb-1">
+          <span className="text-sm text-slate mb-1">
             mean across {single.count} subject{single.count !== 1 ? "s" : ""}
           </span>
         </div>
@@ -79,8 +79,8 @@ export default function ResultsTrendChart({ results }: ResultsTrendChartProps) {
   }
 
   return (
-    <div className="bg-card border border-line rounded-xl p-5 shadow-xs dark:bg-dark-surface dark:border-dark-border">
-      <p className="text-sm font-semibold text-ink dark:text-dark-text mb-4">
+    <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      <p className="text-sm font-semibold text-foreground mb-4">
         Performance trend
       </p>
 
@@ -131,7 +131,7 @@ export default function ResultsTrendChart({ results }: ResultsTrendChartProps) {
         </BarChart>
       </ResponsiveContainer>
 
-      <p className="text-xs text-slate dark:text-dark-muted mt-2 text-center">
+      <p className="text-xs text-slate mt-2 text-center">
         Mean percentage score per assessment period
       </p>
     </div>
