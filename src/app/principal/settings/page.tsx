@@ -11,9 +11,10 @@ import {
   CheckCircle2, AlertCircle, Zap, Calendar, MessageSquare,
   Mail, Key, Trash2, RefreshCw, BookOpen, BarChart3, Sparkles,
   Plug, ChevronRight, BedDouble, Users, ShieldCheck, ArrowRight,
-  School, GraduationCap, Plus, Pencil, RotateCcw, X,
+  School, GraduationCap, Plus, Pencil, RotateCcw, X, TrendingUp,
 } from "lucide-react";
 import SomaAIConfigPanel from "@/components/SomaAIConfigPanel";
+import ClassPromotionSection from "@/components/settings/ClassPromotionSection";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ type IntegrationStatus = {
   updatedAt: string | null;
 };
 
-type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale";
+type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale" | "promotion";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar nav definition
@@ -49,6 +50,7 @@ const SECTIONS: Array<{
   { id: "dormitory",    label: "Dormitory",             sublabel: "Boarding & allocation config",    Icon: BedDouble    },
   { id: "ai",           label: "AI Configuration",      sublabel: "Soma AI & Gemini",                Icon: Sparkles     },
   { id: "cbe-scale",    label: "CBE Grading Scale",     sublabel: "Customise grade band boundaries", Icon: GraduationCap },
+  { id: "promotion",    label: "Year Promotion",         sublabel: "Class promotion & graduation",    Icon: TrendingUp   },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1687,6 +1689,11 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
     heading: "CBE Grading Scale",
     description: "Customise the grade-band boundaries used when converting Senior CBE pathway scores to achievement levels. Schools that don't customise automatically use the government default (KNEC EE/ME/AE/BE scale).",
     Content: CbeGradingScaleForm,
+  },
+  promotion: {
+    heading: "Year-End Promotion",
+    description: "Assign canonical stage names to classes, configure where each class's students move at year-end (or mark the class as terminal for graduation), then run the atomic promotion transaction.",
+    Content: ClassPromotionSection,
   },
 };
 

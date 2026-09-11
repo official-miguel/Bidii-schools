@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
+import { getStageByName } from "@/lib/curriculum/stageCatalog";
+import type { FrameworkType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   // Records users need class names for the class/stream filters.
@@ -13,8 +15,6 @@ export async function GET(req: NextRequest) {
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Use a lean select instead of include â€” avoids loading extra join rows.
-  // _count.students is an aggregate field, not a full join, so it's cheap.
   const classes = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
@@ -23,21 +23,23 @@ export async function GET(req: NextRequest) {
       name: true,
       form: true,
       stream: true,
+      streamId: true,
+      stageName: true,
       classTeacherId: true,
       frameworkType: true,
       schoolId: true,
       updatedAt: true,
+      promotesToClassId: true,
+      confirmedTerminal: true,
+      resetTeachersOnPromotion: true,
+      skipStageConfirmed: true,
       classTeacher: { select: { id: true, fullName: true } },
       _count: { select: { students: true } },
     },
   });
 
-  // ETag based on the number of classes + their latest updatedAt â€” classes
-  // rarely change so most requests return 304 after the first load.
-  // Count is included so bulk imports (new rows) always bust the ETag.
-  // max-age removed: no-cache means browsers always revalidate after an import.
-  const latest  = classes.reduce((m, c) => Math.max(m, c.updatedAt.getTime()), 0);
-  const etag    = `"cls-${classes.length}-${latest}"`;
+  const latest = classes.reduce((m, c) => Math.max(m, c.updatedAt.getTime()), 0);
+  const etag   = `"cls-${classes.length}-${latest}"`;
 
   if (req.headers.get("if-none-match") === etag) {
     return new NextResponse(null, {
@@ -53,11 +55,16 @@ export async function GET(req: NextRequest) {
 
 const createSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters, e.g. Form 3."),
-  // form is auto-derived from the class name on the client; accept any positive int
+  /** Legacy free-typed form number — accepted but overridden when stageName is given. */
   form: z.number().int().min(1).optional().default(1),
+  /** Canonical stage name picked from STAGE_CATALOG dropdown in the UI. */
+  stageName: z.string().trim().optional(),
+  /** Structured stream FK (optional). */
+  streamId: z.string().optional().nullable(),
+  /** Legacy free-text stream — kept for backward compat. */
   stream: z.string().trim().optional().or(z.literal("")),
   classTeacherId: z.string().nullable().optional(),
-  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
+  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
 });
 
 export async function POST(req: NextRequest) {
@@ -72,6 +79,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const framework = parsed.data.frameworkType as FrameworkType;
+
+  // Derive form (rank) from stageName if provided; otherwise keep the
+  // supplied form integer (legacy path).
+  let derivedForm = parsed.data.form;
+  let derivedStageName: string | null = parsed.data.stageName ?? null;
+
+  if (parsed.data.stageName) {
+    const entry = getStageByName(framework, parsed.data.stageName);
+    if (!entry) {
+      return NextResponse.json(
+        { error: `"${parsed.data.stageName}" is not a valid stage for ${framework}.` },
+        { status: 400 }
+      );
+    }
+    derivedForm      = entry.rank;
+    derivedStageName = entry.name;
+  }
+
   if (parsed.data.classTeacherId) {
     const teacher = await prisma.teacher.findFirst({
       where: { id: parsed.data.classTeacherId, schoolId: user.schoolId! },
@@ -79,15 +105,24 @@ export async function POST(req: NextRequest) {
     if (!teacher) return NextResponse.json({ error: "Choose a valid teacher." }, { status: 400 });
   }
 
+  if (parsed.data.streamId) {
+    const stream = await prisma.stream.findFirst({
+      where: { id: parsed.data.streamId, schoolId: user.schoolId! },
+    });
+    if (!stream) return NextResponse.json({ error: "Choose a valid stream." }, { status: 400 });
+  }
+
   try {
-    const schoolClass = await (prisma as any).schoolClass.create({ // eslint-disable-line @typescript-eslint/no-explicit-any
+    const schoolClass = await prisma.schoolClass.create({
       data: {
-        schoolId: user.schoolId!,
-        name:          parsed.data.name,
-        form:          parsed.data.form,
-        stream:        parsed.data.stream || null,
+        schoolId:       user.schoolId!,
+        name:           parsed.data.name,
+        form:           derivedForm,
+        stageName:      derivedStageName,
+        stream:         parsed.data.stream || null,
+        streamId:       parsed.data.streamId ?? null,
         classTeacherId: parsed.data.classTeacherId || null,
-        frameworkType: parsed.data.frameworkType,
+        frameworkType:  framework,
       },
     });
     return NextResponse.json(schoolClass, { status: 201 });
@@ -108,4 +143,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create class." }, { status: 500 });
   }
 }
-

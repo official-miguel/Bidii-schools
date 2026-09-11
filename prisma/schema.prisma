@@ -157,6 +157,8 @@ model School {
   parentNotifications      ParentNotification[]
   /// CBE grading scale customisation
   cbeGradingScales         CbeGradingScale[]
+  /// Promotion module
+  streams                  Stream[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -532,7 +534,12 @@ model TeacherSubject {
 model SchoolClass {
   id                 String                     @id @default(cuid())
   name               String
+  /// Numeric rank of the class's stage within its framework — set
+  /// automatically from STAGE_CATALOG when stageName is chosen. Never
+  /// typed directly by the principal anymore (legacy rows keep their values).
   form               Int
+  /// Free-text stream identifier kept for backwards-compat with legacy
+  /// queries. New code should use streamId + Stream relation instead.
   stream             String?
   classTeacherId     String?                    @unique
   /// Which curriculum framework students in this class are assessed under.
@@ -542,10 +549,38 @@ model SchoolClass {
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   schoolId           String
+
+  /// Canonical stage name from STAGE_CATALOG, e.g. "Form 2" or "Grade 7".
+  /// Null for legacy classes not yet matched to a catalog entry.
+  stageName          String?
+
+  /// FK to the structured Stream entity (replaces the free-text stream field
+  /// for new and migrated classes). Null = no stream / single-stream school.
+  streamId           String?
+
+  /// Explicit, human-confirmed link to the class students move into at
+  /// year-end promotion. Null + confirmedTerminal=true means "graduates here".
+  /// Null + confirmedTerminal=false means "not yet configured" — blocks the run.
+  promotesToClassId  String?                    @unique
+  /// True only when the Principal has explicitly marked this as the final
+  /// stage (students graduate rather than move to another class).
+  confirmedTerminal  Boolean                    @default(false)
+
+  /// When true, ClassSubjectTeacher and ClassElectiveGroupTeacher rows for
+  /// this class are deleted after a promotion run so teachers can be
+  /// reassigned fresh. False (default) = existing assignments persist.
+  resetTeachersOnPromotion Boolean              @default(false)
+
+  /// Stored flag indicating the Principal already confirmed a skip-stage
+  /// warning for the current promotesToClassId value. Cleared whenever
+  /// promotesToClassId changes.
+  skipStageConfirmed Boolean                    @default(false)
+
   attendances        Attendance[]
   subjectTeachers    ClassSubjectTeacher[]
   classTeacher       Teacher?                   @relation("ClassTeacher", fields: [classTeacherId], references: [id])
   school             School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  stream_rel         Stream?                    @relation(fields: [streamId], references: [id])
   students           Student[]
   timetableSlots     TimetableSlot[]
   lessonRequirements SubjectLessonRequirement[]
@@ -555,8 +590,31 @@ model SchoolClass {
   classElectiveGroupTeachers ClassElectiveGroupTeacher[]
   diaryTargets               DiaryTarget[]
 
+  /// Self-referential promotion link: this class promotes TO another class.
+  promotesTo         SchoolClass?               @relation("ClassPromotion", fields: [promotesToClassId], references: [id])
+  /// Inverse: which class promotes into this one.
+  promotedFrom       SchoolClass?               @relation("ClassPromotion")
+
   @@unique([schoolId, name])
   @@index([schoolId, form])
+  @@index([schoolId, streamId])
+}
+
+/// A named stream/cohort within a school, e.g. "North", "Science", "A".
+/// Replaces the free-text SchoolClass.stream field for structured lookups.
+/// One Stream can span multiple classes (e.g. "North" covers all forms).
+/// @@unique([schoolId, name]) prevents duplicate stream names per school.
+model Stream {
+  id        String      @id @default(cuid())
+  schoolId  String
+  name      String
+  createdAt DateTime    @default(now())
+
+  school    School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classes   SchoolClass[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
 }
 
 /// Section 2D — student registry. Admission number is the identifier

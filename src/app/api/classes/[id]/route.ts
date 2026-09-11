@@ -2,11 +2,19 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { getStageByName } from "@/lib/curriculum/stageCatalog";
+import type { FrameworkType } from "@prisma/client";
 
 const updateSchema = z.object({
-  name: z.string().trim().min(2).optional(),
-  form: z.number().int().min(1).optional(),
-  stream: z.string().trim().optional().or(z.literal("")),
+  name:           z.string().trim().min(2).optional(),
+  /** Legacy form integer — accepted but overridden when stageName is provided. */
+  form:           z.number().int().min(1).optional(),
+  /** Canonical stage name from STAGE_CATALOG. */
+  stageName:      z.string().trim().optional().nullable(),
+  /** Structured stream FK. */
+  streamId:       z.string().optional().nullable(),
+  /** Legacy free-text stream — kept for backward compat. */
+  stream:         z.string().trim().optional().or(z.literal("")),
   classTeacherId: z.string().nullable().optional(),
 });
 
@@ -34,12 +42,40 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!teacher) return NextResponse.json({ error: "Choose a valid teacher." }, { status: 400 });
   }
 
+  if (parsed.data.streamId) {
+    const stream = await prisma.stream.findFirst({
+      where: { id: parsed.data.streamId, schoolId: user.schoolId! },
+    });
+    if (!stream) return NextResponse.json({ error: "Choose a valid stream." }, { status: 400 });
+  }
+
+  // Derive form from stageName if provided, keeping existing framework (immutable).
+  let derivedForm:      number | undefined = parsed.data.form;
+  let derivedStageName: string | null | undefined = parsed.data.stageName;
+
+  if (parsed.data.stageName) {
+    const framework = existing.frameworkType as FrameworkType;
+    const entry = getStageByName(framework, parsed.data.stageName);
+    if (!entry) {
+      return NextResponse.json(
+        { error: `"${parsed.data.stageName}" is not a valid stage for ${framework}.` },
+        { status: 400 }
+      );
+    }
+    derivedForm      = entry.rank;
+    derivedStageName = entry.name;
+  }
+
   try {
     const schoolClass = await prisma.schoolClass.update({
       where: { id: params.id },
       data: {
-        ...parsed.data,
-        stream: parsed.data.stream === "" ? null : parsed.data.stream,
+        ...(parsed.data.name      !== undefined && { name:      parsed.data.name }),
+        ...(derivedForm           !== undefined && { form:      derivedForm }),
+        ...(derivedStageName      !== undefined && { stageName: derivedStageName }),
+        ...(parsed.data.streamId  !== undefined && { streamId:  parsed.data.streamId }),
+        ...(parsed.data.stream    !== undefined && { stream:    parsed.data.stream === "" ? null : parsed.data.stream }),
+        ...(parsed.data.classTeacherId !== undefined && { classTeacherId: parsed.data.classTeacherId }),
       },
     });
     return NextResponse.json(schoolClass);
