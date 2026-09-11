@@ -52,9 +52,14 @@ function ForgotPasswordForm() {
     e.preventDefault();
     setError(null);
 
-    const trimId   = identifier.trim().toLowerCase();
+    let trimId = identifier.trim().toLowerCase();
     const trimSlug = schoolSlug.trim().replace(/^@/, "");
     if (!trimId) { setError("Enter your email address or phone number."); return; }
+
+    // Auto-convert 254... to +254... for phone numbers
+    if (/^254\d{9}$/.test(trimId)) {
+      trimId = `+${trimId}`;
+    }
 
     setLoading(true);
     try {
@@ -89,8 +94,13 @@ function ForgotPasswordForm() {
     setError(null);
 
     const trimOtp  = otp.trim();
-    const trimId   = identifier.trim().toLowerCase();
+    let trimId     = identifier.trim().toLowerCase();
     const trimSlug = schoolSlug.trim().replace(/^@/, "");
+
+    // Auto-convert 254... to +254... for phone numbers
+    if (/^254\d{9}$/.test(trimId)) {
+      trimId = `+${trimId}`;
+    }
 
     if (trimOtp.length !== 6 || !/^\d{6}$/.test(trimOtp)) {
       setError("Enter the 6-digit code sent to your phone.");
@@ -175,10 +185,13 @@ function ForgotPasswordForm() {
                       required
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="you@school.com or 07xxxxxxxx"
+                      placeholder="you@school.com or 254712345678"
                       className={inputCls}
                     />
                   </div>
+                  <p className="mt-1.5 text-xs text-slate">
+                    For phone numbers, use format: 254712345678 (starts with 254)
+                  </p>
                 </div>
 
                 {/* School slug — shown when same email/phone maps to >1 school */}
