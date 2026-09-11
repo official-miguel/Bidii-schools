@@ -40,15 +40,9 @@ export async function POST(req: NextRequest) {
 
   const { identifier, schoolSlug } = parsed.data;
 
-  // ── Rate limit (fail-closed) ──────────────────────────────────────────────
+  // ── Rate limit (fail-open) ────────────────────────────────────────────────
   const rl = await checkOtpRequestRateLimit(identifier);
   if (!rl.allowed) {
-    if (rl.reason === "redis_unavailable") {
-      return NextResponse.json(
-        { error: "Service temporarily unavailable. Please try again later." },
-        { status: 503 }
-      );
-    }
     // Rate-limited — return generic to avoid timing oracle
     return GENERIC_OK;
   }

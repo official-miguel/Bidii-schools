@@ -192,17 +192,16 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
 
 export type OtpRateLimitResult =
   | { allowed: true }
-  | { allowed: false; reason: "identifier_limit" | "redis_unavailable" };
+  | { allowed: false; reason: "identifier_limit" };
 
 /**
  * Rate limit for forgot-password OTP requests.
  *
- * Fail-CLOSED: if Redis is not configured, returns { allowed: false,
- * reason: "redis_unavailable" } — this sends real money-costing SMS so
- * the same stakes apply as login. A misconfigured deployment must not
- * allow unlimited OTP requests.
+ * Fail-OPEN: if Redis is not configured, logs a warning and returns
+ * { allowed: true } — this allows the OTP flow to work even without Redis,
+ * though SMS costs are not protected in that scenario.
  *
- * Max 3 requests per identifier per 15 minutes.
+ * Max 3 requests per identifier per 15 minutes (when Redis is available).
  */
 export async function checkOtpRequestRateLimit(
   identifier: string
@@ -210,11 +209,11 @@ export async function checkOtpRequestRateLimit(
   const limiter = getOtpRequestLimiter();
 
   if (!limiter) {
-    console.error(
-      "[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — OTP rate limiting UNAVAILABLE. " +
-      "Request rejected (fail-closed)."
+    console.warn(
+      "[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — OTP rate limiting is DISABLED. " +
+      "Set these env vars to enable distributed rate limiting and protect SMS costs."
     );
-    return { allowed: false, reason: "redis_unavailable" };
+    return { allowed: true };
   }
 
   const result = await limiter.limit(identifier.toLowerCase().trim());
