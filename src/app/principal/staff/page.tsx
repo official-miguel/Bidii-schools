@@ -711,13 +711,56 @@ function DirectoryTab() {
     </div>
   );
 }
+// ─── Permission groups config ─────────────────────────────────────────────────
+
+type GroupState = "view" | "manage" | "none" | "custom";
+type ModPerm    = { canView: boolean; canManage: boolean };
+
+const PERM_GROUPS: { id: string; label: string; modules: string[]; adminSwitch?: boolean }[] = [
+  { id: "fees",             label: "Fees",                modules: ["FEES"] },
+  { id: "library",          label: "Library",             modules: ["LIBRARY"] },
+  { id: "timetable",        label: "Timetable",           modules: ["TIMETABLE"] },
+  { id: "examination",      label: "Examination",         modules: ["ASSESSMENT_FRAMEWORK", "EXAM_PERIODS", "RESULTS", "ASSESSMENTS"] },
+  { id: "students-academic",label: "Students & Academic", modules: ["SUBJECTS", "CLASSES", "STUDENTS"] },
+  { id: "student-life",     label: "Student Life",        modules: ["ACCOMMODATION"] },
+  { id: "communication",    label: "Communication",       modules: ["COMMUNICATION", "CALENDAR"] },
+  { id: "leadership",       label: "Leadership",          modules: ["AI_TOOLS", "ANALYTICS", "REPORTS", "STAFF", "DEPARTMENTS", "HISTORY"], adminSwitch: true },
+];
+
+const VIEW_PRESET:   ModPerm = { canView: true,  canManage: false };
+const MANAGE_PRESET: ModPerm = { canView: true,  canManage: true  };
+const NONE_PRESET:   ModPerm = { canView: false, canManage: false };
+
+function deriveState(modules: string[], perms: Record<string, ModPerm>): GroupState {
+  const states = modules.map((m) => {
+    const p = perms[m] ?? NONE_PRESET;
+    if (p.canView && p.canManage)   return "manage";
+    if (p.canView && !p.canManage)  return "view";
+    if (!p.canView && !p.canManage) return "none";
+    return "custom";
+  });
+  const first = states[0];
+  return states.every((s) => s === first) ? first : "custom";
+}
+
+function applyState(modules: string[], state: "view" | "manage" | "none"): Record<string, ModPerm> {
+  const preset = state === "manage" ? MANAGE_PRESET : state === "view" ? VIEW_PRESET : NONE_PRESET;
+  return Object.fromEntries(modules.map((m) => [m, { ...preset }]));
+}
+
+// ─── RolesTab ─────────────────────────────────────────────────────────────────
+
 function RolesTab() {
   const [roles, setRoles]           = useState<FullRole[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draftPerms, setDraftPerms] = useState<Record<string, { canView: boolean; canManage: boolean }>>({});
-  const [dirty, setDirty]       = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  // savedPerms holds the last-loaded server state for the selected role
+  const [savedPerms, setSavedPerms] = useState<Record<string, ModPerm>>({});
+  // changedModules accumulates only what the Principal explicitly touched
+  const [changedModules, setChangedModules] = useState<Record<string, ModPerm>>({});
+  const [groupStates, setGroupStates] = useState<Record<string, GroupState>>({});
+  const [fullAdmin, setFullAdmin]   = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
   async function load(selectAfter?: string) {
@@ -730,37 +773,65 @@ function RolesTab() {
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const selected = roles?.find((r) => r.id === selectedId) || null;
+  const selected = roles?.find((r) => r.id === selectedId) ?? null;
 
+  // Re-derive group states whenever selected role changes
   useEffect(() => {
-    if (!selected) { setDraftPerms({}); return; }
-    const map: Record<string, { canView: boolean; canManage: boolean }> = {};
+    if (!selected) { setSavedPerms({}); setChangedModules({}); setGroupStates({}); setFullAdmin(false); return; }
+    const map: Record<string, ModPerm> = {};
     for (const p of selected.permissions) map[p.module] = { canView: p.canView, canManage: p.canManage };
-    setDraftPerms(map); setDirty(false); setError(null);
+    setSavedPerms(map);
+    setChangedModules({});
+    const states = Object.fromEntries(PERM_GROUPS.map((g) => [g.id, deriveState(g.modules, map)]));
+    setGroupStates(states);
+    setFullAdmin(PERM_GROUPS.every((g) => deriveState(g.modules, map) === "manage"));
+    setError(null);
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function setPerm(module: string, key: "canView" | "canManage", value: boolean) {
-    setDraftPerms((prev) => {
-      const cur  = prev[module] || { canView: false, canManage: false };
-      const next = { ...cur, [key]: value };
-      if (key === "canManage" && value)  next.canView   = true;
-      if (key === "canView"   && !value) next.canManage = false;
-      return { ...prev, [module]: next };
-    });
-    setDirty(true);
+  function applyGroupChange(groupId: string, next: "view" | "manage" | "none") {
+    const group = PERM_GROUPS.find((g) => g.id === groupId);
+    if (!group) return;
+    const diff = applyState(group.modules, next);
+    setGroupStates((prev) => ({ ...prev, [groupId]: next }));
+    setChangedModules((prev) => ({ ...prev, ...diff }));
+  }
+
+  function handleViewToggle(groupId: string) {
+    const cur = groupStates[groupId] ?? "none";
+    if (cur === "manage") return; // locked
+    applyGroupChange(groupId, cur === "view" ? "none" : "view");
+    setFullAdmin(false);
+  }
+
+  function handleManageToggle(groupId: string) {
+    const cur = groupStates[groupId] ?? "none";
+    applyGroupChange(groupId, cur === "manage" ? "view" : "manage");
+    setFullAdmin(false);
+  }
+
+  function handleFullAdminToggle() {
+    const next = !fullAdmin;
+    setFullAdmin(next);
+    const allDiff: Record<string, ModPerm> = {};
+    const state = next ? "manage" : "none";
+    for (const g of PERM_GROUPS) Object.assign(allDiff, applyState(g.modules, state));
+    setGroupStates(Object.fromEntries(PERM_GROUPS.map((g) => [g.id, state])));
+    setChangedModules((prev) => ({ ...prev, ...allDiff }));
   }
 
   async function handleSave() {
     if (!selected) return;
+    if (Object.keys(changedModules).length === 0) return;
     setSaving(true); setError(null);
-    const permissions = Object.entries(draftPerms)
-      .filter(([, v]) => v.canView || v.canManage)
-      .map(([module, v]) => ({ module, canView: v.canView, canManage: v.canManage }));
+    // Merge: existing saved state + what changed this session → full payload
+    const merged = { ...savedPerms, ...changedModules };
+    const permissions = Object.entries(merged).map(([module, v]) => ({ module, ...v }));
     const res  = await fetch(`/api/staff-roles/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permissions }) });
     const data = await res.json();
     setSaving(false);
     if (!res.ok) { setError(data.error || "Couldn't save permissions."); return; }
-    setDirty(false); load(selected.id);
+    setChangedModules({});
+    load(selected.id);
   }
 
   async function handleCreate(e: FormEvent<HTMLFormElement>) {
@@ -780,6 +851,8 @@ function RolesTab() {
     if (!res.ok) { const data = await res.json(); alert(data.error || "Couldn't delete."); return; }
     setSelectedId(null); load();
   }
+
+  const hasChanges = Object.keys(changedModules).length > 0;
 
   return (
     <div>
@@ -816,105 +889,100 @@ function RolesTab() {
             ))}
           </div>
 
+          {/* Permission editor */}
           {selected && (
-            <div className={`${royalCardClass} p-5`}>
+            <div className={`${royalCardClass} p-5 space-y-3`}>
               {error && <ErrorBanner message={error} />}
-              <div className="flex items-start justify-between mb-5">
+
+              {/* Role header */}
+              <div className="flex items-start justify-between mb-2">
                 <div>
                   <h2 className="text-base font-semibold text-foreground">{selected.name}</h2>
-                  {selected.description && (
-                    <p className="text-sm text-slate mt-0.5 leading-relaxed">{selected.description}</p>
-                  )}
+                  {selected.description && <p className="text-sm text-slate mt-0.5">{selected.description}</p>}
                   <p className="text-xs text-slate mt-1">
                     {selected.totalUsers ?? selected._count.users} {(selected.totalUsers ?? selected._count.users) === 1 ? "person" : "people"} with this role
                   </p>
                 </div>
-                <button className={dangerLinkClass} onClick={() => handleDeleteRole(selected)}>
-                  Delete role
-                </button>
+                <button className={dangerLinkClass} onClick={() => handleDeleteRole(selected)}>Delete role</button>
               </div>
 
-              <div className="bg-card border border-border rounded-xl overflow-hidden">
-                {/* Column headers */}
-                <div className="grid grid-cols-[1fr_80px_80px] border-b border-border bg-background/60 px-5 py-3">
-                  <p className="text-xs font-semibold text-slate uppercase tracking-wide">Module</p>
-                  <p className="text-xs font-semibold text-slate uppercase tracking-wide text-center">View</p>
-                  <p className="text-xs font-semibold text-slate uppercase tracking-wide text-center">Manage</p>
-                </div>
-                <div className="divide-y divide-border">
-                  {ASSIGNABLE_MODULES.map((m) => {
-                    const info = MODULE_INFO[m];
-                    const perm = draftPerms[m] || { canView: false, canManage: false };
-                    return (
-                      <div
-                        key={m}
-                        className={`grid grid-cols-[1fr_80px_80px] px-5 py-3.5 items-center transition-colors ${
-                          perm.canView || perm.canManage ? "bg-teal-50/30" : "hover:bg-background/60"
-                        }`}
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{info.label}</p>
-                          <p className="text-xs text-slate/70 mt-0.5">{info.description}</p>
-                        </div>
-                        <div className="flex justify-center">
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={perm.canView}
-                            onClick={() => setPerm(m, "canView", !perm.canView)}
-                            className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-100 ${
-                              perm.canView
-                                ? "bg-teal border-teal"
-                                : "border-border hover:border-teal/50"
-                            }`}
-                          >
-                            {perm.canView && (
-                              <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="currentColor">
-                                <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                        <div className="flex justify-center">
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={perm.canManage}
-                            onClick={() => setPerm(m, "canManage", !perm.canManage)}
-                            className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-100 ${
-                              perm.canManage
-                                ? "bg-teal border-teal"
-                                : "border-border hover:border-teal/50"
-                            }`}
-                          >
-                            {perm.canManage && (
-                              <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="currentColor">
-                                <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
+              {/* Column legend */}
+              <div className="flex justify-end gap-8 pr-1">
+                <span className="text-[11px] text-slate font-medium uppercase tracking-wide">View</span>
+                <span className="text-[11px] text-slate font-medium uppercase tracking-wide">Manage</span>
+              </div>
+
+              {/* Group cards */}
+              {PERM_GROUPS.map((group) => {
+                const state    = groupStates[group.id] ?? "none";
+                const isCustom = state === "custom";
+                const isView   = state === "view" || state === "manage";
+                const isManage = state === "manage";
+
+                return (
+                  <div key={group.id} className={`rounded-xl border transition-colors ${
+                    isCustom  ? "border-amber-200 bg-amber-50/40 dark:border-amber-800/40 dark:bg-amber-900/10"
+                    : isManage ? "border-teal/30 bg-teal/5"
+                    : isView   ? "border-border bg-background"
+                    :            "border-border bg-card"
+                  }`}>
+                    <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{group.label}</p>
+                        <p className="text-[10px] text-slate mt-0.5 truncate">{group.modules.join(" · ")}</p>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between pt-4 mt-1">
-                {dirty ? (
-                  <p className="text-xs text-warn font-medium flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-warn inline-block" />
-                    Unsaved changes
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate">Permissions are saved per role.</p>
-                )}
+                      {isCustom ? (
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                            ⚠ Custom — click to set
+                          </span>
+                          <PermCheckbox label="View"   checked={false} locked={false} onToggle={() => handleViewToggle(group.id)} />
+                          <PermCheckbox label="Manage" checked={false} locked={false} onToggle={() => handleManageToggle(group.id)} />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-6 shrink-0">
+                          <PermCheckbox label="View"   checked={isView}   locked={isManage} onToggle={() => handleViewToggle(group.id)} />
+                          <PermCheckbox label="Manage" checked={isManage} locked={false}    onToggle={() => handleManageToggle(group.id)} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Full Admin Access switch — Leadership card only */}
+                    {group.adminSwitch && (
+                      <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-border/60">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">Full Admin Access</p>
+                          <p className="text-[10px] text-slate mt-0.5">
+                            Grants Manage across all 8 groups. Staff Roles &amp; Permissions management stays Principal-only.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={fullAdmin}
+                          onClick={handleFullAdminToggle}
+                          className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${fullAdmin ? "bg-teal" : "bg-slate-200 dark:bg-slate-700"}`}
+                        >
+                          <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${fullAdmin ? "left-5" : "left-1"}`} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-[11px] text-slate leading-relaxed max-w-sm">
+                  Attendance, Diary &amp; Records access is granted automatically based on class/subject assignments.
+                </p>
                 <button
                   className={royalButtonClass}
-                  disabled={!dirty || saving}
+                  disabled={!hasChanges || saving}
                   onClick={handleSave}
                 >
-                  {saving ? "Saving…" : "Save permissions"}
+                  {saving ? "Saving…" : hasChanges ? "Save changes" : "Saved"}
                 </button>
               </div>
             </div>
@@ -935,41 +1003,46 @@ function RolesTab() {
               <div className="space-y-4">
                 <div>
                   <label className={labelClass}>Role name <span className="text-danger">*</span></label>
-                  <input
-                    name="name"
-                    required
-                    placeholder="e.g. Accountant, Librarian"
-                    className={inputClass}
-                    autoFocus
-                  />
-                  <p className="text-xs text-slate mt-1.5">
-                    Staff members see this label next to their name.
-                  </p>
+                  <input name="name" required placeholder="e.g. Accountant, Librarian" className={inputClass} autoFocus />
+                  <p className="text-xs text-slate mt-1.5">Staff members see this label next to their name.</p>
                 </div>
                 <div>
                   <label className={labelClass}>Description (optional)</label>
-                  <input
-                    name="description"
-                    placeholder="Brief note about what this role does"
-                    className={inputClass}
-                  />
+                  <input name="description" placeholder="Brief note about what this role does" className={inputClass} />
                 </div>
               </div>
             </div>
-
-            {/* Form actions — inside the form so they work on mobile */}
             <div className="flex justify-end gap-3 pt-1">
-              <button type="button" className={secondaryButtonClass} onClick={() => setCreateOpen(false)}>
-                Cancel
-              </button>
-              <button type="submit" className={royalButtonClass}>
-                Create role
-              </button>
+              <button type="button" className={secondaryButtonClass} onClick={() => setCreateOpen(false)}>Cancel</button>
+              <button type="submit" className={royalButtonClass}>Create role</button>
             </div>
           </form>
         </Modal>
       )}
     </div>
+  );
+}
+
+// ─── PermCheckbox — reusable checkbox used inside group cards ─────────────────
+function PermCheckbox({ label, checked, locked, onToggle }: { label: string; checked: boolean; locked: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={locked}
+      onClick={locked ? undefined : onToggle}
+      className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-100
+        ${checked ? "bg-teal border-teal" : "border-border hover:border-teal/50"}
+        ${locked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      {checked && (
+        <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
+        </svg>
+      )}
+    </button>
   );
 }
 
