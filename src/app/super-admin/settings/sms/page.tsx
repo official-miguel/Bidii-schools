@@ -212,8 +212,8 @@ export default function PlatformSmsConfigPage() {
             className={inputClass}
           />
           <p className="mt-1.5 text-xs text-slate">
-            Alphanumeric sender name shown on the recipient's phone, e.g. "BIDII".
-            Leave blank to use the Africa's Talking default.
+            Alphanumeric sender name shown on the recipient&apos;s phone, e.g. &ldquo;BIDII&rdquo;.
+            Leave blank to use the Africa&apos;s Talking default.
           </p>
         </div>
 
@@ -246,7 +246,7 @@ export default function PlatformSmsConfigPage() {
           <p className="font-semibold">Keep this key secret</p>
           <p className="text-xs mt-0.5 text-warn">
             Rotating or deleting this key will immediately break SMS delivery for every
-            school until a new key is saved. Back up your Africa's Talking credentials
+            school until a new key is saved. Back up your Africa&apos;s Talking credentials
             before changing them here.
           </p>
         </div>
