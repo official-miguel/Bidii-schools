@@ -251,6 +251,15 @@ function LoginForm() {
                 {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
                 {loading ? "Signing in…" : "Sign in"}
               </button>
+
+              <div className="text-center pt-1">
+                <a
+                  href="/forgot-password"
+                  className="text-xs text-slate hover:text-teal transition-colors"
+                >
+                  Forgot password?
+                </a>
+              </div>
             </form>
           </div>
         </div>
@@ -269,6 +278,7 @@ function rolePath(role: string): string {
     case "PRINCIPAL":    return "/principal";
     case "TEACHER":      return "/teacher";
     case "ADMIN_STAFF":  return "/staff";
+    case "BURSAR":       return "/staff";
     case "PARENT":       return "/parent";
     default:             return "/login?notice=dashboard-not-ready";
   }

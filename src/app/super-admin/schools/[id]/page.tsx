@@ -15,7 +15,7 @@ import Link                                  from "next/link";
 import {
   ChevronLeft, Building2, Users, GraduationCap, HardDrive,
   AlertTriangle, Puzzle, Upload, PauseCircle,
-  PlayCircle, ExternalLink, CheckCircle2,
+  PlayCircle, ExternalLink, CheckCircle2, MessageSquare,
 } from "lucide-react";
 import {
   Card, Badge, Spinner, ErrorBanner, ProgressBar,
@@ -75,6 +75,7 @@ const TABS = [
   { id:"storage",   label:"Storage",   Icon: HardDrive      },
   { id:"modules",   label:"Modules",   Icon: Puzzle         },
   { id:"imports",   label:"Imports",   Icon: Upload         },
+  { id:"sms",       label:"SMS Wallet", Icon: MessageSquare },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -123,9 +124,25 @@ export default function SchoolDetailPage() {
   const [impersonating, setImpersonating] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // ── SMS wallet state ─────────────────────────────────────────────────────
+  const [smsWallet, setSmsWallet]   = useState<{
+    unitsRemaining: number; unitsLifetimeAllocated: number; lowBalanceThreshold: number;
+  } | null>(null);
+  const [smsTxns, setSmsTxns]       = useState<{
+    id: string; type: string; units: number; reason: string; reference: string | null;
+    balanceAfter: number; performedByUserId: string | null; createdAt: string;
+  }[]>([]);
+  const [smsTxTotal, setSmsTxTotal] = useState(0);
+  const [smsPage,    setSmsPage]    = useState(1);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsError,   setSmsError]   = useState<string | null>(null);
+  // Topup form
+  const [topupUnits, setTopupUnits] = useState("");
+  const [topupNote,  setTopupNote]  = useState("");
+  const [topping,    setTopping]    = useState(false);
+
   const load = useCallback(async () => {
-    setLoading(true); setApiError(null);
-    try {
+    setLoading(true); setApiError(null);    try {
       const res = await fetch(`/api/super-admin/schools/${id}`);
       if (!res.ok) throw new Error("Failed to load school");
       const j = await res.json();
@@ -139,6 +156,49 @@ export default function SchoolDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadSmsWallet = useCallback(async (page = 1) => {
+    setSmsLoading(true); setSmsError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-wallet?page=${page}`);
+      if (!res.ok) throw new Error("Failed to load SMS wallet");
+      const j = await res.json();
+      setSmsWallet(j.wallet);
+      setSmsTxns(j.transactions);
+      setSmsTxTotal(j.total);
+      setSmsPage(j.page);
+    } catch (e: unknown) {
+      setSmsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSmsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => { if (tab === "sms") loadSmsWallet(1); }, [tab, loadSmsWallet]);
+
+  async function handleTopup(e: React.FormEvent) {
+    e.preventDefault();
+    const units = parseInt(topupUnits, 10);
+    if (!units || units <= 0) return;
+    setTopping(true); setSmsError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-wallet`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ units, note: topupNote.trim() || undefined }),
+      });
+      const j = await res.json() as { wallet?: typeof smsWallet; error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Topup failed");
+      setTopupUnits(""); setTopupNote("");
+      setSuccessMsg(`Allocated ${units} SMS units`);
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await loadSmsWallet(1);
+    } catch (e: unknown) {
+      setSmsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTopping(false);
+    }
+  }
 
   async function handleStatusChange(status: "SUSPENDED" | "ACTIVE") {
     setBusy(true); setApiError(null);
@@ -566,6 +626,171 @@ export default function SchoolDetailPage() {
           )}
         </div>
       )}
+
+      {/* ── SMS WALLET tab ── */}
+      {tab === "sms" && (
+        <div className="space-y-6">
+          {smsError && <ErrorBanner message={smsError} onDismiss={() => setSmsError(null)} />}
+
+          {smsLoading && !smsWallet ? (
+            <div className="flex justify-center py-10"><Spinner size="lg" /></div>
+          ) : (
+            <>
+              {/* Balance card */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    label: "Balance",
+                    value: (smsWallet?.unitsRemaining ?? 0).toLocaleString(),
+                    note:  "SMS units remaining",
+                    highlight: (smsWallet?.unitsRemaining ?? 0) <= (smsWallet?.lowBalanceThreshold ?? 50),
+                  },
+                  {
+                    label: "Lifetime allocated",
+                    value: (smsWallet?.unitsLifetimeAllocated ?? 0).toLocaleString(),
+                    note:  "Total units ever topped up",
+                    highlight: false,
+                  },
+                  {
+                    label: "Low balance alert",
+                    value: (smsWallet?.lowBalanceThreshold ?? 50).toLocaleString(),
+                    note:  "Units threshold for warning",
+                    highlight: false,
+                  },
+                ].map(({ label, value, note, highlight }) => (
+                  <div key={label} className={`rounded-xl border p-4 shadow-xs ${highlight ? "border-warn/40 bg-warn-bg" : "border-border bg-card"}`}>
+                    <p className={`text-2xl font-bold ${highlight ? "text-warn" : "text-foreground"}`}>{value}</p>
+                    <p className="text-sm font-medium text-foreground mt-0.5">{label}</p>
+                    <p className="text-xs text-slate mt-0.5">{note}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Allocate units form */}
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Allocate units</h3>
+                <form onSubmit={handleTopup} className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label htmlFor="topup-units" className="block text-xs font-medium text-slate mb-1">
+                      Units to add
+                    </label>
+                    <input
+                      id="topup-units"
+                      type="number"
+                      min={1}
+                      step={1}
+                      required
+                      value={topupUnits}
+                      onChange={(e) => setTopupUnits(e.target.value)}
+                      placeholder="e.g. 500"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-32
+                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <label htmlFor="topup-note" className="block text-xs font-medium text-slate mb-1">
+                      Note / payment ref <span className="font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="topup-note"
+                      type="text"
+                      value={topupNote}
+                      onChange={(e) => setTopupNote(e.target.value)}
+                      placeholder="Paid via Paybill, ref XYZ"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground
+                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={topping || !topupUnits || parseInt(topupUnits, 10) <= 0}
+                    className={`${primaryButtonClass} text-sm h-[38px]`}
+                  >
+                    {topping ? <><Spinner size="sm" /> Allocating…</> : "Allocate units"}
+                  </button>
+                </form>
+              </div>
+
+              {/* Transaction history */}
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Transaction history</h3>
+                  <p className="text-xs text-slate mt-0.5">{smsTxTotal.toLocaleString()} total rows — append-only ledger</p>
+                </div>
+                {smsTxns.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-slate">No transactions yet.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-background border-b border-border text-xs text-slate uppercase tracking-wide">
+                        <tr>
+                          <th className="px-5 py-3 text-left">Date</th>
+                          <th className="px-5 py-3 text-left">Type</th>
+                          <th className="px-5 py-3 text-right">Units</th>
+                          <th className="px-5 py-3 text-right">Balance after</th>
+                          <th className="px-5 py-3 text-left">Reason / Ref</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {smsTxns.map((tx) => (
+                          <tr key={tx.id}>
+                            <td className="px-5 py-3 text-xs text-slate whitespace-nowrap">
+                              {new Date(tx.createdAt).toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3">
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                tx.type === "TOPUP"      ? "bg-success-bg text-success border-success/20"
+                                : tx.type === "DEDUCTION" ? "bg-danger-bg text-danger border-danger/20"
+                                :                           "bg-warn-bg text-warn border-warn/20"
+                              }`}>
+                                {tx.type}
+                              </span>
+                            </td>
+                            <td className={`px-5 py-3 text-right font-mono font-semibold ${tx.units >= 0 ? "text-success" : "text-danger"}`}>
+                              {tx.units >= 0 ? "+" : ""}{tx.units.toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3 text-right font-mono text-foreground">
+                              {tx.balanceAfter.toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3 text-xs text-slate max-w-[200px] truncate">
+                              {tx.reason}{tx.reference ? ` — ${tx.reference}` : ""}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Pagination */}
+                {smsTxTotal > 30 && (
+                  <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-background text-xs text-slate">
+                    <span>Page {smsPage} of {Math.ceil(smsTxTotal / 30)}</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={smsPage <= 1}
+                        onClick={() => loadSmsWallet(smsPage - 1)}
+                        className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        disabled={smsPage >= Math.ceil(smsTxTotal / 30)}
+                        onClick={() => loadSmsWallet(smsPage + 1)}
+                        className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

@@ -21,16 +21,18 @@ import {
   Upload,
   LogOut,
   ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/super-admin",          label: "Overview",  Icon: LayoutDashboard },
-  { href: "/super-admin/schools",  label: "Schools",   Icon: Building2       },
-  { href: "/super-admin/modules",  label: "Modules",   Icon: Puzzle          },
-  { href: "/super-admin/errors",   label: "Errors",    Icon: AlertTriangle   },
-  { href: "/super-admin/health",   label: "Health",    Icon: Activity        },
-  { href: "/super-admin/storage",  label: "Storage",   Icon: HardDrive       },
-  { href: "/super-admin/imports",  label: "Imports",   Icon: Upload          },
+  { href: "/super-admin",                label: "Overview",  Icon: LayoutDashboard },
+  { href: "/super-admin/schools",        label: "Schools",   Icon: Building2       },
+  { href: "/super-admin/modules",        label: "Modules",   Icon: Puzzle          },
+  { href: "/super-admin/errors",         label: "Errors",    Icon: AlertTriangle   },
+  { href: "/super-admin/health",         label: "Health",    Icon: Activity        },
+  { href: "/super-admin/storage",        label: "Storage",   Icon: HardDrive       },
+  { href: "/super-admin/imports",        label: "Imports",   Icon: Upload          },
+  { href: "/super-admin/settings/sms",   label: "Platform SMS", Icon: MessageSquare },
 ] as const;
 
 export default function SuperAdminSidebar() {

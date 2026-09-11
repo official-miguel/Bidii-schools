@@ -2,82 +2,49 @@
  * src/lib/messaging/dispatch.ts
  *
  * Provider-agnostic message dispatch wrapper.
- * Reads the school's integration key, calls the provider's API,
- * and returns a DispatchResult.
+ *
+ * Two public entry points:
+ *   dispatchMessage(schoolId, channel, phone, body)
+ *     — per-school path: reads the school's own WhatsApp/SMS key from
+ *       SchoolIntegration.  SMS via this path is now legacy; the platform
+ *       path below is what the Communication Centre uses.
+ *
+ *   dispatchPlatformSms(phone, body)
+ *     — platform path: reads the single PlatformSmsConfig row instead of
+ *       a per-school key.  Used for:
+ *         • All Communication Centre bulk-SMS sends (wallet-deducted).
+ *         • Forgot-password OTP (never wallet-deducted).
+ *
+ * The actual HTTP call to Africa's Talking lives in one private helper —
+ * sendViaAfricasTalking — shared by both paths so there is exactly one
+ * implementation.
  *
  * SERVER-SIDE ONLY.
  */
 
 import type { MessageChannel } from "@prisma/client";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
+import { getPlatformSmsKey }        from "@/lib/platform-sms";
 
 export type DispatchResult = {
-  phone:          string;
-  providerMsgId:  string | null;
-  status:         "SENT" | "FAILED";
-  errorDetail?:   string;
+  phone:         string;
+  providerMsgId: string | null;
+  status:        "SENT" | "FAILED";
+  errorDetail?:  string;
 };
 
 // ---------------------------------------------------------------------------
-// Main dispatch function
+// Shared Africa's Talking HTTP helper (one implementation, two callers)
 // ---------------------------------------------------------------------------
 
-export async function dispatchMessage(
-  schoolId: string,
-  channel:  MessageChannel,
-  phone:    string,
-  body:     string
-): Promise<DispatchResult> {
-  const provider = channel === "SMS" ? "SMS" : "WHATSAPP";
-  const integration = await getSchoolIntegrationKey(schoolId, provider);
-
-  if (!integration) {
-    return {
-      phone,
-      providerMsgId: null,
-      status: "FAILED",
-      errorDetail: `${provider} integration is not configured for this school.`,
-    };
-  }
-
-  // Basic phone number validation — must be non-empty and contain digits
-  if (!phone || !/\d{7,}/.test(phone.replace(/[^0-9+]/g, ""))) {
-    return {
-      phone,
-      providerMsgId: null,
-      status: "FAILED",
-      errorDetail: "Invalid phone number format.",
-    };
-  }
-
-  try {
-    if (channel === "SMS") {
-      return await dispatchSms(phone, body, integration.apiKey, integration.metadata);
-    } else {
-      return await dispatchWhatsApp(phone, body, integration.apiKey, integration.metadata);
-    }
-  } catch (err) {
-    return {
-      phone,
-      providerMsgId: null,
-      status: "FAILED",
-      errorDetail: err instanceof Error ? err.message : "Unknown dispatch error.",
-    };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// SMS adapter (Africa's Talking shape — swappable per school via metadata)
-// ---------------------------------------------------------------------------
-
-async function dispatchSms(
+async function sendViaAfricasTalking(
   phone:    string,
   body:     string,
   apiKey:   string,
   metadata: Record<string, unknown> | null
 ): Promise<DispatchResult> {
   const username = (metadata?.username as string) ?? "sandbox";
-  const from     = (metadata?.from as string)     ?? undefined;
+  const from     = (metadata?.from     as string) ?? undefined;
 
   const params = new URLSearchParams({
     username,
@@ -106,9 +73,8 @@ async function dispatchSms(
   };
   const recipient = json?.SMSMessageData?.Recipients?.[0];
   const msgId     = recipient?.messageId ?? null;
+  const ok        = recipient?.status === "Success" || recipient?.status === "Sent";
 
-  // Africa's Talking success statuses
-  const ok = recipient?.status === "Success" || recipient?.status === "Sent";
   return {
     phone,
     providerMsgId: msgId,
@@ -118,7 +84,7 @@ async function dispatchSms(
 }
 
 // ---------------------------------------------------------------------------
-// WhatsApp adapter (360dialog / Meta Cloud API shape)
+// WhatsApp adapter (360dialog / Meta Cloud API shape) — unchanged
 // ---------------------------------------------------------------------------
 
 async function dispatchWhatsApp(
@@ -128,7 +94,7 @@ async function dispatchWhatsApp(
   metadata: Record<string, unknown> | null
 ): Promise<DispatchResult> {
   // Normalise to E.164 without leading +
-  const to = phone.replace(/^\+/, "").replace(/\D/g, "");
+  const to      = phone.replace(/^\+/, "").replace(/\D/g, "");
   const baseUrl = (metadata?.baseUrl as string) ?? "https://waba.360dialog.io/v1/messages";
 
   const res = await fetch(baseUrl, {
@@ -150,8 +116,94 @@ async function dispatchWhatsApp(
     return { phone, providerMsgId: null, status: "FAILED", errorDetail: text };
   }
 
-  const json = await res.json() as { messages?: { id?: string }[] };
+  const json  = await res.json() as { messages?: { id?: string }[] };
   const msgId = json?.messages?.[0]?.id ?? null;
-
   return { phone, providerMsgId: msgId, status: "SENT" };
+}
+
+// ---------------------------------------------------------------------------
+// Per-school dispatch (legacy SMS path + WhatsApp — unchanged behaviour)
+// ---------------------------------------------------------------------------
+
+export async function dispatchMessage(
+  schoolId: string,
+  channel:  MessageChannel,
+  phone:    string,
+  body:     string
+): Promise<DispatchResult> {
+  const provider    = channel === "SMS" ? "SMS" : "WHATSAPP";
+  const integration = await getSchoolIntegrationKey(schoolId, provider);
+
+  if (!integration) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   `${provider} integration is not configured for this school.`,
+    };
+  }
+
+  if (!phone || !/\d{7,}/.test(phone.replace(/[^0-9+]/g, ""))) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   "Invalid phone number format.",
+    };
+  }
+
+  try {
+    if (channel === "SMS") {
+      return await sendViaAfricasTalking(phone, body, integration.apiKey, integration.metadata);
+    } else {
+      return await dispatchWhatsApp(phone, body, integration.apiKey, integration.metadata);
+    }
+  } catch (err) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   err instanceof Error ? err.message : "Unknown dispatch error.",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Platform SMS dispatch (centralised key — Communication Centre + OTP)
+// ---------------------------------------------------------------------------
+
+export async function dispatchPlatformSms(
+  phone: string,
+  body:  string
+): Promise<DispatchResult> {
+  const config = await getPlatformSmsKey();
+
+  if (!config) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   "Platform SMS is not configured. Ask a Super Admin to set the API key in Settings → SMS.",
+    };
+  }
+
+  if (!phone || !/\d{7,}/.test(phone.replace(/[^0-9+]/g, ""))) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   "Invalid phone number format.",
+    };
+  }
+
+  try {
+    return await sendViaAfricasTalking(phone, body, config.apiKey, config.metadata);
+  } catch (err) {
+    return {
+      phone,
+      providerMsgId: null,
+      status:        "FAILED",
+      errorDetail:   err instanceof Error ? err.message : "Unknown dispatch error.",
+    };
+  }
 }

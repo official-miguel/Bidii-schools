@@ -46,6 +46,7 @@ function getRedis(): Redis | null {
 let _loginIpLimiter:         Ratelimit | null = null;
 let _loginIdentifierLimiter: Ratelimit | null = null;
 let _parentLimiter:          Ratelimit | null = null;
+let _otpRequestLimiter:      Ratelimit | null = null;
 
 function getLoginIpLimiter(): Ratelimit | null {
   if (_loginIpLimiter) return _loginIpLimiter;
@@ -87,6 +88,20 @@ function getParentLimiter(): Ratelimit | null {
     analytics: false,
   });
   return _parentLimiter;
+}
+
+function getOtpRequestLimiter(): Ratelimit | null {
+  if (_otpRequestLimiter) return _otpRequestLimiter;
+  const redis = getRedis();
+  if (!redis) return null;
+  // 3 OTP requests per 15 minutes per identifier — fail-closed
+  _otpRequestLimiter = new Ratelimit({
+    redis,
+    limiter:   Ratelimit.slidingWindow(3, "15 m"),
+    prefix:    "rl:otp:req",
+    analytics: false,
+  });
+  return _otpRequestLimiter;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -173,4 +188,36 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
 
   const result = await limiter.limit(userId);
   return result.success;
+}
+
+export type OtpRateLimitResult =
+  | { allowed: true }
+  | { allowed: false; reason: "identifier_limit" | "redis_unavailable" };
+
+/**
+ * Rate limit for forgot-password OTP requests.
+ *
+ * Fail-CLOSED: if Redis is not configured, returns { allowed: false,
+ * reason: "redis_unavailable" } — this sends real money-costing SMS so
+ * the same stakes apply as login. A misconfigured deployment must not
+ * allow unlimited OTP requests.
+ *
+ * Max 3 requests per identifier per 15 minutes.
+ */
+export async function checkOtpRequestRateLimit(
+  identifier: string
+): Promise<OtpRateLimitResult> {
+  const limiter = getOtpRequestLimiter();
+
+  if (!limiter) {
+    console.error(
+      "[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — OTP rate limiting UNAVAILABLE. " +
+      "Request rejected (fail-closed)."
+    );
+    return { allowed: false, reason: "redis_unavailable" };
+  }
+
+  const result = await limiter.limit(identifier.toLowerCase().trim());
+  if (!result.success) return { allowed: false, reason: "identifier_limit" };
+  return { allowed: true };
 }

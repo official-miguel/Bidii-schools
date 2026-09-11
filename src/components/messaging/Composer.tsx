@@ -5,7 +5,7 @@ import RecipientPicker from "./RecipientPicker";
 import TemplateSelector from "./TemplateSelector";
 import { applyPlaceholders, groupToken } from "@/lib/messaging/placeholders";
 import type { RecipientDescriptor } from "@/lib/messaging/resolve";
-import { X, ChevronRight, ChevronLeft, Send, Clock, AlertTriangle, Loader2, Paperclip } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Send, Clock, AlertTriangle, Loader2, Paperclip, MessageSquare } from "lucide-react";
 import { ErrorBanner, inputClass, labelClass } from "@/components/ui";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
@@ -155,6 +155,10 @@ export default function Composer({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── SMS wallet balance ─────────────────────────────────────────────────
+  const [smsBalance,   setSmsBalance]   = useState<number | null>(null);
+  const [lowThreshold, setLowThreshold] = useState(50);
+
   // Persist draft whenever meaningful fields change
   useEffect(() => {
     setDraft({ channel, body, scheduledAt, useSchedule, attachmentUrl, attachmentName, descriptors });
@@ -179,6 +183,17 @@ export default function Composer({
       .then((d: Integration[]) => setIntegrations(d))
       .catch(() => {});
   }, []);
+
+  // Fetch SMS wallet balance whenever channel switches to SMS
+  useEffect(() => {
+    if (channel !== "SMS") return;
+    fetch("/api/messaging/wallet")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: { unitsRemaining: number; lowBalanceThreshold: number } | null) => {
+        if (d) { setSmsBalance(d.unitsRemaining); setLowThreshold(d.lowBalanceThreshold); }
+      })
+      .catch(() => {});
+  }, [channel]);
 
   // Resolve recipient count + preview
   useEffect(() => {
@@ -206,6 +221,13 @@ export default function Composer({
   const canSend     = canProceed && body.trim().length > 0 && channelOk;
   const charCount   = body.length % SMS_LIMIT || (body.length > 0 ? SMS_LIMIT : 0);
   const parts       = Math.ceil(body.length / SMS_LIMIT) || 1;
+
+  // Live SMS unit estimate: recipients × segments
+  const estimatedUnits = channel === "SMS" && resolvedCount > 0
+    ? resolvedCount * parts
+    : 0;
+  const isLowBalance = channel === "SMS" && smsBalance !== null && smsBalance <= lowThreshold;
+  const insufficientBalance = channel === "SMS" && smsBalance !== null && estimatedUnits > 0 && smsBalance < estimatedUnits;
 
   async function handleSend() {
     if (!canSend) return;
@@ -377,7 +399,43 @@ export default function Composer({
                     {skippedCount} without contact will be skipped
                   </span>
                 )}
+                {/* SMS balance badge */}
+                {channel === "SMS" && smsBalance !== null && (
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ml-auto ${
+                    isLowBalance
+                      ? "bg-warn-bg text-warn border-warn/30"
+                      : "bg-success-bg text-success border-success/20"
+                  }`}>
+                    <MessageSquare className="h-3 w-3" aria-hidden />
+                    {smsBalance.toLocaleString()} units
+                  </span>
+                )}
               </div>
+
+              {/* Low balance warning */}
+              {isLowBalance && (
+                <div className="flex items-start gap-2 rounded-lg bg-warn-bg border border-warn/20 text-warn text-xs px-3 py-2.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" aria-hidden />
+                  <span>
+                    Low SMS balance ({smsBalance?.toLocaleString()} units left).
+                    Contact your account manager to top up.
+                  </span>
+                </div>
+              )}
+
+              {/* Live unit cost estimate */}
+              {channel === "SMS" && estimatedUnits > 0 && (
+                <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                  insufficientBalance
+                    ? "bg-danger-bg border-danger/20 text-danger"
+                    : "bg-background border-border text-slate"
+                }`}>
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  This message will use approximately{" "}
+                  <strong className="text-foreground">{estimatedUnits.toLocaleString()} units</strong>
+                  {insufficientBalance && " — not enough balance to send."}
+                </div>
+              )}
 
               {/* Message body */}
               <div className="form-section">
@@ -519,7 +577,12 @@ export default function Composer({
             <div className="shrink-0 px-6 py-4 border-t border-border bg-background">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-xs text-slate">
-                  {!channelOk && integrations.length > 0 ? (
+                  {insufficientBalance ? (
+                    <span className="text-danger flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                      Insufficient SMS balance
+                    </span>
+                  ) : !channelOk && integrations.length > 0 ? (
                     <span className="text-warn flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" aria-hidden="true" />
                       {channel} not configured
@@ -542,7 +605,7 @@ export default function Composer({
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={!canSend || sending}
+                    disabled={!canSend || sending || insufficientBalance}
                     className="inline-flex items-center gap-2 rounded-lg bg-teal text-white text-sm font-semibold px-6 py-2.5 hover:bg-teal-dark active:scale-[0.98] transition-all duration-100 disabled:opacity-40 shadow-xs"
                   >
                     {sending ? (
