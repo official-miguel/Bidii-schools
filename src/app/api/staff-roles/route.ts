@@ -3,13 +3,11 @@ import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
-import { ensureDefaultStaffRoles, logPermissionAudit } from "@/lib/permissions";
+import { logPermissionAudit } from "@/lib/permissions";
 
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  await ensureDefaultStaffRoles(user.schoolId!);
 
   const roles = await prisma.staffRole.findMany({
     where: { schoolId: user.schoolId! },

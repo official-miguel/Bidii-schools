@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Shield, Users, Clock } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultStaffRoles, MODULE_INFO, ALL_MODULES } from "@/lib/permissions";
+import { MODULE_INFO, ALL_MODULES } from "@/lib/permissions";
 import type { Module } from "@prisma/client";
 import PermissionMatrixClient from "@/components/permissions/PermissionMatrixClient";
 import AuditLogTable from "@/components/permissions/AuditLogTable";
@@ -12,7 +12,6 @@ export default async function StaffRolesPage() {
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
 
   const schoolId = user.schoolId!;
-  await ensureDefaultStaffRoles(schoolId);
 
   const [roles, auditLogs, staffUsers] = await Promise.all([
     prisma.staffRole.findMany({
