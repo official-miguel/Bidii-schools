@@ -4336,7 +4336,7 @@ model CbeGradingScale {
 /// ultimately sends through. Encrypted the same way SchoolIntegration is.
 model PlatformSmsConfig {
   id             String   @id @default(cuid())
-  provider       String   @default("AFRICAS_TALKING") // keep swappable
+  provider       String   @default("SMS_MOBIVAS") // keep swappable
   encryptedValue String   // encryptSecret(apiKey)
   keyPreview     String
   metadata       Json?    // { username, from, ... } — same shape as SchoolIntegration.metadata

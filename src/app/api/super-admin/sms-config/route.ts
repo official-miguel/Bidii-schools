@@ -11,8 +11,8 @@ import type { Prisma }                      from "@prisma/client";
 
 const schema = z.object({
   apiKey:   z.string().min(1, "API key is required."),
-  username: z.string().optional(),
-  from:     z.string().optional(),
+  clientId: z.string().min(1, "Client ID is required."),
+  senderId: z.string().min(1, "Sender ID is required."),
 });
 
 export async function GET() {
@@ -36,21 +36,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { apiKey, username, from } = parsed.data;
+  const { apiKey, clientId, senderId } = parsed.data;
 
-  // Build metadata only with values that were actually provided
-  const metadata: Record<string, string> = {};
-  if (username) metadata.username = username;
-  if (from)     metadata.from     = from;
+  const metadata = { clientId, senderId };
 
-  await setPlatformSmsKey(apiKey, Object.keys(metadata).length > 0
-    ? metadata as Prisma.InputJsonValue
-    : null
-  );
+  await setPlatformSmsKey(apiKey, metadata as Prisma.InputJsonValue);
 
   await logAudit(user.id, "PLATFORM_SMS_CONFIG_UPDATED", "platform_sms", undefined, {
-    username: username ?? null,
-    from:     from     ?? null,
+    clientId,
+    senderId,
   });
 
   const updated = await getPlatformSmsStatus();

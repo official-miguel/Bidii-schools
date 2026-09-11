@@ -20,9 +20,9 @@ export const PROVIDER_INFO: Record<
     placeholder: "AIza...",
   },
   SMS: {
-    label: "SMS provider",
-    description: "Sends SMS messages from the Communication Centre.",
-    keyLabel: "API key / Auth token",
+    label: "SMS provider (legacy)",
+    description: "Sends SMS messages from the Communication Centre. (Note: new deployments use the centralised Platform SMS provider instead.)",
+    keyLabel: "API key",
     placeholder: "",
   },
   WHATSAPP: {

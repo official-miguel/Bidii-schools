@@ -19,7 +19,7 @@ interface SmsConfigStatus {
   configured:  boolean;
   provider:    string | null;
   keyPreview:  string | null;
-  metadata:    { username?: string; from?: string } | null;
+  metadata:    { clientId?: string; senderId?: string } | null;
   isActive:    boolean;
   updatedAt:   string | null;
 }
@@ -45,8 +45,8 @@ export default function PlatformSmsConfigPage() {
       const d = await res.json() as { config: SmsConfigStatus };
       setConfig(d.config);
       // Pre-fill metadata fields (never the API key itself)
-      if (d.config.metadata?.username) setUsername(d.config.metadata.username);
-      if (d.config.metadata?.from)     setFrom(d.config.metadata.from);
+      if (d.config.metadata?.clientId) setUsername(d.config.metadata.clientId);
+      if (d.config.metadata?.senderId) setFrom(d.config.metadata.senderId);
     } catch (e) {
       setApiError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -58,7 +58,7 @@ export default function PlatformSmsConfigPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim() || !username.trim() || !from.trim()) return;
     setSaving(true);
     setApiError(null);
     setSaved(false);
@@ -67,9 +67,9 @@ export default function PlatformSmsConfigPage() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          apiKey: apiKey.trim(),
-          ...(username.trim() ? { username: username.trim() } : {}),
-          ...(from.trim()     ? { from: from.trim()         } : {}),
+          apiKey:   apiKey.trim(),
+          clientId: username.trim(),
+          senderId: from.trim(),
         }),
       });
       const d = await res.json() as { config?: SmsConfigStatus; error?: string };
@@ -95,7 +95,7 @@ export default function PlatformSmsConfigPage() {
       <div>
         <h1 className="text-xl font-semibold text-foreground">Platform SMS Provider</h1>
         <p className="text-sm text-slate mt-1">
-          These credentials are used for every outbound SMS across all schools —
+          SMSMobivas credentials used for every outbound SMS across all schools —
           both Communication Centre bulk sends and forgot-password OTP codes.
         </p>
       </div>
@@ -111,7 +111,7 @@ export default function PlatformSmsConfigPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">
-                {config.configured ? "Africa's Talking" : "Not configured"}
+                {config.configured ? "SMSMobivas" : "Not configured"}
               </p>
               <p className="text-xs text-slate">
                 {config.configured && config.updatedAt
@@ -141,16 +141,16 @@ export default function PlatformSmsConfigPage() {
 
           {config.metadata && (
             <div className="grid grid-cols-2 gap-3 text-xs">
-              {config.metadata.username && (
+              {config.metadata.clientId && (
                 <div>
-                  <span className="block text-slate">Username</span>
-                  <span className="font-medium text-foreground">{config.metadata.username}</span>
+                  <span className="block text-slate">Client ID</span>
+                  <span className="font-medium text-foreground">{config.metadata.clientId}</span>
                 </div>
               )}
-              {config.metadata.from && (
+              {config.metadata.senderId && (
                 <div>
                   <span className="block text-slate">Sender ID</span>
-                  <span className="font-medium text-foreground">{config.metadata.from}</span>
+                  <span className="font-medium text-foreground">{config.metadata.senderId}</span>
                 </div>
               )}
             </div>
@@ -166,7 +166,7 @@ export default function PlatformSmsConfigPage() {
 
         <div>
           <label htmlFor="sms-apikey" className={labelClass}>
-            API key / Auth token <span className="text-danger" aria-hidden>*</span>
+            API Key <span className="text-danger" aria-hidden>*</span>
           </label>
           <input
             id="sms-apikey"
@@ -174,7 +174,7 @@ export default function PlatformSmsConfigPage() {
             autoComplete="off"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={config?.configured ? "Enter new key to replace current" : "Paste your Africa's Talking API key"}
+            placeholder={config?.configured ? "Enter new key to replace current" : "Paste your SMSMobivas API key"}
             className={inputClass}
             required
           />
@@ -185,35 +185,39 @@ export default function PlatformSmsConfigPage() {
 
         <div>
           <label htmlFor="sms-username" className={labelClass}>
-            Username <span className="text-slate font-normal">(optional)</span>
+            Client ID <span className="text-danger" aria-hidden>*</span>
           </label>
           <input
             id="sms-username"
             type="text"
             autoComplete="off"
+            required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="sandbox"
+            placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000"
             className={inputClass}
           />
+          <p className="mt-1.5 text-xs text-slate">
+            The UUID shown in your SMSMobivas dashboard.
+          </p>
         </div>
 
         <div>
           <label htmlFor="sms-from" className={labelClass}>
-            Sender ID <span className="text-slate font-normal">(optional)</span>
+            Sender ID <span className="text-danger" aria-hidden>*</span>
           </label>
           <input
             id="sms-from"
             type="text"
             autoComplete="off"
+            required
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             placeholder="BIDII"
             className={inputClass}
           />
           <p className="mt-1.5 text-xs text-slate">
-            Alphanumeric sender name shown on the recipient&apos;s phone, e.g. &ldquo;BIDII&rdquo;.
-            Leave blank to use the Africa&apos;s Talking default.
+            Your approved alphanumeric sender name, e.g. &ldquo;BIDII&rdquo;.
           </p>
         </div>
 
@@ -226,7 +230,7 @@ export default function PlatformSmsConfigPage() {
 
         <button
           type="submit"
-          disabled={saving || !apiKey.trim()}
+          disabled={saving || !apiKey.trim() || !username.trim() || !from.trim()}
           className="inline-flex items-center gap-2 rounded-lg bg-teal text-white text-sm font-semibold
                      px-5 py-2.5 hover:bg-teal-dark active:scale-[0.98] transition-all duration-100
                      disabled:opacity-50 shadow-xs"
@@ -243,11 +247,11 @@ export default function PlatformSmsConfigPage() {
       <div className="flex items-start gap-3 rounded-xl border border-warn/20 bg-warn-bg px-4 py-3.5 text-sm">
         <AlertTriangle className="h-4 w-4 text-warn mt-0.5 shrink-0" aria-hidden />
         <div className="text-warn-dark">
-          <p className="font-semibold">Keep this key secret</p>
+          <p className="font-semibold">Keep these credentials secret</p>
           <p className="text-xs mt-0.5 text-warn">
-            Rotating or deleting this key will immediately break SMS delivery for every
-            school until a new key is saved. Back up your Africa&apos;s Talking credentials
-            before changing them here.
+            Rotating or deleting these credentials will immediately break SMS delivery
+            for every school until new credentials are saved. Back up your SMSMobivas
+            credentials before changing them here.
           </p>
         </div>
       </div>

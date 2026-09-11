@@ -34,52 +34,65 @@ export type DispatchResult = {
 };
 
 // ---------------------------------------------------------------------------
-// Shared Africa's Talking HTTP helper (one implementation, two callers)
+// Shared SMSMobivas HTTP helper (one implementation, two callers)
 // ---------------------------------------------------------------------------
 
-async function sendViaAfricasTalking(
+async function sendViaSMSMobivas(
   phone:    string,
   body:     string,
   apiKey:   string,
   metadata: Record<string, unknown> | null
 ): Promise<DispatchResult> {
-  const username = (metadata?.username as string) ?? "sandbox";
-  const from     = (metadata?.from     as string) ?? undefined;
+  const clientId = (metadata?.clientId as string) ?? "";
+  const senderId = (metadata?.senderId as string) ?? "";
+
+  if (!clientId || !senderId) {
+    return {
+      phone,
+      providerMsgId: null,
+      status: "FAILED" as const,
+      errorDetail: "Missing clientId or senderId in platform SMS config.",
+    };
+  }
+
+  // SMSMobivas expects phone numbers without the leading +
+  const cleanPhone = phone.replace(/^\+/, "");
 
   const params = new URLSearchParams({
-    username,
-    to:      phone,
-    message: body,
-    ...(from ? { from } : {}),
+    ApiKey:       apiKey,
+    ClientId:     clientId,
+    SenderId:     senderId,
+    Message:      body,
+    MobileNumbers: cleanPhone,
   });
 
-  const res = await fetch("https://api.africastalking.com/version1/messaging", {
-    method:  "POST",
-    headers: {
-      Accept:         "application/json",
-      "Content-Type": "application/x-www-form-urlencoded",
-      apiKey,
-    },
-    body: params.toString(),
+  const url = `https://user.smsmobivas.co.ke/api/v2/SendSMS?${params.toString()}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { Accept: "application/json" },
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    return { phone, providerMsgId: null, status: "FAILED", errorDetail: text };
+    return { phone, providerMsgId: null, status: "FAILED" as const, errorDetail: text };
   }
 
   const json = await res.json() as {
-    SMSMessageData?: { Recipients?: { messageId?: string; status?: string }[] };
+    ErrorCode?: number;
+    ErrorDescription?: string;
+    Data?: { MobileNumber?: string; MessageId?: string }[];
   };
-  const recipient = json?.SMSMessageData?.Recipients?.[0];
-  const msgId     = recipient?.messageId ?? null;
-  const ok        = recipient?.status === "Success" || recipient?.status === "Sent";
+
+  const errorCode = json.ErrorCode ?? -1;
+  const ok = errorCode === 0;
+  const msgId = json.Data?.[0]?.MessageId ?? null;
 
   return {
     phone,
     providerMsgId: msgId,
-    status:        ok ? "SENT" : "FAILED",
-    errorDetail:   ok ? undefined : (recipient?.status ?? "Unknown provider status"),
+    status: ok ? ("SENT" as const) : ("FAILED" as const),
+    errorDetail: ok ? undefined : (json.ErrorDescription ?? `Error code ${errorCode}`),
   };
 }
 
@@ -154,7 +167,7 @@ export async function dispatchMessage(
 
   try {
     if (channel === "SMS") {
-      return await sendViaAfricasTalking(phone, body, integration.apiKey, integration.metadata);
+      return await sendViaSMSMobivas(phone, body, integration.apiKey, integration.metadata);
     } else {
       return await dispatchWhatsApp(phone, body, integration.apiKey, integration.metadata);
     }
@@ -197,7 +210,7 @@ export async function dispatchPlatformSms(
   }
 
   try {
-    return await sendViaAfricasTalking(phone, body, config.apiKey, config.metadata);
+    return await sendViaSMSMobivas(phone, body, config.apiKey, config.metadata);
   } catch (err) {
     return {
       phone,
