@@ -509,7 +509,7 @@ export default function PermissionMatrixClient({
               {/* Unsaved changes indicator */}
               {hasChanges && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 pt-1">
-                  You have unsaved changes. Hit "Save changes" to apply them.
+                  You have unsaved changes. Hit &ldquo;Save changes&rdquo; to apply them.
                 </p>
               )}
 
