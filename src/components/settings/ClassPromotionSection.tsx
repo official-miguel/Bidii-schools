@@ -607,7 +607,7 @@ function PromotionMappingRow({
                           {skipStatus === "backward"
                             ? "Warning: the target class is at the same level or lower than this one (backward/same-level move)."
                             : "Warning: this skips one or more stages in the canonical order."}
-                          {" "}You can still save this, but you'll need to confirm the warning before running the promotion.
+                          {" "}You can still save this, but you&apos;ll need to confirm the warning before running the promotion.
                         </span>
                       </div>
                     )}
