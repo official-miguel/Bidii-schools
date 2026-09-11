@@ -14,20 +14,25 @@ import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
   Building2,
-  Users,
-  BarChart3,
-  Settings,
+  Puzzle,
+  AlertTriangle,
+  Activity,
+  HardDrive,
+  Upload,
+  MessageSquare,
   HelpCircle,
   LogOut,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/super-admin",         label: "Dashboard",     Icon: LayoutDashboard },
-  { href: "/super-admin/schools", label: "Schools",       Icon: Building2       },
-  { href: "/super-admin/students", label: "Students",     Icon: Users           },
-  { href: "/super-admin/staff",   label: "Staff & Admins", Icon: Users         },
-  { href: "/super-admin/reports", label: "Reports",       Icon: BarChart3       },
-  { href: "/super-admin/settings", label: "Settings",     Icon: Settings        },
+  { href: "/super-admin",                label: "Dashboard",    Icon: LayoutDashboard },
+  { href: "/super-admin/schools",        label: "Schools",      Icon: Building2       },
+  { href: "/super-admin/modules",        label: "Modules",      Icon: Puzzle          },
+  { href: "/super-admin/errors",         label: "Errors",       Icon: AlertTriangle   },
+  { href: "/super-admin/health",         label: "Health",       Icon: Activity        },
+  { href: "/super-admin/storage",        label: "Storage",      Icon: HardDrive       },
+  { href: "/super-admin/imports",        label: "Imports",      Icon: Upload          },
+  { href: "/super-admin/settings/sms",   label: "Platform SMS", Icon: MessageSquare   },
 ] as const;
 
 export default function SuperAdminSidebar() {
