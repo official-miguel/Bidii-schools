@@ -19,7 +19,7 @@ export default function SuperAdminTopBar({ userEmail }: Props) {
   return (
     <header
       aria-label="Super admin top bar"
-      className="fixed top-0 left-0 md:left-16 right-0 h-16 z-30
+      className="fixed top-0 left-0 md:left-44 right-0 h-16 z-30
                  bg-card border-b border-border shadow-xs
                  flex items-center justify-between px-4 sm:px-6 gap-4"
     >

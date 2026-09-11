@@ -3,9 +3,9 @@
 /**
  * SuperAdminSidebar
  *
- * Fixed 64px icon-rail for the super-admin control panel.
- * Uses the ink (deep charcoal) background to visually separate
- * the control plane from school-facing dashboards which use white.
+ * Fixed wider sidebar for the super-admin control panel.
+ * Uses the teal background with the Bidii branding to visually separate
+ * the control plane from school-facing dashboards.
  */
 
 import Link from "next/link";
@@ -14,25 +14,20 @@ import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
   Building2,
-  Puzzle,
-  AlertTriangle,
-  Activity,
-  HardDrive,
-  Upload,
+  Users,
+  BarChart3,
+  Settings,
+  HelpCircle,
   LogOut,
-  ShieldCheck,
-  MessageSquare,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/super-admin",                label: "Overview",  Icon: LayoutDashboard },
-  { href: "/super-admin/schools",        label: "Schools",   Icon: Building2       },
-  { href: "/super-admin/modules",        label: "Modules",   Icon: Puzzle          },
-  { href: "/super-admin/errors",         label: "Errors",    Icon: AlertTriangle   },
-  { href: "/super-admin/health",         label: "Health",    Icon: Activity        },
-  { href: "/super-admin/storage",        label: "Storage",   Icon: HardDrive       },
-  { href: "/super-admin/imports",        label: "Imports",   Icon: Upload          },
-  { href: "/super-admin/settings/sms",   label: "Platform SMS", Icon: MessageSquare },
+  { href: "/super-admin",         label: "Dashboard",     Icon: LayoutDashboard },
+  { href: "/super-admin/schools", label: "Schools",       Icon: Building2       },
+  { href: "/super-admin/students", label: "Students",     Icon: Users           },
+  { href: "/super-admin/staff",   label: "Staff & Admins", Icon: Users         },
+  { href: "/super-admin/reports", label: "Reports",       Icon: BarChart3       },
+  { href: "/super-admin/settings", label: "Settings",     Icon: Settings        },
 ] as const;
 
 export default function SuperAdminSidebar() {
@@ -53,83 +48,75 @@ export default function SuperAdminSidebar() {
   return (
     <aside
       aria-label="Super admin navigation"
-      className="fixed top-0 left-0 h-screen w-16 hidden md:flex flex-col z-40
-                 bg-ink border-r border-ink-light/20"
+      className="fixed top-0 left-0 h-screen w-44 hidden md:flex flex-col z-40
+                 bg-teal-800 shadow-lg"
     >
-      {/* Logo */}
-      <div className="flex items-center justify-center h-16 shrink-0 border-b border-white/10">
+      {/* Logo & Branding */}
+      <div className="flex flex-col items-center justify-center py-6 px-4 border-b border-teal-700/50">
         <Link
           href="/super-admin"
           aria-label="Super Admin Home"
-          title="Bidii Super Admin"
-          className="flex items-center justify-center h-10 w-10 rounded-lg
-                     overflow-hidden hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 hover:opacity-90 transition-opacity"
         >
-          <Logo height={40} width={40} alt="Bidii" className="object-contain" />
+          <Logo height={32} width={32} alt="Bidii" className="object-contain" />
+          <div className="flex flex-col -space-y-0.5">
+            <span className="text-white font-bold text-base leading-tight">Bidii</span>
+            <span className="text-white/80 text-[10px] font-medium uppercase tracking-wider leading-tight">
+              SCHOOLS
+            </span>
+          </div>
         </Link>
       </div>
 
-      {/* Super-admin identity badge */}
-      <div className="flex items-center justify-center py-2.5 border-b border-white/10">
-        <div
-          title="Super Admin Control Plane"
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-teal/20"
-        >
-          <ShieldCheck className="h-4 w-4 text-teal-light" strokeWidth={2} aria-hidden />
-        </div>
-      </div>
-
       {/* Nav links */}
-      <nav className="flex-1 flex flex-col items-center gap-1 py-3 overflow-y-auto">
+      <nav className="flex-1 flex flex-col gap-1 py-4 px-3 overflow-y-auto">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const active = isActive(href);
           return (
-            <div key={href} className="relative w-full flex justify-center group">
-              {/* Active indicator pill */}
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal rounded-r-full"
-                />
-              )}
-              <Link
-                href={href}
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-                className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors duration-100
-                  ${active
-                    ? "bg-teal/20 text-teal-light"
-                    : "text-white/50 hover:bg-card/10 hover:text-white"
-                  }`}
-              >
-                <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-              </Link>
-              {/* Tooltip */}
-              <span
-                role="tooltip"
-                className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2
-                           whitespace-nowrap rounded-md shadow-md bg-ink text-white text-xs font-medium
-                           px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100 z-50"
-              >
-                {label}
-              </span>
-            </div>
+            <Link
+              key={href}
+              href={href}
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                ${active
+                  ? "bg-white text-teal-800 shadow-sm font-medium"
+                  : "text-white/90 hover:bg-teal-700/50 hover:text-white"
+                }`}
+            >
+              <Icon 
+                className="h-5 w-5 shrink-0" 
+                strokeWidth={active ? 2 : 1.8} 
+                aria-hidden 
+              />
+              <span className="text-sm truncate">{label}</span>
+            </Link>
           );
         })}
       </nav>
 
-      {/* Sign out */}
-      <div className="flex flex-col items-center pb-4 pt-3 border-t border-white/10">
+      {/* Bottom section */}
+      <div className="flex flex-col gap-1 px-3 pb-4 pt-3 border-t border-teal-700/50">
+        <Link
+          href="/super-admin/support"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                     text-white/90 hover:bg-teal-700/50 hover:text-white
+                     transition-all duration-150"
+        >
+          <HelpCircle className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden />
+          <span className="text-sm">Support</span>
+        </Link>
+        
         <button
           type="button"
           onClick={handleLogout}
-          aria-label="Sign out"
-          title="Sign out"
-          className="flex items-center justify-center w-11 h-11 rounded-lg
-                     text-white/50 hover:bg-danger/20 hover:text-danger
-                     transition-colors duration-100"
+          aria-label="Logout"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                     text-white/90 hover:bg-red-600/20 hover:text-red-200
+                     transition-all duration-150"
         >
-          <LogOut className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
+          <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden />
+          <span className="text-sm">Logout</span>
         </button>
       </div>
     </aside>
