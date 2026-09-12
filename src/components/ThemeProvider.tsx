@@ -4,14 +4,14 @@
  * src/components/ThemeProvider.tsx
  *
  * Manages the dark / light theme:
- *  - Reads the OS preference (prefers-color-scheme) on first render — system-only in v1.
- *  - Listens for OS preference changes while the tab is open and updates immediately.
+ *  - Always defaults to light mode, regardless of OS/device preference.
+ *  - Only switches to dark mode when user explicitly chooses it.
+ *  - Persists user's choice in localStorage.
  *  - Applies / removes the "dark" class on <html> without a flash.
  *  - Exposes useTheme() hook so any component can read the theme.
  *
- * v1 design decision: no localStorage read/write, no manual toggle UI.
- * toggle() and setTheme() are retained on the context API for future use
- * but are not wired to any UI element.
+ * Design decision: System always opens in light mode unless the user has
+ * previously switched to dark mode. Device dark mode settings are ignored.
  *
  * Flash prevention:
  *   A tiny inline <script> (injected by ThemeScript below) runs before React
@@ -65,37 +65,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // in useEffect which runs client-side only, preventing SSR/CSR mismatch.
   const [theme, setThemeState] = useState<Theme>("light");
 
-  // On mount: read saved preference first, fall back to OS.
+  // On mount: read saved preference first, fall back to light mode (never OS).
   useEffect(() => {
     let saved: Theme | null = null;
     try {
       saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
     } catch {}
-    const prefersDark = window.matchMedia
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-      : false;
-    const resolved: Theme = saved ?? (prefersDark ? "dark" : "light");
+    // Always default to light mode unless user explicitly chose dark mode
+    const resolved: Theme = saved ?? "light";
     applyTheme(resolved);
     setThemeState(resolved);
   }, []);
 
-  // Listen for OS changes — only apply if user has NOT set a manual preference.
-  useEffect(() => {
-    if (!window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      let saved: Theme | null = null;
-      try { saved = localStorage.getItem(STORAGE_KEY) as Theme | null; } catch {}
-      // Respect OS change only if user hasn't chosen manually
-      if (!saved) {
-        const resolved: Theme = e.matches ? "dark" : "light";
-        applyTheme(resolved);
-        setThemeState(resolved);
-      }
-    };
-    mq.addEventListener("change", handleChange);
-    return () => mq.removeEventListener("change", handleChange);
-  }, []);
+  // Removed OS preference listener — we ignore device dark mode settings
+  // and only respect explicit user choice via the theme toggle
 
   const setTheme = useCallback((t: Theme) => {
     applyTheme(t);
@@ -166,10 +149,8 @@ export function ThemeScript() {
 (function () {
   try {
     var saved = localStorage.getItem('bidii_theme');
-    var prefersDark = window.matchMedia
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-      : false;
-    var isDark = saved === 'dark' || (!saved && prefersDark);
+    // Always default to light mode, ignore OS preference
+    var isDark = saved === 'dark';
     if (isDark) {
       document.documentElement.classList.add('dark');
     }

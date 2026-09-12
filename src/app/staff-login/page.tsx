@@ -3,6 +3,9 @@
 /**
  * Staff Login Portal — /staff-login
  *
+ * **Theme**: This page is ALWAYS displayed in light mode, regardless of
+ * the user's system theme preference or any dark mode setting.
+ *
  * Dedicated sign-in page for ADMIN_STAFF users.
  * Uses the same /api/auth/login endpoint as the general login but enforces
  * that only ADMIN_STAFF accounts can proceed. Any other role that successfully
@@ -65,6 +68,20 @@ function StaffLoginForm() {
   const [needsSlug, setNeedsSlug] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Force light mode for login page
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    return () => {
+      // Restore saved theme when leaving login page
+      try {
+        const saved = localStorage.getItem('bidii_theme');
+        if (saved === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      } catch {}
+    };
+  }, []);
 
   // Pre-fill identifier from sessionStorage
   useEffect(() => {

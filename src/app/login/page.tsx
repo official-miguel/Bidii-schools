@@ -3,6 +3,10 @@
 /**
  * Login page — email/phone + password.
  *
+ * **Theme**: This page is ALWAYS displayed in light mode, regardless of
+ * the user's system theme preference or any dark mode setting. All dark:*
+ * classes have been removed to enforce light-only display.
+ *
  * First-login flow for teachers / staff:
  *   • Initial password = school username (slug), e.g. "kianyaga" or "@kianyaga"
  *   • On first login mustChangePassword === true → ForcePasswordChangeModal appears
@@ -46,6 +50,20 @@ function LoginForm() {
   const [needsSlug,   setNeedsSlug]   = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [loading,     setLoading]     = useState(false);
+
+  // Force light mode for login page
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    return () => {
+      // Restore saved theme when leaving login page
+      try {
+        const saved = localStorage.getItem('bidii_theme');
+        if (saved === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      } catch {}
+    };
+  }, []);
 
   // Pre-fill identifier from sessionStorage (convenience on repeat visits)
   useEffect(() => {
@@ -110,34 +128,34 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden
-                    bg-gradient-to-br from-teal-50/60 via-white to-slate-50
-                    dark:from-[#0A1628] dark:via-[#0D2035] dark:to-[#0A1628]">
+                    bg-gradient-to-br from-teal-50/60 via-white to-slate-50"
+         style={{ colorScheme: 'light' }}>
 
       {/* Dot grid */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{ backgroundImage: "radial-gradient(circle, #2C7F7E 1px, transparent 1px)", backgroundSize: "32px 32px" }}
       />
       {/* Glow orb */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/4 left-1/3 w-96 h-96 rounded-full opacity-0 dark:opacity-[0.08]"
+        className="pointer-events-none absolute top-1/4 left-1/3 w-96 h-96 rounded-full opacity-0"
         style={{ background: "radial-gradient(circle, #2C7F7E, transparent 70%)" }}
       />
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
-          <div className="rounded-2xl bg-teal/10 dark:bg-card/10 ring-1 ring-teal/20 dark:ring-white/20 p-4 mb-5 shadow-md">
+          <div className="rounded-2xl bg-teal/10 ring-1 ring-teal/20 p-4 mb-5 shadow-md">
             <Logo height={72} width={72} alt="Bidii" className="object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground dark:text-white tracking-tight">Welcome back</h1>
-          <p className="text-slate dark:text-white/50 text-sm mt-1">Sign in to your school account</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h1>
+          <p className="text-slate text-sm mt-1">Sign in to your school account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-card dark:bg-[#162233] rounded-2xl overflow-hidden shadow-xl dark:shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
+        <div className="bg-card rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/5">
           <div className="h-0.5" style={{ background: "linear-gradient(90deg, #2C7F7E, #3A9998, #2C7F7E)" }} />
           <div className="p-7">
 
@@ -264,7 +282,7 @@ function LoginForm() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate dark:text-white/40 mt-4">
+        <p className="text-center text-sm text-slate mt-4">
           Need help signing in? Contact your school administrator.
         </p>
       </div>
