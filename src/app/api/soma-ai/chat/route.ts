@@ -391,7 +391,7 @@ export async function POST(req: NextRequest) {
         try {
           const suggestText = await callGeminiOnce({
             apiKey: credentials.apiKey,
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             prompt: buildSuggestionsPrompt(parsed.message, fullResponse, displayRole),
             timeoutMs: 6000,
           });

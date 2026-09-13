@@ -23,35 +23,28 @@ export interface GeminiModel {
 
 export const GEMINI_MODELS: GeminiModel[] = [
   {
-    id: "gemini-2.0-flash",
-    label: "Gemini 2.0 Flash",
-    description: "Fastest responses, lowest cost. Best for everyday assistant tasks. Recommended for most schools.",
+    id: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
+    description: "Fast, capable, and cost-effective. Best for everyday assistant tasks. Recommended for most schools.",
     recommended: true,
     maxOutputTokens: 8192,
   },
   {
-    id: "gemini-2.0-flash-lite",
-    label: "Gemini 2.0 Flash Lite",
+    id: "gemini-2.5-flash-lite-preview-06-17",
+    label: "Gemini 2.5 Flash Lite",
     description: "Ultra-fast and lightweight. Best for simple queries at very high volume.",
     maxOutputTokens: 8192,
   },
   {
-    id: "gemini-2.5-flash-preview-05-20",
-    label: "Gemini 2.5 Flash",
-    description: "Advanced multi-step reasoning with thinking capabilities. Good for complex analysis.",
-    premium: true,
-    maxOutputTokens: 8192,
-  },
-  {
-    id: "gemini-2.5-pro-preview-06-05",
+    id: "gemini-2.5-pro",
     label: "Gemini 2.5 Pro",
-    description: "Highest capability model for complex analysis and long documents.",
+    description: "Highest capability model for complex analysis, long documents, and advanced reasoning.",
     premium: true,
     maxOutputTokens: 8192,
   },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-2.0-flash";
+export const DEFAULT_MODEL_ID = "gemini-2.5-flash";
 
 // ---------------------------------------------------------------------------
 // AI configuration shape
