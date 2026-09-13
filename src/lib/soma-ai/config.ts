@@ -99,8 +99,10 @@ export interface AiUsage {
  *   "db"      — answered directly from the database (no Gemini spend)
  *   "gemini"  — requires natural language reasoning / Gemini
  *   "hybrid"  — fetch data from DB then pass it to Gemini for analysis
+ *   "help"    — how-to question; resolved against the curated help-content
+ *               knowledge base before any DB or Gemini call is made
  */
-export type QueryIntent = "db" | "gemini" | "hybrid";
+export type QueryIntent = "db" | "gemini" | "hybrid" | "help";
 
 export interface ClassifiedQuery {
   intent: QueryIntent;

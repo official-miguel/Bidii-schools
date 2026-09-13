@@ -44,7 +44,35 @@ export type ExtendedCategory =
   | "discipline_student"
   | "report_remarks"
   | "children_overview"
-  | "school_summary";
+  | "school_summary"
+  // Help layer — how-to / navigation questions (resolved before DB/Gemini)
+  | "help";
+
+// ---------------------------------------------------------------------------
+// Help-intent trigger patterns
+//
+// Run BEFORE both GEMINI_OVERRIDE_PATTERNS and DB_PATTERNS in classifyQuery().
+// A message that matches one of these is classified as intent:"help" so the
+// chat handler can route it to resolveHelpAnswer() first — keeping how-to
+// questions out of both the DB path and the un-grounded Gemini path.
+//
+// Keep these patterns narrow enough to avoid false positives on data
+// questions ("how many students" already matches a DB pattern, but it won't
+// reach that branch if it falsely fires here).  The patterns below target
+// procedural / navigational phrasing, not factual lookups.
+// ---------------------------------------------------------------------------
+
+export const HELP_TRIGGER_PATTERNS: RegExp[] = [
+  /\bhow do i\b/i,
+  /\bhow to\b/i,
+  /\bwhere (do i|can i) (find|see|go|access)\b/i,
+  /\bwhere is (the|my)\b/i,
+  /\bhow does .{2,40} work\b/i,
+  /\bsteps? (to|for)\b/i,
+  /\bguide (to|for|on)\b/i,
+  /\bhow (do i|should i|can i) (use|navigate|open|access|get to)\b/i,
+  /\bwhat (page|screen|section|tab|menu)\b/i,
+];
 
 // ---------------------------------------------------------------------------
 // Intent classifier — pure string matching, zero AI spend
@@ -178,7 +206,18 @@ const GEMINI_OVERRIDE_PATTERNS: RegExp[] = [
 ];
 
 export function classifyQuery(message: string): ClassifiedQuery {
-  // Gemini override always wins
+  // ── Help branch: runs FIRST, before any DB or Gemini override ─────────
+  // Detects procedural/navigational "how do I…" phrasing.  The actual
+  // keyword matching against help-content is done in chat/route.ts
+  // (where the UserScope is available for role filtering).  Here we only
+  // flag the intent so the handler knows to call resolveHelpAnswer().
+  for (const pat of HELP_TRIGGER_PATTERNS) {
+    if (pat.test(message)) {
+      return { intent: "help", reason: `help trigger: ${pat.toString()}` };
+    }
+  }
+
+  // Gemini override always wins over DB patterns
   for (const pat of GEMINI_OVERRIDE_PATTERNS) {
     if (pat.test(message)) {
       return { intent: "gemini", reason: `override: ${pat.toString()}` };

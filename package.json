@@ -19,7 +19,8 @@
                     "test":  "jest --forceExit",
                     "test:watch":  "jest --watch",
                     "test:a11y":  "playwright test tests/a11y/",
-                    "test:pbt":  "jest --config jest.mobile.config.js --forceExit"
+                    "test:pbt":  "jest --config jest.mobile.config.js --forceExit",
+                    "help-audit":  "ts-node --transpile-only scripts/help-audit.ts"
                 },
     "keywords":  [
 

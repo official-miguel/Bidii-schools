@@ -9,6 +9,14 @@ import { resolveUserScope } from "@/lib/soma-ai/permissions";
 import { logSomaAIInteraction } from "@/lib/soma-ai/audit";
 import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
 import { SOMA_TOOL_DECLARATIONS, dispatchTool, pruneToolCache } from "@/lib/soma-ai/tools";
+import { classifyQuery } from "@/lib/soma-ai/router";
+import {
+  resolveHelpAnswer,
+  formatHelpAnswer,
+  formatDisambiguation,
+  formatNearMissContext,
+  type HelpResolveOutcome,
+} from "@/lib/soma-ai/help";
 
 // ---------------------------------------------------------------------------
 // Request schema
@@ -44,6 +52,7 @@ function buildSystemPrompt(opts: {
   studentIds: string[];
   classIds: string[];
   isAdmin: boolean;
+  nearMissHelpContext?: string;   // injected when a help query had no confident match
 }): string {
   const roleDescriptions: Record<string, string> = {
     principal: "a school principal with full access to all school data and operations",
@@ -63,11 +72,15 @@ function buildSystemPrompt(opts: {
           ? "You can only see your own academic records."
           : "Your data access is determined by your staff role permissions.";
 
+  const nearMissSection = opts.nearMissHelpContext
+    ? `\n\n${opts.nearMissHelpContext}`
+    : "";
+
   return `You are Soma AI, the intelligent assistant embedded in the Bidii School Management System.
 
 You are speaking with **${opts.displayName}** (${opts.userEmail}), who is ${roleDescriptions[opts.role] ?? "a school user"} at **${opts.schoolName}**.
 
-## Privacy and access rules (CRITICAL â€” never violate these)
+## Privacy and access rules (CRITICAL \u2014 never violate these)
 ${accessContext}
 
 - NEVER reveal data about students outside this user's scope
@@ -75,22 +88,29 @@ ${accessContext}
 - Do not compare students across different families (for parent role)
 - For system actions (sending messages, generating reports), always ask for confirmation first
 
-## Answering data questions â€” IMPORTANT
-You have access to live database tools. **Always call the appropriate tool** when a question requires specific numbers, names, records, or current status. Do NOT say "I don't have access to that data" or tell the user to check the UI manually â€” use the tools instead.
+## Answering data questions \u2014 IMPORTANT
+You have access to live database tools. **Always call the appropriate tool** when a question requires specific numbers, names, records, or current status. Do NOT say "I don't have access to that data" or tell the user to check the UI manually \u2014 use the tools instead.
 
 Examples of when to call tools:
-- "Who is absent today?" â†’ call getTodayAttendance
-- "What are the exam results?" â†’ call getExamResults
-- "How many students do we have?" â†’ call getStudentCount
-- "Which class is performing best?" â†’ call getClassRankings
-- "How full are the dorms?" â†’ call getDormOccupancy
-- "Show me attendance trends" â†’ call getAttendanceTrends
-- "Tell me about [student name]" â†’ call getStudentProfile
+- "Who is absent today?" \u2192 call getTodayAttendance
+- "What are the exam results?" \u2192 call getExamResults
+- "How many students do we have?" \u2192 call getStudentCount
+- "Which class is performing best?" \u2192 call getClassRankings
+- "How full are the dorms?" \u2192 call getDormOccupancy
+- "Show me attendance trends" \u2192 call getAttendanceTrends
+- "Tell me about [student name]" \u2192 call getStudentProfile
 
 Only answer from your general knowledge when the question is about concepts (CBE/8-4-4 frameworks, grading systems, best practices) or when drafting/writing text.
 
+## Answering "how do I use the system" questions \u2014 CRITICAL
+For any question about how to navigate, find, or use a feature in Bidii:
+- **Only describe UI elements, buttons, pages, and menu paths that are explicitly confirmed in the "Possibly related guides" section below (if present) or that were stated directly in this conversation.**
+- If you are not certain a specific button, page name, or navigation path exists in Bidii, do NOT describe it. Say instead: "I don't have a confirmed guide for that step. I'd suggest asking your school administrator or checking the Help section of the app."
+- Never invent plausible-sounding steps you have not confirmed. A wrong how-to answer is worse than saying you're not sure.
+- If related guides are provided below, paraphrase from them faithfully rather than generating your own steps from scratch.${nearMissSection}
+
 ## Communication style
-- Concise, direct, and professional â€” like a trusted expert colleague
+- Concise, direct, and professional \u2014 like a trusted expert colleague
 - Use markdown: **bold**, tables, numbered steps
 - Note when you are presenting live database data
 - If uncertain about a specific fact, use a tool rather than guessing
@@ -197,6 +217,58 @@ export async function POST(req: NextRequest) {
   };
   const displayRole = parsed.context?.role ?? roleMap[user.role] ?? "staff";
 
+  // -- Help short-circuit (zero Gemini cost) -----------------------------------
+  // Runs before the Gemini credential check so how-to questions that resolve
+  // confidently never touch the LLM at all.
+  let helpOutcomeForAudit: HelpResolveOutcome | undefined;
+  let helpEntryIdForAudit: string | undefined;
+  let nearMissHelpContext: string | undefined;
+
+  const classification = classifyQuery(parsed.message);
+  if (classification.intent === 'help') {
+    const helpResult = resolveHelpAnswer(parsed.message, scope);
+    helpOutcomeForAudit = helpResult.outcome;
+
+    if (helpResult.outcome === 'confident' && helpResult.entry) {
+      helpEntryIdForAudit = helpResult.entry.id;
+      const answer = formatHelpAnswer(helpResult.entry);
+      logSomaAIInteraction({
+        userId: user.id,
+        schoolId: user.schoolId!,
+        userRole: user.role,
+        message: parsed.message,
+        intent: 'help',
+        module: 'help',
+        executionMs: Date.now() - t0,
+        outcome: 'success',
+        helpOutcome: 'confident',
+        helpEntryId: helpResult.entry.id,
+      });
+      return NextResponse.json({ answer, type: 'help_confident' });
+    }
+
+    if (helpResult.outcome === 'disambiguation' && helpResult.candidates) {
+      const answer = formatDisambiguation(helpResult.candidates);
+      logSomaAIInteraction({
+        userId: user.id,
+        schoolId: user.schoolId!,
+        userRole: user.role,
+        message: parsed.message,
+        intent: 'help',
+        module: 'help',
+        executionMs: Date.now() - t0,
+        outcome: 'success',
+        helpOutcome: 'disambiguation',
+      });
+      return NextResponse.json({ answer, type: 'help_disambiguation' });
+    }
+
+    // no_match: fall through to Gemini but inject near-miss context
+    if (helpResult.nearMisses.length > 0) {
+      nearMissHelpContext = formatNearMissContext(helpResult.nearMisses);
+    }
+  }
+
   // â”€â”€ Check Gemini credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const credentials = await getSchoolIntegrationKey(user.schoolId!, "GEMINI");
   if (!credentials) {
@@ -248,6 +320,7 @@ export async function POST(req: NextRequest) {
     studentIds: scope.studentIds,
     classIds: scope.classIds,
     isAdmin: scope.isAdmin,
+    nearMissHelpContext,
   });
 
   // â”€â”€ Build conversation contents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -349,6 +422,8 @@ export async function POST(req: NextRequest) {
           executionMs: Date.now() - t0,
           outcome,
           errorSummary,
+          helpOutcome: helpOutcomeForAudit,
+          helpEntryId: helpEntryIdForAudit,
         });
         controller.close();
       }

@@ -22,6 +22,7 @@
 
 import { prisma } from "@/lib/prisma";
 import type { QueryIntent, DbCategory } from "./config";
+import type { HelpResolveOutcome } from "./help";
 
 export type AuditOutcome = "success" | "denied" | "error" | "db_answer" | "cached";
 
@@ -36,6 +37,16 @@ export interface SomaAIAuditEntry {
   executionMs: number;
   outcome: AuditOutcome;
   errorSummary?: string;     // brief error description if outcome=error
+  /**
+   * For intent="help" queries only: how the help resolver handled it.
+   *   "confident"      — single match returned, zero Gemini spend
+   *   "disambiguation" — multiple close matches, asked user to clarify
+   *   "no_match"       — below threshold, fell through to Gemini
+   * Undefined for non-help intents.
+   */
+  helpOutcome?: HelpResolveOutcome;
+  /** When helpOutcome="confident": the id of the entry that was served. */
+  helpEntryId?: string;
 }
 
 /**
@@ -52,6 +63,8 @@ export function logSomaAIInteraction(entry: SomaAIAuditEntry): void {
     outcome: entry.outcome,
     messageSample: entry.message.slice(0, 500),
     errorSummary: entry.errorSummary ?? null,
+    helpOutcome: entry.helpOutcome ?? null,
+    helpEntryId: entry.helpEntryId ?? null,
     ts: new Date().toISOString(),
   };
 
