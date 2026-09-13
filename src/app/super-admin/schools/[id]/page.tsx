@@ -16,6 +16,7 @@ import {
   ChevronLeft, Building2, Users, GraduationCap, HardDrive,
   AlertTriangle, Puzzle, Upload, PauseCircle,
   PlayCircle, ExternalLink, CheckCircle2, MessageSquare,
+  Sparkles, Key, Trash2, RefreshCw, ShieldCheck, Eye, EyeOff,
 } from "lucide-react";
 import {
   Card, Badge, Spinner, ErrorBanner, ProgressBar,
@@ -76,6 +77,7 @@ const TABS = [
   { id:"modules",   label:"Modules",   Icon: Puzzle         },
   { id:"imports",   label:"Imports",   Icon: Upload         },
   { id:"sms",       label:"SMS Wallet", Icon: MessageSquare },
+  { id:"somaai",    label:"Soma AI",   Icon: Sparkles       },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -141,8 +143,43 @@ export default function SchoolDetailPage() {
   const [topupNote,  setTopupNote]  = useState("");
   const [topping,    setTopping]    = useState(false);
 
+  // ── Soma AI / Gemini key state ────────────────────────────────────────────
+  interface GeminiKeyStatus {
+    configured: boolean;
+    keyPreview: string | null;
+    isActive: boolean;
+    config: { model: string; enabled: boolean; temperature: number; maxOutputTokens: number };
+    usage: { totalRequests: number; lastUsedAt: string | null };
+  }
+  const [aiStatus,     setAiStatus]     = useState<GeminiKeyStatus | null>(null);
+  const [aiLoading,    setAiLoading]    = useState(false);
+  const [aiError,      setAiError]      = useState<string | null>(null);
+  const [aiSaving,     setAiSaving]     = useState(false);
+  const [aiSaved,      setAiSaved]      = useState(false);
+  const [aiDeleting,   setAiDeleting]   = useState(false);
+  const [aiTesting,    setAiTesting]    = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{
+    ok: boolean; model?: string; latencyMs?: number; error?: string;
+  } | null>(null);
+  const [aiKey,        setAiKey]        = useState("");
+  const [showAiKey,    setShowAiKey]    = useState(false);
+
+  const loadAiStatus = useCallback(async () => {
+    setAiLoading(true); setAiError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/gemini-key`);
+      if (!res.ok) throw new Error("Failed to load Soma AI status");
+      setAiStatus(await res.json());
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAiLoading(false);
+    }
+  }, [id]);
+
   const load = useCallback(async () => {
-    setLoading(true); setApiError(null);    try {
+    setLoading(true); setApiError(null);
+    try {
       const res = await fetch(`/api/super-admin/schools/${id}`);
       if (!res.ok) throw new Error("Failed to load school");
       const j = await res.json();
@@ -175,6 +212,67 @@ export default function SchoolDetailPage() {
   }, [id]);
 
   useEffect(() => { if (tab === "sms") loadSmsWallet(1); }, [tab, loadSmsWallet]);
+  useEffect(() => { if (tab === "somaai") loadAiStatus(); }, [tab, loadAiStatus]);
+
+  async function handleAiKeySave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!aiKey.trim()) return;
+    setAiSaving(true); setAiError(null); setAiSaved(false); setAiTestResult(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/gemini-key`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: aiKey.trim() }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Failed to save key");
+      setAiStatus(j);
+      setAiKey("");
+      setShowAiKey(false);
+      setAiSaved(true);
+      setSuccessMsg(`Gemini API key ${j.keyPreview ? "saved (···" + j.keyPreview + ")" : "saved"}`);
+      setTimeout(() => { setAiSaved(false); setSuccessMsg(null); }, 4000);
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAiSaving(false);
+    }
+  }
+
+  async function handleAiKeyDelete() {
+    if (!confirm(`Remove the Gemini API key for "${data?.name}"?\n\nSoma AI will stop working for all users at this school.`)) return;
+    setAiDeleting(true); setAiError(null); setAiTestResult(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/gemini-key`, { method: "DELETE" });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Failed to remove key");
+      setAiStatus((prev) => prev
+        ? { ...prev, configured: false, keyPreview: null, isActive: false }
+        : null);
+      setSuccessMsg("Gemini API key removed — Soma AI disabled for this school");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAiDeleting(false);
+    }
+  }
+
+  async function handleAiTest() {
+    setAiTesting(true); setAiTestResult(null); setAiError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/gemini-key/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const j = await res.json();
+      setAiTestResult(j);
+    } catch (e: unknown) {
+      setAiTestResult({ ok: false, error: e instanceof Error ? e.message : "Test failed" });
+    } finally {
+      setAiTesting(false);
+    }
+  }
 
   async function handleTopup(e: React.FormEvent) {
     e.preventDefault();
@@ -786,6 +884,199 @@ export default function SchoolDetailPage() {
                   </div>
                 )}
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── SOMA AI TAB ── */}
+      {tab === "somaai" && (
+        <div className="space-y-6 max-w-2xl">
+          {aiError && (
+            <div className="flex items-center gap-2 rounded-xl bg-danger-bg border border-danger/20 text-danger text-sm px-4 py-3">
+              {aiError}
+            </div>
+          )}
+
+          {aiLoading ? (
+            <div className="flex justify-center py-10"><Spinner size="lg" /></div>
+          ) : (
+            <>
+              {/* ── Key status card ────────────────────────────────────── */}
+              <div className={`flex items-start gap-4 rounded-xl border p-5 ${
+                aiStatus?.configured
+                  ? "bg-success-bg border-success/20"
+                  : "bg-warn-bg border-warn/20"
+              }`}>
+                {aiStatus?.configured
+                  ? <ShieldCheck className="h-6 w-6 text-success shrink-0 mt-0.5" />
+                  : <Sparkles    className="h-6 w-6 text-warn shrink-0 mt-0.5" />}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold ${aiStatus?.configured ? "text-success" : "text-warn"}`}>
+                    {aiStatus?.configured
+                      ? `Gemini API key active · ···${aiStatus.keyPreview}`
+                      : "No Gemini API key assigned"}
+                  </p>
+                  <p className="text-xs text-foreground/70 mt-0.5">
+                    {aiStatus?.configured
+                      ? `Soma AI is ${aiStatus.config.enabled ? "enabled" : "paused"} · Model: ${aiStatus.config.model}`
+                      : "Assign a key below to enable Soma AI for this school."}
+                  </p>
+                  {aiStatus?.configured && (
+                    <p className="text-xs text-foreground/60 mt-1">
+                      {aiStatus.usage.totalRequests.toLocaleString()} total requests
+                      {aiStatus.usage.lastUsedAt
+                        ? ` · Last used ${new Date(aiStatus.usage.lastUsedAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}`
+                        : " · Never used"}
+                    </p>
+                  )}
+                </div>
+                {aiStatus?.configured && (
+                  <button
+                    type="button"
+                    onClick={handleAiKeyDelete}
+                    disabled={aiDeleting}
+                    title="Remove Gemini key"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-danger/30
+                               text-danger hover:bg-danger-bg/60 disabled:opacity-40 transition-colors shrink-0"
+                  >
+                    {aiDeleting
+                      ? <RefreshCw className="h-4 w-4 animate-spin" />
+                      : <Trash2 className="h-4 w-4" />}
+                  </button>
+                )}
+              </div>
+
+              {/* ── Assign / Replace key form ──────────────────────────── */}
+              <div className="rounded-xl bg-card border border-border p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-teal/10 shrink-0">
+                    <Key className="h-4 w-4 text-teal" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {aiStatus?.configured ? "Replace API Key" : "Assign API Key"}
+                    </p>
+                    <p className="text-xs text-slate">
+                      {aiStatus?.configured
+                        ? "Enter a new key to replace the current one"
+                        : "Paste the Google Gemini API key for this school"}
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAiKeySave} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate uppercase tracking-wide mb-1.5">
+                      Gemini API Key
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showAiKey ? "text" : "password"}
+                        value={aiKey}
+                        onChange={(e) => setAiKey(e.target.value)}
+                        placeholder={aiStatus?.configured ? "Enter new key to replace current" : "AIza..."}
+                        className="block w-full rounded-lg border border-border bg-background px-3 py-2 pr-10
+                                   text-sm text-foreground placeholder:text-slate/50
+                                   focus:border-teal/60 focus:outline-none focus:ring-1 focus:ring-teal/20"
+                        autoComplete="off"
+                        spellCheck={false}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAiKey((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate hover:text-foreground transition-colors"
+                        aria-label={showAiKey ? "Hide key" : "Show key"}
+                      >
+                        {showAiKey
+                          ? <EyeOff className="h-4 w-4" />
+                          : <Eye    className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate">
+                      Key is AES-256 encrypted before storage. Only the last 4 characters are stored for display.
+                      Get a key from{" "}
+                      <a
+                        href="https://aistudio.google.com/app/apikey"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-teal hover:underline"
+                      >
+                        Google AI Studio →
+                      </a>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={aiSaving || !aiKey.trim()}
+                      className={`${primaryButtonClass} text-sm`}
+                    >
+                      {aiSaving
+                        ? <><Spinner size="sm" /> Saving…</>
+                        : <><Key className="h-4 w-4" />{aiStatus?.configured ? "Replace key" : "Save key"}</>}
+                    </button>
+                    {aiSaved && (
+                      <span className="flex items-center gap-1.5 text-sm text-success font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Key saved
+                      </span>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* ── Connection test ────────────────────────────────────── */}
+              {aiStatus?.configured && (
+                <div className="rounded-xl bg-card border border-border p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-teal/10 shrink-0">
+                        <RefreshCw className="h-4 w-4 text-teal" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Test Connection</p>
+                        <p className="text-xs text-slate">Verify the key reaches Google Gemini</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAiTest}
+                      disabled={aiTesting}
+                      className={`${secondaryButtonClass} text-sm`}
+                    >
+                      {aiTesting
+                        ? <><RefreshCw className="h-4 w-4 animate-spin" />Testing…</>
+                        : <><RefreshCw className="h-4 w-4" />Test</>}
+                    </button>
+                  </div>
+
+                  {aiTestResult && (
+                    <div className={`mt-4 flex items-start gap-2.5 rounded-lg p-3 border text-sm ${
+                      aiTestResult.ok
+                        ? "bg-success-bg border-success/20 text-success"
+                        : "bg-danger-bg border-danger/20 text-danger"
+                    }`}>
+                      {aiTestResult.ok
+                        ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                        : <Sparkles     className="h-4 w-4 shrink-0 mt-0.5" />}
+                      <div>
+                        {aiTestResult.ok ? (
+                          <>
+                            <p className="font-semibold">Connection successful</p>
+                            <p className="text-xs opacity-80 mt-0.5">
+                              Model: {aiTestResult.model} · {aiTestResult.latencyMs}ms
+                            </p>
+                          </>
+                        ) : (
+                          <p>{aiTestResult.error}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

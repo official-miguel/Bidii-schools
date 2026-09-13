@@ -8,9 +8,8 @@ import {
 } from "@/components/ui";
 import { SkeletonBar } from "@/components/ui/ProgressivePage";
 import {
-  CheckCircle2, AlertCircle, Zap, Calendar, MessageSquare,
-  Mail, Key, Trash2, RefreshCw, BookOpen, BarChart3, Sparkles,
-  Plug, ChevronRight, ChevronDown, BedDouble, Users, ShieldCheck,
+  CheckCircle2, AlertCircle, BookOpen, BarChart3, Sparkles,
+  ChevronRight, ChevronDown, BedDouble, Users, ShieldCheck,
   ArrowRight, School, GraduationCap, Plus, Pencil, RotateCcw, X,
   TrendingUp,
 } from "lucide-react";
@@ -22,17 +21,7 @@ import { useFormDraft } from "@/lib/hooks/useFormDraft";
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = "GEMINI" | "GOOGLE_CALENDAR" | "SMS" | "WHATSAPP" | "EMAIL";
-
-type IntegrationStatus = {
-  provider: Provider;
-  configured: boolean;
-  keyPreview: string | null;
-  isActive: boolean;
-  updatedAt: string | null;
-};
-
-type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale" | "promotion";
+type SectionId = "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale" | "promotion";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Grouped sidebar nav definition
@@ -88,62 +77,18 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: "ai-group",
-    label: "AI & INTEGRATIONS",
+    label: "AI & CONFIGURATION",
     color: "bg-purple-500",
     textColor: "text-purple-600",
     Icon: Sparkles,
     items: [
-      { id: "ai",           label: "AI Configuration" },
-      { id: "integrations", label: "API Integrations" },
+      { id: "ai", label: "AI Configuration" },
     ],
   },
 ];
 
 // Flat list for mobile strip + event handler validation
 const SECTIONS = NAV_GROUPS.flatMap((g) => g.items);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Provider metadata
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PROVIDER_INFO: Record<Provider, {
-  label: string; description: string; keyLabel: string;
-  placeholder: string; testable?: boolean;
-  Icon: React.ComponentType<{ className?: string }>;
-}> = {
-  GEMINI: {
-    label: "Google Gemini",
-    description: "Powers the AI Timetable Generator, AI TOD Scheduler, and School Intelligence.",
-    keyLabel: "API key", placeholder: "AIza...", testable: true,
-    Icon: Zap,
-  },
-  GOOGLE_CALENDAR: {
-    label: "Google Calendar",
-    description: "Syncs the school calendar with Google Calendar for staff.",
-    keyLabel: "API key", placeholder: "AIza...",
-    Icon: Calendar,
-  },
-  SMS: {
-    label: "SMS Provider",
-    description: "Sends bulk SMS from the Communication Centre to parents and staff.",
-    keyLabel: "API key / Auth token", placeholder: "",
-    Icon: MessageSquare,
-  },
-  WHATSAPP: {
-    label: "WhatsApp",
-    description: "Sends WhatsApp messages to parents with a WhatsApp number on file.",
-    keyLabel: "API key / Access token", placeholder: "",
-    Icon: MessageSquare,
-  },
-  EMAIL: {
-    label: "Email (SMTP)",
-    description: "Sends email notifications from the Communication Centre.",
-    keyLabel: "SMTP password / API key", placeholder: "",
-    Icon: Mail,
-  },
-};
-
-const PROVIDER_ORDER: Provider[] = ["GEMINI", "GOOGLE_CALENDAR", "SMS", "WHATSAPP", "EMAIL"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RankingConfigForm  (unchanged logic)
@@ -444,181 +389,6 @@ function LibrarySettingsForm() {
         {savedAt && <span className="text-xs text-slate">Last saved: {new Date(savedAt).toLocaleString()}</span>}
       </div>
     </form>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// IntegrationsPanel  (unchanged logic, extracted for clarity)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function IntegrationsPanel() {
-  const [statuses,   setStatuses]   = useState<IntegrationStatus[] | null>(null);
-  const [editing,    setEditing]    = useState<Provider | null>(null);
-  const [intError,   setIntError]   = useState<string | null>(null);
-  const [saving,     setSaving]     = useState(false);
-  const [testResult, setTestResult] = useState<{ provider: Provider; ok: boolean; message: string } | null>(null);
-  const [testing,    setTesting]    = useState<Provider | null>(null);
-
-  const load = useCallback(async () => {
-    const res = await fetch("/api/settings/integrations");
-    setStatuses(await res.json());
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  function statusFor(p: Provider) { return statuses?.find((s) => s.provider === p) ?? null; }
-
-  async function handleSaveKey(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!editing) return;
-    setIntError(null); setSaving(true);
-    const form = new FormData(e.currentTarget);
-    const res = await fetch("/api/settings/integrations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider: editing, apiKey: form.get("apiKey") }),
-    });
-    const data = await res.json(); setSaving(false);
-    if (!res.ok) { setIntError(data.error || "Couldn't save this key."); return; }
-    setStatuses(data); setEditing(null);
-  }
-
-  async function handleRemove(provider: Provider) {
-    if (!confirm(`Remove the saved ${PROVIDER_INFO[provider].label} key? Features using it will stop working.`)) return;
-    const res = await fetch(`/api/settings/integrations/${provider}`, { method: "DELETE" });
-    if (res.ok) setStatuses(await res.json());
-  }
-
-  async function handleTest(provider: Provider) {
-    setTesting(provider); setTestResult(null);
-    const res = await fetch("/api/settings/integrations/test", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider }),
-    });
-    const data = await res.json(); setTesting(null);
-    setTestResult({ provider, ok: !!data.ok,
-      message: data.ok ? "Key works — connected successfully." : data.error || "Couldn't verify this key." });
-  }
-
-  return (
-    <>
-      <div className="space-y-3">
-        {PROVIDER_ORDER.map((provider) => {
-          const info   = PROVIDER_INFO[provider];
-          const status = statusFor(provider);
-          const { Icon } = info;
-          return (
-            <div key={provider}
-              className="flex items-center gap-4 rounded-xl bg-card border border-border px-5 py-4
-                         hover:shadow-sm transition-shadow">
-              {/* Provider icon */}
-              <div className={`flex items-center justify-center h-10 w-10 rounded-full shrink-0 ${
-                status?.configured ? "bg-teal/10 text-teal" : "bg-muted text-slate"
-              }`}>
-                <Icon className="h-5 w-5" />
-              </div>
-
-              {/* Text — grows to fill */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground">{info.label}</p>
-                  {status?.configured ? (
-                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
-                                     bg-success-bg text-success border border-success/20 font-medium">
-                      <CheckCircle2 className="h-3 w-3 shrink-0" />
-                      Configured · ···{status.keyPreview}
-                    </span>
-                  ) : (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-slate border border-border">
-                      Not configured
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-slate mt-0.5 leading-relaxed">{info.description}</p>
-                {testResult?.provider === provider && (
-                  <div className={`mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium rounded-md px-2 py-1 ${
-                    testResult.ok ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
-                  }`}>
-                    {testResult.ok
-                      ? <CheckCircle2 className="h-3 w-3 shrink-0" />
-                      : <AlertCircle  className="h-3 w-3 shrink-0" />}
-                    {testResult.message}
-                  </div>
-                )}
-              </div>
-
-              {/* Actions — right side */}
-              <div className="flex items-center gap-2 shrink-0">
-                {info.testable && status?.configured && (
-                  <button
-                    className={secondaryButtonClass}
-                    disabled={testing === provider}
-                    onClick={() => handleTest(provider)}
-                  >
-                    {testing === provider
-                      ? <><RefreshCw className="h-4 w-4 animate-spin" />Testing…</>
-                      : <><RefreshCw className="h-4 w-4" />Test</>}
-                  </button>
-                )}
-                {status?.configured && (
-                  <button
-                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border
-                               text-slate hover:text-danger hover:bg-danger-bg/40 hover:border-danger/30
-                               transition-all"
-                    onClick={() => handleRemove(provider)}
-                    aria-label={`Remove ${info.label} key`}
-                    title="Remove key"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-                <button
-                  className={royalButtonClass}
-                  onClick={() => setEditing(provider)}
-                >
-                  <Key className="h-4 w-4" />
-                  {status?.configured ? "Update key" : "Add key"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* API key modal */}
-      {editing && (
-        <Modal
-          title={`${statusFor(editing)?.configured ? "Update" : "Add"} ${PROVIDER_INFO[editing].label} key`}
-          description="This key is stored encrypted. Only the last 4 characters will be shown after saving."
-          onClose={() => setEditing(null)}
-        >
-          <form onSubmit={handleSaveKey} className="space-y-4">
-            {intError && <ErrorBanner message={intError} />}
-            <div className="form-section">
-              <div className="form-section-title">API Credentials</div>
-              <div>
-                <label className={labelClass}>
-                  {PROVIDER_INFO[editing].keyLabel} <span className="text-danger">*</span>
-                </label>
-                <input name="apiKey" required autoComplete="off" type="password"
-                  placeholder={PROVIDER_INFO[editing].placeholder || "Paste your key here"}
-                  className={inputClass} autoFocus />
-                <p className="text-xs text-slate mt-1.5 leading-relaxed">
-                  Stored encrypted on the server. You won&apos;t be able to view it again after
-                  saving — only the last 4 characters, to confirm which key is active.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-1">
-              <button type="button" className={secondaryButtonClass} onClick={() => setEditing(null)}>Cancel</button>
-              <button type="submit" className={royalButtonClass} disabled={saving}>
-                <Key className="h-4 w-4" />{saving ? "Saving…" : "Save key"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </>
   );
 }
 
@@ -1719,11 +1489,6 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
     description: "School identity, branding, gender policy, boarding type, and dormitory auto-allocation settings.",
     Content: SchoolConfigForm,
   },
-  integrations: {
-    heading: "Integrations",
-    description: "Connect your school to external services. Keys are stored encrypted and never exposed to the browser.",
-    Content: IntegrationsPanel,
-  },
   ranking: {
     heading: "Ranking Configuration",
     description: "Adjust how the composite teacher performance score is weighted. Changes apply to all future ranking calculations.",
@@ -1761,7 +1526,7 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [active, setActive] = useState<SectionId>("integrations");
+  const [active, setActive] = useState<SectionId>("ai");
   // Track which nav groups are open; default all open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     () => Object.fromEntries(NAV_GROUPS.map((g) => [g.id, true]))
