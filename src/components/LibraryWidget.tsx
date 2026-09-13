@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 export interface LibrarySummary {
   totalBooks: number;
@@ -42,9 +41,6 @@ export default function LibraryWidget({ initialData }: Props) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-foreground">Library</h2>
-        <Link href="/principal/library" className="text-sm text-teal hover:text-teal-dark hover:underline transition-colors">
-          View details →
-        </Link>
       </div>
 
       {!summary ? (

@@ -12,7 +12,6 @@ import {
   Trophy,
   BarChart2,
   ClipboardList,
-  BookOpen,
   ArrowRight,
 } from "lucide-react";
 
@@ -165,21 +164,6 @@ const CATEGORIES: ReportCategory[] = [
         label: "Achievements Report",
         description:
           "Recognised student achievements across sports, academics, leadership, and co-curricular activities.",
-      },
-    ],
-  },
-  {
-    id: "library",
-    label: "Library Reports",
-    icon: BookOpen,
-    description: "Borrowing activity, overdue books, and fine summaries.",
-    items: [
-      {
-        href: "/principal/library",
-        icon: BookOpen,
-        label: "Library Overview",
-        description:
-          "Catalogue size, copies in circulation, overdue count, and outstanding fines at a glance.",
       },
     ],
   },

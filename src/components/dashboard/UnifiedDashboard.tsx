@@ -337,6 +337,7 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
           overdueCount={libraryData.overdueCount}
           finesOutstanding={libraryData.finesOutstanding}
           studentsWithFines={libraryData.studentsWithFines}
+          readOnly={showSchoolOverview && !isAssignedLibrarian}
         />
       )}
 
@@ -570,7 +571,7 @@ async function fetchLibraryData(schoolId: string, today: Date) {
 
 async function fetchDormData(schoolId: string, dormIds: string[] | undefined) {
   const whereClause = dormIds?.length ? { schoolId, id: { in: dormIds } } : { schoolId };
-  const [dorms, occupiedBeds, openDiscipline] = await Promise.all([
+  const [dorms, occupiedByDorm, occupiedBeds, openDiscipline] = await Promise.all([
     prisma.dormitory.findMany({
       where: whereClause,
       select: {
@@ -579,6 +580,12 @@ async function fetchDormData(schoolId: string, dormIds: string[] | undefined) {
         _count: { select: { beds: true } },
       },
     }).catch(() => []),
+    // Per-dorm occupied count (CURRENT allocations grouped by dormId)
+    prisma.allocationRecord.groupBy({
+      by: ["dormId"],
+      where: { schoolId, ...(dormIds?.length ? { dormId: { in: dormIds } } : {}), status: "CURRENT" },
+      _count: { id: true },
+    }).catch(() => [] as { dormId: string; _count: { id: number } }[]),
     prisma.allocationRecord.count({
       where: { schoolId, ...(dormIds?.length ? { dormId: { in: dormIds } } : {}), status: "CURRENT" },
     }).catch(() => 0),
@@ -586,9 +593,21 @@ async function fetchDormData(schoolId: string, dormIds: string[] | undefined) {
       where: { schoolId, status: { in: ["OPEN", "UNDER_REVIEW"] } },
     }).catch(() => 0),
   ]);
+
+  // Build a quick lookup: dormId → occupied count
+  const occupiedMap = new Map(
+    (occupiedByDorm as { dormId: string; _count: { id: number } }[]).map((r) => [r.dormId, r._count.id])
+  );
+
+  // Attach per-dorm occupied count to each dorm row
+  const dormsWithOccupied = dorms.map((d) => ({
+    ...d,
+    occupiedBeds: occupiedMap.get(d.id) ?? 0,
+  }));
+
   const totalCapacity = dorms.reduce((s, d) => s + (d.totalCapacity ?? 0), 0);
   const occupancyPct  = totalCapacity > 0 ? Math.round((occupiedBeds / totalCapacity) * 100) : 0;
-  return { dorms, occupiedBeds, totalCapacity, occupancyPct, openDiscipline };
+  return { dorms: dormsWithOccupied, occupiedBeds, totalCapacity, occupancyPct, openDiscipline };
 }
 
 // ── Recent activity feed ──────────────────────────────────────────────────────

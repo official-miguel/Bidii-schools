@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 const updateSchema = z.object({
   fullName:           z.string().trim().min(2).optional(),
-  dateOfBirth:        z.string().trim().optional().or(z.literal("")),
+  nemisNumber:        z.string().trim().optional().or(z.literal("")),
   classId:            z.string().min(1).optional(),
   gender:             z.enum(["MALE", "FEMALE"]).nullable().optional(),
   boardingStatus:     z.enum(["DAY", "BOARDING"]).nullable().optional(),
@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       { status: 400 }
     );
   }
-  const { electiveSubjectIds, dateOfBirth, ...rest } = parsed.data;
+  const { electiveSubjectIds, ...rest } = parsed.data;
 
   const existing = await prisma.student.findFirst({
     where: { id: params.id, schoolId },
@@ -106,12 +106,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         where: { id: params.id },
         data: {
           ...rest,
+          nemisNumber: rest.nemisNumber === "" ? null : rest.nemisNumber,
           parentName: rest.parentName === "" ? null : rest.parentName,
           parentContact: rest.parentContact === "" ? null : rest.parentContact,
           photoUrl: rest.photoUrl === "" ? null : rest.photoUrl,
-          ...(dateOfBirth !== undefined
-            ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null }
-            : {}),
         },
       });
     });

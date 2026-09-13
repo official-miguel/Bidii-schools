@@ -38,9 +38,9 @@
   --color-primary-foreground:     #FFFFFF;
   --color-destructive:            #C62828;
   --color-destructive-foreground: #FFFFFF;
-  --color-success:                #ECFDF3;
+  --color-success:                #17B26A;
   --color-success-foreground:     #0D4D2D;
-  --color-warn:                   #FFFAEB;
+  --color-warn:                   #F79009;
   --color-warn-foreground:        #7A3D00;
 
   /* ── Legacy aliases — retained for backward compatibility ─────────────
@@ -108,9 +108,9 @@ html.dark {
   --color-primary-foreground:     #FFFFFF;
   --color-destructive:            #C62828;
   --color-destructive-foreground: #FFFFFF;
-  --color-success:                #0F2B1A;
+  --color-success:                #4ADE80;
   --color-success-foreground:     #6EE7B7;
-  --color-warn:                   #2D1A00;
+  --color-warn:                   #FCD34D;
   --color-warn-foreground:        #FCD34D;
 
   /* ── Legacy aliases — dark overrides ──────────────────────────────── */

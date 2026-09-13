@@ -7,6 +7,7 @@ interface DormRow {
   id: string; name: string; totalCapacity: number;
   genderPolicy: string; status: string;
   _count: { beds: number };
+  occupiedBeds: number;
 }
 
 interface Props {
@@ -58,7 +59,7 @@ export default function DormMasterSection({
           <div className="space-y-3">
             {dorms.map((dorm) => {
               const pct = dorm.totalCapacity > 0
-                ? Math.round((dorm._count.beds / dorm.totalCapacity) * 100)
+                ? Math.round((dorm.occupiedBeds / dorm.totalCapacity) * 100)
                 : 0;
               return (
                 <div key={dorm.id}>
@@ -72,7 +73,7 @@ export default function DormMasterSection({
                         </span>
                       )}
                       <span className="text-xs text-slate">
-                        {dorm._count.beds}/{dorm.totalCapacity} · {pct}%
+                        {dorm.occupiedBeds}/{dorm.totalCapacity} · {pct}%
                       </span>
                     </div>
                   </div>

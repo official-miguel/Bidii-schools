@@ -80,7 +80,7 @@ const ROLE_PRIORITY: Record<string, string[]> = {
 
 // Nav shortcuts shown below the actions grid
 const NAV_SHORTCUTS_PER_ROLE: Record<string, string[]> = {
-  principal: ["nav_students", "nav_classes", "nav_finance", "nav_library", "nav_reports", "nav_accommodation", "nav_calendar", "nav_settings"],
+  principal: ["nav_students", "nav_classes", "nav_finance", "nav_reports", "nav_accommodation", "nav_calendar", "nav_settings"],
   teacher:   ["nav_attendance", "nav_assessments", "nav_results", "nav_calendar"],
   staff:     ["nav_students", "nav_finance", "nav_library", "nav_communication", "nav_calendar"],
 };

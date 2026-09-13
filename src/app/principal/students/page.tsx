@@ -58,7 +58,7 @@ type Student     = {
   id: string;
   fullName: string;
   admissionNumber: string;
-  dateOfBirth: string | null;
+  nemisNumber: string | null;
   gender: string | null;
   boardingStatus: string | null;
   parentName: string | null;
@@ -369,7 +369,11 @@ export default function StudentsPage() {
   // Photo state for the edit modal — tracks the current/uploaded photo URL
   const [editPhotoUrl, setEditPhotoUrl]     = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef    = useRef<HTMLInputElement>(null);
+  // Photo state for the create modal — holds the selected file + preview URL
+  const [createPhotoFile, setCreatePhotoFile]       = useState<File | null>(null);
+  const [createPhotoPreview, setCreatePhotoPreview] = useState<string | null>(null);
+  const createPhotoInputRef = useRef<HTMLInputElement>(null);
 
   // Draft for the "new student" form — only the controlled-state fields
   // (text inputs use defaultValue/FormData and survive within the session).
@@ -428,9 +432,7 @@ export default function StudentsPage() {
     [classes]
   );
 
-  const selectedClass = editing
-    ? classes.find((c) => c.id === selectedClassId)
-    : classes.find((c) => c.form === Number(selectedForm));
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
 
   const availableElectives = useMemo(
     () => subjects.filter(
@@ -447,7 +449,7 @@ export default function StudentsPage() {
         id:              s.id,
         fullName:        s.fullName,
         admissionNumber: s.admissionNumber,
-        dateOfBirth:     s.dateOfBirth ?? null,
+        nemisNumber:     s.nemisNumber ?? null,
         gender:          s.gender ?? null,
         boardingStatus:  s.boardingStatus ?? null,
         parentName:      s.parentName ?? null,
@@ -485,6 +487,8 @@ export default function StudentsPage() {
     setSelectedForm("");
     setSelectedElectives([]);
     setEditPhotoUrl(null);
+    setCreatePhotoFile(null);
+    setCreatePhotoPreview(null);
     setError(null);
     // Pre-set gender from school policy
     setSelectedGender(
@@ -565,7 +569,7 @@ export default function StudentsPage() {
       if (editing) {
         const payload = {
           fullName:           form.get("fullName") as string,
-          dateOfBirth:        (form.get("dateOfBirth") as string) || "",
+          nemisNumber:        (form.get("nemisNumber") as string) || "",
           classId:            selectedClassId,
           gender:             selectedGender || null,
           boardingStatus:     selectedBoarding || null,
@@ -584,15 +588,15 @@ export default function StudentsPage() {
         const payload = {
           fullName:                form.get("fullName") as string,
           startingAdmissionNumber: (form.get("startingAdmissionNumber") as string) || undefined,
-          form:                    selectedForm,
-          dateOfBirth:             (form.get("dateOfBirth") as string) || "",
+          classId:                 selectedClassId,
+          nemisNumber:             (form.get("nemisNumber") as string) || "",
           gender:                  selectedGender || null,
           boardingStatus:          selectedBoarding || null,
           parentName:              (form.get("parentName") as string) || "",
           parentContact:           (form.get("parentContact") as string) || "",
           electiveSubjectIds:      selectedElectives,
         };
-        if (!payload.form) { setError("Choose a form."); return; }
+        if (!payload.classId) { setError("Choose a class."); return; }
         const res = await fetch("/api/students", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -600,6 +604,13 @@ export default function StudentsPage() {
         });
         const data = await res.json();
         if (!res.ok) { setError(data.error || "Something went wrong."); return; }
+
+        // If a photo was selected, upload it now using the new student's id
+        if (createPhotoFile && data.id) {
+          const fd = new FormData();
+          fd.append("photo", createPhotoFile);
+          await fetch(`/api/students/${data.id}/photo`, { method: "POST", body: fd }).catch(() => {});
+        }
       }
 
       setModalOpen(false);
@@ -904,15 +915,16 @@ export default function StudentsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>Date of birth</label>
+                    <label className={labelClass}>NEMIS number</label>
                     <input
-                      name="dateOfBirth"
-                      type="date"
-                      defaultValue={editing?.dateOfBirth ? editing.dateOfBirth.slice(0, 10) : ""}
+                      name="nemisNumber"
+                      type="text"
+                      defaultValue={editing?.nemisNumber || ""}
                       className={inputClass}
+                      placeholder="e.g. 123456789"
                     />
                     <p className="text-xs text-slate mt-1.5">
-                      Used for age-verification and official records.
+                      National Education Management Information System number.
                     </p>
                   </div>
                   <div /> {/* spacer */}
@@ -1033,27 +1045,27 @@ export default function StudentsPage() {
                 ) : (
                   <>
                     <label className={labelClass}>
-                      Form <span className="text-danger">*</span>
+                      Class <span className="text-danger">*</span>
                     </label>
                     <select
-                      value={selectedForm}
+                      value={selectedClassId}
                       onChange={(e) => {
-                        setSelectedForm(e.target.value);
+                        setSelectedClassId(e.target.value);
                         setSelectedElectives([]);
                       }}
                       className={inputClass}
                     >
-                      <option value="" disabled>Select a form…</option>
-                      {forms.map((f) => (
-                        <option key={f} value={f}>Form {f}</option>
+                      <option value="" disabled>Select a class…</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
                     </select>
                   </>
                 )}
 
                 {/* Framework badge + auto-assign note */}
-                {selectedForm && !editing && (() => {
-                  const destClass = classes.find((c) => c.form === Number(selectedForm));
+                {selectedClassId && !editing && (() => {
+                  const destClass = classes.find((c) => c.id === selectedClassId);
                   const fw = destClass?.frameworkType;
                   return (
                     <div className="mt-2 flex items-center gap-2">
@@ -1068,9 +1080,6 @@ export default function StudentsPage() {
                           {fw === "CBE" ? "CBE" : "8-4-4"}
                         </span>
                       )}
-                      <span className="text-xs text-slate">
-                        Stream is allocated automatically based on capacity.
-                      </span>
                     </div>
                   );
                 })()}
@@ -1163,9 +1172,79 @@ export default function StudentsPage() {
                   />
                 </div>
               ) : (
-                <p className="text-sm text-slate">
-                  A photo can be added from the student&apos;s profile page after registration.
-                </p>
+                /* Create mode — photo upload */
+                <div className="flex items-center gap-4">
+                  {/* Preview */}
+                  <div className="relative group shrink-0">
+                    {createPhotoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={createPhotoPreview}
+                        alt="Student photo preview"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-teal/10 border-2 border-dashed border-teal/30
+                                      flex items-center justify-center text-teal/50">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                    )}
+                    {/* Click overlay */}
+                    <button
+                      type="button"
+                      onClick={() => createPhotoInputRef.current?.click()}
+                      aria-label="Choose photo"
+                      className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center
+                                 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <Camera className="w-5 h-5 text-white" />
+                    </button>
+                    {/* Remove selected photo */}
+                    {createPhotoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => { setCreatePhotoFile(null); setCreatePhotoPreview(null); }}
+                        aria-label="Remove photo"
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-card border border-border
+                                   flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100
+                                   transition-opacity hover:bg-danger hover:border-danger hover:text-white text-slate"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-slate space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => createPhotoInputRef.current?.click()}
+                      className="text-teal hover:underline font-medium"
+                    >
+                      {createPhotoPreview ? "Change photo" : "Upload photo"}
+                    </button>
+                    <p className="text-xs">PNG, JPG, or WebP · Max 2 MB</p>
+                    {!createPhotoPreview && (
+                      <p className="text-xs text-slate/60">Can also be added after registration.</p>
+                    )}
+                  </div>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={createPhotoInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      e.target.value = "";
+                      setCreatePhotoFile(file);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setCreatePhotoPreview(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -1206,7 +1285,7 @@ export default function StudentsPage() {
                     <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
                   </svg>
                   <p className="text-sm text-slate">
-                    Select a {editing ? "class" : "form"} above to see available elective subjects.
+                    Select a class above to see available elective subjects.
                   </p>
                 </div>
               ) : availableElectives.length === 0 ? (

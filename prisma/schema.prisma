@@ -635,6 +635,8 @@ model Student {
   /// DAY | BOARDING — persisted so the UI can display and filter by boarding status
   boardingStatus           String?
   dateOfBirth              DateTime?
+  /// Kenya National Education Management Information System number
+  nemisNumber              String?
   classId                  String
   parentName               String?
   parentContact            String?

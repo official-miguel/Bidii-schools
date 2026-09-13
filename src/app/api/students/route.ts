@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
         id: true,
         admissionNumber: true,
         fullName: true,
-        dateOfBirth: true,
+        nemisNumber: true,
         gender: true,
         boardingStatus: true,
         classId: true,
@@ -122,14 +122,17 @@ export async function GET(req: NextRequest) {
 const createSchema = z.object({
   fullName: z.string().trim().min(2, "Enter the student's full name."),
   startingAdmissionNumber: z.coerce.number().int().positive().optional(),
-  form: z.coerce.number().int().min(1, "Choose a form."),
-  dateOfBirth: z.string().trim().optional().or(z.literal("")),
+  /** Direct class assignment — takes precedence over form-based round-robin. */
+  classId: z.string().optional(),
+  /** Legacy form-number path — used when classId is not provided. */
+  form: z.coerce.number().int().min(1, "Choose a class.").optional(),
+  nemisNumber: z.string().trim().optional().or(z.literal("")),
   gender: z.enum(["MALE", "FEMALE"]).nullable().optional(),
   boardingStatus: z.enum(["DAY", "BOARDING"]).nullable().optional(),
   parentName: z.string().trim().optional().or(z.literal("")),
   parentContact: z.string().trim().optional().or(z.literal("")),
   electiveSubjectIds: z.array(z.string()).default([]),
-});
+}).refine((d) => d.classId || d.form, { message: "Choose a class.", path: ["classId"] });
 
 /// Highest numeric admission number in the school (legacy non-numeric ones
 /// are ignored for sequencing but remain valid/unchanged).
@@ -154,39 +157,58 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
-  // Duplicate guard: reject if an active student with the same name already
-  // exists in this school in the same form. Normalise to lower-case and
-  // collapse extra whitespace so "Alice Kamau" and "alice  kamau" both match.
+  // Resolve the target classId
   const normalisedName = data.fullName.toLowerCase().replace(/\s+/g, " ").trim();
-  const sameName = await prisma.student.findMany({
-    where: {
-      schoolId:    schoolId,
-      archivedAt:  null,
-      schoolClass: { form: data.form },
-    },
-    select: { fullName: true },
-  });
-  const isDuplicate = sameName.some(
-    (s) => s.fullName.toLowerCase().replace(/\s+/g, " ").trim() === normalisedName
-  );
-  if (isDuplicate) {
-    return NextResponse.json(
-      { error: `A student named "${data.fullName}" is already registered in that form.` },
-      { status: 409 }
-    );
-  }
+  let resolvedClassId: string;
 
-  // Streams for this form, in registration order â€” round-robin target list.
-  const streams = await prisma.schoolClass.findMany({
-    where: { schoolId, form: data.form },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, _count: { select: { students: true } } },
-  });
-  if (streams.length === 0) {
-    return NextResponse.json({ error: "No class exists for that form yet." }, { status: 400 });
+  if (data.classId) {
+    // Direct class selection — validate it belongs to this school.
+    const targetClass = await prisma.schoolClass.findFirst({
+      where: { id: data.classId, schoolId },
+      select: { id: true },
+    });
+    if (!targetClass) {
+      return NextResponse.json({ error: "Selected class not found." }, { status: 400 });
+    }
+    resolvedClassId = targetClass.id;
+    const sameName = await prisma.student.findMany({
+      where: { schoolId, archivedAt: null, classId: resolvedClassId },
+      select: { fullName: true },
+    });
+    const isDuplicate = sameName.some(
+      (s) => s.fullName.toLowerCase().replace(/\s+/g, " ").trim() === normalisedName
+    );
+    if (isDuplicate) {
+      return NextResponse.json(
+        { error: `A student named "${data.fullName}" is already registered in that class.` },
+        { status: 409 }
+      );
+    }
+  } else {
+    // Legacy form-number path: round-robin across streams.
+    const sameName = await prisma.student.findMany({
+      where: { schoolId, archivedAt: null, schoolClass: { form: data.form! } },
+      select: { fullName: true },
+    });
+    const isDuplicate = sameName.some(
+      (s) => s.fullName.toLowerCase().replace(/\s+/g, " ").trim() === normalisedName
+    );
+    if (isDuplicate) {
+      return NextResponse.json(
+        { error: `A student named "${data.fullName}" is already registered in that form.` },
+        { status: 409 }
+      );
+    }
+    const streams = await prisma.schoolClass.findMany({
+      where: { schoolId, form: data.form! },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, _count: { select: { students: true } } },
+    });
+    if (streams.length === 0) {
+      return NextResponse.json({ error: "No class exists for that form yet." }, { status: 400 });
+    }
+    resolvedClassId = streams.reduce((a, b) => (b._count.students < a._count.students ? b : a)).id;
   }
-  // Round-robin = fewest students wins; ties go to the earliest-registered stream.
-  const classId = streams.reduce((a, b) => (b._count.students < a._count.students ? b : a)).id;
 
   if (data.electiveSubjectIds.length > 0) {
     const count = await prisma.subject.count({
@@ -223,10 +245,10 @@ export async function POST(req: NextRequest) {
             schoolId,
             fullName: data.fullName,
             admissionNumber: String(next),
-            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+            nemisNumber: data.nemisNumber || null,
             gender: data.gender ?? null,
             boardingStatus: data.boardingStatus ?? null,
-            classId,
+            classId: resolvedClassId,
             parentName: data.parentName || null,
             parentContact: data.parentContact || null,
             electives: {
