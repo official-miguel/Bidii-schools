@@ -11,7 +11,7 @@ import {
   CheckCircle2, AlertCircle, BookOpen, BarChart3, Sparkles,
   ChevronRight, ChevronDown, BedDouble, Users, ShieldCheck,
   ArrowRight, School, GraduationCap, Plus, Pencil, RotateCcw, X,
-  TrendingUp,
+  TrendingUp, Trash2,
 } from "lucide-react";
 import SomaAIConfigPanel from "@/components/SomaAIConfigPanel";
 import ClassPromotionSection from "@/components/settings/ClassPromotionSection";
