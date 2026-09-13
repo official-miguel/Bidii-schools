@@ -3,15 +3,16 @@
 import { useEffect, useState, FormEvent, useRef, useCallback } from "react";
 import Modal from "@/components/Modal";
 import {
-  PageHeader, ErrorBanner, SuccessBanner,
+  ErrorBanner, SuccessBanner,
   inputClass, labelClass, secondaryButtonClass, royalButtonClass,
 } from "@/components/ui";
 import { SkeletonBar } from "@/components/ui/ProgressivePage";
 import {
   CheckCircle2, AlertCircle, Zap, Calendar, MessageSquare,
   Mail, Key, Trash2, RefreshCw, BookOpen, BarChart3, Sparkles,
-  Plug, ChevronRight, BedDouble, Users, ShieldCheck, ArrowRight,
-  School, GraduationCap, Plus, Pencil, RotateCcw, X, TrendingUp,
+  Plug, ChevronRight, ChevronDown, BedDouble, Users, ShieldCheck,
+  ArrowRight, School, GraduationCap, Plus, Pencil, RotateCcw, X,
+  TrendingUp,
 } from "lucide-react";
 import SomaAIConfigPanel from "@/components/SomaAIConfigPanel";
 import ClassPromotionSection from "@/components/settings/ClassPromotionSection";
@@ -34,24 +35,72 @@ type IntegrationStatus = {
 type SectionId = "integrations" | "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale" | "promotion";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sidebar nav definition
+// Grouped sidebar nav definition
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SECTIONS: Array<{
+type NavItem = {
   id: SectionId;
   label: string;
-  sublabel: string;
+};
+
+type NavGroup = {
+  id: string;
+  label: string;
+  color: string;       // Tailwind bg-* for the group icon circle
+  textColor: string;   // Tailwind text-* for the group label
   Icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: "school",       label: "School Configuration", sublabel: "Logo, motto, gender & boarding", Icon: School       },
-  { id: "integrations", label: "API Integrations",      sublabel: "Connect external services",       Icon: Plug         },
-  { id: "ranking",      label: "Ranking",               sublabel: "Teacher performance weights",     Icon: BarChart3    },
-  { id: "library",      label: "Library",               sublabel: "Borrowing rules & fines",         Icon: BookOpen     },
-  { id: "dormitory",    label: "Dormitory",             sublabel: "Boarding & allocation config",    Icon: BedDouble    },
-  { id: "ai",           label: "AI Configuration",      sublabel: "Soma AI & Gemini",                Icon: Sparkles     },
-  { id: "cbe-scale",    label: "CBE Grading Scale",     sublabel: "Customise grade band boundaries", Icon: GraduationCap },
-  { id: "promotion",    label: "Year Promotion",         sublabel: "Class promotion & graduation",    Icon: TrendingUp   },
+  items: NavItem[];
+};
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "school-group",
+    label: "SCHOOL",
+    color: "bg-teal",
+    textColor: "text-teal",
+    Icon: School,
+    items: [
+      { id: "school",    label: "School Configuration" },
+    ],
+  },
+  {
+    id: "academics-group",
+    label: "ACADEMICS",
+    color: "bg-blue-500",
+    textColor: "text-blue-600",
+    Icon: GraduationCap,
+    items: [
+      { id: "ranking",   label: "Ranking" },
+      { id: "cbe-scale", label: "CBE Grading Scale" },
+      { id: "promotion", label: "Year Promotion" },
+    ],
+  },
+  {
+    id: "services-group",
+    label: "SCHOOL SERVICES",
+    color: "bg-orange-500",
+    textColor: "text-orange-600",
+    Icon: BookOpen,
+    items: [
+      { id: "library",   label: "Library" },
+      { id: "dormitory", label: "Dormitory" },
+    ],
+  },
+  {
+    id: "ai-group",
+    label: "AI & INTEGRATIONS",
+    color: "bg-purple-500",
+    textColor: "text-purple-600",
+    Icon: Sparkles,
+    items: [
+      { id: "ai",           label: "AI Configuration" },
+      { id: "integrations", label: "API Integrations" },
+    ],
+  },
 ];
+
+// Flat list for mobile strip + event handler validation
+const SECTIONS = NAV_GROUPS.flatMap((g) => g.items);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider metadata
@@ -453,63 +502,53 @@ function IntegrationsPanel() {
 
   return (
     <>
-      <div className="space-y-4 max-w-3xl">
+      <div className="space-y-3">
         {PROVIDER_ORDER.map((provider) => {
           const info   = PROVIDER_INFO[provider];
           const status = statusFor(provider);
           const { Icon } = info;
           return (
             <div key={provider}
-              className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden
-                         hover:shadow-md transition-shadow">
-              {/* Card body: icon + info */}
-              <div className="flex items-start gap-4 px-5 pt-5 pb-4">
-                {/* Provider icon */}
-                <div className={`flex items-center justify-center h-10 w-10 rounded-xl shrink-0 ${
-                  status?.configured
-                    ? "bg-teal/10 text-teal"
-                    : "bg-muted text-slate"
-                }`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-
-                {/* Text content */}
-                <div className="flex-1 min-w-0">
-                  {/* Title row */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-foreground">{info.label}</p>
-                    {status?.configured ? (
-                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
-                                       bg-success-bg text-success border border-success/20 font-medium">
-                        <CheckCircle2 className="h-3 w-3 shrink-0" />
-                        Configured · ···{status.keyPreview}
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-slate border border-border font-medium">
-                        Not configured
-                      </span>
-                    )}
-                  </div>
-                  {/* Description */}
-                  <p className="text-sm text-slate mt-1 leading-relaxed">{info.description}</p>
-                  {/* Test result inline */}
-                  {testResult?.provider === provider && (
-                    <div className={`mt-2 inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-2.5 py-1 ${
-                      testResult.ok
-                        ? "bg-success-bg text-success"
-                        : "bg-danger-bg text-danger"
-                    }`}>
-                      {testResult.ok
-                        ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                        : <AlertCircle  className="h-3.5 w-3.5 shrink-0" />}
-                      {testResult.message}
-                    </div>
-                  )}
-                </div>
+              className="flex items-center gap-4 rounded-xl bg-card border border-border px-5 py-4
+                         hover:shadow-sm transition-shadow">
+              {/* Provider icon */}
+              <div className={`flex items-center justify-center h-10 w-10 rounded-full shrink-0 ${
+                status?.configured ? "bg-teal/10 text-teal" : "bg-muted text-slate"
+              }`}>
+                <Icon className="h-5 w-5" />
               </div>
 
-              {/* Action bar — sits at the bottom of each card */}
-              <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-background/50">
+              {/* Text — grows to fill */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-foreground">{info.label}</p>
+                  {status?.configured ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
+                                     bg-success-bg text-success border border-success/20 font-medium">
+                      <CheckCircle2 className="h-3 w-3 shrink-0" />
+                      Configured · ···{status.keyPreview}
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-slate border border-border">
+                      Not configured
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate mt-0.5 leading-relaxed">{info.description}</p>
+                {testResult?.provider === provider && (
+                  <div className={`mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium rounded-md px-2 py-1 ${
+                    testResult.ok ? "bg-success-bg text-success" : "bg-danger-bg text-danger"
+                  }`}>
+                    {testResult.ok
+                      ? <CheckCircle2 className="h-3 w-3 shrink-0" />
+                      : <AlertCircle  className="h-3 w-3 shrink-0" />}
+                    {testResult.message}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions — right side */}
+              <div className="flex items-center gap-2 shrink-0">
                 {info.testable && status?.configured && (
                   <button
                     className={secondaryButtonClass}
@@ -518,7 +557,7 @@ function IntegrationsPanel() {
                   >
                     {testing === provider
                       ? <><RefreshCw className="h-4 w-4 animate-spin" />Testing…</>
-                      : <><RefreshCw className="h-4 w-4" />Test connection</>}
+                      : <><RefreshCw className="h-4 w-4" />Test</>}
                   </button>
                 )}
                 {status?.configured && (
@@ -1681,8 +1720,8 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
     Content: SchoolConfigForm,
   },
   integrations: {
-    heading: "API Integrations",
-    description: "Connect external services. Keys are stored encrypted and never exposed to the browser.",
+    heading: "Integrations",
+    description: "Connect your school to external services. Keys are stored encrypted and never exposed to the browser.",
     Content: IntegrationsPanel,
   },
   ranking: {
@@ -1723,8 +1762,16 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
 
 export default function SettingsPage() {
   const [active, setActive] = useState<SectionId>("integrations");
-  const rankingRef = useRef<HTMLDivElement>(null);
+  // Track which nav groups are open; default all open
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(NAV_GROUPS.map((g) => [g.id, true]))
+  );
+  const rankingRef    = useRef<HTMLDivElement>(null);
   const mobileTabsRef = useRef<HTMLDivElement>(null);
+
+  function toggleGroup(id: string) {
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1756,112 +1803,125 @@ export default function SettingsPage() {
   const { Content } = section;
 
   return (
-    <div>
-      <PageHeader
-        title="System Settings"
-        description="Manage school configuration, API integrations, AI, teacher ranking weights, library rules, and dormitory settings."
-      />
+    <div className="flex min-h-[calc(100vh-5rem)]">
 
-      {/* ── Mobile tab strip (hidden on md+) ─────────────────────────── */}
-      <div
-        ref={mobileTabsRef}
-        className="flex md:hidden overflow-x-auto gap-1 pb-1 mb-3 mt-2 scrollbar-none"
-        role="tablist"
-        aria-label="Settings sections"
-      >
-        {SECTIONS.map(({ id, label, Icon }) => {
-          const isActive = active === id;
-          return (
-            <button
-              key={id}
-              data-tab={id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActive(id)}
-              className={`
-                flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap
-                shrink-0 transition-colors border
-                ${isActive
-                  ? "bg-teal/10 text-teal border-teal/30"
-                  : "bg-card text-slate border-border hover:bg-background hover:text-foreground"
-                }
-              `}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {/* ── Left sidebar ─────────────────────────────────────────────── */}
+      <aside className="hidden md:flex w-64 xl:w-72 shrink-0 flex-col border-r border-border bg-background">
 
-      {/* ── Two-column shell (md+) ───────────────────────────────────── */}
-      <div className="flex min-h-[640px] rounded-2xl border border-border overflow-hidden shadow-sm">
+        {/* Sidebar header */}
+        <div className="px-5 pt-6 pb-4 border-b border-border">
+          <h1 className="text-base font-bold text-foreground">Settings</h1>
+          <p className="text-xs text-slate mt-0.5">Manage your school&apos;s configuration and preferences</p>
+        </div>
 
-        {/* ── Left sidebar nav — desktop only ─────────────────────────── */}
-        <nav
+        {/* Nav groups */}
+        <nav aria-label="Settings sections" className="flex-1 overflow-y-auto py-2">
+          {NAV_GROUPS.map((group) => {
+            const isOpen = openGroups[group.id] !== false;
+            const { Icon: GroupIcon } = group;
+            return (
+              <div key={group.id} className="mb-1">
+                {/* Group header — clickable to collapse */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-card transition-colors"
+                >
+                  <span className={`flex items-center justify-center h-6 w-6 rounded-md ${group.color} shrink-0`}>
+                    <GroupIcon className="h-3.5 w-3.5 text-white" />
+                  </span>
+                  <span className={`text-xs font-bold tracking-wide flex-1 text-left ${group.textColor}`}>
+                    {group.label}
+                  </span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-slate transition-transform duration-200 ${
+                    isOpen ? "rotate-0" : "-rotate-90"
+                  }`} />
+                </button>
+
+                {/* Group items */}
+                {isOpen && (
+                  <ul className="mt-0.5">
+                    {group.items.map(({ id, label }) => {
+                      const isActive = active === id;
+                      return (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            onClick={() => setActive(id)}
+                            aria-current={isActive ? "page" : undefined}
+                            className={`w-full flex items-center justify-between px-4 py-2 pl-12 text-left
+                              text-sm transition-colors rounded-lg mx-1
+                              ${isActive
+                                ? "bg-teal/10 text-teal font-medium"
+                                : "text-foreground hover:bg-card"
+                              }`}
+                          >
+                            <span className="truncate">{label}</span>
+                            <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-opacity ${
+                              isActive ? "opacity-100 text-teal" : "opacity-40"
+                            }`} />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* ── Mobile tab strip ─────────────────────────────────────────── */}
+      <div className="md:hidden flex-none w-full border-b border-border bg-background">
+        <div
+          ref={mobileTabsRef}
+          className="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-none"
+          role="tablist"
           aria-label="Settings sections"
-          className="hidden md:flex w-56 xl:w-60 shrink-0 bg-background border-r border-border
-                     flex-col py-1.5"
         >
-          {SECTIONS.map(({ id, label, sublabel, Icon }) => {
+          {SECTIONS.map(({ id, label }) => {
             const isActive = active === id;
             return (
               <button
                 key={id}
+                data-tab={id}
                 type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActive(id)}
-                aria-current={isActive ? "page" : undefined}
-                className={`
-                  relative w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                  whitespace-nowrap shrink-0 transition-colors border
                   ${isActive
-                    ? "bg-teal/[0.07]"
-                    : "hover:bg-card hover:text-foreground"
-                  }
-                `}
+                    ? "bg-teal/10 text-teal border-teal/30"
+                    : "bg-card text-slate border-border hover:bg-background hover:text-foreground"
+                  }`}
               >
-                {/* Active indicator — right border */}
-                {isActive && (
-                  <span className="absolute right-0 top-1 bottom-1 w-[3px] rounded-l-full bg-teal" />
-                )}
-                <div className={`flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors ${
-                  isActive
-                    ? "bg-teal/15 text-teal"
-                    : "bg-border/60 text-slate group-hover:bg-border"
-                }`}>
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm font-medium leading-tight truncate ${
-                    isActive ? "text-teal" : "text-foreground"
-                  }`}>{label}</p>
-                  <p className="text-[11px] text-slate truncate leading-tight mt-0.5">
-                    {sublabel}
-                  </p>
-                </div>
-                <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-all ${
-                  isActive ? "opacity-100 text-teal" : "opacity-0"
-                }`} aria-hidden="true" />
+                {label}
               </button>
             );
           })}
-        </nav>
-
-        {/* ── Content panel ─────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0 bg-card px-6 py-6 sm:px-8 sm:py-7 overflow-y-auto">
-          <div ref={active === "ranking" ? rankingRef : undefined}>
-            <div className="mb-6">
-              <h2 className="text-base font-semibold text-foreground leading-snug">
-                {section.heading}
-              </h2>
-              <p className="text-sm text-slate mt-1 leading-relaxed">
-                {section.description}
-              </p>
-            </div>
-            <Content />
-          </div>
         </div>
       </div>
+
+      {/* ── Content panel ────────────────────────────────────────────── */}
+      <main className="flex-1 min-w-0 bg-card overflow-y-auto">
+        <div
+          ref={active === "ranking" ? rankingRef : undefined}
+          className="px-6 py-7 sm:px-8 sm:py-8 max-w-4xl"
+        >
+          {/* Section heading */}
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-foreground leading-snug">
+              {section.heading}
+            </h2>
+            <p className="text-sm text-slate mt-1 leading-relaxed">
+              {section.description}
+            </p>
+          </div>
+          <Content />
+        </div>
+      </main>
     </div>
   );
 }
