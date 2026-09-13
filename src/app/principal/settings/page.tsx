@@ -453,40 +453,52 @@ function IntegrationsPanel() {
 
   return (
     <>
-      <div className="space-y-3 max-w-3xl">
+      <div className="space-y-4 max-w-3xl">
         {PROVIDER_ORDER.map((provider) => {
           const info   = PROVIDER_INFO[provider];
           const status = statusFor(provider);
           const { Icon } = info;
           return (
             <div key={provider}
-              className="rounded-xl bg-card border border-border shadow-sm p-4 sm:p-5
+              className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden
                          hover:shadow-md transition-shadow">
-              {/* Top row: icon + info */}
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className={`flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg shrink-0 ${
-                  status?.configured ? "bg-teal-50 text-teal" : "bg-background text-slate"
+              {/* Card body: icon + info */}
+              <div className="flex items-start gap-4 px-5 pt-5 pb-4">
+                {/* Provider icon */}
+                <div className={`flex items-center justify-center h-10 w-10 rounded-xl shrink-0 ${
+                  status?.configured
+                    ? "bg-teal/10 text-teal"
+                    : "bg-muted text-slate"
                 }`}>
                   <Icon className="h-5 w-5" />
                 </div>
+
+                {/* Text content */}
                 <div className="flex-1 min-w-0">
+                  {/* Title row */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{info.label}</p>
                     {status?.configured ? (
                       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
-                                       bg-success-bg text-success border border-success/20">
-                        <CheckCircle2 className="h-3 w-3" />
+                                       bg-success-bg text-success border border-success/20 font-medium">
+                        <CheckCircle2 className="h-3 w-3 shrink-0" />
                         Configured · ···{status.keyPreview}
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-line text-slate border border-border">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-slate border border-border font-medium">
                         Not configured
                       </span>
                     )}
                   </div>
+                  {/* Description */}
                   <p className="text-sm text-slate mt-1 leading-relaxed">{info.description}</p>
+                  {/* Test result inline */}
                   {testResult?.provider === provider && (
-                    <div className={`mt-2 flex items-center gap-1.5 text-sm ${testResult.ok ? "text-success" : "text-danger"}`}>
+                    <div className={`mt-2 inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-2.5 py-1 ${
+                      testResult.ok
+                        ? "bg-success-bg text-success"
+                        : "bg-danger-bg text-danger"
+                    }`}>
                       {testResult.ok
                         ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                         : <AlertCircle  className="h-3.5 w-3.5 shrink-0" />}
@@ -495,23 +507,24 @@ function IntegrationsPanel() {
                   )}
                 </div>
               </div>
-              {/* Action buttons — full-width row on mobile, inline on sm+ */}
-              <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0 sm:justify-end">
+
+              {/* Action bar — sits at the bottom of each card */}
+              <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-background/50">
                 {info.testable && status?.configured && (
-                  <button className={secondaryButtonClass} disabled={testing === provider} onClick={() => handleTest(provider)}>
+                  <button
+                    className={secondaryButtonClass}
+                    disabled={testing === provider}
+                    onClick={() => handleTest(provider)}
+                  >
                     {testing === provider
                       ? <><RefreshCw className="h-4 w-4 animate-spin" />Testing…</>
-                      : <><RefreshCw className="h-4 w-4" />Test</>}
+                      : <><RefreshCw className="h-4 w-4" />Test connection</>}
                   </button>
                 )}
-                <button className={royalButtonClass} onClick={() => setEditing(provider)}>
-                  <Key className="h-4 w-4" />
-                  {status?.configured ? "Update key" : "Add key"}
-                </button>
                 {status?.configured && (
                   <button
                     className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border
-                               text-slate hover:text-danger hover:bg-danger-bg/30 hover:border-danger/20
+                               text-slate hover:text-danger hover:bg-danger-bg/40 hover:border-danger/30
                                transition-all"
                     onClick={() => handleRemove(provider)}
                     aria-label={`Remove ${info.label} key`}
@@ -520,6 +533,13 @@ function IntegrationsPanel() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}
+                <button
+                  className={royalButtonClass}
+                  onClick={() => setEditing(provider)}
+                >
+                  <Key className="h-4 w-4" />
+                  {status?.configured ? "Update key" : "Add key"}
+                </button>
               </div>
             </div>
           );
@@ -1776,13 +1796,13 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Two-column shell (md+) ───────────────────────────────────── */}
-      <div className="flex gap-0 min-h-[600px] rounded-2xl border border-border overflow-hidden">
+      <div className="flex min-h-[640px] rounded-2xl border border-border overflow-hidden shadow-sm">
 
         {/* ── Left sidebar nav — desktop only ─────────────────────────── */}
         <nav
           aria-label="Settings sections"
-          className="hidden md:flex w-60 xl:w-64 shrink-0 bg-background border-r border-border
-                     flex-col py-2"
+          className="hidden md:flex w-56 xl:w-60 shrink-0 bg-background border-r border-border
+                     flex-col py-1.5"
         >
           {SECTIONS.map(({ id, label, sublabel, Icon }) => {
             const isActive = active === id;
@@ -1793,19 +1813,25 @@ export default function SettingsPage() {
                 onClick={() => setActive(id)}
                 aria-current={isActive ? "page" : undefined}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 text-left transition-colors
+                  relative w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
                   ${isActive
-                    ? "bg-teal/8 border-r-2 border-teal text-teal"
-                    : "text-slate hover:bg-card hover:text-foreground border-r-2 border-transparent"
+                    ? "bg-teal/[0.07]"
+                    : "hover:bg-card hover:text-foreground"
                   }
                 `}
               >
-                <div className={`flex items-center justify-center h-8 w-8 rounded-lg shrink-0 ${
-                  isActive ? "bg-teal/10 text-teal" : "bg-line/60 text-slate"
+                {/* Active indicator — right border */}
+                {isActive && (
+                  <span className="absolute right-0 top-1 bottom-1 w-[3px] rounded-l-full bg-teal" />
+                )}
+                <div className={`flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors ${
+                  isActive
+                    ? "bg-teal/15 text-teal"
+                    : "bg-border/60 text-slate group-hover:bg-border"
                 }`}>
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className={`text-sm font-medium leading-tight truncate ${
                     isActive ? "text-teal" : "text-foreground"
                   }`}>{label}</p>
@@ -1813,7 +1839,7 @@ export default function SettingsPage() {
                     {sublabel}
                   </p>
                 </div>
-                <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-auto transition-opacity ${
+                <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-all ${
                   isActive ? "opacity-100 text-teal" : "opacity-0"
                 }`} aria-hidden="true" />
               </button>
@@ -1822,13 +1848,13 @@ export default function SettingsPage() {
         </nav>
 
         {/* ── Content panel ─────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0 bg-card px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 overflow-y-auto">
+        <div className="flex-1 min-w-0 bg-card px-6 py-6 sm:px-8 sm:py-7 overflow-y-auto">
           <div ref={active === "ranking" ? rankingRef : undefined}>
-            <div className="mb-5 md:mb-6">
-              <h2 className="text-base font-semibold text-foreground">
+            <div className="mb-6">
+              <h2 className="text-base font-semibold text-foreground leading-snug">
                 {section.heading}
               </h2>
-              <p className="text-sm text-slate mt-1">
+              <p className="text-sm text-slate mt-1 leading-relaxed">
                 {section.description}
               </p>
             </div>
