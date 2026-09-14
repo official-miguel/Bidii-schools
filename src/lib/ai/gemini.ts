@@ -217,8 +217,14 @@ export async function callGemini(
 
       if (res.status === 400 || res.status === 401 || res.status === 403) {
         const body = await res.text().catch(() => "");
+        // Parse Google's error detail if available
+        let detail = "";
+        try {
+          const parsed = JSON.parse(body);
+          detail = parsed?.error?.message ?? parsed?.error?.status ?? "";
+        } catch { /* not JSON */ }
         throw new AiServiceError(
-          "Google rejected this school's Gemini key. Check it in Settings → AI Configuration.",
+          `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
           true,
           body
         );
@@ -366,8 +372,10 @@ export async function streamGemini(opts: {
 
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const body = await res.text().catch(() => "");
+      let detail = "";
+      try { const p = JSON.parse(body); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
       throw new AiServiceError(
-        "Google rejected this school's Gemini key. Check it in Settings → AI Configuration.",
+        `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
         true,
         body
       );
@@ -561,8 +569,11 @@ export async function streamGeminiWithTools(opts: {
         );
 
         if (res.status === 400 || res.status === 401 || res.status === 403) {
+          const errBody = await res.text().catch(() => "");
+          let detail = "";
+          try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
           throw new AiServiceError(
-            "Google rejected this school's Gemini key. Check it in Settings → AI Configuration.",
+            `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
             true
           );
         }
@@ -640,8 +651,11 @@ export async function streamGeminiWithTools(opts: {
     );
 
     if (res.status === 400 || res.status === 401 || res.status === 403) {
+      const errBody = await res.text().catch(() => "");
+      let detail = "";
+      try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
       throw new AiServiceError(
-        "Google rejected this school's Gemini key. Check it in Settings → AI Configuration.",
+        `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
         true
       );
     }
