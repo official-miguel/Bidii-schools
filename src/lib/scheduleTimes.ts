@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Maps abstract period numbers (1, 2, 3…) to actual clock times for a
  * given school's TimetableConfig (day start time, period length, break/lunch
  * placement and duration). Every timetable grid in the app schedules in
@@ -69,14 +69,3 @@ export function computePeriodTimes(config: ScheduleTimesConfig): PeriodTime[] {
   return periods;
 }
 
-/**
- * Returns the school day as a display string — e.g. "8:00 – 15:40".
- * Used in the timetable settings summary panel.
- */
-export function schoolDaySpan(config: ScheduleTimesConfig): string {
-  const periods = computePeriodTimes(config);
-  if (periods.length === 0) return "";
-  const start = formatMinutes(periods[0].startMinutes);
-  const end = formatMinutes(periods[periods.length - 1].endMinutes);
-  return `${start} – ${end}`;
-}

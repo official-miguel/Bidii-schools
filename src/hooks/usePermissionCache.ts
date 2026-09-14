@@ -237,7 +237,7 @@ export function usePermissionCache(
 // after a Principal changes permissions for the current user.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function invalidatePermissionCache(schoolId: string, userId: string) {
+function invalidatePermissionCache(schoolId: string, userId: string) {
   const key = cacheKey(schoolId, userId);
   deleteCache(key);
   broadcastInvalidation(schoolId, userId);

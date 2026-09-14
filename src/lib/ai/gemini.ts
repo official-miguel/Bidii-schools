@@ -9,7 +9,15 @@ export class AiServiceError extends Error {
   /// True for problems the Principal can fix themselves (missing/invalid
   /// key) as opposed to transient network/provider failures — lets callers
   /// show a "go to Settings → AI Configuration" link vs. a generic "try again".
-  constructor(message: string, public configIssue = false, public cause?: unknown) {
+  constructor(
+    message: string,
+    public configIssue = false,
+    public cause?: unknown,
+    /** Technical detail (HTTP status, Google's error body) — for
+     *  console.error and audit logs ONLY. Never send this to a
+     *  school-facing response. */
+    public internalDetail?: string
+  ) {
     super(message);
   }
 }
@@ -149,8 +157,10 @@ export async function callGemini(
   const resolved = await resolveSchoolConfig(schoolId);
   if (!resolved) {
     throw new AiServiceError(
-      "No Gemini API key is set up for this school yet. Add one under Settings → AI Configuration.",
-      true
+      "Soma AI isn't set up for this school yet. Contact your system administrator.",
+      true,
+      undefined,
+      "No Gemini key configured"
     );
   }
 
@@ -158,8 +168,10 @@ export async function callGemini(
 
   if (!config.enabled) {
     throw new AiServiceError(
-      "Soma AI is currently disabled for this school. Enable it under Settings → AI Configuration.",
-      true
+      "Soma AI is currently turned off for this school. Contact your system administrator to enable it.",
+      true,
+      undefined,
+      "Soma AI disabled in school config"
     );
   }
 
@@ -224,15 +236,18 @@ export async function callGemini(
           detail = parsed?.error?.message ?? parsed?.error?.status ?? "";
         } catch { /* not JSON */ }
         throw new AiServiceError(
-          `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
+          "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
           true,
-          body
+          body,
+          `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
         );
       }
       if (res.status === 404) {
         throw new AiServiceError(
-          `The AI model "${model}" is no longer available. Choose a different model in Settings → AI Configuration.`,
-          true
+          "Soma AI is having a temporary issue. Please try again shortly.",
+          true,
+          undefined,
+          `Model "${model}" unavailable (404)`
         );
       }
       if (res.status === 429) {
@@ -256,7 +271,7 @@ export async function callGemini(
         );
       }
       if (!res.ok) {
-        throw new Error(`Gemini API returned HTTP ${res.status}`);
+        throw new Error(`Unexpected HTTP ${res.status}`);
       }
 
       const data: { candidates?: { content?: { parts?: { text?: string }[] } }[] } = await res.json();
@@ -270,9 +285,14 @@ export async function callGemini(
       lastError = e;
       const err = e as { name?: string; message?: string };
       const timedOut = err?.name === "AbortError";
+      // For AiServiceError we log internalDetail (the Google-specific info);
+      // for raw errors we log the message directly.
+      const logDetail = e instanceof AiServiceError
+        ? ((e as AiServiceError).internalDetail ?? e.message)
+        : err?.message || e;
       console.error(
         `[ai/gemini] attempt ${attempt + 1}/${retries + 1} failed${timedOut ? " (timeout)" : ""}:`,
-        err?.message || e
+        logDetail
       );
       if (attempt < retries) {
         await sleep(400 * 2 ** attempt); // 400ms → 800ms → …
@@ -283,7 +303,7 @@ export async function callGemini(
   }
 
   throw new AiServiceError(
-    "Couldn't reach Gemini after a few attempts. Try again shortly.",
+    "Soma AI couldn't respond after a few attempts. Please try again shortly.",
     false,
     lastError
   );
@@ -326,8 +346,10 @@ export async function streamGemini(opts: {
   const resolved = await resolveSchoolConfig(opts.schoolId);
   if (!resolved) {
     throw new AiServiceError(
-      "No Gemini API key is set up for this school yet. Add one under Settings → AI Configuration.",
-      true
+      "Soma AI isn't set up for this school yet. Contact your system administrator.",
+      true,
+      undefined,
+      "No Gemini key configured"
     );
   }
 
@@ -335,8 +357,10 @@ export async function streamGemini(opts: {
 
   if (!config.enabled) {
     throw new AiServiceError(
-      "Soma AI is currently disabled for this school. Enable it under Settings → AI Configuration.",
-      true
+      "Soma AI is currently turned off for this school. Contact your system administrator to enable it.",
+      true,
+      undefined,
+      "Soma AI disabled in school config"
     );
   }
 
@@ -375,15 +399,18 @@ export async function streamGemini(opts: {
       let detail = "";
       try { const p = JSON.parse(body); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
       throw new AiServiceError(
-        `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
+        "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
         true,
-        body
+        body,
+        `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
       );
     }
     if (res.status === 404) {
       throw new AiServiceError(
-        `The AI model "${model}" is no longer available. Choose a different model in Settings → AI Configuration.`,
-        true
+        "Soma AI is having a temporary issue. Please try again shortly.",
+        true,
+        undefined,
+        `Model "${model}" unavailable (404)`
       );
     }
     if (res.status === 429) {
@@ -394,7 +421,7 @@ export async function streamGemini(opts: {
       );
     }
     if (!res.ok) {
-      throw new AiServiceError(`Soma AI returned HTTP ${res.status}. Please try again.`, false);
+      throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
     }
     if (!res.body) throw new AiServiceError("No response body from AI.", false);
 
@@ -502,16 +529,20 @@ export async function streamGeminiWithTools(opts: {
   const resolved = await resolveSchoolConfig(opts.schoolId);
   if (!resolved) {
     throw new AiServiceError(
-      "No Gemini API key is set up for this school yet. Add one under Settings → AI Configuration.",
-      true
+      "Soma AI isn't set up for this school yet. Contact your system administrator.",
+      true,
+      undefined,
+      "No Gemini key configured"
     );
   }
 
   const { apiKey, config } = resolved;
   if (!config.enabled) {
     throw new AiServiceError(
-      "Soma AI is currently disabled for this school. Enable it under Settings → AI Configuration.",
-      true
+      "Soma AI is currently turned off for this school. Contact your system administrator to enable it.",
+      true,
+      undefined,
+      "Soma AI disabled in school config"
     );
   }
 
@@ -573,8 +604,10 @@ export async function streamGeminiWithTools(opts: {
           let detail = "";
           try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
           throw new AiServiceError(
-            `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
-            true
+            "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
+            true,
+            undefined,
+            `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
           );
         }
         if (res.status === 429) {
@@ -584,7 +617,7 @@ export async function streamGeminiWithTools(opts: {
             false
           );
         }
-        if (!res.ok) throw new AiServiceError(`Gemini API returned HTTP ${res.status}. Please try again.`, false);
+        if (!res.ok) throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
         roundData = await res.json();
       } finally {
         clearTimeout(timeout);
@@ -655,14 +688,18 @@ export async function streamGeminiWithTools(opts: {
       let detail = "";
       try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
       throw new AiServiceError(
-        `Google rejected this school's Gemini key (HTTP ${res.status}${detail ? ": " + detail : ""}). Replace the key in the super-admin Soma AI tab.`,
-        true
+        "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
+        true,
+        undefined,
+        `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
       );
     }
     if (res.status === 404) {
       throw new AiServiceError(
-        `The AI model "${answerModel}" is no longer available. Choose a different model in Settings → AI Configuration.`,
-        true
+        "Soma AI is having a temporary issue. Please try again shortly.",
+        true,
+        undefined,
+        `Model "${answerModel}" unavailable (404)`
       );
     }
     if (res.status === 429) {
@@ -672,7 +709,7 @@ export async function streamGeminiWithTools(opts: {
         false
       );
     }
-    if (!res.ok) throw new AiServiceError(`Soma AI returned HTTP ${res.status}. Please try again.`, false);
+    if (!res.ok) throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
     if (!res.body) throw new AiServiceError("No response body from AI.", false);
 
     const reader = res.body.getReader();

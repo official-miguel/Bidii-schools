@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   if (!row || !row.isActive) {
     return NextResponse.json(
-      { ok: false, error: "No active Gemini API key found. Save a key first." },
+      { ok: false, error: "No Soma AI key has been assigned to this school yet. Contact your system administrator." },
       { status: 200 }
     );
   }
@@ -58,14 +58,14 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeout);
       return NextResponse.json({
         ok: false,
-        error: "Google rejected this key. Check that it is correct and that the Gemini API is enabled in your Google Cloud project.",
+        error: "Soma AI key validation failed. Please contact your system administrator to check the key.",
       });
     }
     if (!listRes.ok) {
       clearTimeout(timeout);
       return NextResponse.json({
         ok: false,
-        error: `Google returned HTTP ${listRes.status}. Try again shortly.`,
+        error: `Soma AI service returned an unexpected error (HTTP ${listRes.status}). Try again shortly.`,
       });
     }
 

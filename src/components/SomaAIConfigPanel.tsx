@@ -143,13 +143,13 @@ export default function SomaAIConfigPanel() {
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-semibold ${state?.configured ? "text-success" : "text-warn"}`}>
             {state?.configured
-              ? `Gemini API key active · ···${state.keyPreview}`
-              : "No Gemini API key assigned"}
+              ? `Soma AI key active · ···${state.keyPreview}`
+              : "No Soma AI key assigned"}
           </p>
           <p className="text-xs opacity-80 mt-0.5 text-foreground">
             {state?.configured
               ? `AI is ${state.config.enabled ? "enabled" : "disabled"} · Using ${state.config.model}`
-              : "Contact your system administrator to assign a Gemini API key for this school."}
+              : "Contact your system administrator to assign a Soma AI key for this school."}
           </p>
         </div>
         {state?.configured && (

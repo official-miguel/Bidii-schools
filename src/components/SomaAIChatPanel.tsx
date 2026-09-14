@@ -375,8 +375,7 @@ function ConfigNotice() {
       <div>
         <p className="font-medium mb-0.5">Soma AI not configured</p>
         <p className="text-warn/80">
-          Ask the Principal to add a Google Gemini API key under{" "}
-          <span className="font-semibold">Settings → Integrations</span>.
+          Soma AI isn&apos;t set up for this school yet. Contact your system administrator to get it activated.
         </p>
       </div>
     </div>
@@ -433,7 +432,7 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
   const hasConfigError =
     lastMsg?.role === "assistant" &&
     lastMsg?.error &&
-    lastMsg?.content?.includes("Settings → Integrations");
+    (lastMsg?.suggestions?.includes("How do I set up Soma AI?") ?? false);
 
   // Auto-scroll to bottom when new content arrives
   const scrollToBottom = useCallback((smooth = true) => {

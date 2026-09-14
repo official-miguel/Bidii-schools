@@ -3,9 +3,6 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
-import { ScreenHeader, SyncStatusBar } from '@/components/ui';
-import { Colors } from '@/constants';
 // Full borrow list is shown in my-card.tsx; this is a dedicated tab
 // that deep-links directly to the borrow list for easy access.
 import MyCardScreen from './my-card';

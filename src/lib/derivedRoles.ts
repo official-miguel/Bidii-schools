@@ -1,4 +1,4 @@
-/**
+﻿/**
  * src/lib/derivedRoles.ts
  *
  * Derived roles are capabilities automatically computed at query time from
@@ -258,25 +258,4 @@ export async function computeDerivedRolesByTeacherId(
 // hasAnyDerivedRole — fast boolean check (no data hydration)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function hasAnyDerivedRole(
-  teacherUserId: string,
-  _schoolId: string
-): Promise<boolean> {
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: teacherUserId },
-    select: {
-      _count: {
-        select: { teacherSubjects: true, timetableSlots: true, dormsBoardingMaster: true },
-      },
-      classTeacherOf:   { select: { id: true } },
-      departmentHeadOf: { select: { id: true } },
-    },
-  });
-  if (!teacher) return false;
-  return (
-    teacher._count.teacherSubjects > 0 ||
-    teacher.classTeacherOf != null ||
-    teacher.departmentHeadOf != null ||
-    teacher._count.dormsBoardingMaster > 0
-  );
-}
+

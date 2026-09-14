@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(
       {
-        error: "Soma AI is not configured. Ask your Principal to add a Gemini API key under Settings â†’ AI Configuration.",
+        error: "Soma AI isn't set up for this school yet. Please contact your system administrator.",
         configIssue: true,
       },
       { status: 503 }
@@ -288,7 +288,7 @@ export async function POST(req: NextRequest) {
   if (!aiConfig.enabled) {
     return NextResponse.json(
       {
-        error: "Soma AI is currently disabled. The Principal can re-enable it under Settings â†’ AI Configuration.",
+        error: "Soma AI is currently turned off for this school. Please contact your system administrator.",
         configIssue: true,
       },
       { status: 503 }

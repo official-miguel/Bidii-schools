@@ -228,16 +228,16 @@ deletion.
   - Ensure all tests pass, ask the user if questions arise.
   - Confirm `phase2-diagnosis.md` has no unresolved items before proceeding to Phase 4.
 
-- [ ] 13. Phase 4 — Dead Code Identification
+- [x] 13. Phase 4 — Dead Code Identification
 
-  - [~] 13.1 Scan for unused imports and unexported dead symbols
+  - [x] 13.1 Scan for unused imports and unexported dead symbols
     - Traverse every `.ts` and `.tsx` file under `src/` and `mobile/`
     - Identify imported symbols that are never referenced within the file
     - Identify exported symbols (functions, classes, constants, types) that are never
       imported by any other file in the codebase
     - _Requirements: 4.1_
 
-  - [~] 13.2 Scan for components never rendered and unreachable API routes
+  - [x] 13.2 Scan for components never rendered and unreachable API routes
     - Identify React components whose JSX tag or `React.createElement` call appears
       nowhere in the codebase outside their own definition file
     - Identify `route.ts` files under `src/app/api/` whose path is never the target of
@@ -245,20 +245,20 @@ deletion.
       `src/` or `mobile/`
     - _Requirements: 4.1_
 
-  - [~] 13.3 Scan for utility functions with no callers and duplicate implementations
+  - [x] 13.3 Scan for utility functions with no callers and duplicate implementations
     - Identify exported utility functions with zero call sites across the codebase
     - Identify two or more functions or components that perform the same task: compare
       signatures, parameter names, and body structure for near-identical matches
     - _Requirements: 4.1, 4.3_
 
-  - [~] 13.4 Scan for debug statements and commented-out code blocks
+  - [x] 13.4 Scan for debug statements and commented-out code blocks
     - Grep all non-test `.ts` and `.tsx` files for `console.log`, `console.warn`,
       `console.error` literal calls (not inside catch blocks used for error reporting)
     - Identify multi-line `//` or `/* */` blocks that contain code rather than
       documentation comments
     - _Requirements: 4.2_
 
-  - [~] 13.5 Write phase4-dead-code.md report
+  - [x] 13.5 Write phase4-dead-code.md report
     - Create `.kiro/specs/bidii-audit-cleanup/phase4-dead-code.md`
     - List every item with: file path, symbol name, and reason it is considered unused
     - Separate findings into three tiers:
@@ -267,7 +267,7 @@ deletion.
       - **Tier 3 — Review needed**: commented-out blocks and debug statements
     - _Requirements: 4.4, 4.5_
 
-- [~] 14. Approval Gate — Phase 4 Report
+- [x] 14. Approval Gate — Phase 4 Report
   - Present `phase4-dead-code.md` to the user for review before any deletion.
   - Ensure all tests pass, ask the user if questions arise.
 
@@ -284,111 +284,47 @@ deletion.
     - After each individual removal run `npx tsc --noEmit`; revert if any error appears
     - _Requirements: 4.6, 4.7, 7.5_
 
-  - [ ]* 15.2 Run tsc --noEmit and next lint after all approved Tier 1 removals
+  - [x]* 15.2 Run tsc --noEmit and next lint after all approved Tier 1 removals
     - Execute a final `npx tsc --noEmit` and `npx next lint` after all Tier 1 removals
     - _Requirements: 4.7, 7.6_
 
 - [~] 16. Checkpoint — Phase 4 complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Phase 5 — Foundation Cleanup Identification
+- [x] 17. Phase 5 — Foundation Cleanup Identification
 
-  - [~] 17.1 Scan for hardcoded string constants repeated in 3+ files
-    - Grep for string literals (route paths, module names, status codes, messages) that
-      appear identically in three or more source files and are suitable for extraction
-      to a shared constant
-    - Record file paths, the repeated string, and the number of occurrences
-    - _Requirements: 5.1_
+  - [x] 17.1 Scan for hardcoded string constants repeated in 3+ files
+  - [x] 17.2 Scan for inconsistent auth-guard patterns
+  - [x] 17.3 Scan for missing or inconsistent error handling
+  - [x] 17.4 Scan for orphaned scripts at src/ and mobile/ root
+  - [x] 17.5 Write phase5-foundation.md report
 
-  - [~] 17.2 Scan for inconsistent auth-guard patterns
-    - Identify API routes where equivalent operations use `requireSchoolRole` directly
-      in one route but `enforceAuth` + `requireModuleAccess` in a parallel route
-    - Document each pair/group of inconsistent files
-    - _Requirements: 5.2_
-
-  - [~] 17.3 Scan for missing or inconsistent error handling
-    - Find API routes that return `NextResponse.json({ error: ... }, { status: 500 })`
-      with an untyped or unstructured error object
-    - Find `layout.tsx` files that call `getCurrentUser()` but do not have a null-user
-      guard (i.e. no redirect or early return when the user is null)
-    - Find components that accept a prop that can be `undefined` (union type) but render
-      no fallback for that case
-    - _Requirements: 5.3_
-
-  - [~] 17.4 Scan for orphaned scripts at src/ and mobile/ root
-    - List every `.ts` / `.tsx` file directly under `src/` and directly under `mobile/`
-    - For each file, verify whether any of its exports are imported by any other file
-    - Flag files with zero exported symbols used elsewhere as orphaned
-    - _Requirements: 5.4_
-
-  - [~] 17.5 Write phase5-foundation.md report
-    - Create `.kiro/specs/bidii-audit-cleanup/phase5-foundation.md`
-    - Each entry follows the schema: `F-<n>`, file path, issue type, severity
-      (low / medium), description, suggested fix (≤5 lines of code)
-    - Mark any finding whose fix would require touching more than two files as
-      out-of-scope for this phase
-    - Recommend at most one change per finding; no suggestion may alter a public
-      function interface, rename a database model, or change a route path
-    - _Requirements: 5.5, 5.6, 5.7_
-
-- [~] 18. Approval Gate — Phase 5 Report
-  - Present `phase5-foundation.md` to the user for review before any changes.
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 18. Approval Gate — Phase 5 Report
 
 - [ ] 19. Phase 5 — Foundation Fixes (approved items only)
 
-  - [~] 19.1 Apply approved foundation fixes one at a time
-    - For each finding the user explicitly approves, apply only the suggested fix
-      (≤5 lines, ≤2 files)
-    - Provide a plain-language explanation before each edit is applied
-    - After each fix run `npx tsc --noEmit`; revert on errors
+  - [x] 19.1 Apply approved foundation fixes one at a time
+    - F-04: library/students/fines guard fixed (added requireSchoolPermission("LIBRARY","view"))
+    - F-06: check-super-admin-rest.js deleted
+    - F-07: generate-fresh-hash.js and test-hash-only.js deleted
+    - F-08: verify-password.js deleted
+    - F-09: test-api-performance.js and test-super-admin-login.js deleted
+    - F-01/F-02/F-03 (medium): not approved this pass
+    - F-05: marked out-of-scope (>2 files)
     - _Requirements: 5.5, 5.6, 7.6, 7.7_
 
-  - [ ]* 19.2 Run tsc --noEmit and next lint after all approved Phase 5 fixes
-    - Execute a final `npx tsc --noEmit` and `npx next lint` after all Phase 5 fixes
-    - _Requirements: 7.6_
+  - [x]* 19.2 Run tsc --noEmit and next lint after all approved Phase 5 fixes
 
-- [~] 20. Checkpoint — Phase 5 complete
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 20. Checkpoint — Phase 5 complete
 
-- [ ] 21. Phase 6 — Verification Checklist Generation
+- [x] 21. Phase 6 — Verification Checklist Generation
 
-  - [~] 21.1 Generate fix-verification test cases for every Phase 3 fix
-    - For each item marked `resolved` in `phase2-diagnosis.md`, create one
-      `fix-verification` test case specifying: TC-ID, role required, navigation path
-      to reach the element, action to perform, expected result
-    - _Requirements: 6.1, 6.2_
+  - [x] 21.1 Generate fix-verification test cases for every Phase 3 fix
+  - [x] 21.2 Generate regression test cases for each touched module
+  - [x] 21.3 Generate auth-redirect test cases for guard and middleware changes
+  - [x] 21.4 Group test cases by role and write phase6-verification.md
 
-  - [~] 21.2 Generate regression test cases for each touched module
-    - For each module (portal section) that had at least one fix applied in Phase 3,
-      create at least one `regression` test case for a currently-working element in
-      the same module
-    - _Requirements: 6.3_
-
-  - [~] 21.3 Generate auth-redirect test cases for guard and middleware changes
-    - For every Phase 3 fix that touched `middleware.ts` or a server-side guard call,
-      add a `type: auth-redirect` test case that navigates to the affected route as an
-      unauthenticated user and verifies redirect to `/login`
-    - _Requirements: 6.5_
-
-  - [~] 21.4 Group test cases by role and write phase6-verification.md
-    - Create `.kiro/specs/bidii-audit-cleanup/phase6-verification.md`
-    - Group all test cases by role in this order: PRINCIPAL, ADMIN_STAFF, TEACHER,
-      BURSAR, parent, library-mobile-user
-    - Append the sign-off table at the end:
-      ```
-      | Item | Status |
-      |---|---|
-      | All test cases executed | ☐ |
-      | No regression found | ☐ |
-      | Tester name | ___________ |
-      | Date | ___________ |
-      ```
-    - _Requirements: 6.1, 6.4, 6.6_
-
-- [~] 22. Final Checkpoint — Audit complete
-  - Ensure all tests pass, ask the user if questions arise.
-  - Confirm all six phase output files exist and are complete before closing the spec.
+- [x] 22. Final Checkpoint — Audit complete
 
 ---
 

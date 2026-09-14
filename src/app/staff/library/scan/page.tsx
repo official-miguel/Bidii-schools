@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * Scan Mode — optimised for continuous circulation at the library desk.

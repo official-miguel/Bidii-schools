@@ -1506,7 +1506,7 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
   },
   ai: {
     heading: "AI Configuration",
-    description: "Configure Soma AI — the intelligent assistant powered by Google Gemini. API keys are encrypted at rest and never exposed to the browser.",
+    description: "Configure Soma AI — the intelligent assistant for your school. API keys are encrypted at rest and never exposed to the browser.",
     Content: SomaAIConfigPanel,
   },
   "cbe-scale": {
