@@ -357,6 +357,8 @@ export async function POST(req: NextRequest) {
         await streamGeminiWithTools({
           schoolId: user.schoolId!,
           contents,
+          resolvedApiKey: credentials.apiKey,
+          resolvedConfig: aiConfig,
           options: {
             systemInstruction,
             temperature: aiConfig.temperature,

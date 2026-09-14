@@ -591,18 +591,31 @@ export async function streamGeminiWithTools(opts: {
   contents: GeminiContent[];
   options: StreamWithToolsOptions;
   signal?: AbortSignal;
+  /** Pre-resolved credentials — skip the internal DB lookup if provided. */
+  resolvedApiKey?: string;
+  resolvedConfig?: AiConfig;
 }): Promise<string> {
-  const resolved = await resolveSchoolConfig(opts.schoolId);
-  if (!resolved) {
-    throw new AiServiceError(
-      "Soma AI isn't set up for this school yet. Contact your system administrator.",
-      true,
-      undefined,
-      "No Gemini key configured"
-    );
+  // Use pre-resolved credentials if provided (avoids a second DB round-trip)
+  let apiKey: string;
+  let config: AiConfig;
+
+  if (opts.resolvedApiKey && opts.resolvedConfig) {
+    apiKey = opts.resolvedApiKey;
+    config = opts.resolvedConfig;
+  } else {
+    const resolved = await resolveSchoolConfig(opts.schoolId);
+    if (!resolved) {
+      throw new AiServiceError(
+        "Soma AI isn't set up for this school yet. Contact your system administrator.",
+        true,
+        undefined,
+        "No Gemini key configured"
+      );
+    }
+    apiKey = resolved.apiKey;
+    config = resolved.config;
   }
 
-  const { apiKey, config } = resolved;
   if (!config.enabled) {
     throw new AiServiceError(
       "Soma AI is currently turned off for this school. Contact your system administrator to enable it.",
