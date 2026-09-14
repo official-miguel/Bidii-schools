@@ -428,7 +428,7 @@ export async function streamGemini(opts: {
     );
   }
 
-  let model = opts.options?.model ?? config.model;
+  const model = opts.options?.model ?? config.model;
   const temperature = opts.options?.temperature ?? config.temperature;
   const maxOutputTokens = opts.options?.maxOutputTokens ?? config.maxOutputTokens;
   const timeoutMs = opts.options?.timeoutMs ?? 30000;
@@ -614,7 +614,7 @@ export async function streamGeminiWithTools(opts: {
 
   // Always pick the fastest/cheapest model for tool-calling rounds.
   // The school config model is used for the final streaming answer.
-  const toolModel = "gemini-2.5-flash-lite";
+  const toolModel = config.model; // use school's configured model (already resolved via autoPickModel)
   const answerModel = opts.options.model ?? config.model;
   const temperature = opts.options.temperature ?? config.temperature;
   const maxOutputTokens = opts.options.maxOutputTokens ?? config.maxOutputTokens;
