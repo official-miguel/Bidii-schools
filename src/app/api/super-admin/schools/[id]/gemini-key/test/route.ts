@@ -74,43 +74,49 @@ export async function POST(
         .map((m) => m.name.replace(/^models\//, "")) // strip "models/" prefix
     );
 
-    // ── Step 2: Pick best model from priority list ─────────────────────────
+    // ── Step 2: Pick best model — try each in priority order ──────────────
+    // ListModels tells us what's visible, but some models return 404 on
+    // generateContent even when listed (Google capacity restrictions).
+    // We probe each candidate until one actually works.
     let selectedModel: string | null = null;
-    for (const candidate of MODEL_PRIORITY) {
-      if (availableIds.has(candidate)) {
+    let latencyMs = 0;
+
+    const candidates = MODEL_PRIORITY.filter((m) => availableIds.has(m));
+    // If none of our priority list matched, try whatever the key listed
+    if (candidates.length === 0) {
+      const first = availableIds.values().next().value;
+      if (first) candidates.push(first);
+    }
+
+    for (const candidate of candidates) {
+      const genRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: "Reply with just the word: OK" }] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 10 },
+          }),
+        }
+      );
+
+      if (genRes.ok) {
         selectedModel = candidate;
+        latencyMs = Date.now() - t0;
         break;
       }
+      // 404 or other error — try next candidate
     }
-
-    // If none of our priority list matched, fall back to the first
-    // generateContent-capable model the key returned
-    if (!selectedModel) {
-      selectedModel = availableIds.values().next().value ?? DEFAULT_MODEL_ID;
-    }
-
-    // ── Step 3: Confirm the model with a trivial generate call ─────────────
-    const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: "Reply with just the word: OK" }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 10 },
-        }),
-      }
-    );
 
     clearTimeout(timeout);
-    const latencyMs = Date.now() - t0;
 
-    if (!genRes.ok) {
+    if (!selectedModel) {
       return NextResponse.json({
         ok: false,
-        error: `Model "${selectedModel}" was listed but generateContent returned HTTP ${genRes.status}. Try again.`,
-        latencyMs,
+        error: `None of the models available to this API key could process a test request. The key may have capacity restrictions. Tried: ${candidates.slice(0, 3).join(", ")}. Check that the Gemini API is enabled in your Google Cloud project and the key has quota.`,
+        latencyMs: Date.now() - t0,
       });
     }
 

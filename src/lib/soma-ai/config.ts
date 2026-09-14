@@ -23,22 +23,22 @@ export interface GeminiModel {
 
 export const GEMINI_MODELS: GeminiModel[] = [
   {
-    id: "gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
-    description: "Best price-performance with reasoning. Recommended for most schools.",
-    recommended: true,
-    maxOutputTokens: 8192,
-  },
-  {
     id: "gemini-3.5-flash",
     label: "Gemini 3.5 Flash",
-    description: "Latest Flash model. Best capability for complex tasks.",
+    description: "Latest Flash model. Best capability. Recommended for most schools.",
+    recommended: true,
     maxOutputTokens: 8192,
   },
   {
     id: "gemini-3.1-flash-lite",
     label: "Gemini 3.1 Flash Lite",
     description: "Fastest and most cost-efficient. Best for high-volume, lightweight tasks.",
+    maxOutputTokens: 8192,
+  },
+  {
+    id: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
+    description: "Previous generation. Best price-performance with reasoning.",
     maxOutputTokens: 8192,
   },
   {
@@ -50,7 +50,7 @@ export const GEMINI_MODELS: GeminiModel[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-2.5-flash";
+export const DEFAULT_MODEL_ID = "gemini-3.5-flash";
 
 /**
  * Models that have been shut down by Google.
@@ -58,14 +58,15 @@ export const DEFAULT_MODEL_ID = "gemini-2.5-flash";
  * current default at request time — never surfaces as a user-facing 404.
  */
 export const DEPRECATED_MODEL_MAP: Record<string, string> = {
+  // Old 2.x models — remap to current default (3.5-flash)
   "gemini-2.0-flash":                DEFAULT_MODEL_ID,
   "gemini-2.0-flash-lite":           DEFAULT_MODEL_ID,
-  "gemini-2.5-flash-lite":           DEFAULT_MODEL_ID,   // remapped — use gemini-2.5-flash instead
-  "gemini-2.5-flash-preview-05-20":  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite":           DEFAULT_MODEL_ID,
+  "gemini-2.5-flash-preview-05-20":  DEFAULT_MODEL_ID,
   "gemini-2.5-pro-preview-06-05":    "gemini-2.5-pro",
+  // Old preview names — remap to stable equivalents
   "gemini-3.1-flash-lite-preview":   "gemini-3.1-flash-lite",
   "gemini-3-pro-preview":            "gemini-2.5-pro",
-  "gemini-3.5-flash":                "gemini-3.5-flash", // keep as-is — still valid
 };
 
 /**
@@ -85,14 +86,15 @@ export function resolveModelId(stored: string | null | undefined): string {
  * Ordered from most capable / most commonly available to least.
  */
 export const MODEL_PRIORITY: string[] = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-2.5-flash-lite",
   "gemini-3.8-flash",
   "gemini-3.7-flash",
   "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-2.5-flash-lite",
 ];
 
 // ---------------------------------------------------------------------------
