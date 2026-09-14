@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/super-admin";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
-import { resolveModelId } from "@/lib/soma-ai/config";
+import { MODEL_PRIORITY, DEFAULT_MODEL_ID } from "@/lib/soma-ai/config";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 type RouteContext = { params: { id: string } };
 
-const TIMEOUT_MS = 12000;
+const TIMEOUT_MS = 15000;
 
 /**
  * POST /api/super-admin/schools/[id]/gemini-key/test
  *
  * Tests the Gemini API key assigned to a school.
- * Does a ListModels call (key validation) then a trivial generateContent
- * call to confirm the model works.
+ *
+ * 1. Calls ListModels to validate the key and get every model this key can access.
+ * 2. Walks MODEL_PRIORITY and picks the first model the key supports.
+ * 3. Runs a trivial generateContent call to confirm the model actually works.
+ * 4. Saves the working model back to the school's stored metadata so every
+ *    AI call from that point forward uses a model the key can actually reach.
  *
  * Returns { ok, model?, latencyMs?, error? }
  */
@@ -32,22 +37,16 @@ export async function POST(
     );
   }
 
-  // Read model from stored metadata (or fall back to default)
-  const row = await prisma.schoolIntegration.findUnique({
-    where: { schoolId_provider: { schoolId: params.id, provider: "GEMINI" } },
-  });
-  const meta  = (row?.metadata ?? {}) as Record<string, unknown>;
-  const model = resolveModelId(meta.model as string | null);
-
+  const apiKey = credentials.apiKey;
   const t0 = Date.now();
 
   try {
     const controller = new AbortController();
-    const timeout    = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    // Step 1: validate key with ListModels
+    // ── Step 1: Validate key + fetch available models ──────────────────────
     const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(credentials.apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`,
       { signal: controller.signal }
     );
 
@@ -55,17 +54,44 @@ export async function POST(
       clearTimeout(timeout);
       return NextResponse.json({
         ok: false,
-        error: "Google rejected this key. Check it is correct and the Gemini API is enabled in the Google Cloud project.",
+        error: "This API key was rejected by Google. Check that it is valid and that the Gemini API is enabled in the Google Cloud project.",
       });
     }
     if (!listRes.ok) {
       clearTimeout(timeout);
-      return NextResponse.json({ ok: false, error: `Google returned HTTP ${listRes.status}. Try again shortly.` });
+      return NextResponse.json({
+        ok: false,
+        error: `Google returned HTTP ${listRes.status}. Try again shortly.`,
+      });
     }
 
-    // Step 2: test the specific model with a trivial generation call
+    // Parse the list of model names this key can see
+    type ListModelsResponse = { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+    const listData: ListModelsResponse = await listRes.json().catch(() => ({}));
+    const availableIds = new Set(
+      (listData.models ?? [])
+        .filter((m) => (m.supportedGenerationMethods ?? []).includes("generateContent"))
+        .map((m) => m.name.replace(/^models\//, "")) // strip "models/" prefix
+    );
+
+    // ── Step 2: Pick best model from priority list ─────────────────────────
+    let selectedModel: string | null = null;
+    for (const candidate of MODEL_PRIORITY) {
+      if (availableIds.has(candidate)) {
+        selectedModel = candidate;
+        break;
+      }
+    }
+
+    // If none of our priority list matched, fall back to the first
+    // generateContent-capable model the key returned
+    if (!selectedModel) {
+      selectedModel = availableIds.values().next().value ?? DEFAULT_MODEL_ID;
+    }
+
+    // ── Step 3: Confirm the model with a trivial generate call ─────────────
     const genRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(credentials.apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,24 +106,36 @@ export async function POST(
     clearTimeout(timeout);
     const latencyMs = Date.now() - t0;
 
-    if (genRes.status === 404) {
+    if (!genRes.ok) {
       return NextResponse.json({
         ok: false,
-        error: `Model "${model}" is not available with this key. Update the model selection above and save, then test again.`,
+        error: `Model "${selectedModel}" was listed but generateContent returned HTTP ${genRes.status}. Try again.`,
         latencyMs,
       });
     }
-    if (!genRes.ok) {
-      return NextResponse.json({ ok: false, error: `Model test returned HTTP ${genRes.status}.`, latencyMs });
+
+    // ── Step 4: Save the working model to stored config ────────────────────
+    const row = await prisma.schoolIntegration.findUnique({
+      where: { schoolId_provider: { schoolId: params.id, provider: "GEMINI" } },
+    });
+    if (row) {
+      const existingMeta = (row.metadata ?? {}) as Record<string, unknown>;
+      await prisma.schoolIntegration.update({
+        where: { schoolId_provider: { schoolId: params.id, provider: "GEMINI" } },
+        data: {
+          metadata: { ...existingMeta, model: selectedModel } as Prisma.InputJsonValue,
+        },
+      });
     }
 
-    return NextResponse.json({ ok: true, model, latencyMs });
+    return NextResponse.json({ ok: true, model: selectedModel, latencyMs });
+
   } catch (e) {
     const err = e as { name?: string };
     if (err.name === "AbortError") {
       return NextResponse.json({
         ok: false,
-        error: "Connection timed out (>12 s). Check server network access and try again.",
+        error: "Connection timed out (>15s). Check server network access and try again.",
         latencyMs: Date.now() - t0,
       });
     }

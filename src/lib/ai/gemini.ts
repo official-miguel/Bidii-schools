@@ -1,5 +1,7 @@
 import { getSchoolIntegrationKey } from "@/lib/integrations";
-import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId, MODEL_PRIORITY, DEFAULT_MODEL_ID, type AiConfig } from "@/lib/soma-ai/config";
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 /// Centralized Gemini client — every AI feature (Timetable, TOD, School
 /// Intelligence, Soma AI) calls through here rather than hitting the API
@@ -143,6 +145,61 @@ async function resolveSchoolConfig(schoolId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// Auto-pick model — queries the API and saves the best working model
+// ---------------------------------------------------------------------------
+
+/**
+ * Saves a working model ID back to the school's stored config so future
+ * calls use it without another probe round-trip.
+ */
+async function saveWorkingModel(schoolId: string, model: string): Promise<void> {
+  try {
+    const row = await prisma.schoolIntegration.findUnique({
+      where: { schoolId_provider: { schoolId, provider: "GEMINI" } },
+    });
+    if (!row) return;
+    const existingMeta = (row.metadata ?? {}) as Record<string, unknown>;
+    await prisma.schoolIntegration.update({
+      where: { schoolId_provider: { schoolId, provider: "GEMINI" } },
+      data: { metadata: { ...existingMeta, model } as Prisma.InputJsonValue },
+    });
+  } catch {
+    // Non-fatal — if this fails the next call will just try again
+  }
+}
+
+/**
+ * Queries ListModels for the API key and returns the best model from
+ * MODEL_PRIORITY that the key can actually access. Falls back to
+ * DEFAULT_MODEL_ID if the ListModels call fails or returns nothing useful.
+ * On success, saves the chosen model to the school's stored config.
+ */
+async function autoPickModel(schoolId: string, apiKey: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return DEFAULT_MODEL_ID;
+
+    type ListRes = { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+    const data: ListRes = await res.json().catch(() => ({}));
+    const available = new Set(
+      (data.models ?? [])
+        .filter((m) => (m.supportedGenerationMethods ?? []).includes("generateContent"))
+        .map((m) => m.name.replace(/^models\//, ""))
+    );
+
+    const picked = MODEL_PRIORITY.find((m) => available.has(m)) ?? DEFAULT_MODEL_ID;
+    // Save asynchronously — don't await so callers aren't blocked
+    void saveWorkingModel(schoolId, picked);
+    return picked;
+  } catch {
+    return DEFAULT_MODEL_ID;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Core callGemini — non-streaming, with retries and cache
 // ---------------------------------------------------------------------------
 
@@ -176,7 +233,7 @@ export async function callGemini(
   }
 
   // Determine model: per-call override → school config → default
-  const model = options.model ?? config.model;
+  let model = options.model ?? config.model;
   const temperature = options.temperature ?? config.temperature;
   const maxOutputTokens = options.maxOutputTokens ?? config.maxOutputTokens;
 
@@ -243,11 +300,18 @@ export async function callGemini(
         );
       }
       if (res.status === 404) {
+        // Model not available for this key — auto-detect a working model
+        // and retry immediately with it (don't count as a failed attempt)
+        const picked = await autoPickModel(schoolId, apiKey);
+        if (picked !== model) {
+          model = picked;
+          continue; // retry with the new model
+        }
         throw new AiServiceError(
           "Soma AI is having a temporary issue. Please try again shortly.",
           true,
           undefined,
-          `Model "${model}" unavailable (404)`
+          `Model "${model}" unavailable (404) — auto-pick also failed`
         );
       }
       if (res.status === 429) {
@@ -364,7 +428,7 @@ export async function streamGemini(opts: {
     );
   }
 
-  const model = opts.options?.model ?? config.model;
+  let model = opts.options?.model ?? config.model;
   const temperature = opts.options?.temperature ?? config.temperature;
   const maxOutputTokens = opts.options?.maxOutputTokens ?? config.maxOutputTokens;
   const timeoutMs = opts.options?.timeoutMs ?? 30000;
@@ -406,11 +470,13 @@ export async function streamGemini(opts: {
       );
     }
     if (res.status === 404) {
+      // Kick off auto-pick asynchronously — next request will use the correct model
+      void autoPickModel(opts.schoolId, apiKey);
       throw new AiServiceError(
         "Soma AI is having a temporary issue. Please try again shortly.",
         true,
         undefined,
-        `Model "${model}" unavailable (404)`
+        `Model "${model}" unavailable (404) — auto-picking new model for next request`
       );
     }
     if (res.status === 429) {
@@ -695,11 +761,13 @@ export async function streamGeminiWithTools(opts: {
       );
     }
     if (res.status === 404) {
+      // Kick off auto-pick asynchronously — next request will use the correct model
+      void autoPickModel(opts.schoolId, apiKey);
       throw new AiServiceError(
         "Soma AI is having a temporary issue. Please try again shortly.",
         true,
         undefined,
-        `Model "${answerModel}" unavailable (404)`
+        `Model "${answerModel}" unavailable (404) — auto-picking new model for next request`
       );
     }
     if (res.status === 429) {
