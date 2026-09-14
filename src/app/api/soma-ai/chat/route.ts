@@ -387,19 +387,27 @@ export async function POST(req: NextRequest) {
           signal: req.signal,
         });
 
-        // Best-effort follow-up suggestions (fast model, non-blocking)
+        // Best-effort follow-up suggestions — delayed to avoid back-to-back
+        // calls that trigger free-tier rate limits (15 RPM shared across all
+        // calls; firing immediately after the main answer burns the quota).
+        // We skip suggestions entirely if the response was very short
+        // (likely a DB answer or help card that doesn't need follow-ups).
         try {
-          const suggestText = await callGeminiOnce({
-            apiKey: credentials.apiKey,
-            model: "gemini-3.5-flash",
-            prompt: buildSuggestionsPrompt(parsed.message, fullResponse, displayRole),
-            timeoutMs: 6000,
-          });
-          const suggestions = JSON.parse(suggestText) as string[];
-          if (Array.isArray(suggestions) && suggestions.length > 0) {
-            controller.enqueue(sseEvent({ type: "suggestions", suggestions }));
+          if (fullResponse.length > 80) {
+            // Wait 3 seconds before the suggestions call to spread the RPM load
+            await new Promise((r) => setTimeout(r, 3000));
+            const suggestText = await callGeminiOnce({
+              apiKey: credentials.apiKey,
+              model: "gemini-3.5-flash",
+              prompt: buildSuggestionsPrompt(parsed.message, fullResponse, displayRole),
+              timeoutMs: 8000,
+            });
+            const suggestions = JSON.parse(suggestText) as string[];
+            if (Array.isArray(suggestions) && suggestions.length > 0) {
+              controller.enqueue(sseEvent({ type: "suggestions", suggestions }));
+            }
           }
-        } catch {/* best-effort */}
+        } catch {/* best-effort — never fail the main response */}
 
         const executionMs = Date.now() - t0;
         controller.enqueue(sseEvent({ type: "done", executionMs, toolsUsed }));

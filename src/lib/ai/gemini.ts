@@ -37,7 +37,7 @@ type CallOptions = {
 };
 
 const DEFAULT_TIMEOUT_MS = 15000;
-const DEFAULT_RETRIES = 3; // increased to give 429 retries room to breathe
+const DEFAULT_RETRIES = 1; // free-tier: keep retries low to avoid RPM pile-up
 
 // ---------------------------------------------------------------------------
 // In-process cache (prompt → response)
@@ -367,7 +367,7 @@ export async function streamGemini(opts: {
           generationConfig: { temperature, maxOutputTokens },
         }),
       },
-      { retries: 3, maxWaitMs: 12_000, label: "streamGemini" }
+      { retries: 1, maxWaitMs: 12_000, label: "streamGemini" }
     );
 
     if (res.status === 400 || res.status === 401 || res.status === 403) {
@@ -565,7 +565,7 @@ export async function streamGeminiWithTools(opts: {
               generationConfig: { temperature: 0, maxOutputTokens: 512 },
             }),
           },
-          { retries: 3, maxWaitMs: 12_000, label: "streamGeminiWithTools/tool-round" }
+          { retries: 1, maxWaitMs: 12_000, label: "streamGeminiWithTools/tool-round" }
         );
 
         if (res.status === 400 || res.status === 401 || res.status === 403) {
@@ -647,7 +647,7 @@ export async function streamGeminiWithTools(opts: {
           // don't want Gemini to call more functions, just respond in text.
         }),
       },
-      { retries: 3, maxWaitMs: 12_000, label: "streamGeminiWithTools/answer" }
+      { retries: 1, maxWaitMs: 12_000, label: "streamGeminiWithTools/answer" }
     );
 
     if (res.status === 400 || res.status === 401 || res.status === 403) {
