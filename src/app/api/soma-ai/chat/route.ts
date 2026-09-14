@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { streamGeminiWithTools, callGeminiOnce, AiServiceError } from "@/lib/ai/gemini";
+import { streamGeminiWithTools, AiServiceError } from "@/lib/ai/gemini";
 import { resolveUserScope } from "@/lib/soma-ai/permissions";
 import { logSomaAIInteraction } from "@/lib/soma-ai/audit";
 import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
@@ -126,22 +126,6 @@ function getCurrentTerm(): string {
   if (m <= 3) return "Term 1 (Januaryâ€“March)";
   if (m <= 7) return "Term 2 (Aprilâ€“July)";
   return "Term 3 (Augustâ€“November)";
-}
-
-function buildSuggestionsPrompt(userMessage: string, assistantResponse: string, role: string): string {
-  const roleHints: Record<string, string> = {
-    parent: "The user is a parent viewing their child's school data.",
-    teacher: "The user is a teacher managing their classes.",
-    principal: "The user is a school principal with full admin access.",
-    staff: "The user is administrative staff.",
-    student: "The user is a student viewing their own records.",
-  };
-  return `${roleHints[role] ?? ""} Based on this exchange, generate exactly 3 short follow-up questions they might ask next.
-
-User asked: "${userMessage.slice(0, 200)}"
-Assistant: "${assistantResponse.slice(0, 300)}"
-
-Return ONLY a JSON array of 3 strings. Example: ["Show me last week too", "Which class had the best attendance?", "How do I export this?"]`;
 }
 
 // ---------------------------------------------------------------------------
@@ -386,28 +370,6 @@ export async function POST(req: NextRequest) {
           },
           signal: req.signal,
         });
-
-        // Best-effort follow-up suggestions — delayed to avoid back-to-back
-        // calls that trigger free-tier rate limits (15 RPM shared across all
-        // calls; firing immediately after the main answer burns the quota).
-        // We skip suggestions entirely if the response was very short
-        // (likely a DB answer or help card that doesn't need follow-ups).
-        try {
-          if (fullResponse.length > 80) {
-            // Wait 3 seconds before the suggestions call to spread the RPM load
-            await new Promise((r) => setTimeout(r, 3000));
-            const suggestText = await callGeminiOnce({
-              apiKey: credentials.apiKey,
-              model: "gemini-3.5-flash",
-              prompt: buildSuggestionsPrompt(parsed.message, fullResponse, displayRole),
-              timeoutMs: 8000,
-            });
-            const suggestions = JSON.parse(suggestText) as string[];
-            if (Array.isArray(suggestions) && suggestions.length > 0) {
-              controller.enqueue(sseEvent({ type: "suggestions", suggestions }));
-            }
-          }
-        } catch {/* best-effort — never fail the main response */}
 
         const executionMs = Date.now() - t0;
         controller.enqueue(sseEvent({ type: "done", executionMs, toolsUsed }));

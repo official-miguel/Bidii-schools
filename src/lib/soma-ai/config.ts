@@ -23,34 +23,34 @@ export interface GeminiModel {
 
 export const GEMINI_MODELS: GeminiModel[] = [
   {
-    id: "gemini-3.5-flash",
-    label: "Gemini 3.5 Flash",
-    description: "Fast, capable, and cost-effective. Best for everyday assistant tasks. Recommended for most schools.",
+    id: "gemini-2.5-flash-lite",
+    label: "Gemini 2.5 Flash Lite",
+    description: "Fastest and most budget-friendly. Highest free-tier RPM. Best for schools on the free plan.",
     recommended: true,
     maxOutputTokens: 8192,
   },
   {
     id: "gemini-2.5-flash",
     label: "Gemini 2.5 Flash",
-    description: "Best price-performance for low-latency, high-volume tasks requiring reasoning.",
+    description: "Best price-performance with reasoning. Good balance for most schools.",
     maxOutputTokens: 8192,
   },
   {
-    id: "gemini-2.5-flash-lite",
-    label: "Gemini 2.5 Flash Lite",
-    description: "Fastest and most budget-friendly. Good for simple, high-volume queries.",
+    id: "gemini-3.5-flash",
+    label: "Gemini 3.5 Flash",
+    description: "Latest Flash model. Best capability, but lower free-tier RPM.",
     maxOutputTokens: 8192,
   },
   {
     id: "gemini-2.5-pro",
     label: "Gemini 2.5 Pro",
-    description: "Most advanced model for complex analysis, deep reasoning, and long documents.",
+    description: "Most advanced reasoning and analysis. Paid tier recommended.",
     premium: true,
     maxOutputTokens: 8192,
   },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-3.5-flash";
+export const DEFAULT_MODEL_ID = "gemini-2.5-flash-lite";
 
 /**
  * Models that have been shut down by Google.
@@ -58,15 +58,22 @@ export const DEFAULT_MODEL_ID = "gemini-3.5-flash";
  * current default at request time — never surfaces as a user-facing 404.
  */
 export const DEPRECATED_MODEL_MAP: Record<string, string> = {
-  "gemini-2.0-flash":               DEFAULT_MODEL_ID,
-  "gemini-2.0-flash-lite":          DEFAULT_MODEL_ID,
-  "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash",
-  "gemini-2.5-pro-preview-06-05":   "gemini-2.5-pro",
-  "gemini-3.1-flash-lite-preview":  "gemini-2.5-flash-lite",
-  "gemini-3-pro-preview":           "gemini-2.5-pro",
+  "gemini-2.0-flash":                DEFAULT_MODEL_ID,
+  "gemini-2.0-flash-lite":           DEFAULT_MODEL_ID,
+  "gemini-2.5-flash-preview-05-20":  "gemini-2.5-flash",
+  "gemini-2.5-pro-preview-06-05":    "gemini-2.5-pro",
+  "gemini-3.1-flash-lite-preview":   "gemini-2.5-flash-lite",
+  "gemini-3-pro-preview":            "gemini-2.5-pro",
+  "gemini-3.5-flash":                "gemini-3.5-flash", // keep as-is — still valid
 };
 
-/** Resolve a stored model id — remaps deprecated/shut-down models to their replacement. */
+/**
+ * Resolve a stored model id.
+ * - Remaps deprecated/shut-down models to their replacement.
+ * - Passes through ANY other string unchanged — so the principal can type
+ *   any valid Gemini model ID (e.g. "gemini-3.8-flash") and it will be used
+ *   directly, even if it's not in the GEMINI_MODELS list above.
+ */
 export function resolveModelId(stored: string | null | undefined): string {
   if (!stored) return DEFAULT_MODEL_ID;
   return DEPRECATED_MODEL_MAP[stored] ?? stored;

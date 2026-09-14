@@ -515,9 +515,9 @@ export async function streamGeminiWithTools(opts: {
     );
   }
 
-  // Always pick the fastest capable model for the tool-calling step.
+  // Always pick the fastest/cheapest model for tool-calling rounds.
   // The school config model is used for the final streaming answer.
-  const toolModel = "gemini-3.5-flash";
+  const toolModel = "gemini-2.5-flash-lite";
   const answerModel = opts.options.model ?? config.model;
   const temperature = opts.options.temperature ?? config.temperature;
   const maxOutputTokens = opts.options.maxOutputTokens ?? config.maxOutputTokens;

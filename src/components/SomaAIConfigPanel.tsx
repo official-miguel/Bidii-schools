@@ -168,10 +168,14 @@ export default function SomaAIConfigPanel() {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">AI Model</p>
-            <p className="text-xs text-slate">Choose which Gemini model powers Soma AI</p>
+            <p className="text-xs text-slate">
+              Choose a preset or type any valid Gemini model ID — the system will use whatever you enter.
+            </p>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+
+        {/* Preset tiles */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
           {GEMINI_MODELS.map((m) => (
             <label
               key={m.id}
@@ -207,6 +211,40 @@ export default function SomaAIConfigPanel() {
               </div>
             </label>
           ))}
+        </div>
+
+        {/* Free-text model override */}
+        <div>
+          <label className={labelClass}>Custom model ID (optional)</label>
+          <input
+            type="text"
+            value={GEMINI_MODELS.some((m) => m.id === model) ? "" : model}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              if (v) setModel(v);
+            }}
+            placeholder="e.g. gemini-3.8-flash or any valid model ID"
+            className={inputClass}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <p className="mt-1 text-xs text-slate">
+            Enter any model ID from{" "}
+            <a
+              href="https://ai.google.dev/gemini-api/docs/models"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-teal hover:underline"
+            >
+              Google's model list →
+            </a>{" "}
+            Overrides the selected preset above.
+          </p>
+          {model && !GEMINI_MODELS.some((m) => m.id === model) && (
+            <p className="mt-1 text-xs font-medium text-teal">
+              Currently using custom model: <span className="font-mono">{model}</span>
+            </p>
+          )}
         </div>
       </div>
 
