@@ -47,7 +47,7 @@ type CallOptions = {
 };
 
 const DEFAULT_TIMEOUT_MS = 15000;
-const DEFAULT_RETRIES = 1; // free-tier: keep retries low to avoid RPM pile-up
+const DEFAULT_RETRIES = 2; // retry once on transient failures; 429s get their own backoff
 
 // ---------------------------------------------------------------------------
 // In-process cache (prompt → response)
@@ -174,7 +174,7 @@ async function saveWorkingModel(schoolId: string, model: string): Promise<void> 
  * DEFAULT_MODEL_ID if the ListModels call fails or returns nothing useful.
  * On success, saves the chosen model to the school's stored config.
  */
-async function autoPickModel(schoolId: string, apiKey: string): Promise<string> {
+export async function autoPickModel(schoolId: string, apiKey: string): Promise<string> {
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`,
@@ -309,7 +309,7 @@ export async function callGemini(
         }
         throw new AiServiceError(
           "Soma AI is having a temporary issue. Please try again shortly.",
-          true,
+          false,   // not a config issue — auto-healing in progress
           undefined,
           `Model "${model}" unavailable (404) — auto-pick also failed`
         );
@@ -474,7 +474,7 @@ export async function streamGemini(opts: {
       void autoPickModel(opts.schoolId, apiKey);
       throw new AiServiceError(
         "Soma AI is having a temporary issue. Please try again shortly.",
-        true,
+        false,   // not a config issue — auto-healing in progress
         undefined,
         `Model "${model}" unavailable (404) — auto-picking new model for next request`
       );
@@ -765,7 +765,7 @@ export async function streamGeminiWithTools(opts: {
       void autoPickModel(opts.schoolId, apiKey);
       throw new AiServiceError(
         "Soma AI is having a temporary issue. Please try again shortly.",
-        true,
+        false,   // not a config issue — auto-healing in progress
         undefined,
         `Model "${answerModel}" unavailable (404) — auto-picking new model for next request`
       );

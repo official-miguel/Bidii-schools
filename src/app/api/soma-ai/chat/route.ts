@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { streamGeminiWithTools, AiServiceError } from "@/lib/ai/gemini";
+import { streamGeminiWithTools, AiServiceError, autoPickModel } from "@/lib/ai/gemini";
 import { resolveUserScope } from "@/lib/soma-ai/permissions";
 import { logSomaAIInteraction } from "@/lib/soma-ai/audit";
 import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
@@ -293,6 +293,18 @@ export async function POST(req: NextRequest) {
       },
       { status: 503 }
     );
+  }
+
+  // If the stored model is a legacy 2.5 model that may have access restrictions,
+  // auto-pick the best available model for this key and update the config.
+  // This runs fast (ListModels is a GET) and self-heals without needing the
+  // super-admin to click "Test" first.
+  const legacyModels = new Set(["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"]);
+  if (legacyModels.has(aiConfig.model)) {
+    const picked = await autoPickModel(user.schoolId!, credentials.apiKey);
+    if (picked !== aiConfig.model) {
+      aiConfig.model = picked;
+    }
   }
 
   // â”€â”€ Build system prompt (no static data snapshot â€” tools handle that) â”€â”€â”€

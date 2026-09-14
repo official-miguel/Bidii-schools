@@ -30,6 +30,8 @@ export interface SomaMessage {
   streaming?: boolean;
   /** For assistant messages — true if an error occurred */
   error?: boolean;
+  /** True when the error is a config issue (no key / disabled) — drives ConfigNotice */
+  configIssue?: boolean;
   /** Suggested follow-up questions attached to this assistant message */
   suggestions?: string[];
   /** Whether the user has copied this message */
@@ -280,6 +282,7 @@ export const useSomaAIStore = create<SomaAIState>((set, get) => ({
                   streaming: false,
                   activeTools: [],
                   error: true,
+                  configIssue: configIssue ?? false,
                   content: error,
                   suggestions: configIssue
                     ? ["How do I set up Soma AI?", "Where are the Integration Settings?"]

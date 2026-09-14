@@ -431,8 +431,8 @@ export default function SomaAIChatPanel({ onClose }: { onClose: () => void }) {
   const lastMsg = messages[messages.length - 1];
   const hasConfigError =
     lastMsg?.role === "assistant" &&
-    lastMsg?.error &&
-    (lastMsg?.suggestions?.includes("How do I set up Soma AI?") ?? false);
+    lastMsg?.error === true &&
+    lastMsg?.configIssue === true;
 
   // Auto-scroll to bottom when new content arrives
   const scrollToBottom = useCallback((smooth = true) => {
