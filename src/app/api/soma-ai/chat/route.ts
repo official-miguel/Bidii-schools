@@ -382,6 +382,15 @@ export async function POST(req: NextRequest) {
           : "Soma AI encountered an unexpected error. Please try again.";
         const isConfig = e instanceof AiServiceError && e.configIssue;
         errorSummary = msg.slice(0, 200);
+        
+        // Log the full error details for debugging
+        console.error("[soma-ai/chat] Error:", {
+          isAiServiceError: e instanceof AiServiceError,
+          message: e instanceof Error ? e.message : String(e),
+          internalDetail: e instanceof AiServiceError ? e.internalDetail : undefined,
+          stack: e instanceof Error ? e.stack : undefined,
+        });
+        
         controller.enqueue(sseEvent({ type: "error", error: msg, configIssue: isConfig }));
       } finally {
         logSomaAIInteraction({
