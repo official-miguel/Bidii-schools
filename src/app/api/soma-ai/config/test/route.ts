@@ -1,29 +1,20 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 import { resolveModelId } from "@/lib/soma-ai/config";
 
-const schema = z.object({
-  model: z.string().optional(),
-});
-
 /**
  * POST /api/soma-ai/config/test
- * Sends a lightweight probe to the Gemini API to verify the stored key is
- * valid and the chosen model is accessible. Uses the ListModels endpoint
- * (no generation spend) and then a minimal generateContent call to confirm
- * the specific model works.
+ * Sends a lightweight probe to the Soma AI (Gemini) API to verify the stored
+ * key is valid. The model is always taken from the stored school config —
+ * principals cannot override it.
  *
  * Returns { ok: boolean; model: string; latencyMs: number; error?: string }
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const user = await requireSchoolRole("PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const parsed = schema.safeParse(await req.json().catch(() => ({})));
-  const requestedModel = parsed.success ? (parsed.data.model ?? null) : null;
 
   const row = await prisma.schoolIntegration.findUnique({
     where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
@@ -38,9 +29,8 @@ export async function POST(req: NextRequest) {
 
   const apiKey = decryptSecret(row.encryptedValue);
   const meta = (row.metadata ?? {}) as Record<string, unknown>;
-  const model = requestedModel
-    ? resolveModelId(requestedModel)
-    : resolveModelId(meta.model as string | null);
+  // Model is always the stored value — principals do not choose the model
+  const model = resolveModelId(meta.model as string | null);
 
   const t0 = Date.now();
 
@@ -89,7 +79,7 @@ export async function POST(req: NextRequest) {
     if (genRes.status === 404) {
       return NextResponse.json({
         ok: false,
-        error: `Model "${model}" is not available with this key. Try a different model.`,
+        error: `The configured model "${model}" is not available with this key. Contact your system administrator to update the model.`,
         latencyMs,
       });
     }

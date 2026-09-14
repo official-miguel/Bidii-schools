@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { encryptSecret, previewSecret } from "@/lib/crypto";
 import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
 
 // ---------------------------------------------------------------------------
@@ -58,12 +57,7 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 
 const patchSchema = z.object({
-  // Optional key update
-  apiKey: z.string().trim().min(1).optional(),
-  // AI config fields
-  model: z.string().optional(),
-  temperature: z.number().min(0).max(2).optional(),
-  maxOutputTokens: z.number().int().min(256).max(8192).optional(),
+  // Behaviour fields only — model is managed by super-admin, not principals
   enabled: z.boolean().optional(),
   cacheEnabled: z.boolean().optional(),
   cacheTtlMinutes: z.number().int().min(1).max(1440).optional(),
@@ -85,47 +79,27 @@ export async function PATCH(req: NextRequest) {
     where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
   });
 
-  if (!existing && !parsed.data.apiKey) {
+  if (!existing) {
     return NextResponse.json(
-      { error: "No API key configured. Add a key first." },
+      { error: "No Soma AI key configured for this school yet." },
       { status: 400 }
     );
   }
 
-  const existingMeta = (existing?.metadata ?? {}) as Record<string, unknown>;
-  const { apiKey, ...configFields } = parsed.data;
+  const existingMeta = (existing.metadata ?? {}) as Record<string, unknown>;
 
-  // Merge config fields into existing metadata
+  // Merge only behaviour fields — never overwrite model/temperature/maxOutputTokens
   const newMeta: Record<string, unknown> = {
     ...existingMeta,
     ...Object.fromEntries(
-      Object.entries(configFields).filter(([, v]) => v !== undefined)
+      Object.entries(parsed.data).filter(([, v]) => v !== undefined)
     ),
   };
 
-  if (apiKey) {
-    // Full upsert with new key
-    const encryptedValue = encryptSecret(apiKey);
-    const keyPreview = previewSecret(apiKey);
-    const jsonMeta = newMeta as Prisma.InputJsonValue;
-    await prisma.schoolIntegration.upsert({
-      where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
-      update: { encryptedValue, keyPreview, metadata: jsonMeta, isActive: true },
-      create: {
-        schoolId: user.schoolId!,
-        provider: "GEMINI",
-        encryptedValue,
-        keyPreview,
-        metadata: jsonMeta,
-      },
-    });
-  } else {
-    // Metadata-only update
-    await prisma.schoolIntegration.update({
-      where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
-      data: { metadata: newMeta as Prisma.InputJsonValue },
-    });
-  }
+  await prisma.schoolIntegration.update({
+    where: { schoolId_provider: { schoolId: user.schoolId!, provider: "GEMINI" } },
+    data: { metadata: newMeta as Prisma.InputJsonValue },
+  });
 
   // Re-read and return fresh state
   const updated = await prisma.schoolIntegration.findUnique({

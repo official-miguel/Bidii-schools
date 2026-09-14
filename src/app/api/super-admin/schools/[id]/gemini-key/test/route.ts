@@ -83,7 +83,7 @@ export async function POST(
     if (genRes.status === 404) {
       return NextResponse.json({
         ok: false,
-        error: `Model "${model}" is not available with this key. The principal can change the model under AI Configuration.`,
+        error: `Model "${model}" is not available with this key. Update the model selection above and save, then test again.`,
         latencyMs,
       });
     }

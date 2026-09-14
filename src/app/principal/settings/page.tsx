@@ -8,12 +8,11 @@ import {
 } from "@/components/ui";
 import { SkeletonBar } from "@/components/ui/ProgressivePage";
 import {
-  CheckCircle2, AlertCircle, BookOpen, BarChart3, Sparkles,
+  CheckCircle2, AlertCircle, BookOpen, BarChart3,
   ChevronRight, ChevronDown, BedDouble, Users, ShieldCheck,
   ArrowRight, School, GraduationCap, Plus, Pencil, RotateCcw, X,
   TrendingUp, Trash2,
 } from "lucide-react";
-import SomaAIConfigPanel from "@/components/SomaAIConfigPanel";
 import ClassPromotionSection from "@/components/settings/ClassPromotionSection";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
@@ -21,7 +20,7 @@ import { useFormDraft } from "@/lib/hooks/useFormDraft";
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type SectionId = "ranking" | "library" | "ai" | "dormitory" | "school" | "cbe-scale" | "promotion";
+type SectionId = "ranking" | "library" | "dormitory" | "school" | "cbe-scale" | "promotion";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Grouped sidebar nav definition
@@ -73,16 +72,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "library",   label: "Library" },
       { id: "dormitory", label: "Dormitory" },
-    ],
-  },
-  {
-    id: "ai-group",
-    label: "AI & CONFIGURATION",
-    color: "bg-purple-500",
-    textColor: "text-purple-600",
-    Icon: Sparkles,
-    items: [
-      { id: "ai", label: "AI Configuration" },
     ],
   },
 ];
@@ -1504,11 +1493,6 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
     description: "Module-wide preferences for boarding management. Individual dormitory structures and bed layouts are configured per dorm under Student Life → Accommodation.",
     Content: DormitorySettingsForm,
   },
-  ai: {
-    heading: "AI Configuration",
-    description: "Configure Soma AI — the intelligent assistant for your school. API keys are encrypted at rest and never exposed to the browser.",
-    Content: SomaAIConfigPanel,
-  },
   "cbe-scale": {
     heading: "CBE Grading Scale",
     description: "Customise the grade-band boundaries used when converting Senior CBE pathway scores to achievement levels. Schools that don't customise automatically use the government default (KNEC EE/ME/AE/BE scale).",
@@ -1526,7 +1510,7 @@ const SECTION_CONTENT: Record<SectionId, { heading: string; description: string;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [active, setActive] = useState<SectionId>("ai");
+  const [active, setActive] = useState<SectionId>("school");
   // Track which nav groups are open; default all open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     () => Object.fromEntries(NAV_GROUPS.map((g) => [g.id, true]))
