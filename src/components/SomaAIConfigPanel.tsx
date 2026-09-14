@@ -236,7 +236,7 @@ export default function SomaAIConfigPanel() {
               rel="noopener noreferrer"
               className="text-teal hover:underline"
             >
-              Google's model list →
+              Google&apos;s model list →
             </a>{" "}
             Overrides the selected preset above.
           </p>
