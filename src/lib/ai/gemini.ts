@@ -1,5 +1,5 @@
 import { getSchoolIntegrationKey } from "@/lib/integrations";
-import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
 
 /// Centralized Gemini client — every AI feature (Timetable, TOD, School
 /// Intelligence, Soma AI) calls through here rather than hitting the API
@@ -123,7 +123,7 @@ async function resolveSchoolConfig(schoolId: string): Promise<{
 
   const meta = (credentials.metadata ?? {}) as Record<string, unknown>;
   const config: AiConfig = {
-    model: (meta.model as string) ?? DEFAULT_AI_CONFIG.model,
+    model: resolveModelId(meta.model as string | null),
     temperature: (meta.temperature as number) ?? DEFAULT_AI_CONFIG.temperature,
     maxOutputTokens: (meta.maxOutputTokens as number) ?? DEFAULT_AI_CONFIG.maxOutputTokens,
     enabled: (meta.enabled as boolean) ?? DEFAULT_AI_CONFIG.enabled,
@@ -509,7 +509,7 @@ export async function streamGeminiWithTools(opts: {
 
   // Always pick the fastest capable model for the tool-calling step.
   // The school config model is used for the final streaming answer.
-  const toolModel = "gemini-2.5-flash";
+  const toolModel = "gemini-3.5-flash";
   const answerModel = opts.options.model ?? config.model;
   const temperature = opts.options.temperature ?? config.temperature;
   const maxOutputTokens = opts.options.maxOutputTokens ?? config.maxOutputTokens;

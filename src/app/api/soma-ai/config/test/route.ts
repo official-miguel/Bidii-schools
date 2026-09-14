@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
-import { DEFAULT_AI_CONFIG } from "@/lib/soma-ai/config";
+import { resolveModelId } from "@/lib/soma-ai/config";
 
 const schema = z.object({
   model: z.string().optional(),
@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
 
   const apiKey = decryptSecret(row.encryptedValue);
   const meta = (row.metadata ?? {}) as Record<string, unknown>;
-  const model = requestedModel ?? (meta.model as string) ?? DEFAULT_AI_CONFIG.model;
+  const model = requestedModel
+    ? resolveModelId(requestedModel)
+    : resolveModelId(meta.model as string | null);
 
   const t0 = Date.now();
 

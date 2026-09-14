@@ -7,7 +7,7 @@ import {
   removeSchoolIntegrationKey,
 } from "@/lib/integrations";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_AI_CONFIG } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId } from "@/lib/soma-ai/config";
 
 type RouteContext = { params: { id: string } };
 
@@ -43,7 +43,7 @@ export async function GET(
     keyPreview: row.keyPreview,
     isActive: row.isActive,
     config: {
-      model:           (meta.model           as string)  ?? DEFAULT_AI_CONFIG.model,
+      model:           resolveModelId(meta.model as string | null),
       temperature:     (meta.temperature     as number)  ?? DEFAULT_AI_CONFIG.temperature,
       maxOutputTokens: (meta.maxOutputTokens as number)  ?? DEFAULT_AI_CONFIG.maxOutputTokens,
       enabled:         (meta.enabled         as boolean) ?? DEFAULT_AI_CONFIG.enabled,
@@ -110,7 +110,7 @@ export async function POST(
       keyPreview: row?.keyPreview ?? null,
       isActive:   row?.isActive  ?? true,
       config: {
-        model:           (meta.model           as string)  ?? DEFAULT_AI_CONFIG.model,
+        model:           resolveModelId(meta.model as string | null),
         temperature:     (meta.temperature     as number)  ?? DEFAULT_AI_CONFIG.temperature,
         maxOutputTokens: (meta.maxOutputTokens as number)  ?? DEFAULT_AI_CONFIG.maxOutputTokens,
         enabled:         (meta.enabled         as boolean) ?? DEFAULT_AI_CONFIG.enabled,

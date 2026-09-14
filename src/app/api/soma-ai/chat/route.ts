@@ -7,7 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { streamGeminiWithTools, callGeminiOnce, AiServiceError } from "@/lib/ai/gemini";
 import { resolveUserScope } from "@/lib/soma-ai/permissions";
 import { logSomaAIInteraction } from "@/lib/soma-ai/audit";
-import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
 import { SOMA_TOOL_DECLARATIONS, dispatchTool, pruneToolCache } from "@/lib/soma-ai/tools";
 import { classifyQuery } from "@/lib/soma-ai/router";
 import {
@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
 
   const meta = (credentials.metadata ?? {}) as Record<string, unknown>;
   const aiConfig: AiConfig = {
-    model: (meta.model as string) ?? DEFAULT_AI_CONFIG.model,
+    model: resolveModelId(meta.model as string | null),
     temperature: (meta.temperature as number) ?? DEFAULT_AI_CONFIG.temperature,
     maxOutputTokens: (meta.maxOutputTokens as number) ?? DEFAULT_AI_CONFIG.maxOutputTokens,
     enabled: (meta.enabled as boolean) ?? DEFAULT_AI_CONFIG.enabled,
@@ -391,7 +391,7 @@ export async function POST(req: NextRequest) {
         try {
           const suggestText = await callGeminiOnce({
             apiKey: credentials.apiKey,
-            model: "gemini-2.5-flash",
+            model: "gemini-3.5-flash",
             prompt: buildSuggestionsPrompt(parsed.message, fullResponse, displayRole),
             timeoutMs: 6000,
           });

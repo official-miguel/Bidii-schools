@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/super-admin";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
-import { DEFAULT_AI_CONFIG } from "@/lib/soma-ai/config";
+import { resolveModelId } from "@/lib/soma-ai/config";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: { id: string } };
@@ -37,7 +37,7 @@ export async function POST(
     where: { schoolId_provider: { schoolId: params.id, provider: "GEMINI" } },
   });
   const meta  = (row?.metadata ?? {}) as Record<string, unknown>;
-  const model = (meta.model as string) ?? DEFAULT_AI_CONFIG.model;
+  const model = resolveModelId(meta.model as string | null);
 
   const t0 = Date.now();
 

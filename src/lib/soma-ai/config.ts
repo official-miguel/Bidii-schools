@@ -23,28 +23,54 @@ export interface GeminiModel {
 
 export const GEMINI_MODELS: GeminiModel[] = [
   {
-    id: "gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
+    id: "gemini-3.5-flash",
+    label: "Gemini 3.5 Flash",
     description: "Fast, capable, and cost-effective. Best for everyday assistant tasks. Recommended for most schools.",
     recommended: true,
     maxOutputTokens: 8192,
   },
   {
-    id: "gemini-2.5-flash-lite-preview-06-17",
+    id: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
+    description: "Best price-performance for low-latency, high-volume tasks requiring reasoning.",
+    maxOutputTokens: 8192,
+  },
+  {
+    id: "gemini-2.5-flash-lite",
     label: "Gemini 2.5 Flash Lite",
-    description: "Ultra-fast and lightweight. Best for simple queries at very high volume.",
+    description: "Fastest and most budget-friendly. Good for simple, high-volume queries.",
     maxOutputTokens: 8192,
   },
   {
     id: "gemini-2.5-pro",
     label: "Gemini 2.5 Pro",
-    description: "Highest capability model for complex analysis, long documents, and advanced reasoning.",
+    description: "Most advanced model for complex analysis, deep reasoning, and long documents.",
     premium: true,
     maxOutputTokens: 8192,
   },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-2.5-flash";
+export const DEFAULT_MODEL_ID = "gemini-3.5-flash";
+
+/**
+ * Models that have been shut down by Google.
+ * Any stored metadata using one of these gets silently remapped to the
+ * current default at request time — never surfaces as a user-facing 404.
+ */
+export const DEPRECATED_MODEL_MAP: Record<string, string> = {
+  "gemini-2.0-flash":               DEFAULT_MODEL_ID,
+  "gemini-2.0-flash-lite":          DEFAULT_MODEL_ID,
+  "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash",
+  "gemini-2.5-pro-preview-06-05":   "gemini-2.5-pro",
+  "gemini-3.1-flash-lite-preview":  "gemini-2.5-flash-lite",
+  "gemini-3-pro-preview":           "gemini-2.5-pro",
+};
+
+/** Resolve a stored model id — remaps deprecated/shut-down models to their replacement. */
+export function resolveModelId(stored: string | null | undefined): string {
+  if (!stored) return DEFAULT_MODEL_ID;
+  return DEPRECATED_MODEL_MAP[stored] ?? stored;
+}
 
 // ---------------------------------------------------------------------------
 // AI configuration shape

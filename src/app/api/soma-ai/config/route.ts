@@ -4,7 +4,7 @@ import { requireSchoolRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { encryptSecret, previewSecret } from "@/lib/crypto";
-import { DEFAULT_AI_CONFIG, type AiConfig } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
 
 // ---------------------------------------------------------------------------
 // GET /api/soma-ai/config
@@ -31,7 +31,7 @@ export async function GET() {
 
   const meta = (row.metadata ?? {}) as Record<string, unknown>;
   const config: AiConfig = {
-    model: (meta.model as string) ?? DEFAULT_AI_CONFIG.model,
+    model: resolveModelId(meta.model as string | null),
     temperature: (meta.temperature as number) ?? DEFAULT_AI_CONFIG.temperature,
     maxOutputTokens: (meta.maxOutputTokens as number) ?? DEFAULT_AI_CONFIG.maxOutputTokens,
     enabled: (meta.enabled as boolean) ?? DEFAULT_AI_CONFIG.enabled,
@@ -138,7 +138,7 @@ export async function PATCH(req: NextRequest) {
     keyPreview: updated?.keyPreview ?? null,
     isActive: updated?.isActive ?? false,
     config: {
-      model: (meta.model as string) ?? DEFAULT_AI_CONFIG.model,
+      model: resolveModelId(meta.model as string | null),
       temperature: (meta.temperature as number) ?? DEFAULT_AI_CONFIG.temperature,
       maxOutputTokens: (meta.maxOutputTokens as number) ?? DEFAULT_AI_CONFIG.maxOutputTokens,
       enabled: (meta.enabled as boolean) ?? DEFAULT_AI_CONFIG.enabled,
