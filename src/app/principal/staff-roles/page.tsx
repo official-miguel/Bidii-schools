@@ -7,6 +7,21 @@ import type { Module } from "@prisma/client";
 import PermissionMatrixClient from "@/components/permissions/PermissionMatrixClient";
 import AuditLogTable from "@/components/permissions/AuditLogTable";
 
+/**
+ * Holders of a role, counted once each. Assignments live in the UserStaffRole
+ * join table, but the legacy User.staffRoleId FK still holds older ones, and a
+ * user recorded in both was previously counted twice.
+ */
+function roleUserCount(role: {
+  users:     { id: string }[];
+  userRoles: { userId: string }[];
+}): number {
+  return new Set([
+    ...role.users.map((u) => u.id),
+    ...role.userRoles.map((ur) => ur.userId),
+  ]).size;
+}
+
 export default async function StaffRolesPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "PRINCIPAL") redirect("/login");
@@ -19,7 +34,10 @@ export default async function StaffRolesPage() {
       orderBy: { name: "asc" },
       include: {
         permissions: true,
-        _count: { select: { users: true } },
+        // Both the legacy User.staffRoleId FK and the UserStaffRole join table
+        // are read, and the ids are merged below — a user held in both was
+        // being counted twice.
+        users:     { select: { id: true } },
         userRoles: { select: { userId: true } },
       },
     }),
@@ -57,7 +75,7 @@ export default async function StaffRolesPage() {
     id:          r.id,
     name:        r.name,
     description: r.description,
-    userCount:   r._count.users + r.userRoles.length, // legacy + multi-role
+    userCount:   roleUserCount(r),
     permissions: Object.fromEntries(
       r.permissions.map((p) => [
         p.module,
@@ -140,7 +158,7 @@ export default async function StaffRolesPage() {
                 )}
               </div>
               <span className="shrink-0 text-xs bg-teal-50 text-teal px-2 py-0.5 rounded-full font-medium dark:bg-teal/15">
-                {role._count.users + role.userRoles.length} user{role._count.users + role.userRoles.length !== 1 ? "s" : ""}
+                {roleUserCount(role)} user{roleUserCount(role) !== 1 ? "s" : ""}
               </span>
             </div>
             <div className="flex items-center gap-1.5 mt-2 flex-wrap">

@@ -3,7 +3,11 @@ import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
-import { logPermissionAudit } from "@/lib/permissions";
+import {
+  logPermissionAudit,
+  grantsAnyPermission,
+  normaliseRolePermission,
+} from "@/lib/permissions";
 
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");
@@ -67,22 +71,15 @@ export async function POST(req: NextRequest) {
         name,
         description: description || null,
         permissions: {
+          // Store every row that grants anything, normalised the same way the
+          // update endpoint normalises it.
           create: permissions
-            .filter((p) => p.canView || p.canManage || p.canCreate || p.canEdit)
+            .filter(grantsAnyPermission)
             .map((p) => ({
               // Double-cast: Module enum in generated client may lag behind schema migrations.
               // The DB enum is always authoritative; Prisma passes this string through as-is.
               module: p.module as unknown as Module,
-              canView: p.canView,
-              canCreate: p.canCreate ?? false,
-              canEdit: p.canEdit ?? false,
-              canDelete: p.canDelete ?? false,
-              canApprove: p.canApprove ?? false,
-              canExport: p.canExport ?? false,
-              canPrint: p.canPrint ?? false,
-              canManage: p.canManage,
-              canConfigure: p.canConfigure ?? false,
-              canAIAccess: p.canAIAccess ?? false,
+              ...normaliseRolePermission(p),
             })),
         },
       },

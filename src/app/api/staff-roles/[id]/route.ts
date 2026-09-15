@@ -3,7 +3,11 @@ import { z } from "zod";
 import type { Module } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
-import { logPermissionAudit } from "@/lib/permissions";
+import {
+  logPermissionAudit,
+  grantsAnyPermission,
+  normaliseRolePermission,
+} from "@/lib/permissions";
 
 const permSchema = z.object({
   module:       z.string().min(1),
@@ -45,7 +49,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const role = await prisma.$transaction(async (tx) => {
       if (permissions !== undefined) {
         await tx.rolePermission.deleteMany({ where: { staffRoleId: params.id } });
-        const rows = permissions.filter((p) => p.canView || p.canManage || p.canCreate || p.canEdit);
+        // Store every row that grants anything at all — not just view/create/
+        // edit/manage, which silently dropped export-, approve-, print-,
+        // delete-, configure- and AI-only grants.
+        const rows = permissions.filter(grantsAnyPermission);
         if (rows.length > 0) {
           await tx.rolePermission.createMany({
             data: rows.map((p) => ({
@@ -53,16 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               // Double-cast: Module enum in generated client may lag behind schema migrations.
               // The DB enum is always authoritative; Prisma passes this string through as-is.
               module:       p.module as unknown as Module,
-              canView:      p.canView || p.canManage,
-              canCreate:    p.canCreate || p.canManage,
-              canEdit:      p.canEdit  || p.canManage,
-              canDelete:    p.canDelete || p.canManage,
-              canApprove:   p.canApprove,
-              canExport:    p.canExport || p.canManage,
-              canPrint:     p.canPrint  || p.canManage,
-              canManage:    p.canManage,
-              canConfigure: p.canConfigure,
-              canAIAccess:  p.canAIAccess,
+              ...normaliseRolePermission(p),
             })),
           });
         }

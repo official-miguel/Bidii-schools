@@ -20,8 +20,11 @@ export default async function GenericStaffDashboard({ user }: Props) {
     getUpcomingCalendarItems(schoolId, { days: 14, limit: 5 }),
   ]);
 
+  // canManage implies visibility, matching the API guard and the sidebar —
+  // a role granted management of a module but not the view flag still gets
+  // its tile here.
   const granted = (Object.entries(perms) as [Module, ModuleAccess][])
-    .filter(([, v]) => v?.canView);
+    .filter(([, v]) => v?.canView || v?.canManage);
 
   const MODULE_HREF: Partial<Record<Module, string>> = {
     STUDENTS:             "/staff/students",

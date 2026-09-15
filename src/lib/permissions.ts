@@ -351,11 +351,76 @@ export async function hasAssignedRoles(userId: string): Promise<boolean> {
 export function getVisibleHubs(perms: EffectivePermissions): Set<NavHub> {
   const visible = new Set<NavHub>(["dashboard"]);
   for (const [mod, access] of Object.entries(perms) as [Module, ModuleAccess][]) {
-    if (access?.canView) {
+    // canManage implies visibility, exactly as the API guard's "view" check
+    // does. Testing canView alone hid the hub from a role granted full
+    // management of a module but not the view flag itself.
+    if (access?.canView || access?.canManage) {
       visible.add(MODULE_INFO[mod].hub);
     }
   }
   return visible;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role permission normalisation
+//
+// Shared by the create and update endpoints so a role saves identically
+// whichever way it was edited. Previously they disagreed: update expanded
+// canManage into the individual write flags while create did not, so the same
+// tick boxes produced different stored rows.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The ten flags a role can grant on one module. */
+export interface PermissionFlags {
+  canView:      boolean;
+  canCreate:    boolean;
+  canEdit:      boolean;
+  canDelete:    boolean;
+  canApprove:   boolean;
+  canExport:    boolean;
+  canPrint:     boolean;
+  canManage:    boolean;
+  canConfigure: boolean;
+  canAIAccess:  boolean;
+}
+
+/**
+ * True when a submitted row grants anything at all.
+ *
+ * Used to decide whether the row is worth storing. It deliberately tests every
+ * flag: an earlier version checked only view/create/edit/manage, so a role
+ * granted just Export, Print, Approve, Delete, Configure, or AI access was
+ * silently discarded on save — the principal ticked the box, saved, and the
+ * permission was never written.
+ */
+export function grantsAnyPermission(p: Partial<PermissionFlags>): boolean {
+  return Boolean(
+    p.canView || p.canCreate || p.canEdit || p.canDelete || p.canApprove ||
+    p.canExport || p.canPrint || p.canManage || p.canConfigure || p.canAIAccess
+  );
+}
+
+/**
+ * Expands a submitted row into the flags actually stored.
+ *
+ * canManage is the "full write" shorthand, so it implies the individual
+ * operations. canApprove, canConfigure and canAIAccess stay independent —
+ * they are deliberate extra grants rather than part of ordinary management.
+ */
+export function normaliseRolePermission(p: Partial<PermissionFlags>): PermissionFlags {
+  const manage = Boolean(p.canManage);
+  return {
+    canView:      Boolean(p.canView)   || manage,
+    canCreate:    Boolean(p.canCreate) || manage,
+    canEdit:      Boolean(p.canEdit)   || manage,
+    canDelete:    Boolean(p.canDelete) || manage,
+    canExport:    Boolean(p.canExport) || manage,
+    canPrint:     Boolean(p.canPrint)  || manage,
+    canManage:    manage,
+    canApprove:   Boolean(p.canApprove),
+    canConfigure: Boolean(p.canConfigure),
+    canAIAccess:  Boolean(p.canAIAccess),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
