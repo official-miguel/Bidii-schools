@@ -8,11 +8,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { PolicyEngine } from "@/lib/library/policyEngine";
 
-async function guard() { return (await requireSchoolRole("PRINCIPAL")) ??
+async function guard() { return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY","view")); }
 
 export async function GET(req: NextRequest) {

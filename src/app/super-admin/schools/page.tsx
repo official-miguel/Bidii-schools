@@ -4,9 +4,9 @@
  * /super-admin/schools — Schools Management
  *
  * Sortable, searchable table of all schools with:
- *  - Plan tier badge, status badge, student/staff counts, storage used
+ *  - Status badge, student/staff counts, storage used
  *  - Row click → detail page
- *  - Row actions: Suspend / Reactivate, Edit plan tier
+ *  - Row actions: Suspend / Reactivate
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -29,7 +29,6 @@ interface SchoolRow {
   createdAt: string;
   email:     string | null;
   schoolMeta: {
-    planTier:      string;
     status:        string;
     storageQuotaGb: number;
     studentCount:  number;
@@ -54,21 +53,6 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[status] ?? "bg-slate-100 text-slate border-border"}`}>
       {status}
-    </span>
-  );
-}
-
-function PlanBadge({ tier }: { tier: string }) {
-  const map: Record<string, string> = {
-    FREE:         "bg-slate-100 text-slate border-border",
-    STARTER:      "bg-teal-50 text-teal border-teal/20",
-    GROWTH:       "bg-info-bg text-info border-info/20",
-    PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
-    ENTERPRISE:   "bg-danger-bg text-danger border-danger/20",
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-border"}`}>
-      {tier}
     </span>
   );
 }
@@ -279,7 +263,6 @@ export default function SchoolsPage() {
                       School <SortIcon active={sortKey === "name"} dir={sortDir} />
                     </span>
                   </th>
-                  <th className={th}>Plan</th>
                   <th className={th}>Status</th>
                   <th
                     className={`${th} cursor-pointer hover:text-foreground`}
@@ -316,9 +299,6 @@ export default function SchoolsPage() {
                         {meta?.contactEmail && (
                           <p className="text-xs text-slate mt-0.5">{meta.contactEmail}</p>
                         )}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <PlanBadge tier={meta?.planTier ?? "FREE"} />
                       </td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={meta?.status ?? "ONBOARDING"} />

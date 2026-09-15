@@ -2077,6 +2077,12 @@ enum SystemHealthStatus {
 /// Super-admin-only metadata attached to each school. One row per School.
 model SchoolMeta {
   schoolId       String       @id
+  /// DEPRECATED — the plan/billing tier system was removed. Schools are no
+  /// longer sold in tiers: every school gets every core module, and Library,
+  /// Finance, and Accommodation are switched on or off individually via
+  /// SchoolModuleToggle. Nothing reads or writes this column; it is kept only
+  /// so existing rows are not destroyed, and can be dropped in a later
+  /// migration once the data is confirmed unneeded.
   planTier       PlanTier     @default(FREE)
   status         SchoolStatus @default(ONBOARDING)
   storageQuotaGb Float        @default(5)
@@ -2094,7 +2100,17 @@ model SchoolMeta {
   @@index([planTier])
 }
 
-/// One row per module enabled/disabled for a school.
+/// Per-school switch for an optional module.
+///
+/// Only three modules are optional: LIBRARY, FEE_MANAGEMENT (Finance), and
+/// ACCOMMODATION. Every other module is core and ships with every school, so
+/// it never has a row here.
+///
+/// Absence means enabled: a school with no row for a module has it. A row is
+/// written only when a super admin changes the setting, and `enabled: false`
+/// removes the module from that school completely — hidden from every
+/// dashboard, with its pages and API routes answering 404. The school's data
+/// is retained and returns intact when it is switched back on.
 model SchoolModuleToggle {
   schoolId  String
   module    SystemModule

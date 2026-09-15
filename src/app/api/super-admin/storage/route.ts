@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const schools = await prisma.school.findMany({
     select: {
       id: true, name: true,
-      schoolMeta: { select: { storageQuotaGb: true, planTier: true } },
+      schoolMeta: { select: { storageQuotaGb: true } },
       storageUsages: {
         select: { type: true, sizeBytes: true, recordedAt: true },
         orderBy: { recordedAt: "desc" },
@@ -40,7 +40,6 @@ export async function GET(req: NextRequest) {
     return {
       schoolId:     s.id,
       schoolName:   s.name,
-      planTier:     s.schoolMeta?.planTier ?? "FREE",
       quotaGb:      s.schoolMeta?.storageQuotaGb ?? 5,
       usedBytes:    totalBytes.toString(),
       usedGb:       Number((Number(totalBytes) / 1024 ** 3).toFixed(3)),

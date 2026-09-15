@@ -30,6 +30,7 @@ import type { User } from "@prisma/client";
 import type { Module } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import { getEffectivePermissions, type PermissionAction } from "@/lib/permissions";
+import { moduleDisabledResponse } from "@/lib/moduleAccess";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // enforceAuth
@@ -84,6 +85,11 @@ export async function requireModuleAccess(
   module:  Module,
   action:  PermissionAction = "view"
 ): Promise<NextResponse | null> {
+  // A module switched off for this school answers 404 for every role — it must
+  // look absent rather than forbidden.
+  const disabled = await moduleDisabledResponse(user.schoolId, module);
+  if (disabled) return disabled;
+
   if (user.role === "PRINCIPAL") return null;
 
   // BURSAR has full access to FEES and scoped access to STUDENTS + COMMUNICATION
@@ -204,6 +210,12 @@ export async function requireBursarOrPrincipal(): Promise<
   if (result.error) return result;
 
   const { user } = result;
+
+  // Finance switched off for this school — nobody passes, Principal and Bursar
+  // included, and the route answers 404 as though it did not exist.
+  const disabled = await moduleDisabledResponse(user.schoolId, "FEES");
+  if (disabled) return { user: null, schoolId: null, error: disabled };
+
   if (user.role === "PRINCIPAL" || user.role === "BURSAR") return result;
 
   // ADMIN_STAFF (or TEACHER) with FEES module permission also passes

@@ -52,21 +52,16 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
-const PLAN_TIERS = ["FREE","STARTER","GROWTH","PROFESSIONAL","ENTERPRISE"] as const;
-const ALL_MODULES = [
-  "ATTENDANCE","GRADING","REPORTS","IMPORT_TOOL","MESSAGING",
-  "LIBRARY","TIMETABLE","FEE_MANAGEMENT","ACCOMMODATION","ANALYTICS","AI_TOOLS","TRANSPORT",
-];
-const MODULE_LABEL: Record<string, string> = {
-  ATTENDANCE:"Attendance", GRADING:"Grading", REPORTS:"Reports",
-  IMPORT_TOOL:"Import Tool", MESSAGING:"Messaging", LIBRARY:"Library",
-  TIMETABLE:"Timetable", FEE_MANAGEMENT:"Fee Management",
-  ACCOMMODATION:"Accommodation", ANALYTICS:"Analytics",
-  AI_TOOLS:"AI Tools", TRANSPORT:"Transport",
-};
-const MODULE_DEPS: Record<string, string[]> = {
-  GRADING:["ATTENDANCE"], REPORTS:["GRADING"], ANALYTICS:["GRADING"], AI_TOOLS:["GRADING"],
-};
+/**
+ * The three optional modules. Everything else is core: it ships with every
+ * school and has no switch. Keys are the RBAC module ids the API accepts;
+ * `systemModule` is how the toggle row is stored.
+ */
+const OPTIONAL_MODULES = [
+  { id: "LIBRARY",       systemModule: "LIBRARY",        label: "Library",       description: "Catalogue, cards, borrowing, and fines" },
+  { id: "FEES",          systemModule: "FEE_MANAGEMENT", label: "Finance",       description: "Fee structures, invoicing, and payments" },
+  { id: "ACCOMMODATION", systemModule: "ACCOMMODATION",  label: "Accommodation", description: "Dormitories, beds, and boarding allocations" },
+] as const;
 
 // ── Tab bar ───────────────────────────────────────────────────────────────────
 
@@ -85,7 +80,6 @@ type TabId = (typeof TABS)[number]["id"];
 interface SchoolMetaShape {
   slug?:          string | null;
   status:        string;
-  planTier:      string;
   storageQuotaGb: number;
   contactPerson?: string | null;
   contactEmail?:  string | null;
@@ -120,8 +114,6 @@ export default function SchoolDetailPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [tab, setTab]           = useState<TabId>("overview");
   const [busy, setBusy]         = useState(false);
-  const [editPlan, setEditPlan] = useState(false);
-  const [newPlan, setNewPlan]   = useState("");
   const [modulesBusy, setModulesBusy] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -184,7 +176,6 @@ export default function SchoolDetailPage() {
       if (!res.ok) throw new Error("Failed to load school");
       const j = await res.json();
       setData(j.school);
-      setNewPlan(j.school?.schoolMeta?.planTier ?? "STARTER");
     } catch (e: unknown) {
       setApiError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -316,25 +307,6 @@ export default function SchoolDetailPage() {
     }
   }
 
-  async function handlePlanUpdate() {
-    setBusy(true); setApiError(null);
-    try {
-      const res = await fetch(`/api/super-admin/schools/${id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planTier: newPlan }),
-      });
-      if (!res.ok) throw new Error("Failed to update plan");
-      setEditPlan(false);
-      setSuccessMsg("Plan tier updated");
-      await load();
-    } catch (e: unknown) {
-      setApiError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-      setTimeout(() => setSuccessMsg(null), 3000);
-    }
-  }
-
   async function handleModuleToggle(module: string, enabled: boolean) {
     setModulesBusy(module); setApiError(null);
     try {
@@ -403,9 +375,6 @@ export default function SchoolDetailPage() {
             <h1 className="text-xl font-semibold text-foreground truncate">{data.name}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <StatusBadge status={status} />
-              {meta?.planTier && (
-                <span className="text-xs text-slate">{meta.planTier} plan</span>
-              )}
               {meta?.slug && (
                 <span className="text-xs font-mono text-slate">/{meta.slug}</span>
               )}
@@ -519,46 +488,6 @@ export default function SchoolDetailPage() {
             </dl>
           </Card>
 
-          {/* Plan tier editor */}
-          <Card className="">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">Plan Tier</h3>
-              {!editPlan && (
-                <button type="button" onClick={() => setEditPlan(true)} className="text-xs text-teal font-medium hover:underline">
-                  Edit
-                </button>
-              )}
-            </div>
-            {editPlan ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {PLAN_TIERS.map(tier => (
-                    <button
-                      key={tier}
-                      type="button"
-                      onClick={() => setNewPlan(tier)}
-                      className={`rounded-xl border-2 px-3 py-2.5 text-xs font-semibold transition-all
-                        ${newPlan === tier ? "border-teal bg-teal-50 text-teal" : "border-border text-slate hover:border-teal/40"}`}
-                    >
-                      {tier}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={handlePlanUpdate} disabled={busy} className={`${primaryButtonClass} text-xs`}>
-                    {busy ? "Saving…" : "Save"}
-                  </button>
-                  <button type="button" onClick={() => setEditPlan(false)} className={`${secondaryButtonClass} text-xs`}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-foreground">{meta?.planTier ?? "FREE"}</span>
-              </div>
-            )}
-          </Card>
         </div>
       )}
 
@@ -641,34 +570,32 @@ export default function SchoolDetailPage() {
       {/* MODULES TAB */}
       {tab === "modules" && (
         <Card className="">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Module Toggles</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Optional Modules</h3>
+          <p className="text-xs text-slate mb-4 leading-relaxed">
+            Turning one off removes it from this school entirely — it disappears from
+            every dashboard and its pages stop existing. Records are kept and return
+            untouched if it is turned back on. Every other module is always included.
+          </p>
           <div className="space-y-3">
-            {ALL_MODULES.map(mod => {
-              const enabled  = enabledMap[mod] ?? false;
-              const deps     = MODULE_DEPS[mod] ?? [];
-              const missingDeps = deps.filter(d => !(enabledMap[d] ?? false));
-              const blocked  = !enabled && missingDeps.length > 0;
-              const loading  = modulesBusy === mod;
+            {OPTIONAL_MODULES.map(mod => {
+              // No stored row means the module is on.
+              const stored  = enabledMap[mod.systemModule];
+              const enabled = stored === undefined ? true : stored;
+              const loading = modulesBusy === mod.id;
 
               return (
-                <div key={mod}
-                  className="flex items-start justify-between gap-4 py-3 border-b border-border/60/60 last:border-0">
+                <div key={mod.id}
+                  className="flex items-start justify-between gap-4 py-3 border-b border-border/60 last:border-0">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">
-                      {MODULE_LABEL[mod] ?? mod}
-                    </p>
-                    {blocked && (
-                      <p className="text-xs text-warn mt-0.5">
-                        Requires: {missingDeps.map(d => MODULE_LABEL[d] ?? d).join(", ")}
-                      </p>
-                    )}
+                    <p className="text-sm font-medium text-foreground">{mod.label}</p>
+                    <p className="text-xs text-slate mt-0.5">{mod.description}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {loading && <Spinner size="sm" />}
                     <Toggle
                       checked={enabled}
-                      onChange={v => handleModuleToggle(mod, v)}
-                      disabled={loading || blocked}
+                      onChange={v => handleModuleToggle(mod.id, v)}
+                      disabled={loading}
                     />
                   </div>
                 </div>

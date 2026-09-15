@@ -15,10 +15,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
-async function guard() { return (await requireSchoolRole("PRINCIPAL")) ??
+async function guard() { return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY","view")); }
 
 export async function GET(req: NextRequest) {

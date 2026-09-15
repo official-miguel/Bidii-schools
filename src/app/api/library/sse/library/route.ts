@@ -9,15 +9,14 @@
 
 import { NextRequest } from "next/server";
 import { sseBus } from "@/lib/sse";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const user =
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "view"));
   if (!user) return new Response("Unauthorized", { status: 401 });
 

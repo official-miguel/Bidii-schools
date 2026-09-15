@@ -18,6 +18,8 @@
 
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { usePermissions } from "@/components/PermissionProvider";
+import type { OptionalModule } from "@/lib/moduleAccess";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,6 +114,8 @@ interface NavEntry {
   icon:     string;
   roles:    string[];  // which roles can navigate here
   keywords: string[];  // extra search terms
+  /** Optional module this page belongs to — hidden when the school has it off */
+  module?:  OptionalModule;
 }
 
 const NAV_REGISTRY: NavEntry[] = [
@@ -136,8 +140,8 @@ const NAV_REGISTRY: NavEntry[] = [
   { id: "nav_exam_periods",  label: "Exam Periods",       detail: "Assessments",    href: "/{role}/exam-periods",   icon: "BookOpenCheck", roles: ["principal"],                  keywords: ["term exams","examinations","schedule"] },
   // ── Administration ────────────────────────────────────────────────────────
   { id: "nav_departments",   label: "Departments",        detail: "Administration", href: "/{role}/departments",    icon: "Layers",        roles: ["principal"],                  keywords: ["faculties","sections"] },
-  { id: "nav_library",       label: "Library",            detail: "Administration", href: "/{role}/library",        icon: "Library",       roles: ["principal","staff"],          keywords: ["books","borrowing","catalogue","isbn"] },
-  { id: "nav_accommodation", label: "Accommodation",      detail: "Administration", href: "/{role}/accommodation",  icon: "BedDouble",     roles: ["principal"],                  keywords: ["dormitory","boarding","dorm","allocation","hostel"] },
+  { id: "nav_library",       label: "Library",            detail: "Administration", href: "/{role}/library",        icon: "Library",       roles: ["principal","staff"],          keywords: ["books","borrowing","catalogue","isbn"], module: "LIBRARY" as const },
+  { id: "nav_accommodation", label: "Accommodation",      detail: "Administration", href: "/{role}/accommodation",  icon: "BedDouble",     roles: ["principal"],                  keywords: ["dormitory","boarding","dorm","allocation","hostel"], module: "ACCOMMODATION" as const },
   { id: "nav_settings",      label: "Settings",           detail: "Administration", href: "/{role}/settings",       icon: "Settings",      roles: ["principal"],                  keywords: ["configuration","preferences","school"] },
   { id: "nav_administration",label: "Administration",     detail: "Hub",            href: "/{role}/administration", icon: "Settings2",     roles: ["principal"],                  keywords: ["admin","management"] },
   // ── Staff portal ─────────────────────────────────────────────────────────
@@ -153,30 +157,32 @@ interface QuickActionEntry {
   icon:     string;
   roles:    string[];
   keywords: string[];
+  /** Optional module this action belongs to — hidden when the school has it off */
+  module?:  OptionalModule;
 }
 
 const ACTIONS_REGISTRY: QuickActionEntry[] = [
   { id: "qa_add_student",    label: "Register Student",     detail: "Quick Action", href: "/{role}/students?action=add",          icon: "UserPlus",      roles: ["principal","staff"],   keywords: ["new student","enroll","admit"] },
   { id: "qa_add_staff",      label: "Add Staff Member",     detail: "Quick Action", href: "/{role}/staff?action=add",             icon: "UserCheck",     roles: ["principal"],           keywords: ["hire","new teacher","new staff"] },
   { id: "qa_take_attendance",label: "Take Attendance",      detail: "Quick Action", href: "/{role}/attendance",                   icon: "ClipboardCheck",roles: ["principal","teacher"], keywords: ["mark attendance","roll call"] },
-  { id: "qa_issue_book",     label: "Issue Book",           detail: "Quick Action", href: "/{role}/library?action=issue",         icon: "BookUp",        roles: ["principal","staff"],   keywords: ["borrow","lend","library"] },
+  { id: "qa_issue_book",     label: "Issue Book",           detail: "Quick Action", href: "/{role}/library?action=issue",         icon: "BookUp",        roles: ["principal","staff"],   keywords: ["borrow","lend","library"], module: "LIBRARY" as const },
   { id: "qa_send_message",   label: "Send Message",         detail: "Quick Action", href: "/{role}/communication?action=compose", icon: "Send",          roles: ["principal","staff"],   keywords: ["compose","email","sms","announce"] },
   { id: "qa_create_exam",    label: "Create Exam Period",   detail: "Quick Action", href: "/{role}/exam-periods?action=add",      icon: "BookOpenCheck", roles: ["principal"],           keywords: ["new exam","schedule exam"] },
   { id: "qa_view_reports",   label: "Generate Report",      detail: "Quick Action", href: "/{role}/reports",                      icon: "FileBarChart",  roles: ["principal"],           keywords: ["analytics","summary","export"] },
   { id: "qa_add_class",      label: "Add Class",            detail: "Quick Action", href: "/{role}/classes?action=add",           icon: "School",        roles: ["principal"],                  keywords: ["new class","new form","stream"] },
   { id: "qa_record_result",  label: "Enter Results",        detail: "Quick Action", href: "/{role}/results",                      icon: "ClipboardEdit", roles: ["principal","teacher"],        keywords: ["marks","grades","scores"] },
-  { id: "qa_allocate_dorm",  label: "Allocate Boarding",    detail: "Quick Action", href: "/{role}/accommodation/allocations",    icon: "BedDouble",     roles: ["principal"],                  keywords: ["dorm","boarding","allocate","hostel"] },
+  { id: "qa_allocate_dorm",  label: "Allocate Boarding",    detail: "Quick Action", href: "/{role}/accommodation/allocations",    icon: "BedDouble",     roles: ["principal"],                  keywords: ["dorm","boarding","allocate","hostel"], module: "ACCOMMODATION" as const },
   // ── Fees / Finance ────────────────────────────────────────────────────────
-  { id: "qa_post_payment",   label: "Post Payment",         detail: "Quick Action", href: "/staff/finance/payments",              icon: "Banknote",      roles: ["principal","staff"],          keywords: ["payment","collect fee","cash","bank transfer"] },
-  { id: "qa_view_debtors",   label: "View Debtors",         detail: "Quick Action", href: "/staff/finance/",                      icon: "TrendingDown",  roles: ["principal","staff"],          keywords: ["outstanding","arrears","unpaid","owing"] },
-  { id: "qa_invoice_term",   label: "Invoice Term Fees",    detail: "Quick Action", href: "/staff/finance/fee-structures",        icon: "ReceiptText",   roles: ["principal"],                  keywords: ["invoice","charge","term fees","billing"] },
-  { id: "qa_fee_reports",    label: "Fee Reports",          detail: "Quick Action", href: "/staff/finance/reports",               icon: "PieChart",      roles: ["principal","staff"],          keywords: ["finance report","collection rate","analytics"] },
-  { id: "qa_reconcile",      label: "Reconcile Payments",   detail: "Quick Action", href: "/staff/finance/reconciliation",        icon: "RefreshCw",     roles: ["principal","staff"],          keywords: ["mpesa","unmatched","reconcile","match payment"] },
+  { id: "qa_post_payment",   label: "Post Payment",         detail: "Quick Action", href: "/staff/finance/payments",              icon: "Banknote",      roles: ["principal","staff"],          keywords: ["payment","collect fee","cash","bank transfer"], module: "FEES" as const },
+  { id: "qa_view_debtors",   label: "View Debtors",         detail: "Quick Action", href: "/staff/finance/",                      icon: "TrendingDown",  roles: ["principal","staff"],          keywords: ["outstanding","arrears","unpaid","owing"], module: "FEES" as const },
+  { id: "qa_invoice_term",   label: "Invoice Term Fees",    detail: "Quick Action", href: "/staff/finance/fee-structures",        icon: "ReceiptText",   roles: ["principal"],                  keywords: ["invoice","charge","term fees","billing"], module: "FEES" as const },
+  { id: "qa_fee_reports",    label: "Fee Reports",          detail: "Quick Action", href: "/staff/finance/reports",               icon: "PieChart",      roles: ["principal","staff"],          keywords: ["finance report","collection rate","analytics"], module: "FEES" as const },
+  { id: "qa_reconcile",      label: "Reconcile Payments",   detail: "Quick Action", href: "/staff/finance/reconciliation",        icon: "RefreshCw",     roles: ["principal","staff"],          keywords: ["mpesa","unmatched","reconcile","match payment"], module: "FEES" as const },
   // ── Library ───────────────────────────────────────────────────────────────
-  { id: "qa_return_book",    label: "Return Book",          detail: "Quick Action", href: "/{role}/library/circulate",            icon: "BookCheck",     roles: ["principal","staff"],          keywords: ["return","hand in","borrow back"] },
-  { id: "qa_add_book",       label: "Add Book to Catalogue",detail: "Quick Action", href: "/{role}/library/inventory?action=add", icon: "BookPlus",      roles: ["principal","staff"],          keywords: ["new book","catalogue","add title","acquisition"] },
-  { id: "qa_library_fines",  label: "Manage Library Fines", detail: "Quick Action", href: "/{role}/library/cards?hasFine=true",   icon: "BadgeDollarSign",roles: ["principal","staff"],         keywords: ["library fine","waive fine","collect fine","overdue fine"] },
-  { id: "qa_overdue_books",  label: "View Overdue Books",   detail: "Quick Action", href: "/{role}/library/cards",                icon: "BookX",         roles: ["principal","staff"],          keywords: ["overdue","late return","past due","unreturned"] },
+  { id: "qa_return_book",    label: "Return Book",          detail: "Quick Action", href: "/{role}/library/circulate",            icon: "BookCheck",     roles: ["principal","staff"],          keywords: ["return","hand in","borrow back"], module: "LIBRARY" as const },
+  { id: "qa_add_book",       label: "Add Book to Catalogue",detail: "Quick Action", href: "/{role}/library/inventory?action=add", icon: "BookPlus",      roles: ["principal","staff"],          keywords: ["new book","catalogue","add title","acquisition"], module: "LIBRARY" as const },
+  { id: "qa_library_fines",  label: "Manage Library Fines", detail: "Quick Action", href: "/{role}/library/cards?hasFine=true",   icon: "BadgeDollarSign",roles: ["principal","staff"],         keywords: ["library fine","waive fine","collect fine","overdue fine"], module: "LIBRARY" as const },
+  { id: "qa_overdue_books",  label: "View Overdue Books",   detail: "Quick Action", href: "/{role}/library/cards",                icon: "BookX",         roles: ["principal","staff"],          keywords: ["overdue","late return","past due","unreturned"], module: "LIBRARY" as const },
 ];
 
 // ---------------------------------------------------------------------------
@@ -207,6 +213,20 @@ export function useGlobalSearch(query: string, role: string) {
   // Roles that have access to the staff-only search APIs.
   // PARENT (and any future portal-only roles) only get navigation/actions search.
   const isStaffRole = ["principal", "teacher", "staff"].includes(role);
+
+  // Pages and actions belonging to an optional module are only searchable when
+  // the school has that module switched on. The permission cache already has
+  // disabled modules stripped out, so presence there is the test. Entries are
+  // withheld until the cache confirms the module — a switched-off module must
+  // never flash up in search while permissions load.
+  const { permissions } = usePermissions();
+  const moduleAvailable = useCallback(
+    (module?: OptionalModule) => {
+      if (!module) return true;
+      return Boolean(permissions?.modules?.[module]);
+    },
+    [permissions]
+  );
 
   // Fetch data from APIs on component mount
   useEffect(() => {
@@ -363,6 +383,7 @@ export function useGlobalSearch(query: string, role: string) {
         .filter(
           (n) =>
             n.roles.includes(role) &&
+            moduleAvailable(n.module) &&
             (n.label.toLowerCase().includes(lower) ||
               n.detail.toLowerCase().includes(lower) ||
               n.keywords.some((k) => k.toLowerCase().includes(lower)))
@@ -390,6 +411,7 @@ export function useGlobalSearch(query: string, role: string) {
         .filter(
           (a) =>
             a.roles.includes(role) &&
+            moduleAvailable(a.module) &&
             (a.label.toLowerCase().includes(lower) ||
               a.keywords.some((k) => k.toLowerCase().includes(lower)))
         )

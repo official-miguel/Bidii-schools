@@ -23,15 +23,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { mintQrToken } from "@/lib/library/qr";
 import { recordCirculationEvent } from "@/lib/library/circulationEvents";
 import { emitSSE } from "@/lib/sse";
 
 async function manageGuard() {
   return (
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "manage"))
   );
 }

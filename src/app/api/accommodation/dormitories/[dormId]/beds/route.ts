@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 async function manageGuard() {
   return (
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
     (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
 }
@@ -80,7 +79,7 @@ export async function GET(
   { params }: { params: { dormId: string } }
 ) {
   const user =
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
     (await requireSchoolPermission("ACCOMMODATION", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;

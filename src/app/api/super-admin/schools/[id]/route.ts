@@ -4,7 +4,6 @@ import { prisma }                     from "@/lib/prisma";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
 
 const UpdateSchema = z.object({
-  planTier: z.enum(["FREE","STARTER","GROWTH","PROFESSIONAL","ENTERPRISE"]).optional(),
   status:   z.enum(["ONBOARDING","ACTIVE","SUSPENDED"]).optional(),
   storageQuotaGb: z.number().min(1).optional(),
 });
@@ -49,7 +48,7 @@ export async function GET(
   return NextResponse.json({ school });
 }
 
-/** PATCH /api/super-admin/schools/[id] — update plan tier or status */
+/** PATCH /api/super-admin/schools/[id] — update status or storage quota */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -61,11 +60,11 @@ export async function PATCH(
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 
-  const { planTier, status, storageQuotaGb } = parsed.data;
+  const { status, storageQuotaGb } = parsed.data;
 
   const updated = await prisma.schoolMeta.update({
     where: { schoolId: params.id },
-    data:  { planTier, status, storageQuotaGb },
+    data:  { status, storageQuotaGb },
   });
 
   const action = status === "SUSPENDED" ? "SCHOOL_SUSPENDED"

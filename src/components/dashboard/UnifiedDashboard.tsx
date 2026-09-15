@@ -28,6 +28,7 @@
 import type { User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeDerivedRoles } from "@/lib/derivedRoles";
+import { getEnabledOptionalModules } from "@/lib/moduleAccess";
 import { getEffectivePermissions, getAssignedRoleNames } from "@/lib/permissions";
 import { getUpcomingCalendarItems, getPrincipalDeadlines } from "@/lib/calendarUpcoming";
 import type { DeadlineItem } from "@/components/dashboard/DeadlineCountdownBanner";
@@ -89,16 +90,24 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
   const showSubjectTeacher = !showSchoolOverview && derived.subjectTeacher != null;
 
   // Boarding
-  const hasBoarding   = school?.boardingType !== "DAY_ONLY";
+  // Optional modules the school has switched off are absent from the dashboard
+  // for everyone, Principal included — no stats card, no quick link, nothing.
+  const enabledModules   = await getEnabledOptionalModules(schoolId);
+  const boardingEnabled  = enabledModules.has("ACCOMMODATION");
+  const libraryEnabled   = enabledModules.has("LIBRARY");
+
+  const hasBoarding   = boardingEnabled && school?.boardingType !== "DAY_ONLY";
   const showDorm      = hasBoarding && (derived.dormMaster != null || isAssignedMatron || isPrincipal || isDeputy);
   const dormIsSchoolWide = isAssignedMatron || showSchoolOverview;
 
   // Library
-  const [libBooksCount, libSettingsCount] = await Promise.all([
-    prisma.libraryBook.count({ where: { schoolId } }).catch(() => 0),
-    prisma.librarySettings.count({ where: { schoolId } }).catch(() => 0),
-  ]);
-  const hasLibrary  = libSettingsCount > 0 || libBooksCount > 0;
+  const [libBooksCount, libSettingsCount] = libraryEnabled
+    ? await Promise.all([
+        prisma.libraryBook.count({ where: { schoolId } }).catch(() => 0),
+        prisma.librarySettings.count({ where: { schoolId } }).catch(() => 0),
+      ])
+    : [0, 0];
+  const hasLibrary  = libraryEnabled && (libSettingsCount > 0 || libBooksCount > 0);
   const showLibrary = hasLibrary && (
     isAssignedLibrarian || isPrincipal || isDeputy ||
     (perms as Record<string, { canView?: boolean }>)?.LIBRARY?.canView

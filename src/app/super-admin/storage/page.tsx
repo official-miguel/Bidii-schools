@@ -4,7 +4,7 @@
  * /super-admin/storage — Storage & Usage
  *
  * System-wide totals card + progress bar
- * Per-school sortable table: School | Used | % of quota | Plan | Trend indicator
+ * Per-school sortable table: School | Used | % of quota | Trend indicator
  * Breakdown by type (documents / media / database / backups) via stacked bar chart (CSS)
  * Top-5 schools by usage highlighted
  */
@@ -25,7 +25,6 @@ import {
 interface StorageRow {
   schoolId:   string;
   schoolName: string;
-  planTier:   string;
   quotaGb:    number;
   usedGb:     number;
   pct:        number;
@@ -95,23 +94,6 @@ function TrendIndicator({ pct }: { pct: number }) {
   if (pct > 80)  return <TrendingUp   className="h-4 w-4 text-danger"  aria-hidden="true" />;
   if (pct > 50)  return <TrendingUp   className="h-4 w-4 text-warn"    aria-hidden="true" />;
   return              <Minus         className="h-4 w-4 text-slate"    aria-hidden="true" />;
-}
-
-// ── Plan badge ────────────────────────────────────────────────────────────────
-
-function PlanBadge({ tier }: { tier: string }) {
-  const map: Record<string, string> = {
-    FREE:         "bg-slate-100 text-slate border-border",
-    STARTER:      "bg-teal-50 text-teal border-teal/20",
-    GROWTH:       "bg-info-bg text-info border-info/20",
-    PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
-    ENTERPRISE:   "bg-danger-bg text-danger border-danger/20",
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[tier] ?? "bg-slate-100 text-slate border-border"}`}>
-      {tier.slice(0, 3)}
-    </span>
-  );
 }
 
 // ── System-wide summary card ──────────────────────────────────────────────────
@@ -265,7 +247,6 @@ export default function StoragePage() {
                           School <SortIcon active={sortKey === "schoolName"} dir={sortDir} />
                         </span>
                       </th>
-                      <th className={`${th} hidden sm:table-cell`}>Plan</th>
                       <th className={thS} onClick={() => toggleSort("usedGb")}>
                         <span className="inline-flex items-center gap-1">
                           Used <SortIcon active={sortKey === "usedGb"} dir={sortDir} />
@@ -317,9 +298,6 @@ export default function StoragePage() {
                                   </span>
                                 )}
                               </div>
-                            </td>
-                            <td className="px-5 py-3.5 hidden sm:table-cell">
-                              <PlanBadge tier={row.planTier} />
                             </td>
                             <td className="px-5 py-3.5 text-sm font-semibold text-foreground tabular-nums whitespace-nowrap">
                               {fmtGb(row.usedGb)}

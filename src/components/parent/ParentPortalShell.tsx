@@ -89,6 +89,12 @@ interface ParentPortalShellProps {
   schoolName?: string;
   /** Unread message/notification count */
   unreadCount?: number;
+  /**
+   * Route segments to leave out of the nav entirely — used for optional
+   * modules the school has switched off (e.g. "fees" when Finance is off).
+   * Omitted items are not rendered at all, not disabled.
+   */
+  hiddenSegs?: readonly string[];
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -100,11 +106,16 @@ export default function ParentPortalShell({
   avatarUrl,
   schoolName: _schoolName,
   unreadCount = 0,
+  hiddenSegs = [],
 }: ParentPortalShellProps) {
   const pathname   = usePathname();
   const router     = useRouter();
   const activeSeg  = getActiveSeg(pathname);
   const userInits  = initials(parentName);
+
+  // Nav for modules this school has switched off is dropped, not disabled.
+  const navItems    = PARENT_NAV.filter((i) => !i.seg || !hiddenSegs.includes(i.seg));
+  const bottomTabs  = BOTTOM_TABS.filter((i) => !i.seg || !hiddenSegs.includes(i.seg));
 
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [profileOpen,  setProfileOpen]  = useState(false);
@@ -381,7 +392,7 @@ export default function ParentPortalShell({
 
         {/* Main nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          {PARENT_NAV.map(({ label, href, Icon, seg, ...rest }) => {
+          {navItems.map(({ label, href, Icon, seg, ...rest }) => {
             const active  = isActive(seg);
             const hasBadge = "badge" in rest && rest.badge;
             return (
@@ -542,7 +553,7 @@ export default function ParentPortalShell({
 
             {/* Nav */}
             <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
-              {PARENT_NAV.map(({ label, href, Icon, seg, ...rest }) => {
+              {navItems.map(({ label, href, Icon, seg, ...rest }) => {
                 const active   = isActive(seg);
                 const hasBadge = "badge" in rest && rest.badge;
                 return (
@@ -633,7 +644,7 @@ export default function ParentPortalShell({
           minHeight: "68px",
         }}
       >
-        {BOTTOM_TABS.map(({ label, href, Icon, seg, ...rest }) => {
+        {bottomTabs.map(({ label, href, Icon, seg, ...rest }) => {
           const badgeCount = "badge" in rest ? (rest as { badge?: number }).badge ?? 0 : 0;
           const active = href
             ? (seg === null ? activeSeg === null : activeSeg === seg)

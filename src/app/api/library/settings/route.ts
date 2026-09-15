@@ -5,12 +5,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 async function guard() {
   return (
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "view"))
   );
 }
@@ -49,7 +48,7 @@ const updateSchema = z.object({
 });
 
 export async function PUT(req: NextRequest) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  const user = await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));

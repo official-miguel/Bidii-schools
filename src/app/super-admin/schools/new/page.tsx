@@ -4,7 +4,8 @@
  * /super-admin/schools/new — School Onboarding form
  *
  * Creates a new school + first PRINCIPAL user in one transaction.
- * Plan tier selector auto-shows the module bundle for that tier.
+ * Optional modules (Library, Finance, Accommodation) start switched on and
+ * can be left off here; everything else is core and always included.
  * On success → redirects to the new school's detail page.
  */
 
@@ -18,30 +19,13 @@ import {
   ErrorBanner,
 } from "@/components/ui";
 
-const PLAN_TIERS = ["FREE", "STARTER", "GROWTH", "PROFESSIONAL", "ENTERPRISE"] as const;
-type PlanTier = (typeof PLAN_TIERS)[number];
+const OPTIONAL_MODULES = [
+  { id: "LIBRARY",       label: "Library",       description: "Catalogue, cards, borrowing, and fines" },
+  { id: "FEES",          label: "Finance",       description: "Fee structures, invoicing, and payments" },
+  { id: "ACCOMMODATION", label: "Accommodation", description: "Dormitories, beds, and boarding allocations" },
+] as const;
 
-const PLAN_BUNDLES: Record<PlanTier, string[]> = {
-  FREE:         ["Attendance"],
-  STARTER:      ["Attendance", "Grading", "Reports", "Import Tool"],
-  GROWTH:       ["Attendance", "Grading", "Reports", "Import Tool", "Messaging", "Library", "Timetable"],
-  PROFESSIONAL: ["Attendance", "Grading", "Reports", "Import Tool", "Messaging", "Library",
-                 "Timetable", "Fee Management", "Accommodation", "Analytics"],
-  ENTERPRISE:   ["Attendance", "Grading", "Reports", "Import Tool", "Messaging", "Library",
-                 "Timetable", "Fee Management", "Accommodation", "Analytics", "AI Tools", "Transport"],
-};
-
-const PLAN_COLORS: Record<PlanTier, string> = {
-  FREE:         "bg-slate-100 text-slate border-border",
-  STARTER:      "bg-teal-50 text-teal border-teal/20",
-  GROWTH:       "bg-info-bg text-info border-info/20",
-  PROFESSIONAL: "bg-warn-bg text-warn border-warn/20",
-  ENTERPRISE:   "bg-danger-bg text-danger border-danger/20",
-};
-
-const DEFAULT_QUOTAS: Record<PlanTier, number> = {
-  FREE: 2, STARTER: 5, GROWTH: 15, PROFESSIONAL: 50, ENTERPRISE: 200,
-};
+type OptionalModuleId = (typeof OPTIONAL_MODULES)[number]["id"];
 
 function generateSlug(name: string) {
   return name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -56,7 +40,7 @@ export default function SchoolOnboardingPage() {
     contactPerson:  "",
     contactEmail:   "",
     contactPhone:   "",
-    planTier:       "STARTER" as PlanTier,
+    modules:        OPTIONAL_MODULES.map(m => m.id) as OptionalModuleId[],
     storageQuotaGb: 5,
     slug:           "",
     adminName:      "",
@@ -78,9 +62,13 @@ export default function SchoolOnboardingPage() {
     if (!form.slug) set("slug", generateSlug(v));
   }
 
-  function handlePlanChange(tier: PlanTier) {
-    set("planTier", tier);
-    set("storageQuotaGb", DEFAULT_QUOTAS[tier]);
+  function toggleModule(id: OptionalModuleId) {
+    setForm(f => ({
+      ...f,
+      modules: f.modules.includes(id)
+        ? f.modules.filter(m => m !== id)
+        : [...f.modules, id],
+    }));
   }
 
   function validate() {
@@ -224,58 +212,64 @@ export default function SchoolOnboardingPage() {
           </div>
         </Card>
 
-        {/* ── Plan tier ─────────────────────────────────────────────── */}
+        {/* ── Modules & quota ───────────────────────────────────────── */}
         <Card className="">
           <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-border">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-warn-bg">
               <Shield className="h-4 w-4 text-warn" aria-hidden />
             </div>
-            <h2 className="text-sm font-semibold text-foreground">Plan &amp; Quota</h2>
+            <h2 className="text-sm font-semibold text-foreground">Modules &amp; Storage</h2>
           </div>
 
-          {/* Plan tier selector */}
           <div className="space-y-3">
-            <label className={labelClass}>Plan Tier <span className="text-danger ml-1">*</span></label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {PLAN_TIERS.map(tier => (
-                <button
-                  key={tier}
-                  type="button"
-                  onClick={() => handlePlanChange(tier)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border-2 px-3 py-3 text-xs font-semibold
-                              transition-all duration-100
-                              ${form.planTier === tier
-                                ? "border-teal bg-teal-50 text-teal shadow-sm"
-                                : "border-border hover:border-teal/40 text-slate"
-                              }`}
-                >
-                  {tier}
-                </button>
-              ))}
-            </div>
+            <label className={labelClass}>Optional modules</label>
+            <p className="text-xs text-slate -mt-1.5">
+              Everything else is included for every school. These three can be turned
+              off now or at any time from Module Management.
+            </p>
 
-            {/* Module bundle preview */}
-            <div className="rounded-lg bg-background border border-border p-3">
-              <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">
-                Included modules
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {PLAN_BUNDLES[form.planTier].map(m => (
-                  <span
-                    key={m}
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium
-                                ${PLAN_COLORS[form.planTier]}`}
+            <div className="grid gap-2 sm:grid-cols-3">
+              {OPTIONAL_MODULES.map(mod => {
+                const on = form.modules.includes(mod.id);
+                return (
+                  <button
+                    key={mod.id}
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    onClick={() => toggleModule(mod.id)}
+                    className={`flex flex-col items-start gap-1.5 rounded-xl border-2 px-3.5 py-3 text-left
+                                transition-all duration-100
+                                ${on
+                                  ? "border-teal bg-teal-50 shadow-sm"
+                                  : "border-border hover:border-teal/40"
+                                }`}
                   >
-                    {m}
-                  </span>
-                ))}
-              </div>
+                    <span className="flex items-center justify-between w-full gap-2">
+                      <span className={`text-sm font-semibold ${on ? "text-teal" : "text-slate"}`}>
+                        {mod.label}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent
+                                    transition-colors duration-200 ${on ? "bg-teal" : "bg-line"}`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-card shadow
+                                      transition-transform duration-200 ${on ? "translate-x-4" : "translate-x-0"}`}
+                        />
+                      </span>
+                    </span>
+                    <span className="text-[11px] leading-snug text-slate">{mod.description}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Storage quota */}
             <FormField
               label="Initial Storage Quota (GB)"
-              helper={`Default for ${form.planTier}: ${DEFAULT_QUOTAS[form.planTier]} GB`}
+              helper="Applies to uploaded documents, media, and generated reports."
             >
               <input
                 type="number"

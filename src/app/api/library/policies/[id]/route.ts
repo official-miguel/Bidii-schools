@@ -6,17 +6,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 type Params = { params: { id: string } };
 
 async function guard() {
-  return (await requireSchoolRole("PRINCIPAL")) ??
+  return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "view"));
 }
 async function manageGuard() {
-  return (await requireSchoolRole("PRINCIPAL")) ??
+  return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "manage"));
 }
 

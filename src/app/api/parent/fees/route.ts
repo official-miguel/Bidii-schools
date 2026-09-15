@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireParent, ownsStudent } from "@/lib/parentAuth";
+import { moduleDisabledResponse } from "@/lib/moduleAccess";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { prisma } from "@/lib/prisma";
 
@@ -25,6 +26,11 @@ export async function GET(req: NextRequest) {
   if (!parent) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Finance switched off for this school — the parent portal must not expose
+  // fees at all, so answer as though the route does not exist.
+  const feesDisabled = await moduleDisabledResponse(parent.schoolId, "FEES");
+  if (feesDisabled) return feesDisabled;
 
   if (!(await checkRateLimit(parent.userId))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });

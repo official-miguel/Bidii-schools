@@ -28,12 +28,11 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 async function manageGuard() {
   return (
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "manage"))
   );
 }

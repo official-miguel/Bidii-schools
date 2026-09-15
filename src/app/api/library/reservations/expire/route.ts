@@ -15,13 +15,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { tryAutoAssign } from "@/lib/library/autoAssign";
 
 async function manageGuard() {
-  return (await requireSchoolRole("PRINCIPAL")) ??
+  return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "manage"));
 }
 

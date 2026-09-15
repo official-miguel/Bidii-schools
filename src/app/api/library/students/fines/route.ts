@@ -1,7 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 
 /** GET /api/library/students/fines
  *  Returns all library cards with a positive fine balance, ordered by
@@ -9,7 +8,7 @@ import { requireSchoolPermission } from "@/lib/permissions";
  */
 export async function GET() {
   const user =
-    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

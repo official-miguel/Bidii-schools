@@ -16,15 +16,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolRole } from "@/lib/auth";
-import { requireSchoolPermission } from "@/lib/permissions";
+import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { PolicyEngine, computeFine } from "@/lib/library/policyEngine";
 import { recordCirculationEvent, recordFineAudit } from "@/lib/library/circulationEvents";
 import { loadBorrowWithRelations } from "@/lib/library/borrowHelper";
 
 async function manageGuard() {
-  return (await requireSchoolRole("PRINCIPAL")) ??
+  return (await requireSchoolRoleForModule("LIBRARY", "PRINCIPAL")) ??
     (await requireSchoolPermission("LIBRARY", "manage"));
 }
 

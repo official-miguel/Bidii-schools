@@ -1,6 +1,7 @@
-import type { Module, User } from "@prisma/client";
+import type { Module, Role, User } from "@prisma/client";
 import { prisma } from "./prisma";
-import { getCurrentUser } from "./auth";
+import { getCurrentUser, requireSchoolRole } from "./auth";
+import { getEnabledOptionalModules, isModuleEnabled, stripDisabledModules } from "./moduleAccess";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Module registry — single source of truth for labels, descriptions, and which
@@ -141,6 +142,14 @@ function mergeAccess(a: ModuleAccess, b: ModuleAccess): ModuleAccess {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getEffectivePermissions(user: User): Promise<EffectivePermissions> {
+  const perms = await computeEffectivePermissions(user);
+  // Modules switched off for this school are removed here, which is what makes
+  // them disappear from the sidebar, hub pages, dashboards, and every route
+  // guarded by requirePermission.
+  return stripDisabledModules(user.schoolId, perms);
+}
+
+async function computeEffectivePermissions(user: User): Promise<EffectivePermissions> {
   if (user.role === "PRINCIPAL") {
     const full: EffectivePermissions = {};
     for (const m of ALL_MODULES) full[m] = { ...FULL_ACCESS };
@@ -219,6 +228,11 @@ export async function getEffectivePermissions(user: User): Promise<EffectivePerm
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getTeacherEffectivePermissions(user: User): Promise<EffectivePermissions> {
+  const perms = await computeTeacherEffectivePermissions(user);
+  return stripDisabledModules(user.schoolId, perms);
+}
+
+async function computeTeacherEffectivePermissions(user: User): Promise<EffectivePermissions> {
   // Fetch teacher + all assignment data in ONE query
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },
@@ -370,6 +384,11 @@ export async function requirePermission(
 ): Promise<User | null> {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // A module switched off for this school is treated as non-existent for
+  // everyone, Principal included.
+  if (!(await isModuleEnabled(user.schoolId, module))) return null;
+
   if (user.role === "PRINCIPAL") return user;
 
   if (user.role === "ADMIN_STAFF") {
@@ -400,6 +419,24 @@ export async function requireSchoolPermission(
   const user = await requirePermission(module, action);
   if (!user || !user.schoolId!) return null;
   return user as import("./auth").SchoolUser;
+}
+
+/**
+ * Module-aware requireSchoolRole.
+ *
+ * Library, Finance, and Accommodation routes let a Principal through on role
+ * alone, which would otherwise bypass the module switch entirely. This wrapper
+ * applies the switch first: if the module is off for the school, nobody passes
+ * — the route then answers exactly as it would for a user with no access.
+ */
+export async function requireSchoolRoleForModule(
+  module: Module,
+  ...roles: Role[]
+): Promise<import("./auth").SchoolUser | null> {
+  const user = await requireSchoolRole(...roles);
+  if (!user) return null;
+  if (!(await isModuleEnabled(user.schoolId, module))) return null;
+  return user;
 }
 
 function checkAction(entry: ModuleAccess, action: PermissionAction): boolean {
@@ -668,6 +705,15 @@ export type DashboardVariant =
  *  Priority: deputy > hod > class_teacher > librarian > boarding_master > generic. */
 export async function getDashboardVariant(user: User): Promise<DashboardVariant> {
   if (user.role === "PRINCIPAL") return "principal";
+
+  // A dashboard built around an optional module is only offered when the school
+  // actually has that module. Otherwise the user falls through to a general
+  // dashboard — a librarian at a school without Library sees no library
+  // dashboard rather than an empty one.
+  const modules      = user.schoolId ? await getEnabledOptionalModules(user.schoolId) : null;
+  const hasLibrary   = !modules || modules.has("LIBRARY");
+  const hasBoarding  = !modules || modules.has("ACCOMMODATION");
+
   if (user.role === "TEACHER") {
     const teacher = await prisma.teacher.findUnique({
       where: { userId: user.id },
@@ -679,7 +725,7 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
     });
     if (teacher?.departmentHeadOf)            return "hod";
     if (teacher?.classTeacherOf)              return "class_teacher";
-    if (teacher?.dormsBoardingMaster?.length) return "boarding_master";
+    if (hasBoarding && teacher?.dormsBoardingMaster?.length) return "boarding_master";
     return "subject_teacher";
   }
 
@@ -692,8 +738,8 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
     if (lower.some((n) => n.includes("deputy principal") || n.includes("deputy"))) return "deputy_principal";
     if (lower.some((n) => n.includes("head of department") || n.includes("hod")))  return "hod";
     if (lower.some((n) => n.includes("class teacher")))                             return "class_teacher";
-    if (lower.some((n) => n.includes("librarian")))                                return "librarian";
-    if (lower.some((n) => n.includes("boarding master") || n.includes("matron")))  return "boarding_master";
+    if (hasLibrary  && lower.some((n) => n.includes("librarian")))                  return "librarian";
+    if (hasBoarding && lower.some((n) => n.includes("boarding master") || n.includes("matron"))) return "boarding_master";
 
     // Also check derived assignments for ADMIN_STAFF who have a teacher record
     const teacher = await prisma.teacher.findUnique({
@@ -707,7 +753,7 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
 
     if (teacher?.departmentHeadOf)            return "hod";
     if (teacher?.classTeacherOf)              return "class_teacher";
-    if (teacher?.dormsBoardingMaster?.length) return "boarding_master";
+    if (hasBoarding && teacher?.dormsBoardingMaster?.length) return "boarding_master";
 
     const perms = await getEffectivePermissions(user);
     if (perms.ACCOMMODATION?.canView) return "boarding_master";

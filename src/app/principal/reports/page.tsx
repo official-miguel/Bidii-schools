@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { getEnabledOptionalModules, type OptionalModule } from "@/lib/moduleAccess";
 import {
   FileText,
   Printer,
@@ -32,6 +33,11 @@ interface ReportCategory {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   items: ReportItem[];
+  /**
+   * Optional module this category belongs to. The whole category is left out
+   * when the school has that module switched off.
+   */
+  module?: OptionalModule;
 }
 
 const CATEGORIES: ReportCategory[] = [
@@ -111,6 +117,7 @@ const CATEGORIES: ReportCategory[] = [
   },
   {
     id: "accommodation",
+    module: "ACCOMMODATION",
     label: "Accommodation Reports",
     icon: BedDouble,
     description: "Dormitory occupancy, allocations, and boarding population.",
@@ -175,6 +182,14 @@ export default async function PrincipalReportsHub() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  // Categories belonging to a switched-off module are dropped entirely.
+  const enabledModules = user.schoolId
+    ? await getEnabledOptionalModules(user.schoolId)
+    : null;
+  const categories = CATEGORIES.filter(
+    (c) => !c.module || !enabledModules || enabledModules.has(c.module)
+  );
+
   return (
     <div>
       {/* Page header */}
@@ -192,7 +207,7 @@ export default async function PrincipalReportsHub() {
 
       {/* Categories */}
       <div className="space-y-10">
-        {CATEGORIES.map(({ id, label, icon: CatIcon, description, items }) => (
+        {categories.map(({ id, label, icon: CatIcon, description, items }) => (
           <section key={id}>
             {/* Category header */}
             <div className="flex items-center gap-2.5 mb-4">

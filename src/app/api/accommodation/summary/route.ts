@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { moduleDisabledResponse } from "@/lib/moduleAccess";
 
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Accommodation switched off for this school — answer as if the route does
+  // not exist. Checked before the role fast-path below, which bypasses the
+  // permission resolver.
+  const disabled = await moduleDisabledResponse(user.schoolId, "ACCOMMODATION");
+  if (disabled) return disabled;
 
   // Fast-path auth:
   // - PRINCIPAL: always allowed

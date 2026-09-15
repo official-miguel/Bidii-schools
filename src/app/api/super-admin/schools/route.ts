@@ -3,6 +3,7 @@ import { z }                     from "zod";
 import { prisma }                from "@/lib/prisma";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
 import { hashPassword } from "@/lib/auth";
+import { OPTIONAL_MODULES, toSystemModule } from "@/lib/moduleAccess";
 
 const CreateSchema = z.object({
   name:          z.string().min(2),
@@ -10,7 +11,8 @@ const CreateSchema = z.object({
   contactPerson: z.string().min(1),
   contactEmail:  z.string().email(),
   contactPhone:  z.string().optional(),
-  planTier:      z.enum(["FREE","STARTER","GROWTH","PROFESSIONAL","ENTERPRISE"]).default("STARTER"),
+  /** Optional modules the new school starts with. Omitted means all three. */
+  modules:       z.array(z.enum(OPTIONAL_MODULES)).optional(),
   storageQuotaGb: z.number().min(1).default(10),
   slug:          z.string().regex(/^[a-z0-9-]+$/).optional(),
   adminName:     z.string().min(1),
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
       id: true, name: true, createdAt: true, email: true,
       schoolMeta: {
         select: {
-          planTier: true, status: true, storageQuotaGb: true,
+          status: true, storageQuotaGb: true,
           studentCount: true, staffCount: true, contactPerson: true, contactEmail: true,
         },
       },
@@ -89,7 +91,6 @@ export async function POST(req: NextRequest) {
         slug,
         schoolMeta: {
           create: {
-            planTier:       d.planTier,
             status:         "ONBOARDING",
             storageQuotaGb: d.storageQuotaGb,
             slug,
@@ -111,11 +112,26 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Optional modules are on unless a row says otherwise, so only the ones
+    // the admin left off need storing.
+    const chosen  = d.modules ?? [...OPTIONAL_MODULES];
+    const omitted = OPTIONAL_MODULES.filter((m) => !chosen.includes(m));
+    if (omitted.length > 0) {
+      await tx.schoolModuleToggle.createMany({
+        data: omitted.map((m) => ({
+          schoolId:  s.id,
+          module:    toSystemModule(m),
+          enabled:   false,
+          updatedBy: user.id,
+        })),
+      });
+    }
+
     return s;
   });
 
   await logAudit(user.id, "SCHOOL_CREATED", "school", school.id, {
-    name: d.name, planTier: d.planTier,
+    name: d.name, modules: d.modules ?? [...OPTIONAL_MODULES],
   });
 
   return NextResponse.json({ school }, { status: 201 });

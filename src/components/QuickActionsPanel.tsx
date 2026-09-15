@@ -21,6 +21,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useSomaAI } from "@/components/SomaAIProvider";
 import { useSomaAIStore } from "@/lib/soma-ai/store";
 import { ACTIONS_REGISTRY, NAV_REGISTRY } from "@/lib/hooks/useGlobalSearch";
+import { usePermissions } from "@/components/PermissionProvider";
 import { useProductivityStore } from "@/lib/stores/productivityStore";
 import { getLucideIcon } from "@/lib/utils/lucideIcon";
 
@@ -89,6 +90,7 @@ interface Props {
 
 export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
   const router = useRouter();
+  const { permissions } = usePermissions();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on Esc only — outside-click is handled by the wrapper in TopAppBar
@@ -105,8 +107,16 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
   if (!isOpen) return null;
 
   // Build ordered action list for this role
+  // Actions and shortcuts for an optional module are dropped when the school
+  // has that module switched off. The permission cache already excludes
+  // disabled modules, so presence there is the test.
+  const moduleAvailable = (module?: string) =>
+    !module || Boolean((permissions?.modules as Record<string, unknown> | undefined)?.[module]);
+
   const priority = ROLE_PRIORITY[role] ?? [];
-  const allRoleActions = ACTIONS_REGISTRY.filter((a) => a.roles.includes(role));
+  const allRoleActions = ACTIONS_REGISTRY.filter(
+    (a) => a.roles.includes(role) && moduleAvailable(a.module)
+  );
 
   const orderedActions = [
     ...priority
@@ -119,7 +129,7 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
   const navIds = NAV_SHORTCUTS_PER_ROLE[role] ?? [];
   const navShortcuts = navIds
     .map((id) => NAV_REGISTRY.find((n) => n.id === id))
-    .filter(Boolean) as typeof NAV_REGISTRY;
+    .filter((n): n is (typeof NAV_REGISTRY)[number] => Boolean(n) && moduleAvailable(n!.module));
 
   function navigate(href: string, label: string, icon: string) {
     const resolved = href.replace("{role}", role);

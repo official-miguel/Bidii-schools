@@ -5,6 +5,7 @@ import ParentPortalShell from "@/components/parent/ParentPortalShell";
 import ParentHydrator    from "@/components/parent/ParentHydrator";
 import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
 import SomaAIProvider from "@/components/SomaAIProvider";
+import { getEnabledOptionalModules } from "@/lib/moduleAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,11 @@ export default async function ParentLayout({
     );
   }
 
+  // Optional modules the school has switched off are dropped from the portal
+  // nav entirely — a parent at a school without Finance never sees a fees tab.
+  const enabledModules = await getEnabledOptionalModules(parent.schoolId);
+  const hiddenSegs     = enabledModules.has("FEES") ? [] : ["fees"];
+
   return (
     <MobileDrawerProvider>
       <SomaAIProvider role="parent" schoolName={parent.school.name}>
@@ -76,6 +82,7 @@ export default async function ParentLayout({
           userEmail={user.email}
           avatarUrl={user.avatarUrl ?? null}
           schoolName={parent.school.name}
+          hiddenSegs={hiddenSegs}
         >
           <ParentHydrator />
           {children}
