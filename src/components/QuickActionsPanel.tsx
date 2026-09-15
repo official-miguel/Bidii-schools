@@ -62,19 +62,14 @@ const ROLE_PRIORITY: Record<string, string[]> = {
     "qa_add_student",
   ],
   staff: [
-    "qa_add_student",
     "qa_post_payment",
-    "qa_issue_book",
-    "qa_return_book",
     "qa_view_debtors",
-    "qa_library_fines",
-    "qa_send_message",
-    "qa_overdue_books",
-    // extras
-    "qa_take_attendance",
     "qa_reconcile",
-    "qa_add_book",
     "qa_fee_reports",
+    "qa_invoice_term",
+    // extras
+    "qa_add_student",
+    "qa_take_attendance",
   ],
 };
 
@@ -82,7 +77,7 @@ const ROLE_PRIORITY: Record<string, string[]> = {
 const NAV_SHORTCUTS_PER_ROLE: Record<string, string[]> = {
   principal: ["nav_students", "nav_classes", "nav_finance", "nav_reports", "nav_accommodation", "nav_calendar", "nav_settings"],
   teacher:   ["nav_attendance", "nav_assessments", "nav_results", "nav_calendar"],
-  staff:     ["nav_students", "nav_finance", "nav_library", "nav_communication", "nav_calendar"],
+  staff:     ["nav_finance"],
 };
 
 // ---------------------------------------------------------------------------
