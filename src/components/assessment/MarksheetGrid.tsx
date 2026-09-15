@@ -932,7 +932,30 @@ export default function MarksheetGrid({
         body: JSON.stringify({ subjectId, items }),
       });
       const json = await res.json();
-      if (!res.ok) { setSaveError(json.error ?? "Couldn't save marks."); return; }
+      if (!res.ok) {
+        // Enhanced error logging
+        console.error("❌ Failed to save marks:", {
+          status: res.status,
+          error: json.error,
+          details: json.items || json,
+          payload: { subjectId, items },
+        });
+        
+        // More descriptive error messages
+        let errorMessage = "Couldn't save marks.";
+        if (res.status === 403) {
+          errorMessage = "Permission denied. You may not have access to enter marks for this subject.";
+        } else if (res.status === 422) {
+          errorMessage = json.error === "VALIDATION_ERROR" && json.items
+            ? `Validation error: ${json.items.map((i: any) => i.message).join(", ")}`
+            : "Invalid mark values. Please check your entries.";
+        } else if (json.error) {
+          errorMessage = json.error;
+        }
+        
+        setSaveError(errorMessage);
+        return;
+      }
       setSavedAt(Date.now());
       setData((prev) => {
         if (!prev) return prev;
@@ -949,8 +972,10 @@ export default function MarksheetGrid({
         };
       });
       setEdits(new Map());
-    } catch {
-      setSaveError("Couldn't save marks.");
+      console.log("✅ Marks saved successfully");
+    } catch (err) {
+      console.error("❌ Network or parsing error:", err);
+      setSaveError("Couldn't save marks. Network error or invalid response.");
     } finally {
       setSaving(false);
     }

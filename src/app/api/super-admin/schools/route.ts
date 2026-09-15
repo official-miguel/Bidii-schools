@@ -15,7 +15,6 @@ const CreateSchema = z.object({
   slug:          z.string().regex(/^[a-z0-9-]+$/).optional(),
   adminName:     z.string().min(1),
   adminEmail:    z.string().email(),
-  tempPassword:  z.string().min(8),
 });
 
 /** GET /api/super-admin/schools — paginated list with meta join */
@@ -78,7 +77,8 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.schoolMeta.findUnique({ where: { slug } });
   if (existing) return NextResponse.json({ error: "Slug already taken" }, { status: 409 });
 
-  const passwordHash = await hashPassword(d.tempPassword);
+  // Use slug as the initial password for the principal
+  const passwordHash = await hashPassword(slug);
 
   const school = await prisma.$transaction(async (tx) => {
     const s = await tx.school.create({

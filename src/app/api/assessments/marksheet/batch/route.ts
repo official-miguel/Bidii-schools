@@ -55,7 +55,21 @@ export async function POST(req: NextRequest) {
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canEnterMarks(actor, subjectId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Enhanced permission error logging
+    console.error("❌ Permission denied for marks entry:", {
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      subjectId,
+      teacherId: actor.teacher?.id,
+      isPrincipal: actor.isPrincipal,
+      roles: actor.roles.map(r => ({ role: r.role, subjectId: r.subjectId })),
+      assignedSubjectIds: Array.from(actor.assignedSubjectIds),
+      classTeacherOfId: actor.classTeacherOfId,
+    });
+    return NextResponse.json({ 
+      error: "You do not have permission to enter marks for this subject. Please contact your administrator." 
+    }, { status: 403 });
   }
 
   type PeriodRow = { id: string; frameworkId: string };
@@ -124,40 +138,41 @@ export async function POST(req: NextRequest) {
   const toDelete = items.filter((i) => i.score === null);
 
   // ── Persist in a single transaction: 2 queries instead of N ───────────────
-  await prisma.$transaction(async (tx) => {
-    // 1. Bulk upsert non-null scores via raw SQL INSERT … ON CONFLICT.
-    //    Prisma does not expose a native "createMany with upsert" for
-    //    compound unique keys, so raw SQL is the correct tool here.
-    if (toUpsert.length > 0) {
-      // Build VALUES rows: one tuple per item.
-      const valuePlaceholders: string[] = [];
-      const valueArgs: unknown[] = [];
-      let idx = 1;
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Bulk upsert non-null scores via raw SQL INSERT … ON CONFLICT.
+      //    Prisma does not expose a native "createMany with upsert" for
+      //    compound unique keys, so raw SQL is the correct tool here.
+      if (toUpsert.length > 0) {
+        // Build VALUES rows: one tuple per item.
+        const valuePlaceholders: string[] = [];
+        const valueArgs: unknown[] = [];
+        let idx = 1;
 
-      for (const item of toUpsert) {
-        const period = periodMap.get(item.periodId)!;
-        // Each row: (id, schoolId, frameworkId, periodId, studentId, paperId, subjectId,
-        //            resultKind, numericScore, enteredById)
-        const id = `ai_${item.studentId}_${item.periodId}_${item.paperId}`.slice(0, 25)
-          + `_${Date.now().toString(36)}`;
-        valuePlaceholders.push(
-          `($${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},'NUMERIC',$${idx++},$${idx++},NOW(),NOW())`
-        );
-        valueArgs.push(
-          id, schoolId, period.frameworkId, item.periodId,
-          item.studentId, item.paperId, subjectId,
-          item.score, enteredById
-        );
-      }
+        for (const item of toUpsert) {
+          const period = periodMap.get(item.periodId)!;
+          // Each row: (id, schoolId, frameworkId, periodId, studentId, paperId, subjectId,
+          //            resultKind, numericScore, enteredById)
+          const id = `ai_${item.studentId}_${item.periodId}_${item.paperId}`.slice(0, 25)
+            + `_${Date.now().toString(36)}`;
+          valuePlaceholders.push(
+            `($${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},'NUMERIC',$${idx++},$${idx++},NOW(),NOW())`
+          );
+          valueArgs.push(
+            id, schoolId, period.frameworkId, item.periodId,
+            item.studentId, item.paperId, subjectId,
+            item.score, enteredById
+          );
+        }
 
-      // SAFE: $executeRawUnsafe is required here because the VALUES list length
-      // varies at runtime (one tuple per score item). The SQL structure itself
-      // (column names, ON CONFLICT target) is static. All values are bound via
-      // positional $N placeholders in valueArgs — no user-supplied string is
-      // interpolated directly into the query template. The constraint name
-      // "item_paper" is a fixed literal.
-      await tx.$executeRawUnsafe(
-        `INSERT INTO "AssessmentItem"
+        // SAFE: $executeRawUnsafe is required here because the VALUES list length
+        // varies at runtime (one tuple per score item). The SQL structure itself
+        // (column names, ON CONFLICT target) is static. All values are bound via
+        // positional $N placeholders in valueArgs — no user-supplied string is
+        // interpolated directly into the query template. The constraint name
+        // "item_paper" is a fixed literal.
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "AssessmentItem"
            ("id","schoolId","frameworkId","periodId","studentId","paperId","subjectId",
             "resultKind","numericScore","enteredById","createdAt","updatedAt")
          VALUES ${valuePlaceholders.join(",")}
@@ -166,33 +181,45 @@ export async function POST(req: NextRequest) {
            "numericScore" = EXCLUDED."numericScore",
            "enteredById"  = EXCLUDED."enteredById",
            "updatedAt"    = NOW()`,
-        ...valueArgs
-      );
-    }
-
-    // 2. Bulk delete null-score items in one DELETE … WHERE … IN.
-    if (toDelete.length > 0) {
-      // Build a VALUES list of (studentId, periodId, paperId) triples.
-      const tuplePlaceholders: string[] = [];
-      const tupleArgs: unknown[] = [];
-      let idx = 1;
-      for (const item of toDelete) {
-        tuplePlaceholders.push(`($${idx++}::text,$${idx++}::text,$${idx++}::text)`);
-        tupleArgs.push(item.studentId, item.periodId, item.paperId);
+          ...valueArgs
+        );
       }
 
-      // SAFE: $executeRawUnsafe is required because the IN (VALUES …) list length
-      // varies at runtime. All values are bound via positional $N placeholders in
-      // tupleArgs — no user-supplied string is interpolated into the template.
-      // Column names are static literals.
-      await tx.$executeRawUnsafe(
-        `DELETE FROM "AssessmentItem"
+      // 2. Bulk delete null-score items in one DELETE … WHERE … IN.
+      if (toDelete.length > 0) {
+        // Build a VALUES list of (studentId, periodId, paperId) triples.
+        const tuplePlaceholders: string[] = [];
+        const tupleArgs: unknown[] = [];
+        let idx = 1;
+        for (const item of toDelete) {
+          tuplePlaceholders.push(`($${idx++}::text,$${idx++}::text,$${idx++}::text)`);
+          tupleArgs.push(item.studentId, item.periodId, item.paperId);
+        }
+
+        // SAFE: $executeRawUnsafe is required because the IN (VALUES …) list length
+        // varies at runtime. All values are bound via positional $N placeholders in
+        // tupleArgs — no user-supplied string is interpolated into the template.
+        // Column names are static literals.
+        await tx.$executeRawUnsafe(
+          `DELETE FROM "AssessmentItem"
          WHERE ("studentId","periodId","paperId")
            IN (VALUES ${tuplePlaceholders.join(",")})`,
-        ...tupleArgs
-      );
-    }
-  });
+          ...tupleArgs
+        );
+      }
+    });
 
-  return NextResponse.json({ ok: true, count: items.length });
+    console.log("✅ Marks saved successfully:", { count: items.length, upserted: toUpsert.length, deleted: toDelete.length });
+    return NextResponse.json({ ok: true, count: items.length });
+  } catch (dbError) {
+    console.error("❌ Database error while saving marks:", {
+      error: dbError,
+      message: (dbError as Error).message,
+      subjectId,
+      itemCount: items.length,
+    });
+    return NextResponse.json({ 
+      error: "Database error. Please try again or contact support if the problem persists." 
+    }, { status: 500 });
+  }
 }

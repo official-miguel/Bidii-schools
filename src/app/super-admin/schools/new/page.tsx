@@ -47,11 +47,6 @@ function generateSlug(name: string) {
   return name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
 
-function generateTempPassword() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
-
 export default function SchoolOnboardingPage() {
   const router = useRouter();
 
@@ -66,7 +61,6 @@ export default function SchoolOnboardingPage() {
     slug:           "",
     adminName:      "",
     adminEmail:     "",
-    tempPassword:   generateTempPassword(),
   });
 
   const [errors, setErrors]     = useState<Record<string, string>>({});
@@ -98,7 +92,6 @@ export default function SchoolOnboardingPage() {
     if (!form.adminName.trim())     e.adminName      = "Admin name is required";
     if (!form.adminEmail.trim())    e.adminEmail     = "Admin email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.adminEmail))   e.adminEmail = "Invalid email";
-    if (!form.tempPassword || form.tempPassword.length < 8) e.tempPassword = "Minimum 8 characters";
     if (form.slug && !/^[a-z0-9-]+$/.test(form.slug)) e.slug = "Only lowercase letters, numbers, and hyphens";
     return e;
   }
@@ -328,27 +321,17 @@ export default function SchoolOnboardingPage() {
             </FormGrid>
 
             <FormField
-              label="Temporary Password"
+              label="Initial Password (School Slug)"
               required
-              error={errors.tempPassword}
-              helper="Share this directly with the principal. They will be prompted to change it on first login."
+              helper="The principal will use the school slug as their initial password. They will be prompted to change it on first login."
             >
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={form.tempPassword}
-                  onChange={e => set("tempPassword", e.target.value)}
-                  className={`${inputClass} font-mono`}
-                />
-                <button
-                  type="button"
-                  onClick={() => set("tempPassword", generateTempPassword())}
-                  className={`${secondaryButtonClass} shrink-0 px-3`}
-                  title="Generate new password"
-                >
-                  ↻
-                </button>
-              </div>
+              <input
+                type="text"
+                value={form.slug}
+                readOnly
+                disabled
+                className={`${inputClass} font-mono bg-slate-50`}
+              />
             </FormField>
           </div>
         </Card>
