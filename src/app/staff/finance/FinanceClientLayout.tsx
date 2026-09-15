@@ -22,9 +22,8 @@ export default function FinanceClientLayout({ children }: { children: React.Reac
       >
         <Menu className="h-6 w-6" />
       </button>
-      <div className="md:pl-64">
-        {children}
-      </div>
+      {/* No padding here - ShellContentWrapper already handles it */}
+      {children}
     </>
   );
 }
