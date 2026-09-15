@@ -148,6 +148,50 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
+// ── Full Admin Access ─────────────────────────────────────────────────────────
+//
+// "Full Admin Access" hands someone the Principal's job. A holder should be
+// able to do everything the Principal dashboard can do, until the Principal
+// narrows it by editing individual groups.
+//
+// Two deliberate exceptions:
+//
+//   Fees and Library are NOT included. They are specialist posts — the bursar
+//   keeps the books, the librarian runs the library — and a deputy or senior
+//   teacher being made an admin should not silently inherit the money or the
+//   book stock. The Principal grants those two explicitly when they mean to.
+//
+//   Staff Roles & Permissions is never included, and is not on this screen at
+//   all. Anyone who can edit roles can grant themselves anything, so that stays
+//   with the Principal.
+
+/** Groups the Full Admin switch leaves alone, in either direction. */
+export const FULL_ADMIN_EXCLUDED_GROUPS = new Set(["fees", "library"]);
+
+/**
+ * Modules the Principal has that this screen does not show as a group.
+ *
+ * For teachers these arrive automatically from the permission resolver's
+ * baseline, but admin staff have no such baseline — their access is exactly
+ * what their role rows say. Without these, a "full admin" could not open
+ * attendance, the diary, or discipline and achievement records, and so would
+ * not match the Principal dashboard the switch promises.
+ *
+ * STAFF_ROLES is deliberately absent, for the reason above.
+ */
+export const FULL_ADMIN_EXTRA_MODULES = [
+  "ATTENDANCE",
+  "DIARY",
+  "RECORDS",
+  "RECORDS_DISCIPLINE",
+  "RECORDS_ACHIEVEMENTS",
+];
+
+/** The groups the Full Admin switch actually governs. */
+export function fullAdminGroups(): PermissionGroup[] {
+  return PERMISSION_GROUPS.filter((g) => !FULL_ADMIN_EXCLUDED_GROUPS.has(g.id));
+}
+
 /**
  * All modules that appear in any group — used to derive which modules belong
  * to the "excluded from screen" category without hardcoding a second list.

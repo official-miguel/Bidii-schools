@@ -13,8 +13,11 @@
  *    to review" and are never silently normalised on save
  *  - PATCH payload only contains modules whose flags actually changed this
  *    session — untouched groups (including "Custom" ones) are not resent
- *  - "Full Admin Access" switch inside Leadership applies Manage to every
- *    module across all 8 groups (STAFF_ROLES explicitly excluded)
+ *  - "Full Admin Access" switch inside Leadership hands over the Principal's
+ *    job: Manage on every group it governs — all except Fees and Library,
+ *    which are specialist posts granted deliberately — plus the
+ *    Principal-level modules this screen does not list as groups (attendance,
+ *    diary, records). It never grants Staff Roles & Permissions.
  *  - Assign-users panel is unchanged from the previous implementation
  */
 
@@ -30,6 +33,10 @@ import {
   PERMISSION_GROUPS,
   deriveGroupState,
   applyGroupState,
+  fullAdminGroups,
+  FULL_ADMIN_EXTRA_MODULES,
+  MANAGE_PRESET,
+  NO_ACCESS_PRESET,
   type GroupState,
   type ModulePermission,
 } from "./permissionGroups";
@@ -176,11 +183,12 @@ export default function PermissionMatrixClient({
     setGroupStates(buildGroupStates(selectedRole.permissions));
     setChangedModules({});
 
-    // Detect if every group is in "manage" state → pre-check fullAdmin switch
-    const allManage = PERMISSION_GROUPS.every((g) => {
-      const state = deriveGroupState(g, selectedRole.permissions);
-      return state === "manage";
-    });
+    // Pre-check the switch when every group it governs is on Manage. Fees and
+    // Library are excluded from the switch, so they must not decide this either
+    // — otherwise a full admin without them would never show as one.
+    const allManage = fullAdminGroups().every(
+      (g) => deriveGroupState(g, selectedRole.permissions) === "manage"
+    );
     setFullAdmin(allManage);
   }, [selectedRoleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -243,38 +251,33 @@ export default function PermissionMatrixClient({
     const next = !fullAdmin;
     setFullAdmin(next);
 
-    if (next) {
-      // Set every module in every group to Manage
-      const allDiff: Record<string, ModulePermission> = {};
-      for (const group of PERMISSION_GROUPS) {
-        const moduleDiff = applyGroupState(group, "manage");
-        Object.assign(allDiff, moduleDiff);
-      }
-      setGroupStates(
-        Object.fromEntries(PERMISSION_GROUPS.map((g) => [g.id, "manage" as GroupState]))
-      );
-      setChangedModules((prev) => ({ ...prev, ...allDiff }));
-      setRoles((prev) => prev.map((r) => {
-        if (r.id !== selectedRoleId) return r;
-        return { ...r, permissions: { ...r.permissions, ...allDiff } };
-      }));
-    } else {
-      // Turning off full-admin resets all groups to "none" as a starting
-      // point; the Principal can then set individual groups.
-      const allDiff: Record<string, ModulePermission> = {};
-      for (const group of PERMISSION_GROUPS) {
-        const moduleDiff = applyGroupState(group, "none");
-        Object.assign(allDiff, moduleDiff);
-      }
-      setGroupStates(
-        Object.fromEntries(PERMISSION_GROUPS.map((g) => [g.id, "none" as GroupState]))
-      );
-      setChangedModules((prev) => ({ ...prev, ...allDiff }));
-      setRoles((prev) => prev.map((r) => {
-        if (r.id !== selectedRoleId) return r;
-        return { ...r, permissions: { ...r.permissions, ...allDiff } };
-      }));
+    const governed = fullAdminGroups();
+    const state: GroupState = next ? "manage" : "none";
+    const preset = next ? MANAGE_PRESET : NO_ACCESS_PRESET;
+
+    // Every governed group, plus the Principal-level modules this screen does
+    // not show as groups — without those a "full admin" could not open
+    // attendance, the diary or student records, and would not match the
+    // Principal dashboard.
+    const allDiff: Record<string, ModulePermission> = {};
+    for (const group of governed) {
+      Object.assign(allDiff, applyGroupState(group, state));
     }
+    for (const mod of FULL_ADMIN_EXTRA_MODULES) {
+      allDiff[mod] = { ...preset };
+    }
+
+    // Fees and Library are left exactly as the Principal set them, in both
+    // directions — the switch does not govern them.
+    setGroupStates((prev) => ({
+      ...prev,
+      ...Object.fromEntries(governed.map((g) => [g.id, state])),
+    }));
+    setChangedModules((prev) => ({ ...prev, ...allDiff }));
+    setRoles((prev) => prev.map((r) => {
+      if (r.id !== selectedRoleId) return r;
+      return { ...r, permissions: { ...r.permissions, ...allDiff } };
+    }));
   }
 
   // ── Save ────────────────────────────────────────────────────────────────────
@@ -639,9 +642,10 @@ function GroupCard({
             <div>
               <p className="text-xs font-semibold text-foreground">Full Admin Access</p>
               <p className="text-[10px] text-slate leading-tight mt-0.5">
-                Grants Manage access across all 8 groups for this role.
-                Does not include Staff Roles &amp; Permissions management
-                (Principal only).
+                Gives this role the run of the Principal dashboard — Manage on
+                every group, plus attendance, diary and student records.
+                Excludes Fees and Library, which are granted separately, and
+                Staff Roles &amp; Permissions, which stays with the Principal.
               </p>
             </div>
           </div>
