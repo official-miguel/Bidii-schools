@@ -67,9 +67,6 @@ const ROLE_PRIORITY: Record<string, string[]> = {
     "qa_reconcile",
     "qa_fee_reports",
     "qa_invoice_term",
-    // extras
-    "qa_add_student",
-    "qa_take_attendance",
   ],
 };
 
