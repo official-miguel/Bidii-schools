@@ -41,11 +41,32 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from ortools.sat.python import cp_model
 from pydantic import BaseModel, Field
+
+# ---------------------------------------------------------------------------
+# Shared-secret authentication
+# ---------------------------------------------------------------------------
+SOLVER_SHARED_SECRET = os.getenv("SOLVER_SHARED_SECRET")
+
+
+async def verify_secret(x_solver_secret: str | None = Header(default=None)):
+    """Validate the X-Solver-Secret header on protected routes.
+
+    If SOLVER_SHARED_SECRET is not configured (e.g. local dev) the check is
+    skipped entirely so development workflows are unaffected.
+    """
+    if not SOLVER_SHARED_SECRET:
+        # No secret configured — skip the check.
+        return
+    if not x_solver_secret or not secrets.compare_digest(
+        x_solver_secret, SOLVER_SHARED_SECRET
+    ):
+        raise HTTPException(status_code=401, detail="Invalid or missing solver secret.")
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -201,7 +222,7 @@ def health() -> dict:
     return {"status": "ok", "solver": "cp-sat"}
 
 
-@app.post("/solve", response_model=SolverResponse)
+@app.post("/solve", response_model=SolverResponse, dependencies=[Depends(verify_secret)])
 def solve(req: SolverRequest) -> SolverResponse:
     try:
         return _solve(req)

@@ -270,6 +270,21 @@ function getSolverUrl(): string {
 }
 
 /**
+ * Build the common headers for all solver requests.
+ * Adds X-Solver-Secret when TIMETABLE_SOLVER_SECRET is configured (production).
+ * Falls back to Content-Type only so local dev works without any extra setup.
+ */
+function getSolverHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (process.env.TIMETABLE_SOLVER_SECRET) {
+    headers["X-Solver-Secret"] = process.env.TIMETABLE_SOLVER_SECRET;
+  }
+  return headers;
+}
+
+/**
  * Call GET /health on the solver to confirm it's reachable before committing
  * to a solve request.  Returns true if healthy, false otherwise.
  */
@@ -281,6 +296,7 @@ export async function isSolverHealthy(
     const id = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${getSolverUrl()}/health`, {
       signal: controller.signal,
+      headers: getSolverHeaders(),
     });
     clearTimeout(id);
     return res.ok;
@@ -385,7 +401,7 @@ export async function generateTimetableViaCpSat(
 
     const res = await fetch(`${getSolverUrl()}/solve`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getSolverHeaders(),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });

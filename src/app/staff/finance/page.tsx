@@ -47,7 +47,8 @@ interface LedgerEntry {
   description: string;
   postedAt: string;
   isVoided: boolean;
-  student: { fullName: string; admissionNumber: string } | null;
+  studentId?: string;
+  student: { id: string; fullName: string; admissionNumber: string } | null;
 }
 
 interface Notification {
@@ -55,6 +56,7 @@ interface Notification {
   type: string;
   message: string;
   createdAt: string;
+  studentId: string | null;
   student: { fullName: string; admissionNumber: string } | null;
 }
 
@@ -81,13 +83,13 @@ function timeAgo(iso: string) {
 }
 
 function getNotificationLink(notification: Notification): string | null {
-  const { type, message, student } = notification;
+  const { type, message, student, studentId } = notification;
   
   switch (type) {
     case "PAYMENT_RECEIVED":
-      // Link to student ledger if student exists
-      return student
-        ? `/staff/finance/students?search=${encodeURIComponent(student.admissionNumber)}`
+      // Link to student ledger page directly if student exists
+      return studentId
+        ? `/staff/finance/students/${studentId}`
         : null;
     
     case "RECONCILIATION_NEEDED":
@@ -95,9 +97,9 @@ function getNotificationLink(notification: Notification): string | null {
       return "/staff/finance/reconciliation";
     
     case "INVOICE_GENERATED":
-      // Link to student ledger if student exists
-      return student
-        ? `/staff/finance/students?search=${encodeURIComponent(student.admissionNumber)}`
+      // Link to student ledger page directly if student exists
+      return studentId
+        ? `/staff/finance/students/${studentId}`
         : null;
     
     case "SETUP_REQUIRED":
@@ -346,8 +348,8 @@ export default function FinanceDashboard() {
                   <tbody>
                     {recentEntries.map((e) => {
                       const { label, variant } = entryTypeLabel(e.entryType);
-                      const studentLedgerLink = e.student
-                        ? `/staff/finance/students?search=${encodeURIComponent(e.student.admissionNumber)}`
+                      const studentLedgerLink = e.student?.id
+                        ? `/staff/finance/students/${e.student.id}`
                         : null;
                       
                       return (

@@ -11,6 +11,7 @@ import {
   PageHeader, Badge, EmptyState,
   primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
+import CardDetailPanel from "@/components/library/CardDetailPanel";
 
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ export default function LibraryDashboard() {
   const [error, setError]       = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
   const [provMsg, setProvMsg]   = useState<string | null>(null);
+  const [openCard, setOpenCard] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -316,10 +318,13 @@ export default function LibraryDashboard() {
                       <tr key={b.id} className="border-b border-border last:border-0 hover:bg-slate-50/40 transition-colors/20">
                         <td className="px-5 py-3.5">
                           {b.student ? (
-                            <>
-                              <p className="text-sm font-medium text-foreground">{b.student.fullName}</p>
+                            <button
+                              onClick={() => setOpenCard(b.student!.id)}
+                              className="text-left hover:bg-teal/5 rounded px-2 py-1 -ml-2 transition-colors group"
+                            >
+                              <p className="text-sm font-medium text-foreground group-hover:text-teal">{b.student.fullName}</p>
                               <p className="text-xs text-slate font-mono">{b.student.admissionNumber}</p>
-                            </>
+                            </button>
                           ) : <span className="text-slate text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3.5">
@@ -362,6 +367,8 @@ export default function LibraryDashboard() {
           }
         />
       )}
+
+      {openCard && <CardDetailPanel studentId={openCard} onClose={() => { setOpenCard(null); load(); }} />}
     </div>
   );
 }
