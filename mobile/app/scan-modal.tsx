@@ -99,6 +99,12 @@ export default function ScanModal() {
   }, [router]);
 
   const onBarcodeScanned = useCallback((result: BarcodeScanningResult) => {
+    // Debug logging for iOS troubleshooting
+    console.log('[Scan Modal] Barcode detected:', {
+      type: result.type,
+      data: result.data,
+      timestamp: new Date().toISOString(),
+    });
     if (!processing) handleScan(result.data);
   }, [processing, handleScan]);
 

@@ -43,7 +43,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Bidii Library to access your camera for scanning QR codes."
+          "cameraPermission": "Allow Bidii Library to access your camera for scanning QR codes.",
+          "barcodeScannerEnabled": true
         }
       ],
       [

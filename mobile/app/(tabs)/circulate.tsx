@@ -159,6 +159,13 @@ export default function CirculateScreen() {
 
   // ── Camera barcode handler ─────────────────────────────────────────────
   const onBarcodeScanned = useCallback((r: BarcodeScanningResult) => {
+    // Debug logging for iOS troubleshooting
+    console.log('[Circulate Scanner] Barcode detected:', {
+      type: r.type,
+      data: r.data,
+      timestamp: new Date().toISOString(),
+    });
+    
     const now = Date.now();
     if (now - lastScanRef.current < SCAN_COOLDOWN_MS) return;
     lastScanRef.current = now;

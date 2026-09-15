@@ -127,6 +127,12 @@ export default function ScanTabScreen() {
   };
 
   const onBarcodeScanned = useCallback((r: BarcodeScanningResult) => {
+    // Debug logging for iOS troubleshooting
+    console.log('[QR Scanner] Barcode detected:', {
+      type: r.type,
+      data: r.data,
+      timestamp: new Date().toISOString(),
+    });
     handleScan(r.data);
   }, [handleScan]);
 
