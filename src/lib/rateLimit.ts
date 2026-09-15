@@ -9,16 +9,18 @@
  *
  * ── Fail-open vs fail-closed behaviour ───────────────────────────────────────
  *
- *  LOGIN endpoint (high-stakes):
- *    If UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are not set, ALL
- *    login attempts are REJECTED with a 503 error.  A misconfigured deployment
- *    must not allow unlimited brute-force just because Redis is absent.
+ *  LOGIN endpoint:
+ *    Counts FAILED attempts only — a correct password costs nothing and clears
+ *    the count. If Redis is not configured the counting is skipped with a
+ *    warning rather than refusing every login, since locking an entire school
+ *    out of its own system is the worse failure.
  *
  *  PARENT routes (lower-stakes, already authenticated):
  *    If Redis is not configured, rate-limiting is SKIPPED with a console.warn.
  *    A misconfiguration should not lock out parents who are already logged in.
  *
- * Call `checkLoginRateLimit` from the login route.
+ * Call `checkLoginBlocked` / `recordFailedLogin` / `clearFailedLogins` from
+ * the login route.
  * Call `checkRateLimit` from the 14 parent routes (same signature as before,
  * but now returns Promise<boolean>).
  *
@@ -43,38 +45,8 @@ function getRedis(): Redis | null {
 
 // ── Rate-limiter instances (lazily created) ───────────────────────────────────
 
-let _loginIpLimiter:         Ratelimit | null = null;
-let _loginIdentifierLimiter: Ratelimit | null = null;
 let _parentLimiter:          Ratelimit | null = null;
 let _otpRequestLimiter:      Ratelimit | null = null;
-
-function getLoginIpLimiter(): Ratelimit | null {
-  if (_loginIpLimiter) return _loginIpLimiter;
-  const redis = getRedis();
-  if (!redis) return null;
-  // 10 attempts per IP per 15 minutes
-  _loginIpLimiter = new Ratelimit({
-    redis,
-    limiter:   Ratelimit.slidingWindow(10, "15 m"),
-    prefix:    "rl:login:ip",
-    analytics: false,
-  });
-  return _loginIpLimiter;
-}
-
-function getLoginIdentifierLimiter(): Ratelimit | null {
-  if (_loginIdentifierLimiter) return _loginIdentifierLimiter;
-  const redis = getRedis();
-  if (!redis) return null;
-  // 5 failed attempts per identifier per 15 minutes
-  _loginIdentifierLimiter = new Ratelimit({
-    redis,
-    limiter:   Ratelimit.slidingWindow(5, "15 m"),
-    prefix:    "rl:login:id",
-    analytics: false,
-  });
-  return _loginIdentifierLimiter;
-}
 
 function getParentLimiter(): Ratelimit | null {
   if (_parentLimiter) return _parentLimiter;
@@ -106,62 +78,124 @@ function getOtpRequestLimiter(): Ratelimit | null {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export type LoginRateLimitResult =
-  | { allowed: true }
-  | { allowed: false; reason: "ip_limit" | "identifier_limit" | "redis_unavailable" };
+// ── Login protection ──────────────────────────────────────────────────────────
+//
+// Only FAILED attempts are counted. A correct password costs nothing and
+// clears whatever failures preceded it, so a user who mistypes and then gets
+// it right is never delayed.
+//
+// This matters most for the per-IP counter. A school sits behind one public
+// IP, so every teacher, bursar and parent logging in from the premises shares
+// it. The previous limiter consumed a token on *every* attempt, successful
+// ones included, and allowed only ten per IP per fifteen minutes — so on a
+// busy morning the eleventh person to sign in was refused even though their
+// password was right and they had never failed once. Counting only failures
+// removes that entirely while keeping brute-force protection.
+
+/** How long a failure is remembered. */
+const LOGIN_WINDOW_SECONDS = 15 * 60;
 
 /**
- * Check both IP-level and identifier-level rate limits for login attempts.
- *
- * Fail-CLOSED: if Redis is not configured, returns { allowed: false, reason:
- * "redis_unavailable" } so the login endpoint rejects rather than allows
- * unlimited attempts.
- *
- * Call this BEFORE password verification.
+ * Failed attempts on one account before it is paused. Generous on purpose:
+ * this is meant to stop password guessing, not to punish someone who cannot
+ * remember whether their password has a capital letter.
  */
-export async function checkLoginRateLimit(
-  ip: string,
-  identifier: string
-): Promise<LoginRateLimitResult> {
-  const ipLimiter         = getLoginIpLimiter();
-  const identifierLimiter = getLoginIdentifierLimiter();
+const MAX_FAILURES_PER_IDENTIFIER = 10;
 
-  if (!ipLimiter || !identifierLimiter) {
-    // Redis not configured — fail open so login is never blocked by a missing env var.
-    // Rate limiting is simply skipped; all other auth checks (password, account status) still apply.
-    console.warn(
-      "[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — login rate limiting DISABLED. " +
-      "Set these env vars to enable distributed rate limiting."
-    );
-    return { allowed: true };
-  }
+/**
+ * Failed attempts from one IP before it is paused. Deliberately high, because
+ * an entire school shares a single IP — this is a backstop against a flood
+ * from one source, not a per-person limit.
+ */
+const MAX_FAILURES_PER_IP = 50;
 
-  const [ipResult, idResult] = await Promise.all([
-    ipLimiter.limit(ip),
-    identifierLimiter.limit(identifier.toLowerCase().trim()),
-  ]);
-
-  if (!ipResult.success) return { allowed: false, reason: "ip_limit" };
-  if (!idResult.success) return { allowed: false, reason: "identifier_limit" };
-  return { allowed: true };
+function identifierKey(identifier: string): string {
+  return `rl:login:fail:id:${identifier.toLowerCase().trim()}`;
+}
+function ipKey(ip: string): string {
+  return `rl:login:fail:ip:${ip}`;
 }
 
+/** Reads a counter and how long is left on it, without changing either. */
+async function readCounter(key: string): Promise<{ count: number; ttl: number }> {
+  const redis = getRedis();
+  if (!redis) return { count: 0, ttl: 0 };
+  try {
+    const [raw, ttl] = await Promise.all([redis.get<number | string>(key), redis.ttl(key)]);
+    return { count: Number(raw ?? 0), ttl: ttl > 0 ? ttl : 0 };
+  } catch {
+    return { count: 0, ttl: 0 };
+  }
+}
+
+export type LoginBlockResult =
+  | { blocked: false }
+  | { blocked: true; scope: "identifier" | "ip"; retryAfterSeconds: number };
+
 /**
- * Reset the per-identifier sliding window on a successful login so a user
- * who eventually provides the right password isn't locked out for 15 minutes.
+ * Whether login is currently paused for this account or IP because of earlier
+ * failures. Consumes nothing — call it before verifying the password.
  *
- * This is best-effort; a Redis error here must not break the login flow.
+ * Fails OPEN when Redis is not configured: a missing env var must not lock
+ * every school out of its own system.
  */
-export async function resetLoginIdentifierLimit(identifier: string): Promise<void> {
+export async function checkLoginBlocked(
+  ip: string,
+  identifier: string
+): Promise<LoginBlockResult> {
+  if (!getRedis()) return { blocked: false };
+
+  const [byId, byIp] = await Promise.all([
+    readCounter(identifierKey(identifier)),
+    readCounter(ipKey(ip)),
+  ]);
+
+  if (byId.count >= MAX_FAILURES_PER_IDENTIFIER) {
+    return {
+      blocked: true,
+      scope: "identifier",
+      retryAfterSeconds: byId.ttl || LOGIN_WINDOW_SECONDS,
+    };
+  }
+  if (byIp.count >= MAX_FAILURES_PER_IP) {
+    return {
+      blocked: true,
+      scope: "ip",
+      retryAfterSeconds: byIp.ttl || LOGIN_WINDOW_SECONDS,
+    };
+  }
+  return { blocked: false };
+}
+
+/** Records one failed attempt. Best-effort — never breaks the login flow. */
+export async function recordFailedLogin(ip: string, identifier: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
   try {
-    // Delete the counter key directly — the prefix + key matches what
-    // @upstash/ratelimit writes internally.
-    const key = `rl:login:id:${identifier.toLowerCase().trim()}`;
-    await redis.del(key);
+    await Promise.all(
+      [identifierKey(identifier), ipKey(ip)].map(async (key) => {
+        const n = await redis.incr(key);
+        // Start the window on the first failure only, so the clock runs from
+        // the first failure rather than being pushed back by each new one.
+        if (n === 1) await redis.expire(key, LOGIN_WINDOW_SECONDS);
+      })
+    );
   } catch {
-    // Swallow — this is a best-effort cleanup
+    // Swallow — a counter that cannot be written must not block a valid login.
+  }
+}
+
+/**
+ * Clears the failure counters after a successful login, so earlier fumbles
+ * never count against the next person to use the same network.
+ */
+export async function clearFailedLogins(ip: string, identifier: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    await redis.del(identifierKey(identifier), ipKey(ip));
+  } catch {
+    // Best-effort cleanup.
   }
 }
 

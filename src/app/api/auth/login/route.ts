@@ -17,12 +17,14 @@
  *
  * Accepts email OR phone number as the identifier.
  *
- * Rate limiting:
- *   - 10 attempts per IP per 15 minutes (IP-level, pre-auth)
- *   - 5 failed attempts per identifier per 15 minutes (identifier-level)
- *   - Successful login resets the per-identifier counter
- *   - Both limiters use Upstash Redis (distributed, works across serverless instances)
- *   - If Redis is not configured the endpoint REJECTS (fail-closed)
+ * Brute-force protection:
+ *   Only FAILED attempts are counted, and a successful login clears the count.
+ *   Entering the right password is never rate limited, however many people
+ *   have signed in from the same network beforehand — schools share one public
+ *   IP, and the previous limiter counted every attempt against it, so ten
+ *   logins in a quarter of an hour locked out the whole site.
+ *   Counters live in Upstash Redis; when it is not configured the counting is
+ *   skipped rather than refusing every login.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -35,7 +37,11 @@ import {
   SESSION_TTL_MS,
   buildOfflineToken,
 } from "@/lib/auth";
-import { checkLoginRateLimit, resetLoginIdentifierLimit } from "@/lib/rateLimit";
+import {
+  checkLoginBlocked,
+  recordFailedLogin,
+  clearFailedLogins,
+} from "@/lib/rateLimit";
 
 // ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
@@ -99,26 +105,27 @@ export async function POST(req: NextRequest) {
 
   const { identifier, password, schoolSlug } = parsed.data;
 
-  // ── Rate limiting (must happen before any DB work) ────────────────────────
-  const ip          = getClientIp(req);
-  const rlResult    = await checkLoginRateLimit(ip, identifier);
-  if (!rlResult.allowed) {
-    if (rlResult.reason === "redis_unavailable") {
-      console.error("[LOGIN] Rate limiter unavailable — Redis not configured (UPSTASH_REDIS_REST_URL/TOKEN missing). Login rejected.");
-      return NextResponse.json(
-        { error: "Authentication service temporarily unavailable. Please try again later." },
-        { status: 503 }
-      );
-    }
-    // ip_limit or identifier_limit
-    return NextResponse.json(
-      { error: "Too many login attempts. Please wait 15 minutes before trying again." },
-      { status: 429 }
-    );
+  // ── Brute-force check (failed attempts only; consumes nothing) ────────────
+  const ip      = getClientIp(req);
+  const blocked = await checkLoginBlocked(ip, identifier);
+  if (blocked.blocked) {
+    const minutes = Math.max(1, Math.ceil(blocked.retryAfterSeconds / 60));
+    const message =
+      blocked.scope === "identifier"
+        ? `Too many incorrect passwords for this account. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}, or reset your password.`
+        : `Too many failed sign-in attempts from this network. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+    return NextResponse.json({ error: message }, {
+      status:  429,
+      headers: { "Retry-After": String(blocked.retryAfterSeconds) },
+    });
   }
 
-  const invalid = () =>
-    NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
+  // Every rejection for a bad credential goes through here, so recording the
+  // failure in one place covers all of them.
+  const invalid = async () => {
+    await recordFailedLogin(ip, identifier).catch(() => {});
+    return NextResponse.json({ error: "Incorrect email/phone or password." }, { status: 401 });
+  };
 
   const isEmail = identifier.includes("@");
 
@@ -303,9 +310,10 @@ export async function POST(req: NextRequest) {
     if (!valid) return invalid();
   }
 
-  // ── Reset per-identifier rate limit counter on successful login ───────────
-  // Best-effort; a Redis error here must not break the login flow.
-  await resetLoginIdentifierLimit(identifier).catch(() => {});
+  // ── Correct password: wipe the failure counters ───────────────────────────
+  // Clears both the account and the network counters, so earlier fumbles never
+  // count against this user or the next person on the same connection.
+  await clearFailedLogins(ip, identifier).catch(() => {});
 
   // ── Session + offline token ───────────────────────────────────────────────
   let token: string;
