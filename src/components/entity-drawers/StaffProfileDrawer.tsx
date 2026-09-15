@@ -319,7 +319,15 @@ function RoleAssignmentCard({
         body:    JSON.stringify({ userId, assign: !currentlyAssigned }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) { showToast(json.error ?? "Failed.", false); return; }
+      if (!res.ok) {
+        showToast(
+          res.status === 401
+            ? "Your session has expired. Please sign in again."
+            : json.error ?? "Failed.",
+          false
+        );
+        return;
+      }
       showToast(currentlyAssigned ? "Role removed." : "Role assigned.", true);
       setOpen(false);
       setFilter("");
@@ -486,11 +494,20 @@ export default function StaffProfileDrawer({
     setError(null);
     setLoading(true);
     fetch(`/api/staff/${staffId}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) throw new Error(d.error);
-        setStaff(d);
+      .then(async (r) => {
+        const d = await r.json().catch(() => null);
+        if (r.status === 401) {
+          // The server rejected the session rather than the request. Saying
+          // "Unauthorized" here reads as a permissions fault on the staff
+          // member being viewed, which is misleading.
+          throw new Error("Your session has expired. Please sign in again.");
+        }
+        if (!r.ok || !d || d.error) {
+          throw new Error(d?.error || "Couldn't load staff profile.");
+        }
+        return d;
       })
+      .then(setStaff)
       .catch((e) => setError(e.message || "Couldn't load staff profile."))
       .finally(() => setLoading(false));
   }

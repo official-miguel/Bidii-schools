@@ -763,12 +763,41 @@ function RolesTab() {
   const [error, setError]           = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
+  /**
+   * Loads the roles list.
+   *
+   * The response is checked before use. It previously went straight into
+   * state, so any error body — a 401 after the session expired, most often —
+   * was stored where an array was expected, and the next `roles.find(...)`
+   * threw and took the whole portal down with the error boundary. An expired
+   * session should say so, not look like the page is broken.
+   */
   async function load(selectAfter?: string) {
-    const res  = await fetch("/api/staff-roles");
-    const data: FullRole[] = await res.json();
-    setRoles(data);
-    const next = selectAfter ?? selectedId ?? data[0]?.id ?? null;
-    setSelectedId(next);
+    try {
+      const res  = await fetch("/api/staff-roles");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !Array.isArray(data)) {
+        setRoles([]);
+        setSelectedId(null);
+        setError(
+          res.status === 401
+            ? "Your session has expired. Please sign in again to manage roles."
+            : (data as { error?: string } | null)?.error ?? "Couldn't load roles."
+        );
+        return;
+      }
+
+      const roleList = data as FullRole[];
+      setError(null);
+      setRoles(roleList);
+      const next = selectAfter ?? selectedId ?? roleList[0]?.id ?? null;
+      setSelectedId(next);
+    } catch {
+      setRoles([]);
+      setSelectedId(null);
+      setError("Couldn't reach the server. Check your connection and try again.");
+    }
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -827,9 +856,16 @@ function RolesTab() {
     const merged = { ...savedPerms, ...changedModules };
     const permissions = Object.entries(merged).map(([module, v]) => ({ module, ...v }));
     const res  = await fetch(`/api/staff-roles/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permissions }) });
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
     setSaving(false);
-    if (!res.ok) { setError(data.error || "Couldn't save permissions."); return; }
+    if (!res.ok) {
+      setError(
+        res.status === 401
+          ? "Your session has expired. Please sign in again — your changes were not saved."
+          : (data as { error?: string } | null)?.error ?? "Couldn't save permissions."
+      );
+      return;
+    }
     setChangedModules({});
     load(selected.id);
   }
@@ -838,8 +874,8 @@ function RolesTab() {
     e.preventDefault(); setError(null);
     const form = new FormData(e.currentTarget);
     const res  = await fetch("/api/staff-roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.get("name"), description: form.get("description") || "" }) });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || "Couldn't create role."); return; }
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.id) { setError(data?.error || "Couldn't create role."); return; }
     setCreateOpen(false); load(data.id);
   }
 
