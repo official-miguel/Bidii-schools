@@ -196,7 +196,7 @@ export async function GET(req: NextRequest) {
   }
 
   const termBatchStats: Record<string, TermBatchStat> = {};
-  for (const [tId, stat] of termStatsMap.entries()) {
+  for (const [tId, stat] of Array.from(termStatsMap.entries())) {
     termBatchStats[tId] = {
       outstanding: stat.outstanding.toString(),
       invoiced:    stat.invoiced.toString(),

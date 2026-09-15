@@ -9,9 +9,10 @@ import { prisma } from "../src/lib/prisma";
 
 async function makeSuperAdmin(email: string) {
   try {
-    const user = await prisma.user.findUnique({
+    // Find user by email (search across all schools since SUPER_ADMIN is global)
+    const user = await prisma.user.findFirst({
       where: { email },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, role: true, schoolId: true },
     });
 
     if (!user) {
@@ -19,7 +20,7 @@ async function makeSuperAdmin(email: string) {
       process.exit(1);
     }
 
-    console.log(`Found user: ${user.name} (${user.email})`);
+    console.log(`Found user: ${user.email}`);
     console.log(`Current role: ${user.role}`);
 
     if (user.role === "SUPER_ADMIN") {
@@ -27,10 +28,13 @@ async function makeSuperAdmin(email: string) {
       process.exit(0);
     }
 
-    // Update to SUPER_ADMIN
+    // Update to SUPER_ADMIN (SUPER_ADMIN accounts should have null schoolId)
     await prisma.user.update({
-      where: { email },
-      data: { role: "SUPER_ADMIN" },
+      where: { id: user.id },
+      data: { 
+        role: "SUPER_ADMIN",
+        schoolId: null, // SUPER_ADMIN is not scoped to any school
+      },
     });
 
     console.log(`✅ Successfully granted SUPER_ADMIN role to ${user.email}`);
