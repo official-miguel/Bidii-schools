@@ -16,10 +16,15 @@ const db = prisma as any;
  *   - Per-subject, per-form formula editor for the HOD's own department
  */
 export default async function HODAssessmentSettingsPage() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  try {
+    console.log('[HOD Settings] Starting page load...');
+    const user = await getCurrentUser();
+    console.log('[HOD Settings] User loaded:', { userId: user?.id, role: user?.role });
+    if (!user || user.role !== "TEACHER") redirect("/login");
 
-  const actor = await resolveAssessmentActor(user, user.schoolId!);
+    console.log('[HOD Settings] Resolving actor...');
+    const actor = await resolveAssessmentActor(user, user.schoolId!);
+    console.log('[HOD Settings] Actor resolved:', { hasHOD: actor.roles.some(r => r.role === "HOD"), teacherId: actor.teacher?.id });
 
   const hasAssessmentHOD = actor.roles.some((r) => r.role === "HOD");
   const isWide = actor.isPrincipal || actor.roles.some((r) =>
@@ -31,25 +36,31 @@ export default async function HODAssessmentSettingsPage() {
   // (Department.headTeacherId) so that a teacher set as department head
   // via People → Departments automatically gets access here, matching
   // the same check used in the nav layout.
+  console.log('[HOD Settings] Resolving department...');
   let department: { id: string; name: string } | null = null;
   if (actor.teacher?.id) {
     // Primary check: are they explicitly the head of a department?
+    console.log('[HOD Settings] Checking if teacher is department head...');
     department = await prisma.department.findFirst({
       where: { schoolId: user.schoolId!, headTeacherId: actor.teacher.id },
       select: { id: true, name: true },
     });
+    console.log('[HOD Settings] Department from headTeacherId:', department);
     // Fall back to primary department if not head of any but has an
     // assessment HOD role
     if (!department && hasAssessmentHOD) {
+      console.log('[HOD Settings] Checking primary department as fallback...');
       const t = await prisma.teacher.findUnique({
         where: { id: actor.teacher.id },
         select: { primaryDepartmentId: true },
       });
+      console.log('[HOD Settings] Teacher primary dept ID:', t?.primaryDepartmentId);
       if (t?.primaryDepartmentId) {
         department = await prisma.department.findUnique({
           where: { id: t.primaryDepartmentId },
           select: { id: true, name: true },
         });
+        console.log('[HOD Settings] Department from primaryDepartmentId:', department);
       }
     }
   }
@@ -80,15 +91,18 @@ export default async function HODAssessmentSettingsPage() {
   }
 
   // ── Subjects in this department ──────────────────────────────────────────
+  console.log('[HOD Settings] Fetching subjects for department:', department.id);
   const subjects = await prisma.subject.findMany({
     where: { schoolId: user.schoolId!, departmentId: department.id },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, applicableForms: true },
   });
+  console.log('[HOD Settings] Found', subjects.length, 'subjects');
 
   // ── All 8-4-4 frameworks (active or not) for the formula dropdown ────────
   // We include inactive ones so the HOD can still manage formulas for past
   // periods even after a new framework is created for a new year.
+  console.log('[HOD Settings] Fetching frameworks...');
   const frameworks = await db.assessmentFramework.findMany({
     where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR" },
     orderBy: { academicYear: "desc" },
@@ -100,10 +114,12 @@ export default async function HODAssessmentSettingsPage() {
       isActive: true,
     },
   }) as Array<{ id: string; type: string; label: string; academicYear: string; isActive: boolean }>;
+  console.log('[HOD Settings] Found', frameworks.length, 'frameworks');
 
   // ── Existing formula configs for this department ─────────────────────────
   // Wrapped in try/catch: the DepartmentFormulaConfig table may not exist yet
   // if the database migration hasn't been applied (prisma db push pending).
+  console.log('[HOD Settings] Fetching existing formulas...');
   let existingFormulas: Array<{
     id: string;
     subjectId: string;
@@ -124,21 +140,26 @@ export default async function HODAssessmentSettingsPage() {
         updatedAt: true,
       },
     });
-  } catch {
+    console.log('[HOD Settings] Found', existingFormulas.length, 'existing formulas');
+  } catch (err) {
+    console.log('[HOD Settings] Formula table query failed (table may not exist):', err);
     // Table doesn't exist yet — page still renders, formulas just start empty
   }
 
   // ── Distinct form numbers registered at this school ─────────────────────
   // Fetch both form (integer) and name so we can display the real class name
   // rather than the generic "Form X" label.
+  console.log('[HOD Settings] Fetching school class forms...');
   const schoolClassForms = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     select: { form: true, name: true },
-    orderBy: { form: "asc", name: "asc" },
+    orderBy: [{ form: "asc" }, { name: "asc" }],
   });
+  console.log('[HOD Settings] Found', schoolClassForms.length, 'class forms');
 
   // Deduplicate by form number, keeping the first (alphabetically sorted) name
   // at each level as the canonical label for formula rows.
+  console.log('[HOD Settings] Deduplicating forms...');
   const schoolForms: number[] = [];
   const schoolFormLabels: Record<number, string> = {};
   for (const c of schoolClassForms) {
@@ -147,7 +168,9 @@ export default async function HODAssessmentSettingsPage() {
       schoolFormLabels[c.form] = c.name;
     }
   }
+  console.log('[HOD Settings] Unique forms:', schoolForms);
 
+  console.log('[HOD Settings] Page data loaded successfully, rendering...');
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -170,4 +193,8 @@ export default async function HODAssessmentSettingsPage() {
       />
     </div>
   );
+  } catch (error) {
+    console.error('[HOD Settings Page Error]:', error);
+    throw error; // Re-throw so the error boundary can catch it
+  }
 }
