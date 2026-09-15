@@ -164,7 +164,7 @@ export default function TopAppBar({
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <header
         className="fixed top-0 right-0 z-30 h-16 flex items-center gap-1 px-2 sm:px-4
-                   bg-card/95 backdrop-blur-sm border-b border-border/95
+                   bg-card backdrop-blur-md border-b border-border
                    md:left-16 left-0"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >

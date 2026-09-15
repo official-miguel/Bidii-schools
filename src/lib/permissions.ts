@@ -796,16 +796,21 @@ export async function getAssignedRoleNames(user: User): Promise<string[]> {
 /** Returns the display label for the user's combined roles. */
 export async function getRoleDisplayLabel(user: User): Promise<string> {
   if (user.role === "PRINCIPAL") return "Principal";
-  if (user.role === "TEACHER")   return "Teacher";
   if (user.role === "BURSAR")    return "Bursar";
   if (user.role === "PARENT")    return "Parent";
   if (user.role === "STUDENT")   return "Student";
 
+  // Check for assigned staff roles first (applies to ADMIN_STAFF and TEACHER with staff roles)
   const names = await getAssignedRoleNames(user);
-  if (names.length === 0) return "Staff";
-  if (names.length === 1) return names[0];
-  // Show first two roles joined, e.g. "HOD & Class Teacher"
-  return names.slice(0, 2).join(" & ") + (names.length > 2 ? " +more" : "");
+  if (names.length > 0) {
+    if (names.length === 1) return names[0];
+    // Show first two roles joined, e.g. "HOD & Class Teacher"
+    return names.slice(0, 2).join(" & ") + (names.length > 2 ? " +more" : "");
+  }
+
+  // Fallback to base role
+  if (user.role === "TEACHER") return "Teacher";
+  return "Staff";
 }
 
 // Re-export legacy name so existing callers don't break
