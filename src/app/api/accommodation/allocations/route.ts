@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
+import { checkStudentForDorm } from "@/lib/accommodation/genderEligibility";
 
 async function guard() {
   return (
@@ -104,6 +105,12 @@ export async function POST(req: NextRequest) {
   });
   if (!dorm) {
     return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
+  }
+
+  // Refuse a placement that would put a student in a dorm of the wrong gender.
+  const genderError = await checkStudentForDorm(schoolId, studentId, dormId);
+  if (genderError) {
+    return NextResponse.json({ error: genderError }, { status: 422 });
   }
 
   // Block allocation if the dorm is already at or above capacity

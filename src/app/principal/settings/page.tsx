@@ -1551,8 +1551,12 @@ export default function SettingsPage() {
   const section = SECTION_CONTENT[active];
   const { Content } = section;
 
+  // Layout stacks on mobile and becomes a sidebar + content row from md up.
+  // It must not be a row on mobile: the tab strip below is `w-full flex-none`,
+  // so it takes the entire row width and the content panel (`flex-1 min-w-0`)
+  // collapses to zero width — which rendered the settings page blank on phones.
   return (
-    <div className="flex min-h-[calc(100vh-5rem)]">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)]">
 
       {/* ── Left sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden md:flex w-64 xl:w-72 shrink-0 flex-col border-r border-border bg-background">

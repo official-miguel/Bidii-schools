@@ -2,12 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
+import { checkStudentsForDorm } from "@/lib/accommodation/genderEligibility";
 
 async function manageGuard() {
   return (
     (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
     (await requireSchoolPermission("ACCOMMODATION", "manage"))
   );
+}
+
+/**
+ * Refuses a bulk move when any student would land in a dorm of the wrong
+ * gender. Relocation is an operational decision, but mixing genders is not one
+ * the system makes silently — the admin is told who is ineligible so they can
+ * choose a suitable destination.
+ */
+async function bulkGenderRefusal(
+  schoolId:   string,
+  studentIds: string[],
+  toDormId:   string
+): Promise<string | null> {
+  const failures = await checkStudentsForDorm(schoolId, studentIds, toDormId);
+  if (failures.length === 0) return null;
+
+  const names = failures.slice(0, 3).map((f) => f.studentName).join(", ");
+  const more  = failures.length > 3 ? ` and ${failures.length - 3} more` : "";
+  return `${failures.length} student(s) cannot move to this dormitory because of its gender policy: ${names}${more}. Choose a destination that matches their gender.`;
 }
 
 /**
@@ -177,6 +197,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Destination dormitory is not active." }, { status: 409 });
     }
 
+    // Refuse a transfer into a dorm of the wrong gender.
+    const genderFailures = await checkStudentsForDorm(schoolId, [studentId], toDormId);
+    if (genderFailures.length > 0) {
+      return NextResponse.json({ error: genderFailures[0].reason }, { status: 422 });
+    }
+
     const currentOccupancy = await prisma.allocationRecord.count({
       where: { dormId: toDormId, status: "CURRENT", schoolId },
     });
@@ -268,6 +294,15 @@ export async function POST(req: NextRequest) {
 
     const relocated = currentAllocations.length;
 
+    if (toDormId && currentAllocations.length > 0) {
+      const refusal = await bulkGenderRefusal(
+        schoolId,
+        currentAllocations.map((a) => a.studentId),
+        toDormId
+      );
+      if (refusal) return NextResponse.json({ error: refusal }, { status: 422 });
+    }
+
     await prisma.$transaction(async (tx) => {
       if (currentAllocations.length > 0) {
         const positionIds = currentAllocations
@@ -348,6 +383,15 @@ export async function POST(req: NextRequest) {
 
     const snapshotted = currentForMaint.length;
     const relocated = relocateStudents && toDormId ? snapshotted : 0;
+
+    if (relocateStudents && toDormId && currentForMaint.length > 0) {
+      const refusal = await bulkGenderRefusal(
+        schoolId,
+        currentForMaint.map((a) => a.studentId),
+        toDormId
+      );
+      if (refusal) return NextResponse.json({ error: refusal }, { status: 422 });
+    }
 
     await prisma.$transaction(async (tx) => {
       if (currentForMaint.length > 0) {

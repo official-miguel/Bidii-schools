@@ -151,6 +151,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           schoolId,
           studentId: params.id,
           studentForm: form,
+          // Use the value just written when gender was part of this update.
+          studentGender: rest.gender !== undefined ? rest.gender : existing.gender,
           allocatedById: user.id,
         }).catch(() => undefined);
       }

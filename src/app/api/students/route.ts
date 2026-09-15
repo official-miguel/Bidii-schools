@@ -330,6 +330,7 @@ export async function POST(req: NextRequest) {
               schoolId,
               studentId: student.id,
               studentForm: student.schoolClass.form,
+              studentGender: student.gender,
               allocatedById: user.id,
             });
             if (!result) {

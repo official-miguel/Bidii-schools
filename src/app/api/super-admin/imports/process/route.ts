@@ -4,6 +4,11 @@ import { Prisma }                      from "@prisma/client";
 import { requireSuperAdmin, logAudit } from "@/lib/super-admin";
 import { emitSSE }                     from "@/lib/sse";
 import { hashPassword }                from "@/lib/auth";
+import {
+  studentMatchesDormGender,
+  genderMismatchReason,
+  type GenderPolicy,
+} from "@/lib/accommodation/genderPolicy";
 
 // Allow up to 5 minutes for large CSV processing on Vercel Pro / self-hosted.
 // On Vercel Hobby the cap is 10 s — upgrade to at least Pro for large imports.
@@ -583,11 +588,17 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
   let succeeded = 0;
   const errors: RowError[] = [];
 
-  const students  = await prisma.student.findMany({ where: { schoolId }, select: { id: true, admissionNumber: true } });
+  const students  = await prisma.student.findMany({ where: { schoolId }, select: { id: true, admissionNumber: true, fullName: true, gender: true } });
   const studMap   = new Map(students.map(s => [norm(s.admissionNumber), s.id]));
+  const studById  = new Map(students.map(s => [s.id, s]));
 
-  const dorms     = await prisma.dormitory.findMany({ where: { schoolId }, select: { id: true, name: true } });
+  const dorms     = await prisma.dormitory.findMany({ where: { schoolId }, select: { id: true, name: true, genderPolicy: true } });
   const dormMap   = new Map(dorms.map(d => [norm(d.name), d.id]));
+  const dormById  = new Map(dorms.map(d => [d.id, d]));
+
+  // The school's own policy is the outer constraint on every placement below.
+  const school       = await prisma.school.findUnique({ where: { id: schoolId }, select: { genderPolicy: true } });
+  const schoolPolicy = (school?.genderPolicy ?? "MIXED") as GenderPolicy;
 
   const cubicles  = await prisma.cubicle.findMany({ where: { schoolId }, select: { id: true, name: true, dormId: true } });
   const beds      = await prisma.bed.findMany({ where: { schoolId }, select: { id: true, label: true, dormId: true } });
@@ -617,6 +628,22 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
     const dormId = dormMap.get(norm(dormName));
     if (!dormId) {
       errors.push({ row: rowNum, field: "dorm_name", message: `Dormitory "${dormName}" not found — import Dormitories first` }); continue;
+    }
+
+    // A spreadsheet must not be able to do what the UI refuses: placing a
+    // student in a dorm of the wrong gender.
+    const studentRow = studById.get(studentId);
+    const dormRow    = dormById.get(dormId);
+    if (
+      studentRow &&
+      dormRow &&
+      !studentMatchesDormGender(schoolPolicy, dormRow.genderPolicy as GenderPolicy, studentRow.gender)
+    ) {
+      const detail = studentRow.gender
+        ? genderMismatchReason(dormRow.genderPolicy as GenderPolicy, studentRow.gender)
+        : "student has no gender recorded, so eligibility cannot be confirmed";
+      errors.push({ row: rowNum, field: "dorm_name", message: `Cannot place ${studentRow.fullName} in "${dormName}" — ${detail}` });
+      continue;
     }
 
     // Resolve optional cubicle
@@ -773,7 +800,10 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
   let succeeded = 0;
   const errors: RowError[] = [];
 
-  const VALID_GENDER = new Set(["BOYS_ONLY", "GIRLS_ONLY", "MIXED"]);
+  // A dormitory is Boys Only or Girls Only. MIXED is rejected here exactly as
+  // the UI rejects it — a MIXED dorm would accept any student and defeat the
+  // gender checks on every placement path.
+  const VALID_GENDER = new Set(["BOYS_ONLY", "GIRLS_ONLY"]);
   const VALID_STRUCT  = new Set(["OPEN_HALL", "CUBICLE_BASED"]);
   const VALID_ALLOC   = new Set(["MIXED_FORMS", "RESTRICTED_BY_FORM"]);
   const VALID_BED     = new Set(["SINGLE", "DOUBLE_DECKER", "CUSTOM"]);
@@ -813,7 +843,7 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
       const desc      = row["description"]?.trim() || null;
 
       if (!VALID_GENDER.has(genderRaw)) {
-        errors.push({ row: rowNum, field: "gender_policy", message: `Must be BOYS_ONLY, GIRLS_ONLY, or MIXED — got "${genderRaw}"` }); continue;
+        errors.push({ row: rowNum, field: "gender_policy", message: `Must be BOYS_ONLY or GIRLS_ONLY — a dormitory cannot be Mixed (got "${genderRaw}")` }); continue;
       }
       if (!VALID_STRUCT.has(structRaw)) {
         errors.push({ row: rowNum, field: "structure", message: `Must be OPEN_HALL or CUBICLE_BASED — got "${structRaw}"` }); continue;
@@ -1045,7 +1075,10 @@ async function processStudentOpeningBalance(rows: Record<string, string>[], scho
 async function processDormitories(rows: Record<string, string>[], schoolId: string): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
-  const VALID_GENDER = new Set(["BOYS_ONLY", "GIRLS_ONLY", "MIXED"]);
+  // A dormitory is Boys Only or Girls Only. MIXED is rejected here exactly as
+  // the UI rejects it — a MIXED dorm would accept any student and defeat the
+  // gender checks on every placement path.
+  const VALID_GENDER = new Set(["BOYS_ONLY", "GIRLS_ONLY"]);
   const VALID_STRUCT = new Set(["OPEN_HALL", "CUBICLE_BASED"]);
   const VALID_ALLOC  = new Set(["MIXED_FORMS", "RESTRICTED_BY_FORM"]);
 
@@ -1060,7 +1093,7 @@ async function processDormitories(rows: Record<string, string>[], schoolId: stri
     const description     = row["description"]?.trim() || null;
 
     if (!name) { errors.push({ row: rowNum, field: "name", message: "name is required" }); continue; }
-    if (!VALID_GENDER.has(genderPolicyRaw)) { errors.push({ row: rowNum, field: "gender_policy", message: "Must be BOYS_ONLY, GIRLS_ONLY, or MIXED" }); continue; }
+    if (!VALID_GENDER.has(genderPolicyRaw)) { errors.push({ row: rowNum, field: "gender_policy", message: "Must be BOYS_ONLY or GIRLS_ONLY — a dormitory cannot be Mixed" }); continue; }
     if (!VALID_STRUCT.has(structureRaw))    { errors.push({ row: rowNum, field: "structure",     message: "Must be OPEN_HALL or CUBICLE_BASED" }); continue; }
     if (!VALID_ALLOC.has(allocPolicyRaw))   { errors.push({ row: rowNum, field: "allocation_policy", message: "Must be MIXED_FORMS or RESTRICTED_BY_FORM" }); continue; }
 

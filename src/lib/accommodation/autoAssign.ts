@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { studentMatchesDormGender, type GenderPolicy } from "./genderPolicy";
 
 export interface AutoAssignResult {
   dormId: string;
@@ -11,6 +12,10 @@ export interface AutoAssignResult {
 /**
  * Attempt to auto-assign a single boarding student to an eligible dormitory
  * and a specific free sleeping position, respecting:
+ *  - GENDER: in a mixed school the dorm's gender policy must match the
+ *    student's recorded gender. A student with no gender recorded is never
+ *    auto-assigned — eligibility cannot be confirmed, so they are left for
+ *    manual placement rather than guessed into a dorm.
  *  - RESTRICTED_BY_FORM: dorm's permitted forms must include the student's form
  *  - MIXED_FORMS + CUBICLE_BASED: prefer the cubicle that currently has the
  *    fewest occupants so each cubicle fills proportionally (mix of forms)
@@ -26,21 +31,46 @@ export async function autoAssignDorm({
   schoolId,
   studentId,
   studentForm,
+  studentGender,
   allocatedById,
 }: {
   schoolId: string;
   studentId: string;
   studentForm: number;
+  /**
+   * The student's recorded gender. Optional only so existing callers keep
+   * compiling; when omitted it is read from the student record, never assumed.
+   */
+  studentGender?: string | null;
   allocatedById: string;
 }): Promise<AutoAssignResult | null> {
-  // ── Load active dorms with form restrictions ──────────────────────────────
-  const dorms = await prisma.dormitory.findMany({
-    where: { schoolId, status: "ACTIVE" },
-    include: { permittedForms: true },
-    orderBy: { name: "asc" },
-  });
+  // ── Load school policy, dorms, and the student's gender ───────────────────
+  const [school, dorms, studentRow] = await Promise.all([
+    prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { genderPolicy: true },
+    }),
+    prisma.dormitory.findMany({
+      where: { schoolId, status: "ACTIVE" },
+      include: { permittedForms: true },
+      orderBy: { name: "asc" },
+    }),
+    studentGender === undefined
+      ? prisma.student.findUnique({
+          where: { id: studentId },
+          select: { gender: true },
+        })
+      : Promise.resolve(null),
+  ]);
 
   if (dorms.length === 0) return null;
+
+  const schoolPolicy = (school?.genderPolicy ?? "MIXED") as GenderPolicy;
+  const gender = studentGender === undefined ? studentRow?.gender ?? null : studentGender;
+
+  // Mixed school with no gender on record: there is no dorm we can safely pick.
+  // Leave the student unallocated for staff to place by hand.
+  if (schoolPolicy === "MIXED" && !gender) return null;
 
   // ── Load all free positions in one query ──────────────────────────────────
   const freePosRows = await prisma.sleepingPosition.findMany({
@@ -62,6 +92,11 @@ export async function autoAssignDorm({
   const eligible = dorms.filter((d) => {
     const free = freeByDorm.get(d.id);
     if (!free || free.length === 0) return false;
+
+    // Never place a student in a dorm of the wrong gender.
+    if (!studentMatchesDormGender(schoolPolicy, d.genderPolicy as GenderPolicy, gender)) {
+      return false;
+    }
 
     if (
       d.allocationPolicy === "RESTRICTED_BY_FORM" &&
