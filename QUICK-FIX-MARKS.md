@@ -1,77 +1,116 @@
-# Quick Fix: Can't Save Marks
+# Quick Fix: Can't Save Marks - DATABASE ERROR
 
-## What I Changed
+## Update: It's a Database Error (500), Not Permissions!
 
-I've improved the error reporting so you can see **exactly** what's going wrong. The system will now show much clearer error messages.
+Based on your console output, this is a **database error**, not a permission issue.
 
-## What To Do Now
-
-1. **Refresh the page** where you're trying to save marks (press F5)
-
-2. **Open the browser console** to see detailed error info:
-   - Press `F12` on your keyboard
-   - Click the **Console** tab
-   - Keep it open
-
-3. **Try saving marks again**
-
-4. **Look at the console** - you'll now see one of these messages:
-
-### If You See: `❌ Permission denied for marks entry`
-
-The console will show details like:
+## What You Saw:
 ```
-❌ Permission denied for marks entry:
-{
-  userEmail: "felix@....",
-  subjectId: "...",
-  roles: [...],
-  assignedSubjectIds: [...]
+❌ Failed to save marks: {
+  status: 500,
+  error: "Database error. Please try again..."
 }
 ```
 
-**This means:** Felix doesn't have the right permissions for this subject.
+## What I Did:
 
-**Solutions:**
-- Check if the subject assignment is in the timetable
-- Check if there's an Assessment Role assigned
-- The console will show which subjects Felix IS assigned to in `assignedSubjectIds`
+I've enhanced the error logging to show the **exact database error message** and stack trace. This will tell us what's failing in the database.
 
-### If You See: `Validation error`
+## Next Steps - Try Again:
 
-**This means:** One of the marks you entered is invalid (too high, negative, or not a number)
+1. **Restart your development server** (if running locally):
+   ```powershell
+   # Stop the server (Ctrl+C), then:
+   npm run dev
+   ```
 
-The error will tell you exactly which mark is wrong.
+2. **If on production, check the server logs** - they will now show:
+   - The exact database error message
+   - The SQL operation that failed
+   - Stack trace
+   - How many items were being saved
 
-### If You See: `Database error`
+3. **Try saving marks again** with console open (F12)
 
-**This means:** There's a server/database problem. Check the server logs.
+4. **The error message will now show the actual database error** instead of just "Database error"
 
-## User-Facing Error Messages
+## Common Database Errors:
 
-The error banner on screen will now show:
-- ✅ **Permission denied**: "You do not have permission to enter marks for this subject"
-- ✅ **Validation error**: Shows exactly which score is invalid
-- ✅ **Database error**: "Database error. Please try again or contact support"
+### Error 1: "relation does not exist" or "constraint does not exist"
+**Cause:** Database schema is out of sync
 
-Instead of just "Couldn't save marks"
+**Fix:**
+```powershell
+# Run Prisma migration
+npx prisma migrate dev
+# OR if already deployed:
+npx prisma db push
+```
 
-## Next Steps
+### Error 2: "connection refused" or "timeout"
+**Cause:** Database is not accessible
 
-1. Try saving marks now with the console open (F12)
-2. Take a screenshot of any errors you see in the console
-3. Share the console output so we can fix the root cause
+**Fix:**
+- Check `.env` file has correct `DATABASE_URL`
+- Check database is running
+- Check network connectivity
 
-## What The Logs Will Tell Us
+### Error 3: "column does not exist"
+**Cause:** Database schema missing a column
 
-The server logs will now show:
-- Which user is trying to save
-- Which subject they're trying to save for
-- What roles/permissions they have
-- Which subjects they ARE allowed to access
-- Any database errors that occur
+**Fix:**
+```powershell
+npx prisma generate
+npx prisma db push
+```
 
-This will make it very easy to identify if it's:
-- ❌ A permission issue (most likely)
-- ❌ A validation issue (bad data)
-- ❌ A database issue (technical problem)
+### Error 4: "constraint violation" or "unique constraint"
+**Cause:** Trying to insert duplicate data
+
+**Fix:** This would be shown in the validation, so unlikely
+
+## Check Server Logs
+
+The server console will now show something like:
+
+```
+❌ Database error while saving marks: {
+  message: "actual error message here",
+  stack: "full stack trace...",
+  name: "PrismaClientKnownRequestError",
+  subjectId: "...",
+  itemCount: 1,
+  toUpsertCount: 1,
+  toDeleteCount: 0
+}
+```
+
+**Share this output** and I can tell you exactly what's wrong and how to fix it.
+
+## Quick Diagnostic:
+
+Try this in your terminal to check if the database is accessible:
+
+```powershell
+npx prisma db execute --stdin
+```
+
+Then paste:
+```sql
+SELECT COUNT(*) FROM "AssessmentItem";
+```
+
+Press Enter, then Ctrl+Z (Windows) or Ctrl+D (Mac/Linux).
+
+If this returns a number, the database is accessible. If it errors, there's a connection problem.
+
+## Most Likely Causes:
+
+1. **Database connection issue** - Check `DATABASE_URL` in `.env`
+2. **Schema out of sync** - Run `npx prisma db push`
+3. **Missing table/constraint** - Run migrations
+4. **Permission at database level** - Check database user has INSERT/UPDATE/DELETE permissions
+
+Try saving again and **share the new error message** from both:
+- Browser console (F12)
+- Server console/terminal

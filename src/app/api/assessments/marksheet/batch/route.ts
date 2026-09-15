@@ -215,11 +215,15 @@ export async function POST(req: NextRequest) {
     console.error("❌ Database error while saving marks:", {
       error: dbError,
       message: (dbError as Error).message,
+      stack: (dbError as Error).stack,
+      name: (dbError as Error).name,
       subjectId,
       itemCount: items.length,
+      toUpsertCount: toUpsert.length,
+      toDeleteCount: toDelete.length,
     });
     return NextResponse.json({ 
-      error: "Database error. Please try again or contact support if the problem persists." 
+      error: `Database error: ${(dbError as Error).message || 'Unknown database error. Please contact support.'}` 
     }, { status: 500 });
   }
 }
