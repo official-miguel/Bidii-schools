@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { schoolId, enabled } = parsed.data;
-  const module: OptionalModule = parsed.data.module;
-  const systemModule = toSystemModule(module);
+  const moduleId: OptionalModule = parsed.data.module;
+  const systemModule = toSystemModule(moduleId);
 
   const school = await prisma.school.findUnique({
     where:  { id: schoolId },
@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
   });
 
   await logAudit(user.id, "MODULE_TOGGLED", "school", schoolId, {
-    module,
-    label: OPTIONAL_MODULE_LABEL[module],
+    module: moduleId,
+    label: OPTIONAL_MODULE_LABEL[moduleId],
     enabled,
   });
 

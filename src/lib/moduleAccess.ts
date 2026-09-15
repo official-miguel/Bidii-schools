@@ -153,11 +153,11 @@ export async function stripDisabledModules<T extends Partial<Record<Module, unkn
   const enabled = await getEnabledOptionalModules(schoolId);
   if (enabled.size === OPTIONAL_MODULES.length) return perms;
 
-  const next = { ...perms };
-  for (const module of OPTIONAL_MODULES) {
-    if (!enabled.has(module)) delete next[module];
+  const next: Partial<Record<Module, unknown>> = { ...perms };
+  for (const optional of OPTIONAL_MODULES) {
+    if (!enabled.has(optional)) delete next[optional];
   }
-  return next;
+  return next as T;
 }
 
 /**
