@@ -80,6 +80,39 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+function getNotificationLink(notification: Notification): string | null {
+  const { type, message, student } = notification;
+  
+  switch (type) {
+    case "PAYMENT_RECEIVED":
+      // Link to student ledger if student exists
+      return student
+        ? `/staff/finance/students?search=${encodeURIComponent(student.admissionNumber)}`
+        : null;
+    
+    case "RECONCILIATION_NEEDED":
+      // Link to reconciliation page
+      return "/staff/finance/reconciliation";
+    
+    case "INVOICE_GENERATED":
+      // Link to student ledger if student exists
+      return student
+        ? `/staff/finance/students?search=${encodeURIComponent(student.admissionNumber)}`
+        : null;
+    
+    case "SETUP_REQUIRED":
+      // Link to setup page
+      return "/staff/finance/setup";
+    
+    case "REMINDER_SENT":
+      // Link to debtors page
+      return "/staff/finance/debtors";
+    
+    default:
+      return null;
+  }
+}
+
 function entryTypeLabel(type: string): {
   label: string;
   variant: "success" | "info" | "warn" | "default";
@@ -313,15 +346,35 @@ export default function FinanceDashboard() {
                   <tbody>
                     {recentEntries.map((e) => {
                       const { label, variant } = entryTypeLabel(e.entryType);
+                      const studentLedgerLink = e.student
+                        ? `/staff/finance/students?search=${encodeURIComponent(e.student.admissionNumber)}`
+                        : null;
+                      
                       return (
                         <tr key={e.id} className={premiumTrClass}>
                           <td className={premiumTdClass}>
-                            <p className="font-medium text-foreground">
-                              {e.student?.fullName ?? "—"}
-                            </p>
-                            <p className="text-xs text-slate font-mono">
-                              {e.student?.admissionNumber}
-                            </p>
+                            {studentLedgerLink ? (
+                              <Link
+                                href={studentLedgerLink}
+                                className="block hover:text-teal transition-colors"
+                              >
+                                <p className="font-medium text-foreground hover:text-teal">
+                                  {e.student?.fullName ?? "—"}
+                                </p>
+                                <p className="text-xs text-slate font-mono">
+                                  {e.student?.admissionNumber}
+                                </p>
+                              </Link>
+                            ) : (
+                              <>
+                                <p className="font-medium text-foreground">
+                                  {e.student?.fullName ?? "—"}
+                                </p>
+                                <p className="text-xs text-slate font-mono">
+                                  {e.student?.admissionNumber}
+                                </p>
+                              </>
+                            )}
                           </td>
                           <td className={premiumTdClass}>
                             <Badge variant={variant}>{label}</Badge>
@@ -379,11 +432,9 @@ export default function FinanceDashboard() {
                 </p>
               </div>
             ) : (
-              notifications.slice(0, 8).map((n) => (
-                <div
-                  key={n.id}
-                  className="rounded-xl border border-border bg-card p-4 hover:border-teal/30 transition-all"
-                >
+              notifications.slice(0, 8).map((n) => {
+                const link = getNotificationLink(n);
+                const notificationContent = (
                   <div className="flex items-start gap-3">
                     <Bell
                       className="h-4 w-4 text-teal mt-0.5 shrink-0"
@@ -398,7 +449,11 @@ export default function FinanceDashboard() {
                       </p>
                     </div>
                     <button
-                      onClick={() => markRead(n.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        markRead(n.id);
+                      }}
                       disabled={markingId === n.id}
                       aria-label="Mark as read"
                       title="Mark as read"
@@ -411,8 +466,25 @@ export default function FinanceDashboard() {
                       )}
                     </button>
                   </div>
-                </div>
-              ))
+                );
+
+                return link ? (
+                  <Link
+                    key={n.id}
+                    href={link}
+                    className="block rounded-xl border border-border bg-card p-4 hover:border-teal/30 hover:shadow-sm transition-all"
+                  >
+                    {notificationContent}
+                  </Link>
+                ) : (
+                  <div
+                    key={n.id}
+                    className="rounded-xl border border-border bg-card p-4"
+                  >
+                    {notificationContent}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
