@@ -8,6 +8,10 @@
  * validated against real borrow data.
  *
  * Provides manual fallback input if camera permission is denied.
+ * 
+ * iOS QR Scanning Fix: Using only 'qr' in barcodeScannerSettings
+ * for optimal iOS compatibility. Including multiple barcode types
+ * can prevent QR code recognition on some iOS devices.
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -158,7 +162,9 @@ export default function ScanModal() {
               style={{ flex: 1 }}
               facing="back"
               enableTorch={torchOn}
-              barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8'] }}
+              barcodeScannerSettings={{ 
+                barcodeTypes: ['qr'] 
+              }}
               onBarcodeScanned={onBarcodeScanned}
             >
               {/* Scan frame overlay */}

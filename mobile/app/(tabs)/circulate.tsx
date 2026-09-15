@@ -382,7 +382,9 @@ export default function CirculateScreen() {
                   <CameraView
                     style={{ flex: 1 }}
                     facing="back"
-                    barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'ean13'] }}
+                    barcodeScannerSettings={{ 
+                      barcodeTypes: ['qr'] 
+                    }}
                     onBarcodeScanned={searchingBook ? undefined : onBarcodeScanned}
                   >
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

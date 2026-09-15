@@ -3,6 +3,10 @@
  * Uses CameraView from expo-camera. Each borrow generates a
  * loan-specific token (BIDII:LOAN:<borrowId>) so returns are
  * always validated against the active loan record.
+ * 
+ * iOS QR Scanning Fix: Using only 'qr' in barcodeScannerSettings
+ * for optimal iOS compatibility. Including multiple barcode types
+ * can prevent QR code recognition on some iOS devices.
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -137,7 +141,9 @@ export default function ScanTabScreen() {
             style={{ flex: 1 }}
             facing="back"
             enableTorch={torchOn}
-            barcodeScannerSettings={{ barcodeTypes: ['qr','code128','ean13'] }}
+            barcodeScannerSettings={{ 
+              barcodeTypes: ['qr'] 
+            }}
             onBarcodeScanned={result.state !== 'processing' ? onBarcodeScanned : undefined}
           >
             {/* Scan frame */}
