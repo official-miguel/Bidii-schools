@@ -39,6 +39,7 @@ import {
   Award,
   Calendar,
   Bell,
+  Archive,
 } from "lucide-react";
 import MobileDrawer from "@/components/MobileDrawer";
 import type { NavHub } from "@/lib/permissions";
@@ -52,6 +53,7 @@ export const HUB_DEFS = [
   { id: "student-life"   as NavHub, label: "Student Life",   Icon: Star,          seg: "accommodation" },
   { id: "calendar"       as NavHub, label: "Calendar",       Icon: CalendarDays,  seg: "calendar" },
   { id: "communication"  as NavHub, label: "Communication",  Icon: MessageSquare, seg: "communication" },
+  { id: "archives"       as NavHub, label: "Archives",       Icon: Archive,       seg: "history" },
   { id: "administration" as NavHub, label: "Administration", Icon: Settings,      seg: "administration" },
 ] as const;
 
@@ -77,7 +79,9 @@ export const HUB_SEG_MAP: Record<string, NavHub> = {
   departments: "academic",
   // People
   people: "people", students: "people", staff: "people",
-  parents: "people", history: "people",
+  parents: "people",
+  // Archives
+  history: "archives",
   // Student Life
   accommodation: "student-life", conduct: "student-life",
   behaviour: "student-life", discipline: "student-life",

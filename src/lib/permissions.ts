@@ -35,7 +35,7 @@ export const MODULE_INFO: Record<
   RECORDS_ACHIEVEMENTS: { label: "Records — Achievements",   description: "Achievements, shared achievements, files, AI summaries",            hub: "student-life" },
   ANALYTICS:            { label: "Analytics",                 description: "School performance analytics and insights",                         hub: "administration" },
   LIBRARY:              { label: "Library",                   description: "Book catalogue, student library cards, borrowing, and fines",       hub: "academic" },
-  HISTORY:              { label: "History",                   description: "Archived institutional records",                                    hub: "people" },
+  HISTORY:              { label: "Archives",                  description: "Leavers and graduands: transferred, expelled, and graduated students, and staff who have left", hub: "archives" },
   ACCOMMODATION:        { label: "Accommodation",             description: "Dormitories, cubicles, beds, and student boarding allocations",     hub: "student-life" },
   ATTENDANCE:           { label: "Attendance",                description: "Take and review daily class attendance for any class",               hub: "academic" },
   FEES:                 { label: "Fees Management",           description: "School finance: fee structures, invoicing, payments, debtor tracking, and reports", hub: "administration" },
@@ -55,6 +55,8 @@ export type NavHub =
   | "student-life"
   | "calendar"
   | "communication"
+  /** Archived institutional records — leavers, graduands, transferred staff. */
+  | "archives"
   | "administration"
   | "diary"
   | "parent";

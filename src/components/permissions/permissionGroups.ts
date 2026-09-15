@@ -141,9 +141,14 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     modules: ["COMMUNICATION", "CALENDAR"],
   },
   {
+    id:      "archives",
+    label:   "Archives",
+    modules: ["HISTORY"],
+  },
+  {
     id:      "leadership",
     label:   "Leadership",
-    modules: ["AI_TOOLS", "ANALYTICS", "REPORTS", "STAFF", "DEPARTMENTS", "HISTORY"],
+    modules: ["AI_TOOLS", "ANALYTICS", "REPORTS", "STAFF", "DEPARTMENTS"],
     hasAdminSwitch: true,
   },
 ];

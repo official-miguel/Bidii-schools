@@ -21,6 +21,9 @@ import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 import { usePermissions } from "@/components/PermissionProvider";
 import type { OptionalModule } from "@/lib/moduleAccess";
 
+/** A module key gating a search entry — the optional three, or any other. */
+type ModuleKey = OptionalModule | "HISTORY";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -114,8 +117,12 @@ interface NavEntry {
   icon:     string;
   roles:    string[];  // which roles can navigate here
   keywords: string[];  // extra search terms
-  /** Optional module this page belongs to — hidden when the school has it off */
-  module?:  OptionalModule;
+  /**
+   * Module this page belongs to. The entry is hidden unless the viewer's
+   * permissions include it — covers both modules a school has switched off and
+   * ones this user was simply never granted.
+   */
+  module?:  ModuleKey;
 }
 
 const NAV_REGISTRY: NavEntry[] = [
@@ -140,6 +147,7 @@ const NAV_REGISTRY: NavEntry[] = [
   { id: "nav_exam_periods",  label: "Exam Periods",       detail: "Assessments",    href: "/{role}/exam-periods",   icon: "BookOpenCheck", roles: ["principal"],                  keywords: ["term exams","examinations","schedule"] },
   // ── Administration ────────────────────────────────────────────────────────
   { id: "nav_departments",   label: "Departments",        detail: "Administration", href: "/{role}/departments",    icon: "Layers",        roles: ["principal"],                  keywords: ["faculties","sections"] },
+  { id: "nav_archives",      label: "Archives",           detail: "Archives",       href: "/{role}/history",        icon: "Archive",       roles: ["principal","staff","teacher"], keywords: ["graduands","graduated","alumni","leavers","transferred","expelled","history","archive"], module: "HISTORY" as const },
   { id: "nav_library",       label: "Library",            detail: "Administration", href: "/{role}/library",        icon: "Library",       roles: ["principal","staff"],          keywords: ["books","borrowing","catalogue","isbn"], module: "LIBRARY" as const },
   { id: "nav_accommodation", label: "Accommodation",      detail: "Administration", href: "/{role}/accommodation",  icon: "BedDouble",     roles: ["principal"],                  keywords: ["dormitory","boarding","dorm","allocation","hostel"], module: "ACCOMMODATION" as const },
   { id: "nav_settings",      label: "Settings",           detail: "Administration", href: "/{role}/settings",       icon: "Settings",      roles: ["principal"],                  keywords: ["configuration","preferences","school"] },
@@ -157,8 +165,8 @@ interface QuickActionEntry {
   icon:     string;
   roles:    string[];
   keywords: string[];
-  /** Optional module this action belongs to — hidden when the school has it off */
-  module?:  OptionalModule;
+  /** Module this action belongs to — hidden unless the viewer holds it. */
+  module?:  ModuleKey;
 }
 
 const ACTIONS_REGISTRY: QuickActionEntry[] = [
@@ -221,7 +229,7 @@ export function useGlobalSearch(query: string, role: string) {
   // never flash up in search while permissions load.
   const { permissions } = usePermissions();
   const moduleAvailable = useCallback(
-    (module?: OptionalModule) => {
+    (module?: ModuleKey) => {
       if (!module) return true;
       return Boolean(permissions?.modules?.[module]);
     },
