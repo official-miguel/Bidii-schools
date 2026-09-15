@@ -24,7 +24,22 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sp     = req.nextUrl.searchParams;
-  const type   = sp.get("type") || undefined;
+
+  // `type` accepts one archive type or a comma-separated list, so a caller can
+  // ask for leavers (TRANSFER,EXPULSION) without also getting graduands. It
+  // used to take a single value only, and the Transferred Students tab had no
+  // way to express "these two but not graduations" — it sent nothing, which
+  // means no filter, which is why graduands appeared under Transferred.
+  const ARCHIVE_TYPES = ["TRANSFER", "EXPULSION", "GRADUATION"];
+  const requestedTypes = (sp.get("type") ?? "")
+    .split(",")
+    .map((t) => t.trim().toUpperCase())
+    .filter((t) => ARCHIVE_TYPES.includes(t));
+
+  const typeFilter =
+    requestedTypes.length === 0 ? {} :
+    requestedTypes.length === 1 ? { archiveType: requestedTypes[0] } :
+                                  { archiveType: { in: requestedTypes } };
   const q      = sp.get("q")?.trim().toLowerCase() || undefined;
   const cursor = sp.get("cursor") || undefined;
   const rawLimit = parseInt(sp.get("limit") ?? "50", 10);
@@ -34,7 +49,7 @@ export async function GET(req: NextRequest) {
   const where: Record<string, any> = {
     schoolId: user.schoolId!,
     archivedAt: { not: null },
-    ...(type ? { archiveType: type } : {}),
+    ...typeFilter,
     ...(cursor ? { id: { gt: cursor } } : {}),
   };
 
@@ -90,7 +105,7 @@ export async function GET(req: NextRequest) {
     : page;
 
   const total = q ? undefined : await prisma.student.count({
-    where: { schoolId: user.schoolId!, archivedAt: { not: null }, ...(type ? { archiveType: type } : {}) },
+    where: { schoolId: user.schoolId!, archivedAt: { not: null }, ...typeFilter },
   });
 
   const headers: Record<string, string> = { "Cache-Control": "private, no-store" };

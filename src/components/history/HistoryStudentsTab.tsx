@@ -69,7 +69,12 @@ function ArchiveBadge({ type }: { type: string | null }) {
 
 interface Props {
   globalSearch: string;
-  typeFilter: string; // "" | "TRANSFER" | "EXPULSION"
+  /**
+   * Archive types to include: one value, or several comma-separated
+   * (e.g. "TRANSFER,EXPULSION"). Empty means every type, graduations
+   * included — rarely what a caller wants.
+   */
+  typeFilter: string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────

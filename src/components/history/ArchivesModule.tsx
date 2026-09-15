@@ -151,7 +151,9 @@ function ArchivesInner({ contextLinks }: { contextLinks: ContextLink[] }) {
       {activeTab === "students" && (
         <HistoryStudentsTab
           globalSearch={debouncedSearch}
-          typeFilter=""   /* show TRANSFER + EXPULSION together */
+          /* Leavers only. An empty filter meant "no filter", which pulled in
+             graduands — they have their own tab. */
+          typeFilter="TRANSFER,EXPULSION"
         />
       )}
       {activeTab === "staff" && (
