@@ -288,21 +288,23 @@ export function LibraryMobileMenuButton({
 
 export default function LibrarySidebarNav({
   schoolName,
-  drawerOpen = false,
+  drawerOpen,
   onDrawerClose,
 }: {
   schoolName?: string;
   drawerOpen?: boolean;
   onDrawerClose?: () => void;
-}) {
+} = {}) {
   return (
     <>
       <DesktopSidebar schoolName={schoolName} />
-      <MobileDrawer
-        open={drawerOpen}
-        onClose={onDrawerClose ?? (() => {})}
-        schoolName={schoolName}
-      />
+      {drawerOpen !== undefined && (
+        <MobileDrawer
+          open={drawerOpen}
+          onClose={onDrawerClose ?? (() => {})}
+          schoolName={schoolName}
+        />
+      )}
     </>
   );
 }
