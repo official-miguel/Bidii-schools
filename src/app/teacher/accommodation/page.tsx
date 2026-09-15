@@ -1,15 +1,26 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BookOpen, Building2 } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { getEnabledOptionalModules } from "@/lib/moduleAccess";
 
 /**
  * /teacher/accommodation — Student Life hub landing page.
  *
  * The HubSidebar uses `seg: "accommodation"` for the Student Life hub,
  * so this is the first page a teacher sees when they click the star icon.
- * It shows two tiles: Records (Discipline + Achievements) and Accommodation.
+ * It shows Records (Discipline + Achievements), which is core, and
+ * Accommodation, which is dropped when the school does not have that module.
  */
-export default function TeacherStudentLifePage() {
-  const tiles = [
+export default async function TeacherStudentLifePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const enabledModules = user.schoolId
+    ? await getEnabledOptionalModules(user.schoolId)
+    : null;
+
+  const allTiles = [
     {
       href: "/teacher/records/discipline",
       icon: BookOpen,
@@ -23,14 +34,22 @@ export default function TeacherStudentLifePage() {
       title: "Accommodation",
       description: "Browse dormitories, room assignments, and boarding student details.",
       color: "violet",
+      module: "ACCOMMODATION",
     },
   ] as const;
+
+  const tiles = allTiles.filter(
+    (tile) =>
+      !("module" in tile) || !enabledModules || enabledModules.has(tile.module)
+  );
 
   return (
     <div>
       <h1 className="text-2xl font-semibold text-foreground mb-1">Student Life</h1>
       <p className="text-slate text-sm mb-8">
-        Access student records and boarding accommodation.
+        {tiles.length > 1
+          ? "Access student records and boarding accommodation."
+          : "Access student records."}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl">
