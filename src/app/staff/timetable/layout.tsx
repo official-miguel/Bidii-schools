@@ -14,8 +14,9 @@ export default async function StaffTimetableLayout({
   const canManage = !!(perms.TIMETABLE?.canManage || perms.TIMETABLE?.canConfigure);
 
   if (!canManage) {
-    // No timetable admin rights — redirect to academic hub
-    redirect("/staff/academics");
+    // No timetable admin rights. Teachers go back to their own portal — the
+    // staff academic hub is not necessarily theirs to land on.
+    redirect(user.role === "TEACHER" ? "/teacher/timetable" : "/staff/academics");
   }
 
   return <>{children}</>;

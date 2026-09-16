@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
   const user =
     (await requireSchoolRole("PRINCIPAL")) ??
     (await requireSchoolPermission("CLASSES", "view")) ??
+    // Managing the student register means picking a class for each student,
+    // so the names have to be readable without a separate CLASSES grant.
+    (await requireSchoolPermission("STUDENTS", "view")) ??
     (await requireRecordsPermission("RECORDS_DISCIPLINE", "view")) ??
     (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

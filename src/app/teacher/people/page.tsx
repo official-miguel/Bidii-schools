@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import PeopleTiles from "@/components/teacher/PeopleTiles";
+import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 
 export default async function TeacherPeoplePage() {
   const user = await getCurrentUser();
@@ -106,6 +107,9 @@ export default async function TeacherPeoplePage() {
       ) : (
         <PeopleTiles tiles={tiles} />
       )}
+
+      {/* Staff and school-wide student management, for a teacher who holds it. */}
+      <SchoolAdminLinks only={["STAFF", "STUDENTS"]} />
     </div>
   );
 }

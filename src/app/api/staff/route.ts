@@ -125,6 +125,19 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
+  // Assigning a staff role is how access is granted, so it stays with the
+  // Principal. Without this, anyone holding STAFF create could register an
+  // account carrying any role in the school — including one with full admin
+  // rights — and sign in as it, since they also set its first password. The
+  // Roles & Permissions tab is hidden from them for the same reason; this is
+  // the server-side half of that, and the half that actually enforces it.
+  if (user.role !== "PRINCIPAL" && data.staffRoleId) {
+    return NextResponse.json(
+      { error: "Only the Principal can assign a staff role." },
+      { status: 403 }
+    );
+  }
+
   if (data.createLogin && !data.email) {
     return NextResponse.json(
       { error: "An email is required to create login credentials." },

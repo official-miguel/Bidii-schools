@@ -2,11 +2,14 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -35,13 +38,24 @@ const updateSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   // Allow PRINCIPAL unconditionally; also allow a class teacher but only for
-  // students in their own class (R4.7, R4.8).
-  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
+  // students in their own class (R4.7, R4.8), and anyone granted the STUDENTS
+  // module school-wide.
+  const user =
+    (await requireSchoolRole("PRINCIPAL", "TEACHER")) ??
+    (await requireSchoolPermission("STUDENTS", "edit"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
-  // For TEACHER callers, enforce class-teacher scope.
-  if (user.role === "TEACHER") {
+  // A delegated role that manages STUDENTS covers the whole school, so the
+  // class-teacher scope below does not apply to it. "manage" is the test
+  // rather than "edit" on purpose: being a class teacher already grants
+  // canEdit on STUDENTS, so testing edit here would hand every class teacher
+  // the whole register and quietly undo R4.7.
+  const managesSchoolWide =
+    user.role === "TEACHER" && !!(await requireSchoolPermission("STUDENTS", "manage"));
+
+  // For TEACHER callers without that grant, enforce class-teacher scope.
+  if (user.role === "TEACHER" && !managesSchoolWide) {
     // Look up the student to get its classId.
     const studentForCheck = await prisma.student.findFirst({
       where: { id: params.id, schoolId },

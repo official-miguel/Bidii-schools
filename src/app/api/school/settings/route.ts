@@ -2,9 +2,15 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET() {
-  const user = await requireSchoolRole("PRINCIPAL");
+  // Read-only. The student register reads the gender and boarding policy from
+  // here to pre-set and constrain the registration form, so anyone who may
+  // see the register may read it. Writing is still Principal-only below.
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

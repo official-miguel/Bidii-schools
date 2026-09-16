@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 
 // ---------------------------------------------------------------------------
@@ -30,7 +31,12 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  // Creating and editing staff already answer to the STAFF permission; ending
+  // someone's employment is the one step that still demanded the Principal,
+  // which left a delegated staff manager unable to finish the job.
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STAFF", "delete"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = archiveSchema.safeParse(await req.json().catch(() => null));

@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 async function maxAdmissionNumber(schoolId: string): Promise<number | null> {
@@ -10,7 +11,10 @@ async function maxAdmissionNumber(schoolId: string): Promise<number | null> {
 }
 
 export async function GET() {
-  const user = await requireSchoolRole("PRINCIPAL");
+  // Whoever may register a student needs the number the register is up to.
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "create"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const current = await maxAdmissionNumber(user.schoolId!);

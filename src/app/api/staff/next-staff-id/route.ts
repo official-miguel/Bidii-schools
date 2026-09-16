@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 async function maxStaffId(schoolId: string): Promise<number | null> {
@@ -27,7 +28,11 @@ async function smallestRecycledId(schoolId: string): Promise<string | null> {
 ///   2. max(existing numeric staffId) + 1 (sequential increment).
 ///   3. null when no numeric IDs exist yet (caller shows starting-number input).
 export async function GET() {
-  const user = await requireSchoolRole("PRINCIPAL");
+  // Registering staff is already open to the STAFF permission, so the ID this
+  // allocates has to be too, or the form opens with nothing to fill in.
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STAFF", "create"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Check for a recycled ID first

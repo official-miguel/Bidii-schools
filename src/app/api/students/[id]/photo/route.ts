@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -18,7 +19,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
+  // Admin staff registering a student need to attach the photo too; the role
+  // check alone turned them away even with the STUDENTS module granted.
+  const user =
+    (await requireSchoolRole("PRINCIPAL", "TEACHER")) ??
+    (await requireSchoolPermission("STUDENTS", "edit"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({
@@ -82,7 +87,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await requireSchoolRole("PRINCIPAL", "TEACHER");
+  const user =
+    (await requireSchoolRole("PRINCIPAL", "TEACHER")) ??
+    (await requireSchoolPermission("STUDENTS", "edit"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const student = await prisma.student.findFirst({

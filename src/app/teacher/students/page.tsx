@@ -14,6 +14,7 @@ import { SkeletonTable }    from "@/components/ui/ProgressivePage";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import { ExternalLink, Pencil } from "lucide-react";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 
 // ---------------------------------------------------------------------------
 // Debounce hook
@@ -217,6 +218,15 @@ export default function TeacherStudentsPage() {
       <PageHeader
         title="Students"
         description="View students on your timetable and their profiles."
+      />
+
+      {/* Shown only to a teacher who also manages the whole register. The list
+          below stays scoped to their own classes; this is the way across. */}
+      <SchoolAdminLinks
+        only={["STUDENTS"]}
+        title="School students"
+        subtitle="You also manage the full student register — admissions, transfers, and every class."
+        className="mb-5"
       />
 
       <WorkspaceToolbar>

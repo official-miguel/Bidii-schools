@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ContextNavigation from "@/components/ContextNavigation";
 import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
+import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 import {
   BookOpen,
   Building2,
@@ -116,6 +117,10 @@ export default async function TeacherAcademicsHub() {
           );
         })}
       </div>
+
+      {/* Catch-all. Every school-wide area this teacher manages appears here,
+          so nothing they have been granted is left without a way in. */}
+      <SchoolAdminLinks />
     </div>
   );
 }

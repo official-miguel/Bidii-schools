@@ -23,6 +23,7 @@ import {
 import ContextNavigation from "@/components/ContextNavigation";
 import { PageHeader, EmptyState, ErrorBanner } from "@/components/ui";
 import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
+import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAY_FULL  = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -214,6 +215,15 @@ export default function TeacherTimetablePage() {
       <PageHeader
         title="My Timetable"
         description={data?.teacher ? `${data.teacher.fullName} · Staff ID ${data.teacher.staffId}` : "Your weekly schedule."}
+      />
+
+      {/* Shown only to a teacher who also manages the school-wide timetable —
+          the builder that generates and publishes every class's schedule. */}
+      <SchoolAdminLinks
+        only={["TIMETABLE"]}
+        title="School timetable"
+        subtitle="You also manage the school-wide timetable — generate, build, and publish it here."
+        className="mb-5"
       />
 
       <div className="space-y-5">

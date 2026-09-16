@@ -149,6 +149,27 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
+  // Changing someone's staff role is changing what they can reach — and the
+  // write below also flips their account to ADMIN_STAFF — so it stays with the
+  // Principal. STAFF edit on its own previously carried it, which let anyone
+  // holding that permission move themselves onto a role with full admin
+  // rights. Sending back the value already on the record is allowed, so an
+  // ordinary save of an unrelated field still goes through.
+  if (user.role !== "PRINCIPAL" && staffRoleId !== undefined) {
+    const linked = existing.userId
+      ? await prisma.user.findUnique({
+          where: { id: existing.userId },
+          select: { staffRoleId: true },
+        })
+      : null;
+    if ((staffRoleId ?? null) !== (linked?.staffRoleId ?? null)) {
+      return NextResponse.json(
+        { error: "Only the Principal can change a staff role." },
+        { status: 403 }
+      );
+    }
+  }
+
   if (staffRoleId) {
     const role = await prisma.staffRole.findFirst({
       where: { id: staffRoleId, schoolId: user.schoolId! },

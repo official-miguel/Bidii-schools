@@ -6,7 +6,10 @@ import { requireSchoolPermission } from "@/lib/permissions";
 
 export async function GET(_req: NextRequest) {
   const user = (await requireSchoolRole("PRINCIPAL")) ??
-    (await requireSchoolPermission("SUBJECTS", "view"));
+    (await requireSchoolPermission("SUBJECTS", "view")) ??
+    // A student's electives are chosen from this list, so managing the
+    // register needs it without a separate SUBJECTS grant.
+    (await requireSchoolPermission("STUDENTS", "view"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const subjects = await prisma.subject.findMany({

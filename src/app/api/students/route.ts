@@ -144,7 +144,12 @@ async function maxAdmissionNumber(schoolId: string): Promise<number | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  // Registering a student belongs to whoever was granted the module, not to
+  // the Principal alone — a delegated role that could open the register but
+  // never add to it made "manage students" an empty grant.
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("STUDENTS", "create"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
