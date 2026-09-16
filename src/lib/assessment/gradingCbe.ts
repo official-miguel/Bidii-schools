@@ -148,6 +148,24 @@ export function bandColour(bandName: string | null): { bg: string; text: string 
   }
 }
 
+/**
+ * Colour a raw mark (0–100) on the CBE band scale — the direct counterpart of
+ * grading844's pointsToColour / pointsToColourHex, for charts that plot marks
+ * rather than grade points.
+ */
+export function markToColour(mark: number | null): { bg: string; text: string } {
+  if (mark === null) return { bg: "bg-background", text: "text-slate" };
+  return cbePercentageColour(mark);
+}
+
+export function markToColourHex(mark: number | null): string {
+  if (mark === null) return "#e5e7eb"; // grey-200 — no data
+  if (mark >= 75) return "#16a34a";    // green-600
+  if (mark >= 58) return "#2563eb";    // blue-600
+  if (mark >= 41) return "#d97706";    // amber-600
+  return "#dc2626";                    // red-600
+}
+
 /** Tailwind colour classes by percentage — used where a band has no fixed
  * colour of its own (custom scales can have arbitrary band counts/names). */
 export function cbePercentageColour(pct: number): { bg: string; text: string } {

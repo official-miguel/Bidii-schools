@@ -113,8 +113,8 @@ export default async function TeacherDeptAnalyticsPage() {
   const classes = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId!, ...classFilter },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true },
-  }) as Array<{ id: string; name: string; form: number }>;
+    select: { id: true, name: true, form: true, frameworkType: true },
+  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
 
   // Subjects — teacher's assigned subjects or all if wide access
   const subjectIds = isWideAccess || !actor.teacher?.id

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { subjectScore, scoreToGrade, denseRank } from "@/lib/assessment/grading844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import { subjectAppliesToForm } from "@/lib/assessment/subjectScope";
+import { loadCbeMarks } from "@/lib/assessment/cbeMarks";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -22,6 +23,11 @@ const schema = z.object({ periodId: z.string().cuid() });
  * achievement is upserted. Records are idempotent: running this twice for the
  * same period only adds students who weren't previously recognised.
  *
+ * Both curricula are ranked. 8-4-4 classes are ranked on total KCSE grade
+ * points; CBE classes are ranked on total raw marks, since CBE has no points
+ * scale. A ranking group is always a single class or a single form, so the two
+ * scales are never compared against each other.
+ *
  * The endpoint requires the caller to be a PRINCIPAL.
  */
 export async function POST(req: NextRequest) {
@@ -36,10 +42,10 @@ export async function POST(req: NextRequest) {
   }
   const { periodId } = parsed.data;
 
-  // Periods are shared across every framework now — verify it belongs to
-  // this school, and separately resolve the active 8-4-4 framework this
-  // endpoint is scoped to.
-  const [period, activeFramework] = await Promise.all([
+  // Periods are shared across every framework now — verify it belongs to this
+  // school, then resolve the 8-4-4 framework; CBE marks come from their own
+  // loader below, so a school running only CBE is still handled.
+  const [period, kcseFramework] = await Promise.all([
     db.assessmentPeriod.findFirst({
       where: { id: periodId, schoolId: user.schoolId! },
       select: { id: true, name: true, academicYear: true, term: true },
@@ -50,18 +56,11 @@ export async function POST(req: NextRequest) {
   if (!period) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
-  if (!activeFramework) {
-    return NextResponse.json(
-      { error: "Top-10 achievements are only supported for the active 8-4-4 framework." },
-      { status: 422 }
-    );
-  }
-
-  // ── Load all 8-4-4 classes for this school ────────────────────────────────
+  // ── Load every class for this school, both curricula ──────────────────────
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId!, frameworkType: "EIGHT_FOUR_FOUR" },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true },
+    select: { id: true, name: true, form: true, frameworkType: true },
   });
 
   if (classes.length === 0) {
@@ -96,10 +95,20 @@ export async function POST(req: NextRequest) {
   const allSubjectIds = [...new Set(
     [...subjectsByForm.values()].flatMap((subs) => subs.map((s) => s.id))
   )];
-  const allPapers = await db.paper.findMany({
-    where: { schoolId: user.schoolId!, frameworkId: activeFramework.id, subjectId: { in: allSubjectIds } },
-    select: { id: true, maxMarks: true, subjectId: true },
-  }) as Array<{ id: string; maxMarks: number; subjectId: string }>;
+  const allPapers = kcseFramework
+    ? await db.paper.findMany({
+        where: { schoolId: user.schoolId!, frameworkId: kcseFramework.id, subjectId: { in: allSubjectIds } },
+        select: { id: true, maxMarks: true, subjectId: true },
+      }) as Array<{ id: string; maxMarks: number; subjectId: string }>
+    : [];
+
+  // CBE marks come from the shared loader so they match the mark sheet —
+  // papers totalled, or the department formula applied when one is set.
+  const cbeMarks = await loadCbeMarks(
+    user.schoolId!,
+    [periodId],
+    classes.filter((c) => c.frameworkType === "CBE")
+  );
 
   const papersBySubject = new Map<string, Array<{ id: string; maxMarks: number }>>();
   for (const p of allPapers) {
@@ -127,8 +136,24 @@ export async function POST(req: NextRequest) {
     scoreIndex.get(item.studentId)!.set(item.paperId, item.numericScore);
   }
 
-  function totalPoints(studentId: string, form: number): number | null {
+  /**
+   * A learner's ranking score: total KCSE grade points for 8-4-4, total raw
+   * marks for CBE. Only ever compared within one class or one form, so the two
+   * scales never meet.
+   */
+  function totalScore(studentId: string, form: number, frameworkType: string): number | null {
     const subjects = subjectsByForm.get(form) ?? [];
+
+    if (frameworkType === "CBE") {
+      let cbeTotal = 0;
+      let cbeHasAny = false;
+      for (const s of subjects) {
+        const mark = cbeMarks.markFor(periodId, studentId, s.id);
+        if (mark !== null) { cbeTotal += mark; cbeHasAny = true; }
+      }
+      return cbeHasAny ? cbeTotal : null;
+    }
+
     const studentScores = scoreIndex.get(studentId);
     let total = 0;
     let hasAny = false;
@@ -153,7 +178,7 @@ export async function POST(req: NextRequest) {
     const classStudents = allStudents.filter((s) => s.classId === cls.id);
     if (classStudents.length === 0) continue;
 
-    const pts = classStudents.map((s) => totalPoints(s.id, cls.form));
+    const pts = classStudents.map((s) => totalScore(s.id, cls.form, cls.frameworkType));
     const ranks = denseRank(pts);
 
     classStudents.forEach((s, i) => {
@@ -164,21 +189,24 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Form-level ranking: group classes by form number
-  const classesByForm = new Map<number, typeof classes>();
+  // Form-level ranking: group classes by form number AND curriculum, so a form
+  // running both never ranks grade points against raw marks.
+  const classesByForm = new Map<string, typeof classes>();
   for (const cls of classes) {
-    const arr = classesByForm.get(cls.form) ?? [];
+    const key = `${cls.form}:${cls.frameworkType}`;
+    const arr = classesByForm.get(key) ?? [];
     arr.push(cls);
-    classesByForm.set(cls.form, arr);
+    classesByForm.set(key, arr);
   }
 
-  for (const [form, formClasses] of classesByForm) {
+  for (const formClasses of classesByForm.values()) {
+    const form = formClasses[0].form;
     const formStudents = allStudents.filter((s) =>
       formClasses.some((c) => c.id === s.classId)
     );
     if (formStudents.length === 0) continue;
 
-    const pts = formStudents.map((s) => totalPoints(s.id, form));
+    const pts = formStudents.map((s) => totalScore(s.id, form, formClasses[0].frameworkType));
     const ranks = denseRank(pts);
 
     formStudents.forEach((s, i) => {
@@ -271,7 +299,8 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Form-level achievements — for students top-10 in their form ───────────
-  for (const [form, formClasses] of classesByForm) {
+  for (const formClasses of classesByForm.values()) {
+    const form = formClasses[0].form;
     const formTopStudentIds = [...top10ByForm.keys()].filter((id) => {
       return formClasses.some((c) => allStudents.find((s) => s.id === id)?.classId === c.id);
     });

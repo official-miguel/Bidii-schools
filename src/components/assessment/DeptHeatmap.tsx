@@ -1,13 +1,16 @@
 "use client";
 
 import { pointsToColour } from "@/lib/assessment/grading844";
-import type { HeatmapCell } from "@/app/api/assessments/department/analytics/route";
+import { markToColour } from "@/lib/assessment/gradingCbe";
+import type { AnalyticsScale, HeatmapCell } from "@/app/api/assessments/department/analytics/route";
 
 interface DeptHeatmapProps {
   cells: HeatmapCell[];
+  /** Units the means are in — grade points (8-4-4) or raw marks (CBE). */
+  scale: AnalyticsScale;
 }
 
-export default function DeptHeatmap({ cells }: DeptHeatmapProps) {
+export default function DeptHeatmap({ cells, scale }: DeptHeatmapProps) {
   if (cells.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
@@ -22,17 +25,20 @@ export default function DeptHeatmap({ cells }: DeptHeatmapProps) {
   const classNames   = new Map(cells.map((c) => [c.classId, c.className]));
   const subjectNames = new Map(cells.map((c) => [c.subjectId, c.subjectName]));
 
-  // Build lookup: classId → subjectId → meanPoints
+  const isMarks = scale.kind === "MARKS";
+  const colourFor = isMarks ? markToColour : pointsToColour;
+
+  // Build lookup: classId → subjectId → mean
   const lookup = new Map<string, Map<string, number | null>>();
   for (const cell of cells) {
     if (!lookup.has(cell.classId)) lookup.set(cell.classId, new Map());
-    lookup.get(cell.classId)!.set(cell.subjectId, cell.meanPoints);
+    lookup.get(cell.classId)!.set(cell.subjectId, cell.mean);
   }
 
   return (
     <div>
       <p className="text-xs text-slate mb-3">
-        Mean grade points per class (rows) × subject (columns). Hover for exact value.
+        {isMarks ? "Mean marks" : "Mean grade points"} per class (rows) × subject (columns). Hover for exact value.
       </p>
       <div className="overflow-x-auto">
         <table className="text-xs border-collapse min-w-full">
@@ -58,14 +64,14 @@ export default function DeptHeatmap({ cells }: DeptHeatmapProps) {
                 </td>
                 {subjectIds.map((sid) => {
                   const pts = lookup.get(cid)?.get(sid) ?? null;
-                  const { bg, text } = pointsToColour(pts);
+                  const { bg, text } = colourFor(pts);
                   return (
                     <td
                       key={sid}
                       className={`px-2 py-1.5 text-center tabular-nums rounded ${bg} ${text}`}
                       title={
                         pts !== null
-                          ? `${classNames.get(cid)} · ${subjectNames.get(sid)}: ${pts.toFixed(2)} pts`
+                          ? `${classNames.get(cid)} · ${subjectNames.get(sid)}: ${pts.toFixed(2)} ${scale.unit}`
                           : "No data"
                       }
                     >

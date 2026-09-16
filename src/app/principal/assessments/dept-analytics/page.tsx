@@ -33,8 +33,8 @@ export default async function DeptAnalyticsRoute() {
   const classes = await (prisma as any).schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true },
-  }) as Array<{ id: string; name: string; form: number }>;
+    select: { id: true, name: true, form: true, frameworkType: true },
+  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
 
   // Subjects — all, ExamFilterBar filters by applicableForms internally.
   const subjects = await prisma.subject.findMany({

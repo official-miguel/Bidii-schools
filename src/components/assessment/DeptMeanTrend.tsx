@@ -10,18 +10,20 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import type { TrendDataPoint } from "@/app/api/assessments/department/analytics/route";
+import type { AnalyticsScale, TrendDataPoint } from "@/app/api/assessments/department/analytics/route";
 
 interface DeptMeanTrendProps {
   data: TrendDataPoint[];
   deptName: string;
+  /** Units the means are in — grade points (8-4-4) or raw marks (CBE). */
+  scale: AnalyticsScale;
 }
 
 function periodLabel(p: TrendDataPoint) {
   return p.term ? `T${p.term} ${p.academicYear}` : p.periodName;
 }
 
-export default function DeptMeanTrend({ data, deptName }: DeptMeanTrendProps) {
+export default function DeptMeanTrend({ data, deptName, scale }: DeptMeanTrendProps) {
   if (data.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-slate">
@@ -57,7 +59,7 @@ export default function DeptMeanTrend({ data, deptName }: DeptMeanTrendProps) {
   return (
     <div>
       <p className="text-xs text-slate mb-3">
-        Mean grade points for <span className="font-medium text-foreground">{deptName}</span> across
+        {scale.kind === "MARKS" ? "Mean marks" : "Mean grade points"} for <span className="font-medium text-foreground">{deptName}</span> across
         all assessment periods vs. school average.
       </p>
       <ResponsiveContainer width="100%" height={240}>
@@ -65,7 +67,11 @@ export default function DeptMeanTrend({ data, deptName }: DeptMeanTrendProps) {
         {/* chart series — intentional */}
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: tickColor }} />
-          <YAxis domain={[1, 12]} ticks={[1, 3, 5, 7, 9, 11, 12]} tick={{ fontSize: 11, fill: tickColor }} />
+          <YAxis
+            domain={scale.kind === "MARKS" ? [0, 100] : [1, 12]}
+            ticks={scale.kind === "MARKS" ? [0, 20, 40, 60, 80, 100] : [1, 3, 5, 7, 9, 11, 12]}
+            tick={{ fontSize: 11, fill: tickColor }}
+          />
           <Tooltip
             formatter={(value: number, name: string) => [
               value?.toFixed(2) ?? "—",

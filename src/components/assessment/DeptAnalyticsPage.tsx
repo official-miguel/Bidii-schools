@@ -22,7 +22,7 @@ interface DeptAnalyticsPageProps {
   departments: Department[];
   defaultDepartmentId?: string;
   /** Classes available to this user (role-scoped by the server page). */
-  classes: { id: string; name: string; form: number }[];
+  classes: { id: string; name: string; form: number; frameworkType?: string }[];
   /** Subjects available to this user (role-scoped by the server page). */
   subjects: { id: string; name: string; applicableForms: number[] }[];
   /** Default period ID — passed to ExamFilterBar as a hint but ExamFilterBar
@@ -46,6 +46,17 @@ export default function DeptAnalyticsPage({
   subjects,
 }: DeptAnalyticsPageProps) {
   const [deptId,   setDeptId]   = useState(defaultDepartmentId ?? departments[0]?.id ?? "");
+
+  // A department's subjects can be taught in both curricula. Analyse one at a
+  // time: CBE is graded on raw marks and achievement bands, 8-4-4 on KCSE
+  // points, and averaging the two together is meaningless.
+  const cbeClasses  = classes.filter((c) => c.frameworkType === "CBE");
+  const kcseClasses = classes.filter((c) => c.frameworkType !== "CBE");
+  const hasBoth     = cbeClasses.length > 0 && kcseClasses.length > 0;
+  const [framework, setFramework] = useState<"EIGHT_FOUR_FOUR" | "CBE">(
+    cbeClasses.length > 0 && kcseClasses.length === 0 ? "CBE" : "EIGHT_FOUR_FOUR"
+  );
+  const scopedClasses = framework === "CBE" ? cbeClasses : kcseClasses;
 
   // Filter state — driven by ExamFilterBar
   const [periodId,  setPeriodId]  = useState("");
@@ -72,7 +83,7 @@ export default function DeptAnalyticsPage({
     setLoading(true);
     setError(null);
 
-    const params = new URLSearchParams({ periodId, departmentId: deptId });
+    const params = new URLSearchParams({ periodId, departmentId: deptId, framework });
     if (classId)   params.set("classId",   classId);
     if (subjectId) params.set("subjectId", subjectId);
 
@@ -81,27 +92,27 @@ export default function DeptAnalyticsPage({
       .then((d) => { if (d.error) setError(d.error); else setData(d); })
       .catch(() => setError("Failed to load analytics."))
       .finally(() => setLoading(false));
-  }, [deptId, periodId, classId, subjectId]);
+  }, [deptId, periodId, classId, subjectId, framework]);
 
   // ── Cross-dept comparison (re-fetches only when period or dept changes) ────
   const loadCompare = useCallback(() => {
     if (!periodId) return;
     setCompareLoading(true);
     setCompareError(null);
-    fetch(`/api/assessments/department/compare?periodId=${periodId}`, { cache: "no-store" })
+    fetch(`/api/assessments/department/compare?periodId=${periodId}&framework=${framework}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => { if (d.error) setCompareError(d.error); else setCompareData(d); })
       .catch(() => setCompareError("Failed to load comparison data."))
       .finally(() => setCompareLoading(false));
-  }, [periodId]);
+  }, [periodId, framework]);
 
   useEffect(() => { load(); },        [load]);
   useEffect(() => { loadCompare(); }, [loadCompare]);
 
   const isPartial =
     data &&
-    data.subjectBreakdown.some((s) => s.meanPoints === null) &&
-    data.subjectBreakdown.some((s) => s.meanPoints !== null);
+    data.subjectBreakdown.some((s) => s.mean === null) &&
+    data.subjectBreakdown.some((s) => s.mean !== null);
 
   return (
     <div className="space-y-5">
@@ -124,9 +135,33 @@ export default function DeptAnalyticsPage({
         </div>
       </div>
 
+      {/* ── Curriculum tabs — only when the school runs both ── */}
+      {hasBoth && (
+        <div className="flex gap-1 border-b border-border">
+          {([
+            { key: "EIGHT_FOUR_FOUR" as const, label: `8-4-4 (${kcseClasses.length})` },
+            { key: "CBE" as const,             label: `CBE (${cbeClasses.length})` },
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFramework(key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                framework === key
+                  ? "border-ink text-foreground"
+                  : "border-transparent text-slate hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Cascading filter bar: Period → Form → Stream → Subject ── */}
       <ExamFilterBar
-        classes={classes}
+        key={framework}
+        classes={scopedClasses}
         subjects={subjects}
         hideSubject={false}
         onChange={handleFilterChange}
@@ -161,13 +196,14 @@ export default function DeptAnalyticsPage({
           <ChartCard title="Subject Breakdown">
             <DeptSubjectBar
               data={data.subjectBreakdown}
+              scale={data.scale}
               drillDownBase="/principal/assessments/dashboard"
             />
           </ChartCard>
 
           {/* 2 — Selected dept's own mean trend vs school average */}
           <ChartCard title="Department Mean Trend">
-            <DeptMeanTrend data={data.trendData} deptName={data.departmentName} />
+            <DeptMeanTrend data={data.trendData} deptName={data.departmentName} scale={data.scale} />
           </ChartCard>
 
           {/* 3 — All departments compared on one chart */}
@@ -191,7 +227,7 @@ export default function DeptAnalyticsPage({
 
           {/* 4 — Class × Subject heatmap */}
           <ChartCard title="Class × Subject Heatmap">
-            <DeptHeatmap cells={data.heatmap} />
+            <DeptHeatmap cells={data.heatmap} scale={data.scale} />
           </ChartCard>
 
         </div>

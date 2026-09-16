@@ -12,15 +12,18 @@ import {
 } from "recharts";
 import { useRouter } from "next/navigation";
 import { pointsToColourHex } from "@/lib/assessment/grading844";
-import type { SubjectBreakdownItem } from "@/app/api/assessments/department/analytics/route";
+import { markToColourHex } from "@/lib/assessment/gradingCbe";
+import type { AnalyticsScale, SubjectBreakdownItem } from "@/app/api/assessments/department/analytics/route";
 
 interface DeptSubjectBarProps {
   data: SubjectBreakdownItem[];
+  /** Units the means are in — grade points (8-4-4) or raw marks (CBE). */
+  scale: AnalyticsScale;
   /** Navigate to this base path on bar click (appends ?subjectId=). */
   drillDownBase?: string;
 }
 
-export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarProps) {
+export default function DeptSubjectBar({ data, scale, drillDownBase }: DeptSubjectBarProps) {
   const router = useRouter();
 
   if (data.length === 0) {
@@ -31,11 +34,14 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
     );
   }
 
+  const isMarks = scale.kind === "MARKS";
+  const colourFor = isMarks ? markToColourHex : pointsToColourHex;
+
   const chartData = data.map((s) => ({
     id: s.subjectId,
     name: s.subjectName,
-    mean: s.meanPoints,
-    grade: s.meanGrade ?? "—",
+    mean: s.mean,
+    label: s.label ?? "—",
   }));
 
   function handleClick(entry: { id: string }) {
@@ -55,7 +61,7 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
   return (
     <div>
       <p className="text-xs text-slate mb-3">
-        Mean grade points per subject — sorted weakest to strongest.
+        {isMarks ? "Mean marks per subject" : "Mean grade points per subject"} — sorted weakest to strongest.
       </p>
       <ResponsiveContainer width="100%" height={Math.max(180, chartData.length * 36)}>
         <BarChart
@@ -65,7 +71,7 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
         >
           {/* chart series — intentional */}
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-          <XAxis type="number" domain={[0, 12]} tick={{ fontSize: 11, fill: tickColor }} />
+          <XAxis type="number" domain={[0, scale.max]} tick={{ fontSize: 11, fill: tickColor }} />
           <YAxis
             type="category"
             dataKey="name"
@@ -74,7 +80,7 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
           />
           <Tooltip
             formatter={(value: number) => [
-              `${typeof value === "number" ? value.toFixed(2) : "—"} pts`,
+              `${typeof value === "number" ? value.toFixed(2) : "—"} ${scale.unit}`,
               "Mean",
             ]}
           />
@@ -85,7 +91,7 @@ export default function DeptSubjectBar({ data, drillDownBase }: DeptSubjectBarPr
             onClick={(entry: { id?: string }) => handleClick({ id: entry.id ?? "" })}
           >
             {chartData.map((entry) => (
-              <Cell key={entry.id} fill={pointsToColourHex(entry.mean)} />
+              <Cell key={entry.id} fill={colourFor(entry.mean)} />
             ))}
           </Bar>
         </BarChart>
