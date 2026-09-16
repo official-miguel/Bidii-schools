@@ -240,10 +240,8 @@ function FilterBar({
 
 function HODMarksheetCard({
   card,
-  periodId,
 }: {
   card: HODDeptCard;
-  periodId: string;
 }) {
   const router = useRouter();
   const done = card.totalStudents > 0 && card.enteredCount >= card.totalStudents;
@@ -253,7 +251,12 @@ function HODMarksheetCard({
       ? Math.round((card.enteredCount / card.totalStudents) * 100)
       : 0;
 
-  const href = `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}&periodId=${periodId}`;
+  // Always this card's own framework's period — never the globally selected
+  // dropdown value, which can belong to a different framework than this
+  // class (a department can span both 8-4-4 and CBE).
+  const href = card.periodId
+    ? `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}&periodId=${card.periodId}`
+    : `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}`;
 
   return (
     <button
@@ -500,7 +503,6 @@ export default function HODDepartmentMarksheetCards({
               <HODMarksheetCard
                 key={`${card.classId}-${card.subjectId}`}
                 card={card}
-                periodId={periodId}
               />
             ))}
           </div>

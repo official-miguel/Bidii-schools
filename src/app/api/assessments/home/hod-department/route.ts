@@ -124,24 +124,32 @@ export async function GET(req: Request) {
   const allClassIds = allClasses.map((c) => c.id);
 
   // ── Resolve the period(s) — one per active framework ─────────────────────
-  // When both 8-4-4 and CBE have a current period, we fetch both and later
-  // match each card to its class's framework type.
-  const currentPeriods = periodIdParam
+  // A department can span both 8-4-4 and CBE classes, and each framework has
+  // its own independent periods. An explicitly-picked period only applies to
+  // its own framework — every other framework still uses its own current
+  // period, never falls back to a period from a different framework (whose
+  // id would never match that class's items anyway).
+  const explicitPeriodRows = periodIdParam
     ? await db.assessmentPeriod.findMany({
         where: { id: periodIdParam, schoolId: user.schoolId! },
         select: { id: true, name: true, frameworkId: true,
                   framework: { select: { type: true } } },
       }) as Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>
-    : await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, isCurrent: true },
-        select: { id: true, name: true, frameworkId: true,
-                  framework: { select: { type: true } } },
-      }) as Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>;
+    : [];
+
+  const currentPeriods = await db.assessmentPeriod.findMany({
+    where: { schoolId: user.schoolId!, isCurrent: true },
+    select: { id: true, name: true, frameworkId: true,
+              framework: { select: { type: true } } },
+  }) as Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>;
 
   const periodByFrameworkType = new Map<string, typeof currentPeriods[0]>();
   for (const p of currentPeriods) periodByFrameworkType.set(p.framework.type, p);
-  const resolvedPeriod = currentPeriods[0] ?? null;
-  const allCurrentPeriodIds = currentPeriods.map((p) => p.id);
+  const explicitPeriod = explicitPeriodRows[0] ?? null;
+  if (explicitPeriod) periodByFrameworkType.set(explicitPeriod.framework.type, explicitPeriod);
+
+  const resolvedPeriod = explicitPeriod ?? currentPeriods[0] ?? null;
+  const allCurrentPeriodIds = [...periodByFrameworkType.values()].map((p) => p.id);
 
   // ── Batch: class-subject-teacher assignments for dept subjects ────────────
   const assignments = await db.classSubjectTeacher.findMany({

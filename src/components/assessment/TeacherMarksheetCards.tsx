@@ -111,10 +111,8 @@ function PeriodSelector({
 
 function MarksheetCard({
   card,
-  periodId,
 }: {
   card: TeacherClassCard;
-  periodId: string;
 }) {
   const router = useRouter();
   const done = card.totalStudents > 0 && card.enteredCount >= card.totalStudents;
@@ -124,7 +122,14 @@ function MarksheetCard({
       ? Math.round((card.enteredCount / card.totalStudents) * 100)
       : 0;
 
-  const href = `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}&periodId=${periodId}`;
+  // Always the period for THIS card's own framework — never the globally
+  // selected dropdown value, which can belong to a different framework
+  // than this class (a teacher can hold both 8-4-4 and CBE classes at
+  // once). Using the wrong one sent the marksheet grid to a period it
+  // doesn't recognize.
+  const href = card.periodId
+    ? `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}&periodId=${card.periodId}`
+    : `/teacher/assessments/marksheet?classId=${card.classId}&subjectId=${card.subjectId}`;
 
   return (
     <button
@@ -159,6 +164,9 @@ function MarksheetCard({
                 <span className="ml-1 text-slate/60">· {card.subjectCode}</span>
               )}
             </p>
+            {card.periodName && (
+              <p className="text-[11px] text-slate/60 truncate mt-0.5">{card.periodName}</p>
+            )}
           </div>
           <div className="shrink-0">
             {done ? (
@@ -304,15 +312,45 @@ export default function TeacherMarksheetCards({ periods, initialPeriodId }: Prop
             );
           })()}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cards.map((card) => (
-              <MarksheetCard
-                key={`${card.classId}-${card.subjectId}`}
-                card={card}
-                periodId={periodId}
-              />
-            ))}
-          </div>
+          {(() => {
+            // A teacher can hold both 8-4-4 and CBE classes — each framework
+            // has its own independent periods, so the single dropdown above
+            // only ever drives one of them at a time (see MarksheetCard's
+            // per-card period). Grouping by framework, with each card
+            // showing its own period, makes that explicit instead of
+            // leaving classes from two different exam systems interleaved
+            // with no indication of which period actually governs each one.
+            const groups = new Map<string, TeacherClassCard[]>();
+            for (const c of cards) {
+              const arr = groups.get(c.frameworkType) ?? [];
+              arr.push(c);
+              groups.set(c.frameworkType, arr);
+            }
+            const frameworkLabel = (t: string) => (t === "CBE" ? "CBE" : "8-4-4");
+            const sortedGroups = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+
+            return (
+              <div className="space-y-6">
+                {sortedGroups.map(([frameworkType, groupCards]) => (
+                  <div key={frameworkType} className="space-y-3">
+                    {sortedGroups.length > 1 && (
+                      <h2 className="text-xs font-semibold text-slate uppercase tracking-wide">
+                        {frameworkLabel(frameworkType)}
+                      </h2>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {groupCards.map((card) => (
+                        <MarksheetCard
+                          key={`${card.classId}-${card.subjectId}`}
+                          card={card}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </>
       )}
     </div>
