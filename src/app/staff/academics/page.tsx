@@ -8,6 +8,14 @@ export default async function StaffAcademicsHub() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  // A teacher routed into the staff portal (e.g. via Full Admin Access) has
+  // a richer Academics hub of their own at /teacher/academics — complete with
+  // their class-teacher context and the "School administration" cards for
+  // whatever they've been granted. Sending them here instead would show a
+  // second, plainer version of the same hub, so the cards would look
+  // different depending on which link happened to route them in.
+  if (user.role === "TEACHER") redirect("/teacher/academics");
+
   const perms = await getEffectivePermissions(user);
 
   // Route timetable link: admin view for those with manage/configure rights,
