@@ -131,6 +131,17 @@ export async function GET(req: NextRequest) {
 
   const classIds = classes.map((c) => c.id);
 
+  // The mean-grade-points / weakest-subject / at-risk metrics below are a
+  // KCSE (8-4-4) concept — CBE is deliberately not ranked this way (see
+  // CbeDashboardEnhanced: "No numeric mean is computed — consistent with
+  // CBE non-ranking design"). Scope the KCSE aggregation to 8-4-4 classes
+  // only, so a CBE class's numeric pathway scores don't get converted
+  // through the KCSE points scale and pollute these school/department-wide
+  // stats with a grading system that doesn't apply to them.
+  const eightFourFourClassIds = classes
+    .filter((c) => c.frameworkType === "EIGHT_FOUR_FOUR")
+    .map((c) => c.id);
+
   // ── PUSH AGGREGATIONS INTO POSTGRESQL ────────────────────────────────────────
   // All four metrics (per-class mean, per-class completion, per-subject mean,
   // learners-at-risk) are computed in a single or small number of SQL queries
@@ -166,7 +177,7 @@ export async function GET(req: NextRequest) {
        JOIN     "Student" s ON s."id" = ai."studentId"
        WHERE    ai."schoolId"   = ${user.schoolId!}
          AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
-         AND    s."classId"     = ANY(${classIds}::text[])
+         AND    s."classId"     = ANY(${eightFourFourClassIds}::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
        GROUP BY s."classId"`),
@@ -178,7 +189,7 @@ export async function GET(req: NextRequest) {
        JOIN     "Student" s ON s."id" = ai."studentId"
        WHERE    ai."schoolId"   = ${user.schoolId!}
          AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
-         AND    s."classId"     = ANY(${classIds}::text[])
+         AND    s."classId"     = ANY(${eightFourFourClassIds}::text[])
          AND    ai."resultKind" = 'NUMERIC'
          AND    ai."numericScore" IS NOT NULL
          AND    ai."subjectId" IS NOT NULL
@@ -193,7 +204,7 @@ export async function GET(req: NextRequest) {
          JOIN     "Student" s ON s."id" = ai."studentId"
          WHERE    ai."schoolId"   = ${user.schoolId!}
            AND    ai."periodId"   = ANY(${currentPeriodIds}::text[])
-           AND    s."classId"     = ANY(${classIds}::text[])
+           AND    s."classId"     = ANY(${eightFourFourClassIds}::text[])
            AND    ai."resultKind" = 'NUMERIC'
            AND    ai."numericScore" IS NOT NULL
          GROUP BY ai."studentId"
