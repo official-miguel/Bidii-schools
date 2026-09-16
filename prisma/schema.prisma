@@ -2537,6 +2537,7 @@ model AssessmentPeriod {
   school        School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   items         AssessmentItem[]
   reportRemarks ReportRemark[]
+  formulaConfigs DepartmentFormulaConfig[]
 
   @@unique([schoolId, name, academicYear])
   /// Supports isCurrent=true lookup used by teacher home and sync pull.
@@ -2581,10 +2582,20 @@ model Paper {
   @@index([frameworkId, subjectId])
 }
 
-/// HOD-configurable % formula override for a specific subject, form, and
-/// assessment framework. When a marksheet loads for a matching
-/// (subjectId, form, frameworkId) the stored formula is pre-loaded into the
-/// FormulaCalculator instead of a blank default.
+/// HOD-configurable % formula override for a specific subject, class level,
+/// and exam period. When a marksheet loads for a matching
+/// (subjectId, form, periodId) the stored formula is used for grading and
+/// the teacher's own formula in the marksheet is ignored.
+///
+/// Scoping rules:
+///   - `form` is the class LEVEL (e.g. 3 for every Form 3 stream), never a
+///     single stream — all streams at a level share one formula.
+///   - `form = 0` is the subject-wide entry: it applies to every class level
+///     that takes the subject, and is only used when no level-specific row
+///     exists for that period.
+///   - `periodId` scopes the formula to one exam period. A period that has
+///     never been configured simply has no rows, so the formula section
+///     starts empty (resets) when the HOD switches to it.
 ///
 /// formula is a plain string using paper names, e.g.:
 ///   (Paper 1 / 80) * 40 + (Paper 2 / 100) * 60
@@ -2594,23 +2605,27 @@ model DepartmentFormulaConfig {
   schoolId     String
   departmentId String
   subjectId    String
-  /// Form / year group this formula applies to, e.g. 3 or 4.
+  /// Class level this formula applies to, e.g. 3 for all Form 3 streams.
+  /// 0 means "every level" — the subject-wide formula for the whole school.
   form         Int
-  frameworkId  String
+  /// Exam period this formula belongs to. Each period keeps its own formulas.
+  periodId     String
   /// The formula expression, built with the marksheet calculator keyboard.
   formula      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  school     School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  department Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  subject    Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  period     AssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
-  /// One formula per (subject, form, framework) in a department.
-  @@unique([departmentId, subjectId, form, frameworkId])
+  /// One formula per (subject, level, period) in a department.
+  @@unique([departmentId, subjectId, form, periodId])
   @@index([schoolId])
   @@index([departmentId])
-  @@index([subjectId, form, frameworkId])
+  @@index([subjectId, form, periodId])
+  @@index([periodId])
 }
 
 // ---------------------------------------------------------------------------

@@ -11,9 +11,15 @@
  *   Tab 2 — Mark Formulas (per-subject, per-form formula editor)
  *
  * Mark Formulas tab:
+ *   - A single exam-period selector at the top — formulas are saved per
+ *     period, so switching to a period that has never been configured shows
+ *     an empty (reset) set
  *   - One accordion card per subject in the HOD's department
- *   - Each card expands to show a row per form the subject applies to
- *   - Each row: framework selector + formula display + "Edit" button
+ *   - Each card expands to an "All classes" row (the subject-wide formula for
+ *     the whole school) followed by a row per class LEVEL the subject applies
+ *     to. A level row covers every stream at that level, and falls back to
+ *     the subject-wide formula when it has none of its own.
+ *   - Each row: formula display + "Edit" button
  *   - Edit opens the full FormulaCalculator modal (same as marksheet)
  *   - Saving calls PUT /api/assessments/department-formulas
  *   - Reset calls DELETE /api/assessments/department-formulas?id=
@@ -43,11 +49,22 @@ interface Framework {
   isActive: boolean;
 }
 
+interface Period {
+  id: string;
+  name: string;
+  academicYear: string;
+  term: number | null;
+  isCurrent: boolean;
+}
+
+/** `form: 0` is the subject-wide entry — it applies to every class level. */
+const SUBJECT_WIDE = 0;
+
 interface FormulaConfig {
   id: string;
   subjectId: string;
   form: number;
-  frameworkId: string;
+  periodId: string;
   formula: string;
   updatedAt: string;
 }
@@ -63,12 +80,14 @@ interface HODFormulaSettingsProps {
   department: { id: string; name: string };
   subjects: Subject[];
   frameworks: Framework[];
+  /** Every exam period at the school — formulas are saved per period. */
+  periods: Period[];
   initialFormulas: FormulaConfig[];
-  /** Distinct form numbers registered at this school — used as the fallback
+  /** Distinct class levels registered at this school — used as the fallback
    *  when a subject has an empty applicableForms array. */
   schoolForms: number[];
-  /** Maps each form number to the actual class name as saved, e.g. { 3: "Form 3 North" }.
-   *  Used to display the real name instead of the generic "Form X" label. */
+  /** Maps each class level to its stream-free stage name, e.g. { 3: "Form 3" }.
+   *  A formula always covers the whole level, never a single stream. */
   schoolFormLabels?: Record<number, string>;
 }
 
@@ -321,7 +340,8 @@ function FormulaCalculator({
 
 function SubjectFormulaCard({
   subject,
-  frameworks,
+  frameworkId,
+  periodId,
   departmentId,
   formulas,
   onFormulaChange,
@@ -329,7 +349,10 @@ function SubjectFormulaCard({
   schoolFormLabels = {},
 }: {
   subject: Subject;
-  frameworks: Framework[];
+  /** The 8-4-4 framework used only to look up this subject's papers. */
+  frameworkId: string;
+  /** The exam period these formulas belong to. */
+  periodId: string;
   departmentId: string;
   formulas: FormulaConfig[];
   onFormulaChange: (config: FormulaConfig) => void;
@@ -337,18 +360,32 @@ function SubjectFormulaCard({
   schoolFormLabels?: Record<number, string>;
 }) {
   const [open, setOpen] = useState(false);
+  const [papers, setPapers] = useState<Paper[]>([]);
+  const [papersLoading, setPapersLoading] = useState(false);
 
-  // Use the subject's explicit form list; fall back to the school's registered forms
+  // Class levels this subject is taught at — the subject's own list, falling
+  // back to every level the school has registered.
   const forms = subject.applicableForms.length > 0
     ? [...subject.applicableForms].sort((a, b) => a - b)
     : schoolForms;
 
-  // Only show 8-4-4 frameworks — formula calculation is specific to this type
-  const kcseFrameworks = frameworks.filter((fw) => fw.type === "EIGHT_FOUR_FOUR");
+  // Papers are the same for every level, so load them once per subject.
+  useEffect(() => {
+    if (!open || !frameworkId || !subject.id) return;
+    setPapersLoading(true);
+    fetch(`/api/assessments/papers?subjectId=${subject.id}&frameworkId=${frameworkId}`)
+      .then((r) => r.json())
+      .then((d) => setPapers(d.papers ?? []))
+      .catch(() => setPapers([]))
+      .finally(() => setPapersLoading(false));
+  }, [open, subject.id, frameworkId]);
 
-  const formulaCount = formulas.filter(
-    (f) => f.subjectId === subject.id && f.formula.trim() !== ""
-  ).length;
+  // Formulas saved for this subject in the selected period only.
+  const periodFormulas = formulas.filter(
+    (f) => f.subjectId === subject.id && f.periodId === periodId && f.formula.trim() !== ""
+  );
+  const subjectWide = periodFormulas.find((f) => f.form === SUBJECT_WIDE);
+  const formulaCount = periodFormulas.length;
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
@@ -384,28 +421,36 @@ function SubjectFormulaCard({
 
       {/* Body */}
       {open && (
-        <div className="border-t border-border">
-          {kcseFrameworks.length === 0 && (
-            <div className="px-5 py-4 text-sm text-slate italic">
-              No active 8-4-4 frameworks found. The principal must create a framework first.
-            </div>
-          )}
-          {kcseFrameworks.length > 0 && (
-            <div className="divide-y divide-border">
-              {forms.map((form) => (
-                <FormFormulaRow
-                  key={form}
-                  subject={subject}
-                  form={form}
-                  formLabel={schoolFormLabels[form] ?? `Form ${form}`}
-                  frameworks={kcseFrameworks}
-                  departmentId={departmentId}
-                  formulas={formulas}
-                  onFormulaChange={onFormulaChange}
-                />
-              ))}
-            </div>
-          )}
+        <div className="border-t border-border divide-y divide-border">
+          {/* Subject-wide row — one formula for every class taking this subject */}
+          <FormFormulaRow
+            subject={subject}
+            form={SUBJECT_WIDE}
+            formLabel="All classes"
+            isSubjectWide
+            periodId={periodId}
+            departmentId={departmentId}
+            papers={papers}
+            papersLoading={papersLoading}
+            formulas={formulas}
+            onFormulaChange={onFormulaChange}
+          />
+          {/* Per-level rows — every stream at a level shares the same formula */}
+          {forms.map((form) => (
+            <FormFormulaRow
+              key={form}
+              subject={subject}
+              form={form}
+              formLabel={schoolFormLabels[form] ?? `Form ${form}`}
+              periodId={periodId}
+              departmentId={departmentId}
+              papers={papers}
+              papersLoading={papersLoading}
+              formulas={formulas}
+              inheritedFormula={subjectWide?.formula ?? ""}
+              onFormulaChange={onFormulaChange}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -413,53 +458,53 @@ function SubjectFormulaCard({
 }
 
 // ── FormFormulaRow ─────────────────────────────────────────────────────────────
-// One row inside a SubjectFormulaCard: form selector, framework selector,
-// formula display and edit button.
+// One row inside a SubjectFormulaCard: the class level (or "All classes"),
+// the formula it resolves to, and an edit button.
 
 function FormFormulaRow({
   subject,
   form,
   formLabel,
-  frameworks,
+  isSubjectWide = false,
+  periodId,
   departmentId,
+  papers,
+  papersLoading,
   formulas,
+  inheritedFormula = "",
   onFormulaChange,
 }: {
   subject: Subject;
+  /** Class level, or SUBJECT_WIDE (0) for the whole-subject row. */
   form: number;
-  /** The real class name to display (e.g. "Form 3 North"), falls back to "Form {form}". */
+  /** Stream-free label, e.g. "Form 3" or "All classes". */
   formLabel: string;
-  frameworks: Framework[];
+  isSubjectWide?: boolean;
+  periodId: string;
   departmentId: string;
+  papers: Paper[];
+  papersLoading: boolean;
   formulas: FormulaConfig[];
+  /** The subject-wide formula this level falls back to when it has none. */
+  inheritedFormula?: string;
   onFormulaChange: (config: FormulaConfig) => void;
 }) {
-  const [selectedFrameworkId, setSelectedFrameworkId] = useState(
-    frameworks[0]?.id ?? ""
-  );
-  const [papers, setPapers] = useState<Paper[]>([]);
-  const [papersLoading, setPapersLoading] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // The current saved formula for this (subject, form, framework)
+  // The saved formula for this exact (subject, level, period)
   const savedConfig = formulas.find(
-    (f) => f.subjectId === subject.id && f.form === form && f.frameworkId === selectedFrameworkId
+    (f) => f.subjectId === subject.id && f.form === form && f.periodId === periodId
   );
-  const currentFormula = savedConfig?.formula ?? "";
+  const ownFormula = savedConfig?.formula ?? "";
+  const hasOwnFormula = ownFormula.trim() !== "";
 
-  // Load papers when subject or framework changes
-  useEffect(() => {
-    if (!selectedFrameworkId || !subject.id) return;
-    setPapersLoading(true);
-    fetch(`/api/assessments/papers?subjectId=${subject.id}&frameworkId=${selectedFrameworkId}`)
-      .then((r) => r.json())
-      .then((d) => setPapers(d.papers ?? []))
-      .catch(() => setPapers([]))
-      .finally(() => setPapersLoading(false));
-  }, [subject.id, selectedFrameworkId]);
+  // What this row actually grades with: its own formula, else the
+  // subject-wide one, else nothing.
+  const effectiveFormula = hasOwnFormula ? ownFormula : inheritedFormula.trim();
+  const isInherited = !hasOwnFormula && effectiveFormula !== "";
 
   async function handleApply(formula: string) {
     setSaving(true);
@@ -472,7 +517,7 @@ function FormFormulaRow({
           departmentId,
           subjectId: subject.id,
           form,
-          frameworkId: selectedFrameworkId,
+          periodId,
           formula,
         }),
       });
@@ -482,7 +527,7 @@ function FormFormulaRow({
         id: json.config.id,
         subjectId: subject.id,
         form,
-        frameworkId: selectedFrameworkId,
+        periodId,
         formula,
         updatedAt: json.config.updatedAt,
       });
@@ -500,54 +545,52 @@ function FormFormulaRow({
       await fetch(`/api/assessments/department-formulas?id=${savedConfig.id}`, {
         method: "DELETE",
       });
-      onFormulaChange({
-        ...savedConfig,
-        formula: "",
-      });
+      onFormulaChange({ ...savedConfig, formula: "" });
     } catch { /* silent */ }
     finally { setDeleting(false); }
   }
 
-  const hasFormula = currentFormula.trim() !== "";
-
   return (
-    <div className="px-5 py-4">
+    <div className={`px-5 py-4 ${isSubjectWide ? "bg-royal/[0.03]" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
-        {/* Form label */}
-        <div className="shrink-0 w-20">
-          <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 text-foreground text-xs font-semibold px-2.5 py-1.5 w-full">
+        {/* Level label */}
+        <div className="shrink-0 w-28">
+          <span
+            className={`inline-flex items-center justify-center rounded-lg text-xs font-semibold px-2.5 py-1.5 w-full ${
+              isSubjectWide
+                ? "bg-royal/10 text-royal"
+                : "bg-slate-100 text-foreground"
+            }`}
+          >
             {formLabel}
           </span>
         </div>
 
-        {/* Framework selector */}
-        <div className="relative min-w-[180px]">
-          <select
-            value={selectedFrameworkId}
-            onChange={(e) => setSelectedFrameworkId(e.target.value)}
-            className="w-full appearance-none rounded-lg border border-border bg-card pl-3 pr-7 py-2 text-xs text-foreground focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/20 transition-colors"
-          >
-            {frameworks.map((fw) => (
-              <option key={fw.id} value={fw.id}>
-                {fw.label} ({fw.academicYear})
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
-        </div>
-
         {/* Formula display */}
         <div className="flex-1 min-w-[160px]">
-          {hasFormula ? (
-            <div className="rounded-lg border border-teal/30 bg-teal/5 px-3 py-2">
-              <p className="text-xs font-mono text-foreground truncate" title={currentFormula}>
-                {currentFormula}
+          {effectiveFormula ? (
+            <div
+              className={`rounded-lg border px-3 py-2 ${
+                isInherited
+                  ? "border-dashed border-royal/30 bg-royal/5"
+                  : "border-teal/30 bg-teal/5"
+              }`}
+            >
+              <p className="text-xs font-mono text-foreground truncate" title={effectiveFormula}>
+                {effectiveFormula}
               </p>
+              {isInherited && (
+                <p className="text-[11px] text-royal/80 mt-0.5">
+                  From the &ldquo;All classes&rdquo; formula — set one here to override it.
+                </p>
+              )}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border px-3 py-2">
               <p className="text-xs text-slate italic">
-                No formula — uses raw score as percentage
+                {isSubjectWide
+                  ? "No subject-wide formula — each level uses its own, or the raw score"
+                  : "No formula — uses raw score as percentage"}
               </p>
             </div>
           )}
@@ -564,10 +607,10 @@ function FormFormulaRow({
               className="inline-flex items-center gap-1.5 rounded-lg border border-royal bg-royal/5 px-3 py-1.5 text-xs font-medium text-royal hover:bg-royal/10 transition-colors"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              {hasFormula ? "Edit formula" : "Set formula"}
+              {hasOwnFormula ? "Edit formula" : "Set formula"}
             </button>
           )}
-          {hasFormula && !deleting && (
+          {hasOwnFormula && !deleting && (
             <button
               type="button"
               onClick={handleDelete}
@@ -590,7 +633,7 @@ function FormFormulaRow({
       {showCalc && (
         <FormulaCalculator
           papers={papers}
-          formula={currentFormula}
+          formula={ownFormula}
           onApply={handleApply}
           onClose={() => setShowCalc(false)}
         />
@@ -616,7 +659,8 @@ function FrameworksTab({ frameworks }: { frameworks: Framework[] }) {
     <div className="space-y-3">
       <p className="text-sm text-slate">
         These are the active assessment frameworks for your school. Formulas you set
-        in the <strong>Mark Formulas</strong> tab are linked to a specific framework.
+        in the <strong>Mark Formulas</strong> tab are saved per exam period, not per
+        framework.
       </p>
       <div className="space-y-2">
         {frameworks.map((fw) => (
@@ -652,6 +696,7 @@ export default function HODFormulaSettings({
   department,
   subjects,
   frameworks,
+  periods,
   initialFormulas,
   schoolForms,
   schoolFormLabels = {},
@@ -659,20 +704,37 @@ export default function HODFormulaSettings({
   const [activeTab, setActiveTab] = useState<Tab>("formulas");
   const [formulas, setFormulas] = useState<FormulaConfig[]>(initialFormulas);
 
+  // Formulas belong to one exam period at a time. Default to the current one.
+  const [periodId, setPeriodId] = useState<string>(
+    periods.find((p) => p.isCurrent)?.id ?? periods[0]?.id ?? ""
+  );
+
+  // Papers are looked up against the school's 8-4-4 framework — periods
+  // themselves are shared across frameworks, so this is just a lookup key.
+  const paperFrameworkId =
+    frameworks.find((fw) => fw.type === "EIGHT_FOUR_FOUR" && fw.isActive)?.id ??
+    frameworks.find((fw) => fw.type === "EIGHT_FOUR_FOUR")?.id ??
+    "";
+
   const handleFormulaChange = useCallback((updated: FormulaConfig) => {
     setFormulas((prev) => {
-      // Remove old entry for same (subjectId, form, frameworkId)
+      // Remove old entry for same (subjectId, form, periodId)
       const filtered = prev.filter(
         (f) =>
           !(f.subjectId === updated.subjectId &&
             f.form === updated.form &&
-            f.frameworkId === updated.frameworkId)
+            f.periodId === updated.periodId)
       );
       // If formula is empty string, just remove it; otherwise upsert
       if (updated.formula.trim() === "") return filtered;
       return [...filtered, updated];
     });
   }, []);
+
+  const selectedPeriod = periods.find((p) => p.id === periodId) ?? null;
+  const periodFormulaCount = formulas.filter(
+    (f) => f.periodId === periodId && f.formula.trim() !== ""
+  ).length;
 
   const TABS: Array<{ id: Tab; label: string }> = [
     { id: "formulas",   label: "Mark Formulas" },
@@ -707,15 +769,63 @@ export default function HODFormulaSettings({
               Mark Calculation Formulas
             </h2>
             <p className="text-sm text-slate">
-              Set a custom percentage formula for each subject and form in{" "}
-              <strong>{department.name}</strong>. The formula uses paper names
+              Set a custom percentage formula for each subject in{" "}
+              <strong>{department.name}</strong>. A formula covers a whole class
+              level — every stream at that level uses it — or the whole subject
+              across the school. The formula uses paper names
               (e.g. <span className="font-mono bg-slate-100 px-1 rounded text-xs">Paper 1</span>,{" "}
               <span className="font-mono bg-slate-100 px-1 rounded text-xs">Paper 2</span>) defined in the
-              marksheet. If no formula is set, the system uses the raw score directly.
+              marksheet. Whatever you set here is what every marksheet for that
+              subject uses — a teacher&apos;s own formula in the marksheet is ignored.
+              If no formula is set, the system uses the raw score directly.
             </p>
           </div>
 
-          {subjects.length === 0 ? (
+          {/* Exam period selector — formulas are saved per period */}
+          <div className="rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate mb-2">
+              Exam period
+            </label>
+            {periods.length === 0 ? (
+              <p className="text-sm text-slate italic">
+                No exam periods yet. The principal must create one first.
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative min-w-[240px]">
+                  <select
+                    value={periodId}
+                    onChange={(e) => setPeriodId(e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2 text-sm text-foreground focus:border-royal focus:outline-none focus:ring-2 focus:ring-royal/20 transition-colors"
+                  >
+                    {periods.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.academicYear}){p.isCurrent ? " — current" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
+                </div>
+                <p className="text-xs text-slate flex-1 min-w-[220px]">
+                  {periodFormulaCount > 0 ? (
+                    <>
+                      <span className="font-medium text-foreground">{periodFormulaCount}</span>{" "}
+                      formula{periodFormulaCount !== 1 ? "s" : ""} saved for{" "}
+                      <span className="font-medium text-foreground">{selectedPeriod?.name}</span>.
+                    </>
+                  ) : (
+                    <>
+                      No formulas set for{" "}
+                      <span className="font-medium text-foreground">{selectedPeriod?.name}</span> yet —
+                      each exam period starts fresh.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {periods.length === 0 ? null : subjects.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-slate">
               No subjects in this department yet. The principal must add subjects to{" "}
               {department.name}.
@@ -724,9 +834,10 @@ export default function HODFormulaSettings({
             <div className="space-y-3">
               {subjects.map((subject) => (
                 <SubjectFormulaCard
-                  key={subject.id}
+                  key={`${subject.id}:${periodId}`}
                   subject={subject}
-                  frameworks={frameworks}
+                  frameworkId={paperFrameworkId}
+                  periodId={periodId}
                   departmentId={department.id}
                   formulas={formulas}
                   onFormulaChange={handleFormulaChange}
@@ -747,8 +858,8 @@ export default function HODFormulaSettings({
               Assessment Frameworks
             </h2>
             <p className="text-sm text-slate">
-              Active frameworks your school is using. Formulas are linked to a specific
-              framework so they remain accurate as academic years change.
+              Active frameworks your school is using. Formulas are linked to an exam
+              period, so each period keeps its own set and a new period starts fresh.
             </p>
           </div>
           <FrameworksTab frameworks={frameworks} />

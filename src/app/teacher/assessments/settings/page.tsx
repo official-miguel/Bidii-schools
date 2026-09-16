@@ -116,6 +116,16 @@ export default async function HODAssessmentSettingsPage() {
   }) as Array<{ id: string; type: string; label: string; academicYear: string; isActive: boolean }>;
   console.log('[HOD Settings] Found', frameworks.length, 'frameworks');
 
+  // ── Exam periods — formulas are saved per period ─────────────────────────
+  // Periods are shared across every framework, so this is the full list.
+  console.log('[HOD Settings] Fetching exam periods...');
+  const periods = await db.assessmentPeriod.findMany({
+    where: { schoolId: user.schoolId! },
+    orderBy: [{ academicYear: "desc" }, { term: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
+  }) as Array<{ id: string; name: string; academicYear: string; term: number | null; isCurrent: boolean }>;
+  console.log('[HOD Settings] Found', periods.length, 'periods');
+
   // ── Existing formula configs for this department ─────────────────────────
   // Wrapped in try/catch: the DepartmentFormulaConfig table may not exist yet
   // if the database migration hasn't been applied (prisma db push pending).
@@ -124,7 +134,7 @@ export default async function HODAssessmentSettingsPage() {
     id: string;
     subjectId: string;
     form: number;
-    frameworkId: string;
+    periodId: string;
     formula: string;
     updatedAt: string;
   }> = [];
@@ -135,7 +145,7 @@ export default async function HODAssessmentSettingsPage() {
         id: true,
         subjectId: true,
         form: true,
-        frameworkId: true,
+        periodId: true,
         formula: true,
         updatedAt: true,
       },
@@ -146,29 +156,31 @@ export default async function HODAssessmentSettingsPage() {
     // Table doesn't exist yet — page still renders, formulas just start empty
   }
 
-  // ── Distinct form numbers registered at this school ─────────────────────
-  // Fetch both form (integer) and name so we can display the real class name
-  // rather than the generic "Form X" label.
+  // ── Distinct class LEVELS registered at this school ─────────────────────
+  // A formula belongs to a whole level (every Form 3 stream shares one), so we
+  // label rows with the canonical stage name ("Form 3", "Grade 10") and never
+  // with a stream's class name ("Form 3 East").
   console.log('[HOD Settings] Fetching school class forms...');
   const schoolClassForms = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
-    select: { form: true, name: true },
+    select: { form: true, stageName: true, frameworkType: true },
     orderBy: [{ form: "asc" }, { name: "asc" }],
   });
   console.log('[HOD Settings] Found', schoolClassForms.length, 'class forms');
 
-  // Deduplicate by form number, keeping the first (alphabetically sorted) name
-  // at each level as the canonical label for formula rows.
-  console.log('[HOD Settings] Deduplicating forms...');
+  console.log('[HOD Settings] Deduplicating levels...');
   const schoolForms: number[] = [];
   const schoolFormLabels: Record<number, string> = {};
   for (const c of schoolClassForms) {
-    if (!(c.form in schoolFormLabels)) {
-      schoolForms.push(c.form);
-      schoolFormLabels[c.form] = c.name;
-    }
+    if (c.form in schoolFormLabels) continue;
+    schoolForms.push(c.form);
+    // stageName is the canonical, stream-free level name. Legacy rows without
+    // one fall back to the framework's own naming.
+    schoolFormLabels[c.form] =
+      c.stageName?.trim() ||
+      (c.frameworkType === "CBE" ? `Grade ${c.form}` : `Form ${c.form}`);
   }
-  console.log('[HOD Settings] Unique forms:', schoolForms);
+  console.log('[HOD Settings] Unique levels:', schoolForms);
 
   console.log('[HOD Settings] Page data loaded successfully, rendering...');
   return (
@@ -178,7 +190,7 @@ export default async function HODAssessmentSettingsPage() {
           Department Settings
         </h1>
         <p className="text-sm text-slate mt-0.5">
-          Configure mark calculation formulas for each subject and form group in{" "}
+          Configure mark calculation formulas for each subject and class level in{" "}
           <span className="font-medium text-foreground">{department.name}</span>.
         </p>
       </div>
@@ -187,6 +199,7 @@ export default async function HODAssessmentSettingsPage() {
         department={department}
         subjects={subjects}
         frameworks={frameworks}
+        periods={periods}
         initialFormulas={existingFormulas}
         schoolForms={schoolForms}
         schoolFormLabels={schoolFormLabels}

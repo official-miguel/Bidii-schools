@@ -1235,7 +1235,7 @@ CREATE TABLE "DepartmentFormulaConfig" (
     "departmentId" TEXT NOT NULL,
     "subjectId" TEXT NOT NULL,
     "form" INTEGER NOT NULL,
-    "frameworkId" TEXT NOT NULL,
+    "periodId" TEXT NOT NULL,
     "formula" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -2249,10 +2249,11 @@ CREATE INDEX "DepartmentFormulaConfig_schoolId_idx" ON "DepartmentFormulaConfig"
 CREATE INDEX "DepartmentFormulaConfig_departmentId_idx" ON "DepartmentFormulaConfig"("departmentId");
 
 -- CreateIndex
-CREATE INDEX "DepartmentFormulaConfig_subjectId_form_frameworkId_idx" ON "DepartmentFormulaConfig"("subjectId", "form", "frameworkId");
+CREATE INDEX "DepartmentFormulaConfig_subjectId_form_periodId_idx" ON "DepartmentFormulaConfig"("subjectId", "form", "periodId");
+CREATE INDEX "DepartmentFormulaConfig_periodId_idx" ON "DepartmentFormulaConfig"("periodId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "DepartmentFormulaConfig_departmentId_subjectId_form_framewo_key" ON "DepartmentFormulaConfig"("departmentId", "subjectId", "form", "frameworkId");
+CREATE UNIQUE INDEX "DepartmentFormulaConfig_departmentId_subjectId_form_periodId_key" ON "DepartmentFormulaConfig"("departmentId", "subjectId", "form", "periodId");
 
 -- CreateIndex
 CREATE INDEX "LearningArea_schoolId_frameworkId_idx" ON "LearningArea"("schoolId", "frameworkId");
@@ -2862,6 +2863,8 @@ ALTER TABLE "DepartmentFormulaConfig" ADD CONSTRAINT "DepartmentFormulaConfig_de
 
 -- AddForeignKey
 ALTER TABLE "DepartmentFormulaConfig" ADD CONSTRAINT "DepartmentFormulaConfig_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "DepartmentFormulaConfig" ADD CONSTRAINT "DepartmentFormulaConfig_periodId_fkey" FOREIGN KEY ("periodId") REFERENCES "AssessmentPeriod"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LearningArea" ADD CONSTRAINT "LearningArea_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE CASCADE ON UPDATE CASCADE;

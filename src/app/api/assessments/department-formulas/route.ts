@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
         id: true,
         subjectId: true,
         form: true,
-        frameworkId: true,
+        periodId: true,
         formula: true,
         updatedAt: true,
         subject: { select: { id: true, name: true, code: true } },
@@ -105,15 +105,17 @@ export async function GET(req: NextRequest) {
 
 // ---------------------------------------------------------------------------
 // PUT /api/assessments/department-formulas
-// Upserts a formula config for one (departmentId, subjectId, form, frameworkId).
-// Body: { departmentId, subjectId, form, frameworkId, formula }
+// Upserts a formula config for one (departmentId, subjectId, form, periodId).
+// Body: { departmentId, subjectId, form, periodId, formula }
+// `form: 0` is the subject-wide entry that applies to every class level.
 // ---------------------------------------------------------------------------
 
 const upsertSchema = z.object({
   departmentId: z.string().min(1),
   subjectId:    z.string().min(1),
-  form:         z.number().int().min(1).max(13),
-  frameworkId:  z.string().min(1),
+  // 0 = subject-wide (applies to every class level taking this subject)
+  form:         z.number().int().min(0).max(13),
+  periodId:     z.string().min(1),
   formula:      z.string().max(2000),
 });
 
@@ -135,7 +137,7 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  const { departmentId, subjectId, form, frameworkId, formula } = parsed.data;
+  const { departmentId, subjectId, form, periodId, formula } = parsed.data;
 
   // HOD can only manage their own department
   const isHod = actor.roles.some((r) => r.role === "HOD");
@@ -158,22 +160,22 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  // Verify framework belongs to this school
-  const framework = await db.assessmentFramework.findFirst({
-    where: { id: frameworkId, schoolId: user.schoolId! },
+  // Verify the exam period belongs to this school
+  const period = await db.assessmentPeriod.findFirst({
+    where: { id: periodId, schoolId: user.schoolId! },
     select: { id: true },
   });
-  if (!framework) {
-    return NextResponse.json({ error: "Framework not found." }, { status: 404 });
+  if (!period) {
+    return NextResponse.json({ error: "Exam period not found." }, { status: 404 });
   }
 
   const config = await db.departmentFormulaConfig.upsert({
     where: {
-      departmentId_subjectId_form_frameworkId: {
+      departmentId_subjectId_form_periodId: {
         departmentId,
         subjectId,
         form,
-        frameworkId,
+        periodId,
       },
     },
     create: {
@@ -181,7 +183,7 @@ export async function PUT(req: NextRequest) {
       departmentId,
       subjectId,
       form,
-      frameworkId,
+      periodId,
       formula: formula.trim(),
     },
     update: {
@@ -191,7 +193,7 @@ export async function PUT(req: NextRequest) {
       id: true,
       subjectId: true,
       form: true,
-      frameworkId: true,
+      periodId: true,
       formula: true,
       updatedAt: true,
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Trash2, X, FileText, Delete, Plus } from "lucide-react";
+import { Trash2, X, FileText, Delete, Plus, Lock } from "lucide-react";
 import {
   scoreToGrade,
   subjectScore,
@@ -909,6 +909,10 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   // HOD/Principal/ExamOfficer gate — canUseFormula defaults to canManagePapers
   const formulaEnabled = canUseFormula ?? canManagePapers;
 
+  // A formula set in the HOD's department settings governs every marksheet for
+  // that subject, so the in-marksheet editor is read-only while one is active.
+  const formulaLocked = formulaFromDept && customFormula.trim() !== "";
+
   // -------------------------------------------------------------------------
   // Load marksheet whenever filters change
   // -------------------------------------------------------------------------
@@ -937,15 +941,21 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   useEffect(() => { loadMarksheet(); }, [loadMarksheet]);
 
   // -------------------------------------------------------------------------
-  // Auto-load department formula when marksheet data is ready
+  // Load the HOD's formula for this (subject, class level, exam period).
+  //
+  // Formulas are set per class LEVEL, so every stream at a level resolves to
+  // the same one, and they are saved per exam period — a period the HOD has
+  // never configured returns nothing, so the marksheet falls back to the
+  // teacher's own formula. When the HOD has set one it WINS: the teacher's
+  // formula button is locked and their expression is replaced.
   // -------------------------------------------------------------------------
   useEffect(() => {
     if (!data) return;
-    const { frameworkId } = data.period;
+    const pid  = data.period.id;
     const form = data.schoolClass.form;
     const sid  = data.subject.id;
     fetch(
-      `/api/assessments/department-formulas/for-marksheet?subjectId=${sid}&form=${form}&frameworkId=${frameworkId}`
+      `/api/assessments/department-formulas/for-marksheet?subjectId=${sid}&form=${form}&periodId=${pid}`
     )
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -961,9 +971,9 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
         }
       })
       .catch(() => { /* non-critical */ });
-  // Only re-run when the subject/class/framework changes, not on every edit
+  // Only re-run when the subject/class/period changes, not on every edit
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.period.frameworkId, data?.schoolClass.form, data?.subject.id]);
+  }, [data?.period.id, data?.schoolClass.form, data?.subject.id]);
 
   // -------------------------------------------------------------------------
   // Edit handler
@@ -1300,19 +1310,28 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
                         <div className="inline-flex flex-col items-center gap-0.5">
                           <button
                             type="button"
-                            title={customFormula ? "Edit % formula" : "Set % formula"}
-                            onClick={() => setShowFormula(true)}
+                            disabled={formulaLocked}
+                            title={
+                              formulaLocked
+                                ? `Set by the Head of Department for this exam period: ${customFormula}`
+                                : customFormula ? "Edit % formula" : "Set % formula"
+                            }
+                            onClick={() => { if (!formulaLocked) setShowFormula(true); }}
                             className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-teal/30 ${
-                              customFormula
-                                ? "bg-teal text-white hover:bg-teal-dark"
-                                : "bg-slate-100 text-slate hover:bg-teal-50 hover:text-teal"
+                              formulaLocked
+                                ? "bg-teal/80 text-white cursor-not-allowed"
+                                : customFormula
+                                  ? "bg-teal text-white hover:bg-teal-dark"
+                                  : "bg-slate-100 text-slate hover:bg-teal-50 hover:text-teal"
                             }`}
                           >
                             %
-                            <Plus className="w-2.5 h-2.5 opacity-70" strokeWidth={2.5} aria-hidden="true" />
+                            {formulaLocked
+                              ? <Lock className="w-2.5 h-2.5 opacity-80" strokeWidth={2.5} aria-hidden="true" />
+                              : <Plus className="w-2.5 h-2.5 opacity-70" strokeWidth={2.5} aria-hidden="true" />}
                           </button>
-                          {formulaFromDept && customFormula && (
-                            <span className="text-[9px] font-medium text-teal/80 leading-none">dept</span>
+                          {formulaLocked && (
+                            <span className="text-[9px] font-medium text-teal/80 leading-none">HOD</span>
                           )}
                         </div>
                       ) : (
@@ -1386,7 +1405,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
       )}
 
       {/* ---- Formula Calculator modal ---- */}
-      {showFormula && data && (
+      {showFormula && data && !formulaLocked && (
         <FormulaCalculator
           papers={data.papers}
           formula={customFormula}
