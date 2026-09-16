@@ -7,10 +7,13 @@
  * directly for ordering after this is in place.
  *
  * FrameworkType values: EIGHT_FOUR_FOUR | CBC | CBE
- * Note: The DB/Prisma enum uses "CBC" but the original spec used "CBE" for
- * the competency-based curriculum stage list. The catalog below maps
- * the CBC enum value to the PP1–Grade 12 progression used in Kenyan schools,
- * and CBE to the TVET pathway (no fixed stage list — empty by design).
+ * Kenya now has two systems in practice: 8-4-4 and CBE (Competency Based
+ * Education) — what used to be called CBC (Competency Based Curriculum) is
+ * now just the PP1–Grade 12 progression under the CBE umbrella. The CBC enum
+ * value still exists in the database for backward compatibility with old
+ * rows, but every current UI and API path only ever reads/writes CBE — the
+ * full PP1–Grade 12 stage catalog now lives under the CBE key, and CBC's own
+ * list is intentionally empty so nothing new gets created against it.
  */
 
 import type { FrameworkType } from "@prisma/client";
@@ -22,8 +25,21 @@ export interface StageEntry {
 }
 
 export const STAGE_CATALOG: Record<FrameworkType, StageEntry[]> = {
-  /** Competency Based Curriculum — PP1 through Grade 12. */
-  CBC: [
+  /**
+   * Legacy value — no longer written by any code path. Kept only so old
+   * rows with frameworkType = "CBC" don't crash a lookup; see CBE below for
+   * the real, actively-used PP1–Grade 12 catalog.
+   */
+  CBC: [],
+  /** Kenya 8-4-4 — Form 1 through Form 4 (secondary). */
+  EIGHT_FOUR_FOUR: [
+    { name: "Form 1", rank: 1 },
+    { name: "Form 2", rank: 2 },
+    { name: "Form 3", rank: 3 },
+    { name: "Form 4", rank: 4 },
+  ],
+  /** CBE (Competency Based Education) — PP1 through Grade 12. */
+  CBE: [
     { name: "PP1",     rank: 1  },
     { name: "PP2",     rank: 2  },
     { name: "Grade 1", rank: 3  },
@@ -39,20 +55,6 @@ export const STAGE_CATALOG: Record<FrameworkType, StageEntry[]> = {
     { name: "Grade 11", rank: 13 },
     { name: "Grade 12", rank: 14 },
   ],
-  /** Kenya 8-4-4 — Form 1 through Form 4 (secondary). */
-  EIGHT_FOUR_FOUR: [
-    { name: "Form 1", rank: 1 },
-    { name: "Form 2", rank: 2 },
-    { name: "Form 3", rank: 3 },
-    { name: "Form 4", rank: 4 },
-  ],
-  /**
-   * CBE / TVET — competency-based education pathway.
-   * No fixed sequential stage list; programmes are defined per institution.
-   * Promotion mapping is still available but without catalog-driven
-   * suggestions or skip-stage warnings.
-   */
-  CBE: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ export function hasCatalog(framework: FrameworkType): boolean {
  * catalog entry for its framework.
  *
  * For EIGHT_FOUR_FOUR the mapping is straightforward: rank == form number.
- * For CBC, rank == form number works only if the existing data happens to
+ * For CBE, rank == form number works only if the existing data happens to
  * use sequential integers starting at 1 — which is not guaranteed.
  *
  * Returns the matched StageEntry when the match is unambiguous, or null

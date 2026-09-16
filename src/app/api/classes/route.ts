@@ -67,7 +67,10 @@ const createSchema = z.object({
   /** Legacy free-text stream — kept for backward compat. */
   stream: z.string().trim().optional().or(z.literal("")),
   classTeacherId: z.string().nullable().optional(),
-  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBC", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
+  // "CBC" is a legacy value — Kenya now has just 8-4-4 and CBE (what used to
+  // be called CBC is now the PP1-Grade 12 progression under CBE). Old rows
+  // may still carry "CBC", but no new class can be created with it.
+  frameworkType: z.enum(["EIGHT_FOUR_FOUR", "CBE"]).optional().default("EIGHT_FOUR_FOUR"),
 });
 
 export async function POST(req: NextRequest) {
