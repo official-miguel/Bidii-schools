@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canEnterMarks } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -35,12 +36,9 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const period: { id: string; frameworkId: string } | null = await db.assessmentPeriod.findFirst({
-    where: {
-      id: periodId,
-      schoolId: user.schoolId!,
-    },
-    select: { id: true, frameworkId: true },
+  const period: { id: string } | null = await db.assessmentPeriod.findFirst({
+    where: { id: periodId, schoolId: user.schoolId! },
+    select: { id: true },
   });
   if (!period) {
     return NextResponse.json({ error: "Period not found.", code: "NOT_FOUND" }, { status: 404 });
@@ -48,7 +46,7 @@ export async function PUT(req: NextRequest) {
 
   const student = await prisma.student.findFirst({
     where: { id: studentId, schoolId: user.schoolId! },
-    select: { id: true, classId: true },
+    select: { id: true, classId: true, schoolClass: { select: { frameworkType: true } } },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found.", code: "NOT_FOUND" }, { status: 404 });
@@ -61,8 +59,15 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "You are not authorized to enter marks for this student's class." }, { status: 403 });
   }
 
+  // Papers are still scoped by framework — resolved from the student's own
+  // class, since the period itself is now shared across every framework.
+  const activeFramework = await resolveActiveFramework(user.schoolId!, student.schoolClass.frameworkType);
+  if (!activeFramework) {
+    return NextResponse.json({ error: "No active framework configured for this class.", code: "NOT_FOUND" }, { status: 404 });
+  }
+
   const paper: { id: string; maxMarks: number } | null = await db.paper.findFirst({
-    where: { id: paperId, subjectId, schoolId: user.schoolId!, frameworkId: period.frameworkId },
+    where: { id: paperId, subjectId, schoolId: user.schoolId!, frameworkId: activeFramework.id },
     select: { id: true, maxMarks: true },
   });
   if (!paper) {
@@ -90,7 +95,7 @@ export async function PUT(req: NextRequest) {
     where: { item_paper: { studentId, periodId, paperId } },
     create: {
       schoolId: user.schoolId!,
-      frameworkId: period.frameworkId,
+      frameworkId: activeFramework.id,
       periodId,
       studentId,
       paperId,

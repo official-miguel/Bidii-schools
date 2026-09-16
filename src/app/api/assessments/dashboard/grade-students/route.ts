@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import {
   subjectScore,
   scoreToGrade,
@@ -50,19 +51,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // ---- period + framework ----
-  const period = await db.assessmentPeriod.findFirst({
-    where: {
-      id: periodId,
-      schoolId: user.schoolId!,
-      framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
-    },
-    select: { id: true, frameworkId: true },
-  });
+  const [period, activeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true },
+    }),
+    resolveActiveFramework(user.schoolId!, "EIGHT_FOUR_FOUR"),
+  ]);
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
+  if (!activeFramework) return NextResponse.json({ error: "No active 8-4-4 framework found." }, { status: 404 });
 
   // ---- classes ----
-  const classWhere: Record<string, unknown> = { schoolId: user.schoolId! };
+  // KCSE-specific (grading844) — scope to 8-4-4 classes only.
+  const classWhere: Record<string, unknown> = { schoolId: user.schoolId!, frameworkType: "EIGHT_FOUR_FOUR" };
   if (classId) classWhere.id = classId;
   if (form !== undefined && !isNaN(form)) classWhere.form = form;
 
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
   // ---- papers ----
   const papersWhere: Record<string, unknown> = {
     schoolId: user.schoolId!,
-    frameworkId: period.frameworkId,
+    frameworkId: activeFramework.id,
   };
   if (subjectId) papersWhere.subjectId = subjectId;
   const papers: Array<{ id: string; subjectId: string; maxMarks: number }> =

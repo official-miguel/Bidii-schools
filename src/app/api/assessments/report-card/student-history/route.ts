@@ -59,9 +59,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ points: [] });
   }
 
-  // All periods for this framework, sorted oldest-first.
+  // Periods are shared across every framework now — all periods for the
+  // school, sorted oldest-first.
   const periods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId!, frameworkId: framework.id },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ academicYear: "asc" }, { term: "asc" }, { name: "asc" }],
     select: { id: true, name: true, academicYear: true, term: true },
   }) as Array<{ id: string; name: string; academicYear: string; term: number | null }>;

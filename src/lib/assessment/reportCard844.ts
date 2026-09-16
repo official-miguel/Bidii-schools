@@ -11,6 +11,7 @@ import {
   denseRank,
   type KcseGrade,
 } from "@/lib/assessment/grading844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -102,12 +103,12 @@ export async function buildReportCard(
   });
   if (!student) return null;
 
-  // All four remaining lookups are independent — run in parallel.
-  const [period, school, subjects, classmateIds] = await Promise.all([
+  // All five remaining lookups are independent — run in parallel.
+  const [period, school, subjects, classmateIds, activeFramework] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId, framework: { type: "EIGHT_FOUR_FOUR", isActive: true } },
-      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null>,
+      where: { id: periodId, schoolId },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
 
     prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } }),
 
@@ -121,14 +122,16 @@ export async function buildReportCard(
       where: { classId: student.classId, schoolId },
       select: { id: true },
     }).then((rows) => rows.map((s) => s.id)),
+
+    resolveActiveFramework(schoolId, "EIGHT_FOUR_FOUR"),
   ]);
 
-  if (!period) return null;
+  if (!period || !activeFramework) return null;
 
   const subjectIds = subjects.map((s) => s.id);
 
   const papers: PaperDbRow[] = await db.paper.findMany({
-    where: { schoolId, frameworkId: period.frameworkId, subjectId: { in: subjectIds } },
+    where: { schoolId, frameworkId: activeFramework.id, subjectId: { in: subjectIds } },
     orderBy: { sortOrder: "asc" },
     select: { id: true, name: true, maxMarks: true, sortOrder: true, subjectId: true },
   });
@@ -203,12 +206,12 @@ export async function buildClassReportCards(
   });
   if (!schoolClass) return null;
 
-  // All four remaining lookups are independent — run in parallel.
-  const [period, school, students] = await Promise.all([
+  // All five remaining lookups are independent — run in parallel.
+  const [period, school, students, activeFramework] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId, framework: { type: "EIGHT_FOUR_FOUR", isActive: true } },
-      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null>,
+      where: { id: periodId, schoolId },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
 
     prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } }),
 
@@ -217,9 +220,11 @@ export async function buildClassReportCards(
       orderBy: { admissionNumber: "asc" },
       select: { id: true, fullName: true, admissionNumber: true },
     }),
+
+    resolveActiveFramework(schoolId, "EIGHT_FOUR_FOUR"),
   ]);
 
-  if (!period) return null;
+  if (!period || !activeFramework) return null;
 
   const studentIds = students.map((s) => s.id);
 
@@ -234,7 +239,7 @@ export async function buildClassReportCards(
   const subjectIds = subjects.map((s) => s.id);
 
   const allPapers: PaperDbRow[] = await db.paper.findMany({
-    where: { schoolId, frameworkId: period.frameworkId, subjectId: { in: subjectIds } },
+    where: { schoolId, frameworkId: activeFramework.id, subjectId: { in: subjectIds } },
     orderBy: { sortOrder: "asc" },
     select: { id: true, name: true, maxMarks: true, sortOrder: true, subjectId: true },
   });

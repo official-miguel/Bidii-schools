@@ -494,7 +494,6 @@ async function main() {
     const row = await prisma.assessmentPeriod.create({
       data: {
         schoolId:    school.id,
-        frameworkId: framework844.id,
         name:        p.name,
         academicYear: "2026",
         term:        p.term,

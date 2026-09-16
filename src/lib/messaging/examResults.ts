@@ -41,10 +41,12 @@ export async function buildResultsMessage(
     return { body: "", recipientLabel: "Unknown", phone: null };
   }
 
-  // Fetch period + framework
+  // Fetch period — shared across every framework now, so which format to
+  // use below is decided from each item's own resultKind, not from a
+  // period-level framework label.
   const period = await prisma.assessmentPeriod.findUnique({
     where: { id: periodId },
-    select: { name: true, framework: { select: { type: true } } },
+    select: { name: true },
   });
 
   // Fetch all assessment items for this student in this period
@@ -69,7 +71,7 @@ export async function buildResultsMessage(
 
   const resultsLines: string[] = [];
 
-  if (period?.framework?.type === "CBE" && items.some(i => i.performanceLevel)) {
+  if (items.some(i => i.performanceLevel)) {
     // CBE junior: group by learning area → strand → sub-strand
     const grouped = new Map<string, { strand: string; subStrand: string; level: string }[]>();
     for (const item of items) {

@@ -27,13 +27,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Verify period belongs to school's active CBE framework.
   const period = await db.assessmentPeriod.findFirst({
-    where: {
-      id: periodId,
-      schoolId: user.schoolId!,
-      framework: { type: "CBE", isActive: true },
-    },
+    where: { id: periodId, schoolId: user.schoolId! },
     select: { id: true, name: true, academicYear: true, term: true },
   }) as { id: string; name: string; academicYear: string; term: number | null } | null;
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });

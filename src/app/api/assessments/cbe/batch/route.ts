@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -64,17 +65,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Validate all periodIds in bulk.
+  // Periods are shared across every framework — validate them plainly, and
+  // resolve the CBE framework separately (still needed to scope the write).
   const uniquePeriodIds = [...new Set(items.map((i) => i.periodId))];
-  const periods = await db.assessmentPeriod.findMany({
-    where: {
-      id: { in: uniquePeriodIds },
-      schoolId: user.schoolId!,
-      framework: { type: "CBE", isActive: true },
-    },
-    select: { id: true, frameworkId: true },
-  }) as Array<{ id: string; frameworkId: string }>;
-  const periodMap = new Map(periods.map((p) => [p.id, p]));
+  const [periods, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findMany({
+      where: { id: { in: uniquePeriodIds }, schoolId: user.schoolId! },
+      select: { id: true },
+    }) as Promise<Array<{ id: string }>>,
+    resolveActiveFramework(user.schoolId!, "CBE"),
+  ]);
+  if (!cbeFramework) {
+    return NextResponse.json({ error: "No active CBE framework found." }, { status: 404 });
+  }
+  const periodMap = new Map(periods.map((p) => [p.id, { ...p, frameworkId: cbeFramework.id }]));
 
   // Validate all studentIds in bulk.
   const uniqueStudentIds = [...new Set(items.map((i) => i.studentId))];

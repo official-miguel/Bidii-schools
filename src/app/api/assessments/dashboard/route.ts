@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import { scoreToGrade, meanGrade, pointsToGrade, subjectScore, type KcseGrade, ALL_GRADES } from "@/lib/assessment/grading844";
 
 // Maximum students loaded into Node memory per dashboard request.
@@ -59,31 +60,30 @@ async function dashboardHandler(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // ── Batch 2: auth actor + period + classes — all independent of each other ──
-  const classWhere: Record<string, unknown> = { schoolId: user.schoolId! };
+  // KCSE-specific (grading844) — scope to 8-4-4 classes only.
+  const classWhere: Record<string, unknown> = { schoolId: user.schoolId!, frameworkType: "EIGHT_FOUR_FOUR" };
   if (classId)            classWhere.id   = classId;
   if (form !== undefined) classWhere.form = form;
 
-  const [actor, period, classes] = await Promise.all([
+  const [actor, period, classes, activeFramework] = await Promise.all([
     resolveAssessmentActor(user, user.schoolId!),
     db.assessmentPeriod.findFirst({
-      where: {
-        id: periodId,
-        schoolId: user.schoolId!,
-        framework: { type: "EIGHT_FOUR_FOUR", isActive: true },
-      },
-      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-    }) as Promise<(PeriodRow & { frameworkId: string }) | null>,
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<PeriodRow | null>,
     prisma.schoolClass.findMany({
       where: classWhere,
       orderBy: [{ form: "asc" }, { name: "asc" }],
       select: { id: true, name: true, form: true },
     }),
+    resolveActiveFramework(user.schoolId!, "EIGHT_FOUR_FOUR"),
   ]);
 
   if (!canAccessDashboard(actor)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
+  if (!activeFramework) return NextResponse.json({ error: "No active 8-4-4 framework found." }, { status: 404 });
 
   const classIds = classes.map((c) => c.id);
   if (classIds.length === 0) return emptyDashboard(period, { periodId, classId, subjectId, form });
@@ -121,7 +121,7 @@ async function dashboardHandler(req: NextRequest) {
   if (studentIds.length === 0) return emptyDashboard(period, { periodId, classId, subjectId, form });
 
   // ── Batch 3: papers + subjects + allPeriods — independent of each other ────
-  const papersWhere: Record<string, unknown>   = { schoolId: user.schoolId!, frameworkId: period.frameworkId };
+  const papersWhere: Record<string, unknown>   = { schoolId: user.schoolId!, frameworkId: activeFramework.id };
   const subjectsWhere: Record<string, unknown> = { schoolId: user.schoolId! };
   if (subjectId) { papersWhere.subjectId = subjectId; subjectsWhere.id = subjectId; }
 
@@ -135,7 +135,7 @@ async function dashboardHandler(req: NextRequest) {
       select: { id: true, name: true, code: true },
     }),
     db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId! },
       orderBy: [{ term: "asc" }, { name: "asc" }],
       select: { id: true, name: true, academicYear: true, term: true },
     }) as Promise<PeriodRow[]>,

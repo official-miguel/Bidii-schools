@@ -106,25 +106,17 @@ export async function GET(req: NextRequest) {
     } as DeptAnalyticsPayload);
   }
 
-  // Items for the selected period and frameworkId are independent — run in parallel.
-  const [items, currentPeriodRow] = await Promise.all([
-    db.assessmentItem.findMany({
-      where: {
-        schoolId: user.schoolId!,
-        periodId,
-        subjectId: { in: deptSubjectIds },
-        resultKind: "NUMERIC",
-      },
-      select: { studentId: true, subjectId: true, numericScore: true,
-                student: { select: { classId: true } } },
-    }) as Promise<Array<{ studentId: string; subjectId: string | null; numericScore: number | null;
-                  student: { classId: string } }>>,
-
-    db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId! },
-      select: { frameworkId: true },
-    }) as Promise<{ frameworkId: string } | null>,
-  ]);
+  const items = await db.assessmentItem.findMany({
+    where: {
+      schoolId: user.schoolId!,
+      periodId,
+      subjectId: { in: deptSubjectIds },
+      resultKind: "NUMERIC",
+    },
+    select: { studentId: true, subjectId: true, numericScore: true,
+              student: { select: { classId: true } } },
+  }) as Array<{ studentId: string; subjectId: string | null; numericScore: number | null;
+                student: { classId: string } }>;
 
   // --- Subject breakdown ---
   const itemsBySubject = new Map<string, typeof items>();
@@ -154,9 +146,9 @@ export async function GET(req: NextRequest) {
   //   Before: ~12 queries × ~18 ms  ≈ 216 ms
   //   After:  2 queries × ~25 ms    ≈  50 ms
   let trendData: TrendDataPoint[] = [];
-  if (currentPeriodRow) {
+  {
     const allPeriods = await db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId!, frameworkId: currentPeriodRow.frameworkId },
+      where: { schoolId: user.schoolId! },
       orderBy: [{ academicYear: "asc" }, { term: "asc" }],
       select: { id: true, name: true, term: true, academicYear: true },
     }) as Array<{ id: string; name: string; term: number | null; academicYear: string }>;

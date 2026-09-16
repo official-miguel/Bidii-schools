@@ -1,14 +1,19 @@
 "use client";
 
 /**
- * FrameworkManager — manages assessment frameworks and their periods.
+ * FrameworkManager — manages assessment frameworks and exam periods.
  *
  * Used inside the Exam Setup hub. The principal can:
- *  - See all frameworks (active / inactive)
+ *  - See all frameworks (active / inactive) — a framework governs which
+ *    grading scale a class's marks are graded on (8-4-4 KCSE bands, or the
+ *    school's CBE scale), decided by SchoolClass.frameworkType.
  *  - Create a new framework (type + label + academic year)
  *  - Toggle active/inactive on existing ones
- *  - Expand a framework to manage its assessment periods
- *  - Create periods, set one as Current, delete empty periods
+ *
+ * Exam periods (e.g. "Term 3 Opener 2026") are a SEPARATE, single shared
+ * list below the frameworks — one period is used by every class in the
+ * school regardless of its framework, so there is exactly one period list
+ * and one "Current" period, not one per framework.
  */
 
 import { useState, useEffect, FormEvent } from "react";
@@ -26,7 +31,7 @@ interface Framework {
   academicYear: string;
   isActive: boolean;
   createdAt: string;
-  _count: { periods: number; items: number };
+  _count: { items: number };
 }
 
 interface Period {
@@ -89,9 +94,6 @@ export default function FrameworkManager() {
     setFwDraft({ createType, createLabel, createYear });
   }, [createType, createLabel, createYear, showCreate, setFwDraft]);
 
-  // Expanded framework for period management
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
   // ── Data loading ─────────────────────────────────────────────────────────
 
   async function loadFrameworks() {
@@ -138,7 +140,6 @@ export default function FrameworkManager() {
       setShowCreate(false);
       setCreateLabel("");
       clearFwDraft();
-      setExpandedId(data.framework.id);
     } finally {
       setCreating(false);
     }
@@ -178,7 +179,6 @@ export default function FrameworkManager() {
       return;
     }
     setFrameworks((prev) => prev.filter((f) => f.id !== fw.id));
-    if (expandedId === fw.id) setExpandedId(null);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -232,12 +232,11 @@ export default function FrameworkManager() {
                   {fw.academicYear}
                 </span>
               </p>
-              <p className="text-xs text-slate mt-0.5">
-                {fw._count.periods} period{fw._count.periods !== 1 ? "s" : ""}
-                {fw._count.items > 0
-                  ? ` · ${fw._count.items.toLocaleString()} assessment items`
-                  : ""}
-              </p>
+              {fw._count.items > 0 && (
+                <p className="text-xs text-slate mt-0.5">
+                  {fw._count.items.toLocaleString()} assessment items
+                </p>
+              )}
             </div>
             {/* Status badge */}
             {fw.isActive ? (
@@ -251,14 +250,6 @@ export default function FrameworkManager() {
             )}
             {/* Actions */}
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() =>
-                  setExpandedId((prev) => (prev === fw.id ? null : fw.id))
-                }
-                className={btnSecondary}
-              >
-                {expandedId === fw.id ? "Close" : "Manage Periods"}
-              </button>
               <button onClick={() => toggleActive(fw)} className={btnSecondary}>
                 {fw.isActive ? "Deactivate" : "Activate"}
               </button>
@@ -273,13 +264,6 @@ export default function FrameworkManager() {
               )}
             </div>
           </div>
-
-          {/* Expanded: period management */}
-          {expandedId === fw.id && (
-            <div className="border-t border-border bg-background/40 px-5 py-4">
-              <PeriodManager framework={fw} />
-            </div>
-          )}
         </div>
       ))}
 
@@ -373,13 +357,24 @@ export default function FrameworkManager() {
           Add Framework
         </button>
       )}
+
+      {/* Exam periods — one shared list, used by every class regardless of
+          its own framework. */}
+      <div className="pt-2">
+        <p className="text-sm font-semibold text-foreground mb-1">Exam Periods</p>
+        <p className="text-xs text-slate mb-3">
+          One period per term, shared by every class — 8-4-4 or CBE. Which grading
+          scale applies is decided by each class&apos;s own framework, not by the period.
+        </p>
+        <PeriodManager />
+      </div>
     </div>
   );
 }
 
 // ── PeriodManager ──────────────────────────────────────────────────────────
 
-function PeriodManager({ framework }: { framework: Framework }) {
+function PeriodManager() {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -387,7 +382,7 @@ function PeriodManager({ framework }: { framework: Framework }) {
 
   // New period form fields
   const [pName, setPName] = useState("");
-  const [pYear, setPYear] = useState(framework.academicYear);
+  const [pYear, setPYear] = useState(new Date().getFullYear().toString());
   const [pTerm, setPTerm] = useState("");
   const [pMaxMarks, setPMaxMarks] = useState("100");
   const [pWeight, setPWeight] = useState("1");
@@ -398,16 +393,10 @@ function PeriodManager({ framework }: { framework: Framework }) {
     setLoading(true);
     setError(null);
     try {
-      // Reuse the marksheet API — fetch all periods for this framework via
-      // a dedicated endpoint. We'll derive a minimal filtered call.
-      const res = await fetch(
-        `/api/assessments/periods?frameworkId=${framework.id}`
-      );
+      const res = await fetch("/api/assessments/periods");
       if (!res.ok) throw new Error("Failed to load periods");
       const data = await res.json();
-      // Filter client-side to this framework.
-      const all: Period[] = data.periods ?? [];
-      setPeriods(all);
+      setPeriods(data.periods ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -417,8 +406,7 @@ function PeriodManager({ framework }: { framework: Framework }) {
 
   useEffect(() => {
     loadPeriods();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [framework.id]);
+  }, []);
 
   async function handleAddPeriod(e: FormEvent) {
     e.preventDefault();
@@ -429,7 +417,6 @@ function PeriodManager({ framework }: { framework: Framework }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          frameworkId: framework.id,
           name: pName,
           academicYear: pYear,
           term: pTerm ? parseInt(pTerm, 10) : null,
@@ -487,7 +474,9 @@ function PeriodManager({ framework }: { framework: Framework }) {
       </p>
     );
 
-  const is844 = framework.type === "EIGHT_FOUR_FOUR";
+  // Term/Max Marks/Weight are generic period attributes now — periods are no
+  // longer tied to one framework, so there's nothing left to branch on here.
+  const is844 = true;
 
   return (
     <div className="space-y-3">

@@ -24,7 +24,7 @@ export default async function CbeReportCardsPage({
 
   const periods = framework
     ? await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, frameworkId: framework.id },
+        where: { schoolId: user.schoolId! },
         orderBy: [{ term: "asc" }, { name: "asc" }],
         select: { id: true, name: true, academicYear: true },
       }) as Array<{ id: string; name: string; academicYear: string }>

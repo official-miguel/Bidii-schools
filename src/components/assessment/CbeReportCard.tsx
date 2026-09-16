@@ -222,17 +222,15 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
       <CardHeader school={data.school} student={data.student} schoolClass={data.schoolClass} period={data.period} />
 
       <div className="mb-5 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-xs px-3 py-2">
-        Competency-Based Education (CBE) — Senior/Pathway level. Results show School-Based Assessment (SBA)
-        and external exam scores with configured weighting. No class ranking is produced.
+        Competency-Based Education (CBE) — Senior/Pathway level. Entry is identical to 8-4-4
+        (one score per paper); grades use the school&apos;s CBE scale. No class ranking is produced.
       </div>
 
       <table className="w-full text-xs border border-border mb-6">
         <thead>
           <tr className="bg-background border-b border-border text-left">
             <th className="px-3 py-2 font-semibold">Subject</th>
-            <th className="px-3 py-2 font-semibold text-center">SBA score</th>
-            <th className="px-3 py-2 font-semibold text-center">Exam score</th>
-            <th className="px-3 py-2 font-semibold text-center">Weighted %</th>
+            <th className="px-3 py-2 font-semibold text-center">Score</th>
             <th className="px-3 py-2 font-semibold text-center">Grade</th>
           </tr>
         </thead>
@@ -242,16 +240,6 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
               <td className="px-3 py-1.5 font-medium text-foreground">
                 {sr.subject.name}
                 <span className="ml-1 text-slate font-normal">({sr.subject.code})</span>
-              </td>
-              <td className="px-3 py-1.5 text-center tabular-nums">
-                {sr.sbaScore !== null
-                  ? <>{sr.sbaScore}<span className="text-slate">/{sr.sbaMaxMarks}</span><span className="ml-1 text-slate text-[10px]">×{Math.round(sr.sbaWeight * 100)}%</span></>
-                  : <Dash />}
-              </td>
-              <td className="px-3 py-1.5 text-center tabular-nums">
-                {sr.examScore !== null
-                  ? <>{sr.examScore}<span className="text-slate">/{sr.examMaxMarks}</span><span className="ml-1 text-slate text-[10px]">×{Math.round(sr.examWeight * 100)}%</span></>
-                  : <Dash />}
               </td>
               <td className="px-3 py-1.5 text-center tabular-nums font-medium">
                 {sr.weightedScore !== null ? `${sr.weightedScore.toFixed(1)}%` : <Dash />}
@@ -264,7 +252,7 @@ function SeniorCard({ data }: { data: SeniorReportCardData }) {
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-ink bg-background font-semibold">
-            <td className="px-3 py-2 text-xs uppercase tracking-wide" colSpan={3}>
+            <td className="px-3 py-2 text-xs uppercase tracking-wide">
               Overall pathway performance
             </td>
             <td className="px-3 py-2 text-center tabular-nums">

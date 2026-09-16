@@ -148,8 +148,9 @@ export async function GET(req: NextRequest) {
     const subjectIdsForExam = allSubjects.map((s: { id: string }) => s.id);
 
     const [periods, papers, allItems] = await Promise.all([
+      // Periods are shared across every framework now.
       db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, frameworkId: framework.id },
+        where: { schoolId: user.schoolId! },
         orderBy: [{ academicYear: "asc" }, { term: "asc" }, { name: "asc" }],
         select: { id: true, name: true },
       }),

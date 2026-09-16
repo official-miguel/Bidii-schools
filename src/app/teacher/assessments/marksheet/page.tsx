@@ -28,22 +28,16 @@ export default async function TeacherMarksheetPage({
     term: number | null; isCurrent: boolean;
   };
 
-  /** Load periods for a given framework type. */
-  async function periodsForFramework(fwType: string): Promise<PeriodOption[]> {
-    // Look for an active framework first; if none is active, fall back to
-    // any framework of this type so periods remain accessible even when the
-    // admin has deactivated the old framework (e.g. after year rollover).
-    const fw = (await db.assessmentFramework.findFirst({
-      where: { schoolId, type: fwType, isActive: true },
-      select: { id: true },
-    }) ?? await db.assessmentFramework.findFirst({
-      where: { schoolId, type: fwType },
-      orderBy: { academicYear: "desc" },
-      select: { id: true },
-    })) as { id: string } | null;
-    if (!fw) return [];
+  /**
+   * All exam periods for the school. Periods are shared across every
+   * framework now (one "Term 3 Opener 2026" used by 8-4-4 and CBE classes
+   * alike), so there's nothing left to filter by framework type — the
+   * `fwType` param is kept only so every call site below reads the same as
+   * before.
+   */
+  async function periodsForFramework(_fwType: string): Promise<PeriodOption[]> {
     return db.assessmentPeriod.findMany({
-      where: { schoolId, frameworkId: fw.id },
+      where: { schoolId },
       orderBy: [{ academicYear: "desc" }, { term: "desc" }],
       select: { id: true, name: true, academicYear: true, term: true, isCurrent: true },
     });
@@ -55,18 +49,9 @@ export default async function TeacherMarksheetPage({
 
   if (!isGridMode) {
     // Landing — render the card grid via MarksheetPageClient.
-    // Load periods for all active frameworks so the period selector shows
-    // every valid period regardless of framework mix.
-    const [periods844, periodsCBE] = await Promise.all([
-      periodsForFramework("EIGHT_FOUR_FOUR"),
-      periodsForFramework("CBE"),
-    ]);
-    // Combine, sort descending by year then term, deduplicate by id.
-    const allPeriods = [...periods844, ...periodsCBE]
-      .sort((a, b) =>
-        b.academicYear.localeCompare(a.academicYear) ||
-        ((b.term ?? 0) - (a.term ?? 0))
-      );
+    // Periods are shared across every framework, so one fetch covers every
+    // class the teacher can see, regardless of framework mix.
+    const allPeriods = await periodsForFramework("EIGHT_FOUR_FOUR");
     const currentPeriod = allPeriods.find((p) => p.isCurrent) ?? allPeriods[0] ?? null;
     const activePeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 

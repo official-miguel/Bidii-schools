@@ -54,7 +54,7 @@ export default async function ReportCardsPage({
 
   const periods = framework
     ? (await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, frameworkId: framework.id },
+        where: { schoolId: user.schoolId! },
         orderBy: [{ academicYear: "desc" }, { term: "desc" }],
         select: { id: true, name: true, academicYear: true },
       }) as Array<{ id: string; name: string; academicYear: string }>)

@@ -48,10 +48,11 @@ export async function GET(req: NextRequest) {
   }
 
   // period, schoolClass, and students are all independent once we have
-  // the framework id — fetch all three in parallel.
+  // the framework id — fetch all three in parallel. Periods are shared
+  // across every framework now, so no frameworkId filter here.
   const [period, schoolClass, students] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId!, frameworkId: framework.id },
+      where: { id: periodId, schoolId: user.schoolId! },
       select: { id: true, name: true, academicYear: true, term: true },
     }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
 

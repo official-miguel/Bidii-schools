@@ -2479,7 +2479,7 @@ enum CompetencyStatus {
 /// have exactly one, but a school running both 8-4-4 (upper secondary) and
 /// CBC (junior secondary) concurrently gets two rows. Scoped per school.
 model AssessmentFramework {
-  id              String             @id @default(cuid())
+  id              String           @id @default(cuid())
   schoolId        String
   type            FrameworkType
   /// Human-readable label, e.g. "KCSE 2026" or "CBC Grade 7".
@@ -2487,11 +2487,10 @@ model AssessmentFramework {
   /// Academic year this framework configuration applies to, e.g. "2026".
   academicYear    String
   /// Whether this is the active/default framework for new assessments.
-  isActive        Boolean            @default(true)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  school          School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  periods         AssessmentPeriod[]
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   /// Framework-specific hierarchy back-relations
   papers          Paper[]
   learningAreas   LearningArea[]
@@ -2508,31 +2507,38 @@ model AssessmentFramework {
 /// Weight and maxMarks carry the same semantics as before but are now
 /// framework-aware (CBC periods don't need maxMarks; CBE doesn't need
 /// weight — both are nullable/defaulted so they can be ignored).
+/// One exam period per term, shared by every framework at the school — e.g.
+/// "Term 3 Opener 2026" is the same period whether a class is 8-4-4 or CBE.
+/// A period no longer belongs to one AssessmentFramework: which grading
+/// scale applies to a score is decided entirely by the STUDENT'S CLASS
+/// (SchoolClass.frameworkType), at the point marks are entered or graded —
+/// never by which "framework" the period itself was created under. This
+/// replaced the old one-period-per-framework model, which let a school end
+/// up with two different "current" periods (one per framework) with similar
+/// names and no shared identity, causing marks entered under one to be
+/// invisible to anything that resolved the other.
 model AssessmentPeriod {
-  id            String              @id @default(cuid())
+  id            String           @id @default(cuid())
   schoolId      String
-  frameworkId   String
   name          String
   academicYear  String
   term          Int? /// 1, 2, or 3 for Kenyan terms
   /// Relative weight when combining periods (8-4-4 use case).
-  weight        Float               @default(1)
+  weight        Float            @default(1)
   /// What numeric marks are out of (8-4-4 use case).
   maxMarks      Float?
-  isCurrent     Boolean             @default(false)
+  isCurrent     Boolean          @default(false)
   /// When marks entry opens (optional — informational only).
   openingDate   DateTime?
   /// Deadline for marks submission — shown as a countdown in teacher dashboards.
   closingDate   DateTime?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  school        School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  framework     AssessmentFramework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  school        School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   items         AssessmentItem[]
   reportRemarks ReportRemark[]
 
-  @@unique([schoolId, frameworkId, name, academicYear])
-  @@index([schoolId, frameworkId])
+  @@unique([schoolId, name, academicYear])
   /// Supports isCurrent=true lookup used by teacher home and sync pull.
   @@index([schoolId, isCurrent])
 }

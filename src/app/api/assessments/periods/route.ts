@@ -8,16 +8,13 @@ const db = prisma as any;
 
 // ---------------------------------------------------------------------------
 // GET /api/assessments/periods
-// Returns all periods for a given framework.
-// Query params:
-//   frameworkId — if supplied, returns periods for that framework directly.
-//   type        — "EIGHT_FOUR_FOUR" | "CBE" — resolves to that framework's
-//                 periods without needing to know its id. Use this from any
-//                 CBE-specific view instead of omitting both params, which
-//                 defaults to 8-4-4 and silently returns the wrong periods.
-//   (neither)   — falls back to the active 8-4-4 framework.
+// Returns every exam period for the school — periods are shared across
+// every framework (8-4-4 and CBE both use the same "Term 3 Opener 2026"),
+// so there is nothing left to filter by here. `frameworkId`/`type` query
+// params are accepted but ignored, kept only so older callers that still
+// pass them don't break.
 // ---------------------------------------------------------------------------
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -26,61 +23,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const frameworkIdParam = searchParams.get("frameworkId");
-  const typeParam = searchParams.get("type"); // "EIGHT_FOUR_FOUR" | "CBE" — convenience alt to frameworkId
-
-  let frameworkId: string | null = frameworkIdParam;
-
-  if (!frameworkId && typeParam) {
-    // Explicit framework type requested — e.g. CBE dashboards asking for CBE
-    // periods specifically, instead of silently falling back to 8-4-4 below.
-    const fw = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: typeParam, isActive: true },
-      select: { id: true },
-    }) ?? await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: typeParam },
-      orderBy: { academicYear: "desc" },
-      select: { id: true },
-    });
-    frameworkId = fw?.id ?? null;
-  } else if (!frameworkId) {
-    // Prefer an active 8-4-4 framework; fall back to any active framework;
-    // final fallback to most-recent inactive 8-4-4 so periods remain visible
-    // even after a year rollover deactivates the old framework.
-    const fw844Active = await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },
-      select: { id: true },
-    });
-    const fwAnyActive = fw844Active ?? await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, isActive: true },
-      orderBy: { academicYear: "desc" },
-      select: { id: true },
-    });
-    const fwFallback = fwAnyActive ?? await db.assessmentFramework.findFirst({
-      where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR" },
-      orderBy: { academicYear: "desc" },
-      select: { id: true },
-    });
-    frameworkId = fwFallback?.id ?? null;
-  } else {
-    // Verify this framework belongs to the user's school.
-    const framework = await db.assessmentFramework.findUnique({
-      where: { id: frameworkId },
-      select: { id: true, schoolId: true },
-    });
-    if (!framework || framework.schoolId !== user.schoolId!) {
-      return NextResponse.json({ error: "Framework not found" }, { status: 404 });
-    }
-  }
-
-  if (!frameworkId) {
-    return NextResponse.json({ periods: [] });
-  }
-
   const periods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId!, frameworkId },
-    orderBy: [{ term: "asc" }, { name: "asc" }],
+    where: { schoolId: user.schoolId! },
+    orderBy: [{ academicYear: "desc" }, { term: "asc" }, { name: "asc" }],
     select: {
       id: true,
       name: true,
@@ -97,9 +42,12 @@ export async function GET(request: Request) {
 
 // ---------------------------------------------------------------------------
 // POST /api/assessments/periods
-// Creates a new assessment period.
+// Creates a new assessment period — shared by every framework at the school
+// (e.g. "Term 3 Opener 2026" is the same period whether a class is 8-4-4 or
+// CBE). Which grading scale applies is decided per-class, never per-period,
+// so this no longer takes a frameworkId at all.
 // Principal only.
-// Body: { frameworkId, name, academicYear, term?, weight?, maxMarks? }
+// Body: { name, academicYear, term?, weight?, maxMarks? }
 // ---------------------------------------------------------------------------
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -109,8 +57,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  const { frameworkId, name, academicYear, term, weight, maxMarks } = body as {
-    frameworkId?: string;
+  const { name, academicYear, term, weight, maxMarks } = body as {
     name?: string;
     academicYear?: string;
     term?: number | null;
@@ -118,27 +65,17 @@ export async function POST(request: Request) {
     maxMarks?: number | null;
   };
 
-  if (!frameworkId || !name || !academicYear) {
+  if (!name || !academicYear) {
     return NextResponse.json(
-      { error: "frameworkId, name, and academicYear are required" },
+      { error: "name and academicYear are required" },
       { status: 422 }
     );
-  }
-
-  // Verify framework belongs to this school.
-  const framework = await db.assessmentFramework.findUnique({
-    where: { id: frameworkId },
-    select: { id: true, schoolId: true },
-  });
-  if (!framework || framework.schoolId !== user.schoolId!) {
-    return NextResponse.json({ error: "Framework not found" }, { status: 404 });
   }
 
   try {
     const period = await db.assessmentPeriod.create({
       data: {
         schoolId: user.schoolId!,
-        frameworkId,
         name: name.trim(),
         academicYear: academicYear.trim(),
         term: term ?? null,
@@ -159,7 +96,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ period }, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "A period with this name already exists for this framework and year." },
+      { error: "A period with this name already exists for this year." },
       { status: 409 }
     );
   }

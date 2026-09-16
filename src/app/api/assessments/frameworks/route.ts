@@ -53,7 +53,7 @@ export async function GET() {
       academicYear: true,
       isActive: true,
       createdAt: true,
-      _count: { select: { periods: true, items: true } },
+      _count: { select: { items: true } },
     },
   });
 
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       academicYear: true,
       isActive: true,
       createdAt: true,
-      _count: { select: { periods: true, items: true } },
+      _count: { select: { items: true } },
     },
   });
 

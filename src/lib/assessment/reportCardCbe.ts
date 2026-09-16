@@ -10,12 +10,10 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import {
-  pathwayScore,
-  DEFAULT_PATHWAY_WEIGHT,
-  type PerformanceLevel,
-} from "@/lib/assessment/gradingCbe";
+import { type PerformanceLevel } from "@/lib/assessment/gradingCbe";
 import { resolveCbeGrade } from "@/lib/assessment/gradingScale";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import { subjectScore } from "@/lib/assessment/grading844";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -71,15 +69,12 @@ export interface JuniorReportCardData {
 
 export interface SeniorSubjectResult {
   subject: { id: string; name: string; code: string };
-  sbaScore: number | null;
-  examScore: number | null;
-  sbaMaxMarks: number;
-  examMaxMarks: number;
-  sbaWeight: number;
-  examWeight: number;
-  /** Weighted combined percentage (0–100). Null if either score is missing. */
+  /** Combined percentage (0–100) across however many papers this subject
+   * has — entry is identical to 8-4-4, so there is no fixed SBA/exam split
+   * to report separately any more. Null if no papers have a score yet. */
   weightedScore: number | null;
-  /** Indicative grade band derived from weightedScore (e.g. "A", "B+"). */
+  /** Indicative grade band derived from weightedScore, from the school's
+   * CBE grading scale (e.g. "EE1", "ME2"). */
   indicativeGrade: string | null;
 }
 
@@ -129,17 +124,20 @@ export async function buildJuniorReportCard(
   });
   if (!student) return null;
 
-  const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId, framework: { type: "CBE", isActive: true } },
-    select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-  }) as { id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null;
-  if (!period) return null;
+  const [period, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
+    resolveActiveFramework(schoolId, "CBE"),
+  ]);
+  if (!period || !cbeFramework) return null;
 
   const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } });
 
   // Fetch the full CBE hierarchy scoped to this framework.
   const learningAreas = await db.learningArea.findMany({
-    where: { frameworkId: period.frameworkId, schoolId },
+    where: { frameworkId: cbeFramework.id, schoolId },
     orderBy: { name: "asc" },
     select: {
       id: true, name: true,
@@ -245,11 +243,14 @@ export async function buildSeniorReportCard(
   });
   if (!student) return null;
 
-  const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId, framework: { type: "CBE", isActive: true } },
-    select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-  }) as { id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null;
-  if (!period) return null;
+  const [period, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
+    resolveActiveFramework(schoolId, "CBE"),
+  ]);
+  if (!period || !cbeFramework) return null;
 
   const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } });
 
@@ -259,12 +260,13 @@ export async function buildSeniorReportCard(
     select: { id: true, name: true, code: true },
   });
 
-  // Papers (SBA = paper 0, Exam = paper 1 by convention).
+  // Entry is identical to 8-4-4 — any number of generically-named papers
+  // per subject, no fixed SBA/exam pairing.
   const papers = await db.paper.findMany({
-    where: { frameworkId: period.frameworkId, subjectId: { in: subjects.map((s) => s.id) } },
+    where: { frameworkId: cbeFramework.id, subjectId: { in: subjects.map((s) => s.id) } },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true, maxMarks: true, subjectId: true, sortOrder: true },
-  }) as Array<{ id: string; name: string; maxMarks: number; subjectId: string; sortOrder: number }>;
+    select: { id: true, maxMarks: true, subjectId: true },
+  }) as Array<{ id: string; maxMarks: number; subjectId: string }>;
 
   const papersBySubject = new Map<string, typeof papers>();
   for (const p of papers) {
@@ -273,45 +275,25 @@ export async function buildSeniorReportCard(
     papersBySubject.set(p.subjectId, arr);
   }
 
-  // Pathway weights.
-  const rawWeights = await db.pathwayWeight.findMany({
-    where: { frameworkId: period.frameworkId, schoolId, subjectId: { in: subjects.map((s) => s.id) } },
-    select: { subjectId: true, sbaWeight: true, examWeight: true, sbaMaxMarks: true, examMaxMarks: true },
-  }) as Array<{ subjectId: string; sbaWeight: number; examWeight: number; sbaMaxMarks: number; examMaxMarks: number }>;
-  const weightMap = new Map(rawWeights.map((w) => [w.subjectId, w]));
-
-  // Items (numeric scores).
   const items = await db.assessmentItem.findMany({
     where: { periodId, studentId, schoolId, resultKind: "NUMERIC" },
     select: { subjectId: true, paperId: true, numericScore: true },
   }) as Array<{ subjectId: string | null; paperId: string | null; numericScore: number | null }>;
+  const itemScoreMap = new Map(items.map((i) => [i.paperId ?? "", i.numericScore]));
 
   const subjectResults: SeniorSubjectResult[] = await Promise.all(subjects.map(async (subj) => {
-    const w = weightMap.get(subj.id) ?? DEFAULT_PATHWAY_WEIGHT;
     const sPapers = papersBySubject.get(subj.id) ?? [];
-    const sbaId  = (sPapers.find((p) => /sba|school/i.test(p.name))?.id ?? sPapers[0]?.id) as string | undefined;
-    const examId = (sPapers.find((p) => /exam|external/i.test(p.name))?.id ?? sPapers[1]?.id) as string | undefined;
+    const scores   = sPapers.map((p) => itemScoreMap.get(p.id) ?? null);
+    const maxMarks = sPapers.map((p) => p.maxMarks);
+    const pct = subjectScore(scores, maxMarks);
 
-    const sbaItem  = items.find((i) => i.paperId === (sbaId  ?? null));
-    const examItem = items.find((i) => i.paperId === (examId ?? null));
-    const sbaScore  = sbaItem?.numericScore  ?? null;
-    const examScore = examItem?.numericScore ?? null;
-
-    const ws    = pathwayScore(sbaScore, examScore, w.sbaWeight, w.examWeight, w.sbaMaxMarks, w.examMaxMarks);
-    // Resolve grade from the school's active scale (DB-driven, falls back to govt default).
-    const gradeResult = ws !== null ? await resolveCbeGrade(schoolId, ws, 100) : null;
-    const grade = gradeResult?.bandName ?? null;
+    // Resolve grade from the school's active CBE scale (falls back to govt default).
+    const gradeResult = pct !== null ? await resolveCbeGrade(schoolId, pct, 100) : null;
 
     return {
-      subject:        { id: subj.id, name: subj.name, code: subj.code },
-      sbaScore,
-      examScore,
-      sbaMaxMarks:    w.sbaMaxMarks,
-      examMaxMarks:   w.examMaxMarks,
-      sbaWeight:      w.sbaWeight,
-      examWeight:     w.examWeight,
-      weightedScore:  ws !== null ? Math.round(ws * 10) / 10 : null,
-      indicativeGrade: grade,
+      subject:         { id: subj.id, name: subj.name, code: subj.code },
+      weightedScore:   pct !== null ? Math.round(pct * 10) / 10 : null,
+      indicativeGrade: gradeResult?.bandName ?? null,
     };
   }));
 
@@ -342,15 +324,15 @@ export async function buildCbeReportCard(
   schoolId: string
 ): Promise<CbeReportCardData | null> {
   // Determine which branch to use from the framework's content.
-  const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId, framework: { type: "CBE", isActive: true } },
-    select: { frameworkId: true },
-  }) as { frameworkId: string } | null;
-  if (!period) return null;
+  const [period, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({ where: { id: periodId, schoolId }, select: { id: true } }),
+    resolveActiveFramework(schoolId, "CBE"),
+  ]);
+  if (!period || !cbeFramework) return null;
 
   const [laCount, paperCount] = await Promise.all([
-    db.learningArea.count({ where: { frameworkId: period.frameworkId } }),
-    db.paper.count({ where: { frameworkId: period.frameworkId } }),
+    db.learningArea.count({ where: { frameworkId: cbeFramework.id } }),
+    db.paper.count({ where: { frameworkId: cbeFramework.id } }),
   ]);
 
   // Prefer Junior (performance-level) when learning areas exist.
@@ -381,11 +363,14 @@ export async function buildCbeClassReportCards(
   });
   if (!schoolClass) return null;
 
-  const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId, framework: { type: "CBE", isActive: true } },
-    select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-  }) as { id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null;
-  if (!period) return null;
+  const [period, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
+    resolveActiveFramework(schoolId, "CBE"),
+  ]);
+  if (!period || !cbeFramework) return null;
 
   const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { name: true } });
 
@@ -396,7 +381,7 @@ export async function buildCbeClassReportCards(
   });
 
   const [laCount] = await Promise.all([
-    db.learningArea.count({ where: { frameworkId: period.frameworkId } }),
+    db.learningArea.count({ where: { frameworkId: cbeFramework.id } }),
   ]);
   const kind: CbeReportKind = laCount > 0 ? "JUNIOR" : "SENIOR";
 

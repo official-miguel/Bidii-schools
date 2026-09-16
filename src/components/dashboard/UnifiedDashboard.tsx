@@ -443,7 +443,7 @@ async function fetchHODData(schoolId: string, departmentId: string) {
 
     if (currentFramework) {
       const currentPeriod = await prisma.assessmentPeriod.findFirst({
-        where: { schoolId, frameworkId: currentFramework.id, isCurrent: true },
+        where: { schoolId, isCurrent: true },
         select: { id: true },
       });
 

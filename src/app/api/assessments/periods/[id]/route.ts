@@ -8,7 +8,9 @@ const db = prisma as any;
 // ---------------------------------------------------------------------------
 // PATCH /api/assessments/periods/[id]
 // Update period fields and/or mark it as the current active period.
-// When isCurrent = true, all other periods in the same framework are cleared.
+// When isCurrent = true, all other periods for the school are cleared —
+// periods are shared across every framework, so there is exactly one
+// "current" period at a time, not one per framework.
 // Principal only.
 // Body: { name?, academicYear?, term?, weight?, maxMarks?, isCurrent? }
 // ---------------------------------------------------------------------------
@@ -22,7 +24,7 @@ export async function PATCH(
 
   const period = await db.assessmentPeriod.findUnique({
     where: { id: params.id },
-    select: { id: true, schoolId: true, frameworkId: true },
+    select: { id: true, schoolId: true },
   });
   if (!period || period.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -31,10 +33,11 @@ export async function PATCH(
   const body = await request.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  // If setting isCurrent = true, first clear the flag on all sibling periods.
+  // If setting isCurrent = true, first clear the flag on every other period
+  // at this school.
   if (body.isCurrent === true) {
     await db.assessmentPeriod.updateMany({
-      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId! },
       data: { isCurrent: false },
     });
   }

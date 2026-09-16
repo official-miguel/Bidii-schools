@@ -19,7 +19,7 @@ export default async function PeriodsPage() {
 
   const periods = framework
     ? await db.assessmentPeriod.findMany({
-        where: { schoolId: user.schoolId!, frameworkId: framework.id },
+        where: { schoolId: user.schoolId! },
         orderBy: [{ term: "asc" }, { name: "asc" }],
       }) as Array<{ id: string; name: string; term: number | null; academicYear: string; isCurrent: boolean }>
     : [];

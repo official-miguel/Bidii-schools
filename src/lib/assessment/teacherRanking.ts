@@ -76,15 +76,14 @@ export async function computeTeacherRanking(
   // ---- 2. Current period info ------------------------------------------------
   const currentPeriod = await db.assessmentPeriod.findFirst({
     where: { id: periodId, schoolId },
-    select: { id: true, frameworkId: true, term: true, academicYear: true },
-  }) as { id: string; frameworkId: string; term: number | null; academicYear: string } | null;
+    select: { id: true, term: true, academicYear: true },
+  }) as { id: string; term: number | null; academicYear: string } | null;
 
   if (!currentPeriod) return [];
 
-  // ---- 3. Previous period (same framework, term - 1 or last period) ----------
+  // ---- 3. Previous period (term - 1, or last period before this year) --------
   const previousPeriod = await resolvePreviousPeriod(
     schoolId,
-    currentPeriod.frameworkId,
     currentPeriod.term,
     currentPeriod.academicYear
   );
@@ -292,18 +291,17 @@ async function loadWeights(schoolId: string): Promise<RankingWeights> {
 
 async function resolvePreviousPeriod(
   schoolId: string,
-  frameworkId: string,
   term: number | null,
   academicYear: string
 ): Promise<{ id: string } | null> {
   if (term && term > 1) {
     return db.assessmentPeriod.findFirst({
-      where: { schoolId, frameworkId, term: term - 1, academicYear },
+      where: { schoolId, term: term - 1, academicYear },
       select: { id: true },
     }) as Promise<{ id: string } | null>;
   }
   return db.assessmentPeriod.findFirst({
-    where: { schoolId, frameworkId, academicYear: { lt: academicYear } },
+    where: { schoolId, academicYear: { lt: academicYear } },
     orderBy: [{ academicYear: "desc" }, { term: "desc" }],
     select: { id: true },
   }) as Promise<{ id: string } | null>;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { subjectScore, scoreToGrade, denseRank } from "@/lib/assessment/grading844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -34,36 +35,30 @@ export async function POST(req: NextRequest) {
   }
   const { periodId } = parsed.data;
 
-  // Verify the period belongs to this school and uses the 8-4-4 framework.
-  const period = await db.assessmentPeriod.findFirst({
-    where: { id: periodId, schoolId: user.schoolId! },
-    select: {
-      id: true,
-      name: true,
-      academicYear: true,
-      term: true,
-      frameworkId: true,
-      framework: { select: { type: true, isActive: true } },
-    },
-  }) as {
-    id: string; name: string; academicYear: string; term: number | null;
-    frameworkId: string;
-    framework: { type: string; isActive: boolean };
-  } | null;
+  // Periods are shared across every framework now — verify it belongs to
+  // this school, and separately resolve the active 8-4-4 framework this
+  // endpoint is scoped to.
+  const [period, activeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
+    resolveActiveFramework(user.schoolId!, "EIGHT_FOUR_FOUR"),
+  ]);
 
   if (!period) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
-  if (period.framework.type !== "EIGHT_FOUR_FOUR" || !period.framework.isActive) {
+  if (!activeFramework) {
     return NextResponse.json(
       { error: "Top-10 achievements are only supported for the active 8-4-4 framework." },
       { status: 422 }
     );
   }
 
-  // ── Load all classes for this school ─────────────────────────────────────
+  // ── Load all 8-4-4 classes for this school ────────────────────────────────
   const classes = await prisma.schoolClass.findMany({
-    where: { schoolId: user.schoolId! },
+    where: { schoolId: user.schoolId!, frameworkType: "EIGHT_FOUR_FOUR" },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: { id: true, name: true, form: true },
   });
@@ -101,7 +96,7 @@ export async function POST(req: NextRequest) {
     [...subjectsByForm.values()].flatMap((subs) => subs.map((s) => s.id))
   )];
   const allPapers = await db.paper.findMany({
-    where: { schoolId: user.schoolId!, frameworkId: period.frameworkId, subjectId: { in: allSubjectIds } },
+    where: { schoolId: user.schoolId!, frameworkId: activeFramework.id, subjectId: { in: allSubjectIds } },
     select: { id: true, maxMarks: true, subjectId: true },
   }) as Array<{ id: string; maxMarks: number; subjectId: string }>;
 

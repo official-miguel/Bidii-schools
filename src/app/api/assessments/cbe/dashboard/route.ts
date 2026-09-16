@@ -46,9 +46,9 @@ export async function GET(req: NextRequest) {
   // period and schoolClass are independent — fetch in parallel.
   const [period, schoolClass] = await Promise.all([
     db.assessmentPeriod.findFirst({
-      where: { id: periodId, schoolId: user.schoolId!, framework: { type: "CBE", isActive: true } },
-      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
-    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null; frameworkId: string } | null>,
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true, name: true, academicYear: true, term: true },
+    }) as Promise<{ id: string; name: string; academicYear: string; term: number | null } | null>,
 
     prisma.schoolClass.findFirst({
       where: { id: classId, schoolId: user.schoolId! },

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import {
   subjectScore,
   scoreToGrade,
@@ -55,18 +56,21 @@ async function scorecardHandler(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [actor, period] = await Promise.all([
+  const [actor, period, activeFramework] = await Promise.all([
     resolveAssessmentActor(user, user.schoolId!),
     db.assessmentPeriod.findFirst({
       where: { id: periodId, schoolId: user.schoolId! },
-      select: { id: true, frameworkId: true },
+      select: { id: true },
     }),
+    resolveActiveFramework(user.schoolId!, "EIGHT_FOUR_FOUR"),
   ]);
 
   if (!canAccessDashboard(actor))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!period)
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
+  if (!activeFramework)
+    return NextResponse.json({ error: "No active 8-4-4 framework found." }, { status: 404 });
 
   // ── Resolve scope: single class or whole form ─────────────────────────────
   let resolvedForm: number;
@@ -87,9 +91,13 @@ async function scorecardHandler(req: NextRequest) {
   }
 
   // ── Batch 2: classes + rankingConfig — run concurrently ───────────────────
+  // This scorecard is KCSE-specific (grading via grading844) — scope to
+  // 8-4-4 classes only so a mixed-framework "whole form" request never
+  // pulls in a CBE class it has no meaningful KCSE grade for.
   const classWhere: Record<string, unknown> = {
     schoolId: user.schoolId!,
     form: resolvedForm,
+    frameworkType: "EIGHT_FOUR_FOUR",
   };
   if (classId) classWhere.id = classId;
 
@@ -126,7 +134,7 @@ async function scorecardHandler(req: NextRequest) {
       select: { id: true, name: true, code: true },
     }),
     db.paper.findMany({
-      where: { schoolId: user.schoolId!, frameworkId: period.frameworkId },
+      where: { schoolId: user.schoolId!, frameworkId: activeFramework.id },
       select: { id: true, subjectId: true, maxMarks: true },
     }),
   ]);

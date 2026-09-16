@@ -51,19 +51,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "periodId is required." }, { status: 400 });
   }
 
-  // Resolve the framework from the supplied period.
   const periodRow = await db.assessmentPeriod.findFirst({
     where: { id: periodId, schoolId: user.schoolId! },
-    select: { frameworkId: true },
-  }) as { frameworkId: string } | null;
+    select: { id: true },
+  }) as { id: string } | null;
 
   if (!periodRow) {
     return NextResponse.json({ error: "Period not found." }, { status: 404 });
   }
 
-  // All periods for this framework, chronological.
+  // All periods for the school, chronological — periods are shared across
+  // every framework now.
   const allPeriods = await db.assessmentPeriod.findMany({
-    where: { schoolId: user.schoolId!, frameworkId: periodRow.frameworkId },
+    where: { schoolId: user.schoolId! },
     orderBy: [{ academicYear: "asc" }, { term: "asc" }],
     select: { id: true, name: true, term: true, academicYear: true },
   }) as Array<{ id: string; name: string; term: number | null; academicYear: string }>;

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canEnterMarks } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import type { FrameworkType } from "@prisma/client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -72,8 +74,9 @@ export async function POST(req: NextRequest) {
     }, { status: 403 });
   }
 
-  type PeriodRow = { id: string; frameworkId: string };
-  type PaperRow  = { id: string; maxMarks: number; frameworkId: string };
+  type PeriodRow  = { id: string };
+  type PaperRow   = { id: string; maxMarks: number; frameworkId: string };
+  type StudentRow = { id: string; classId: string; schoolClass: { frameworkType: FrameworkType } };
 
   const uniquePeriodIds  = [...new Set(items.map((i) => i.periodId))];
   const uniqueStudentIds = [...new Set(items.map((i) => i.studentId))];
@@ -85,13 +88,13 @@ export async function POST(req: NextRequest) {
         id: { in: uniquePeriodIds },
         schoolId: user.schoolId!,
       },
-      select: { id: true, frameworkId: true },
+      select: { id: true },
     }) as Promise<PeriodRow[]>,
 
     prisma.student.findMany({
       where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId! },
-      select: { id: true, classId: true },
-    }),
+      select: { id: true, classId: true, schoolClass: { select: { frameworkType: true } } },
+    }) as Promise<StudentRow[]>,
 
     db.paper.findMany({
       where: { id: { in: uniquePaperIds }, subjectId, schoolId: user.schoolId! },
@@ -102,6 +105,19 @@ export async function POST(req: NextRequest) {
   const periodMap  = new Map(periodsRaw.map((p) => [p.id, p]));
   const studentMap = new Map(students.map((s) => [s.id, s]));
   const paperMap   = new Map(papersRaw.map((p) => [p.id, p]));
+
+  // Resolve the active framework id for every distinct class framework
+  // present in this batch, so each item's paper can be checked against the
+  // framework its own student's class actually uses — periods no longer
+  // carry a framework of their own to compare against.
+  const distinctFrameworkTypes = [...new Set(students.map((s) => s.schoolClass.frameworkType))];
+  const frameworkIdByType = new Map<FrameworkType, string>();
+  await Promise.all(
+    distinctFrameworkTypes.map(async (type) => {
+      const fw = await resolveActiveFramework(user.schoolId!, type);
+      if (fw) frameworkIdByType.set(type, fw.id);
+    })
+  );
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const errors: Array<{ index: number; message: string }> = [];
@@ -130,10 +146,10 @@ export async function POST(req: NextRequest) {
       authFailure = true;
       continue;
     }
-    const period = periodMap.get(item.periodId)!;
-    const paper  = paperMap.get(item.paperId)!;
-    if (paper.frameworkId !== period.frameworkId) {
-      errors.push({ index: i, message: `Paper ${item.paperId} belongs to a different curriculum framework than this exam period.` });
+    const paper = paperMap.get(item.paperId)!;
+    const expectedFrameworkId = frameworkIdByType.get(student.schoolClass.frameworkType);
+    if (!expectedFrameworkId || paper.frameworkId !== expectedFrameworkId) {
+      errors.push({ index: i, message: `Paper ${item.paperId} belongs to a different curriculum framework than this student's class.` });
       continue;
     }
     if (item.score !== null) {
@@ -169,7 +185,8 @@ export async function POST(req: NextRequest) {
         let idx = 1;
 
         for (const item of toUpsert) {
-          const period = periodMap.get(item.periodId)!;
+          const student = studentMap.get(item.studentId)!;
+          const itemFrameworkId = frameworkIdByType.get(student.schoolClass.frameworkType)!;
           // Each row: (id, schoolId, frameworkId, periodId, studentId, paperId, subjectId,
           //            resultKind, numericScore, enteredById)
           // A crypto-random id — the previous scheme truncated the source ids
@@ -182,7 +199,7 @@ export async function POST(req: NextRequest) {
             `($${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},'NUMERIC',$${idx++},$${idx++},NOW(),NOW())`
           );
           valueArgs.push(
-            id, schoolId, period.frameworkId, item.periodId,
+            id, schoolId, itemFrameworkId, item.periodId,
             item.studentId, item.paperId, subjectId,
             item.score, enteredById
           );

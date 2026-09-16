@@ -505,12 +505,9 @@ export default function CbeDashboardEnhanced({ classes, defaultClassId, cbeOnly 
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  // Load periods — scoped to the CBE framework specifically. Omitting this
-  // defaults to the active 8-4-4 framework's periods (see the periods
-  // route), which silently picks a period id the CBE endpoints below don't
-  // recognize and every fetch 404s with "Period not found."
+  // Periods are shared across every framework now.
   useEffect(() => {
-    fetch("/api/assessments/periods?type=CBE")
+    fetch("/api/assessments/periods")
       .then((r) => r.json())
       .then((j) => {
         if (j.periods?.length) {

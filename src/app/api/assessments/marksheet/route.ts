@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canViewMarksheet } from "@/lib/assessment/auth844";
+import type { FrameworkType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
@@ -32,14 +33,15 @@ export async function GET(req: NextRequest) {
   });
   if (!schoolClass) return NextResponse.json({ error: "Class not found." }, { status: 404 });
 
-  const classFrameworkType = schoolClass.frameworkType as string;
+  const classFrameworkType = schoolClass.frameworkType as FrameworkType;
 
-  // PERF: period, subject, and students are all independent of each other —
-  // run them in parallel instead of three sequential round-trips.
-  const [period, subject, students] = await Promise.all([
+  // Periods are shared across every framework now — only Papers are still
+  // framework-scoped, resolved from the CLASS's own frameworkType, never
+  // from the period (which no longer carries one).
+  const [period, subject, students, activeFramework] = await Promise.all([
     prisma.assessmentPeriod.findFirst({
       where: { id: periodId, schoolId: user.schoolId! },
-      select: { id: true, name: true, academicYear: true, term: true, frameworkId: true },
+      select: { id: true, name: true, academicYear: true, term: true },
     }),
     prisma.subject.findFirst({
       where: { id: subjectId, schoolId: user.schoolId! },
@@ -50,25 +52,35 @@ export async function GET(req: NextRequest) {
       orderBy: { admissionNumber: "asc" },
       select: { id: true, fullName: true, admissionNumber: true },
     }),
+    prisma.assessmentFramework.findFirst({
+      where: { schoolId: user.schoolId!, type: classFrameworkType, isActive: true },
+      select: { id: true },
+    }),
   ]);
 
   if (!period) return NextResponse.json({ error: "Period not found." }, { status: 404 });
   if (!subject) return NextResponse.json({ error: "Subject not found." }, { status: 404 });
+  if (!activeFramework) return NextResponse.json({ error: "No active framework configured for this class." }, { status: 404 });
 
-  // Papers depend on period.frameworkId so they must come after period resolves.
   const papers: Array<{ id: string; name: string; maxMarks: number; sortOrder: number }> =
     await prisma.paper.findMany({
       where: {
         subjectId,
         schoolId: user.schoolId!,
-        frameworkId: period.frameworkId,
+        frameworkId: activeFramework.id,
       },
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true, maxMarks: true, sortOrder: true },
     });
 
+  // The client uses period.frameworkId purely to scope Paper-related actions
+  // (Add Paper, department formulas) — attach the class's own active
+  // framework here rather than changing every client call site, even though
+  // the period itself is no longer framework-specific.
+  const periodWithFramework = { ...period, frameworkId: activeFramework.id };
+
   if (students.length === 0) {
-    return NextResponse.json({ period, subject, schoolClass, papers, rows: [] });
+    return NextResponse.json({ period: periodWithFramework, subject, schoolClass, papers, rows: [] });
   }
 
   const studentIds = students.map((s) => s.id);
@@ -101,5 +113,5 @@ export async function GET(req: NextRequest) {
     return { student, scores };
   });
 
-  return NextResponse.json({ period, subject, schoolClass, papers, rows });
+  return NextResponse.json({ period: periodWithFramework, subject, schoolClass, papers, rows });
 }

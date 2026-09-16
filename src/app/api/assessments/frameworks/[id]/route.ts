@@ -45,7 +45,7 @@ export async function PATCH(
       academicYear: true,
       isActive: true,
       createdAt: true,
-      _count: { select: { periods: true, items: true } },
+      _count: { select: { items: true } },
     },
   });
 

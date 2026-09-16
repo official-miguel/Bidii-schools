@@ -164,20 +164,15 @@ async function detect844AtRisk(
   classId: string,
   currentPeriodId: string
 ): Promise<AtRiskReport> {
-  const fw = await db.assessmentFramework.findFirst({
-    where: { schoolId, type: "EIGHT_FOUR_FOUR", isActive: true },
-    select: { id: true },
-  }) as { id: string } | null;
-
-  const period = fw ? await db.assessmentPeriod.findFirst({
-    where: { id: currentPeriodId, frameworkId: fw.id },
+  // Periods are shared across every framework now — no frameworkId filter.
+  const period = await db.assessmentPeriod.findFirst({
+    where: { id: currentPeriodId, schoolId },
     select: { id: true, name: true, term: true, academicYear: true },
-  }) : null;
+  }) as { id: string; name: string; term: number | null; academicYear: string } | null;
 
   // Find the previous period (same academic year, lower term).
-  const prevPeriod = fw && period ? await db.assessmentPeriod.findFirst({
+  const prevPeriod = period ? await db.assessmentPeriod.findFirst({
     where: {
-      frameworkId: fw.id,
       schoolId,
       academicYear: period.academicYear,
       term: period.term != null ? { lt: period.term } : undefined,
@@ -195,10 +190,10 @@ async function detect844AtRisk(
 
   for (const student of students) {
     // Compute current mean.
-    const curItems = fw ? await db.assessmentItem.findMany({
+    const curItems = await db.assessmentItem.findMany({
       where: { periodId: currentPeriodId, studentId: student.id, schoolId, resultKind: "NUMERIC" },
       select: { paperId: true, subjectId: true, numericScore: true },
-    }) : [];
+    });
 
     const curPoints = computeStudentMeanPoints844(curItems);
 
@@ -252,19 +247,15 @@ async function detectCbeAtRisk(
   classId: string,
   currentPeriodId: string
 ): Promise<AtRiskReport> {
-  const fw = await db.assessmentFramework.findFirst({
-    where: { schoolId, type: "CBE", isActive: true },
-    select: { id: true },
-  }) as { id: string } | null;
-
-  const period = fw ? await db.assessmentPeriod.findFirst({
-    where: { id: currentPeriodId, frameworkId: fw.id },
+  // Periods are shared across every framework now — no frameworkId filter.
+  const period = await db.assessmentPeriod.findFirst({
+    where: { id: currentPeriodId, schoolId },
     select: { id: true, name: true, term: true, academicYear: true },
-  }) : null;
+  }) as { id: string; name: string; term: number | null; academicYear: string } | null;
 
-  const prevPeriod = fw && period ? await db.assessmentPeriod.findFirst({
+  const prevPeriod = period ? await db.assessmentPeriod.findFirst({
     where: {
-      frameworkId: fw.id, schoolId,
+      schoolId,
       academicYear: period.academicYear,
       term: period.term != null ? { lt: period.term } : undefined,
     },
@@ -311,41 +302,65 @@ async function detectCbeAtRisk(
       }
     }
 
-    // --- Senior CBE: detect widening SBA/exam gap ---
-    const numericItems = await db.assessmentItem.findMany({
-      where: { periodId: currentPeriodId, studentId: student.id, schoolId, resultKind: "NUMERIC" },
-      select: { subjectId: true, paperId: true, numericScore: true },
-    }) as Array<{ subjectId: string | null; paperId: string | null; numericScore: number | null }>;
+    // --- Senior CBE: detect a significant score drop vs the previous period ---
+    // Entry is identical to 8-4-4 now (any number of generic papers per
+    // subject) — there's no more fixed SBA/exam pairing to compare, so this
+    // compares each subject's overall % between the current and previous
+    // period instead.
+    if (prevPeriod) {
+      const [curItems, prevItems] = await Promise.all([
+        db.assessmentItem.findMany({
+          where: { periodId: currentPeriodId, studentId: student.id, schoolId, resultKind: "NUMERIC" },
+          select: { subjectId: true, paperId: true, numericScore: true },
+        }) as Promise<Array<{ subjectId: string | null; paperId: string | null; numericScore: number | null }>>,
+        db.assessmentItem.findMany({
+          where: { periodId: prevPeriod.id, studentId: student.id, schoolId, resultKind: "NUMERIC" },
+          select: { subjectId: true, paperId: true, numericScore: true },
+        }) as Promise<Array<{ subjectId: string | null; paperId: string | null; numericScore: number | null }>>,
+      ]);
 
-    if (numericItems.length >= 2) {
-      const sbaScores:  number[] = [];
-      const examScores: number[] = [];
+      const paperIds = [...new Set([...curItems, ...prevItems].map((i) => i.paperId).filter(Boolean))] as string[];
+      if (paperIds.length > 0) {
+        const papers = await db.paper.findMany({
+          where: { id: { in: paperIds } },
+          select: { id: true, maxMarks: true },
+        }) as Array<{ id: string; maxMarks: number }>;
+        const maxMarksByPaper = new Map(papers.map((p) => [p.id, p.maxMarks]));
 
-      // Group by subject — first paper = SBA, second = exam (by sortOrder convention).
-      const subjectIds = [...new Set(numericItems.map((i) => i.subjectId).filter(Boolean))] as string[];
-      for (const sid of subjectIds) {
-        const subItems = numericItems.filter((i) => i.subjectId === sid);
-        if (subItems.length >= 2) {
-          const sba  = subItems[0].numericScore;
-          const exam = subItems[1].numericScore;
-          if (sba !== null)  sbaScores.push(sba);
-          if (exam !== null) examScores.push(exam);
-        }
-      }
+        const pctBySubject = (items: typeof curItems) => {
+          const bySubject = new Map<string, { score: number; max: number }>();
+          for (const item of items) {
+            if (!item.subjectId || !item.paperId || item.numericScore === null) continue;
+            const max = maxMarksByPaper.get(item.paperId);
+            if (!max) continue;
+            const acc = bySubject.get(item.subjectId) ?? { score: 0, max: 0 };
+            acc.score += item.numericScore;
+            acc.max += max;
+            bySubject.set(item.subjectId, acc);
+          }
+          const out = new Map<string, number>();
+          for (const [sid, { score, max }] of bySubject) out.set(sid, max > 0 ? (score / max) * 100 : 0);
+          return out;
+        };
 
-      if (sbaScores.length > 0 && examScores.length > 0) {
-        const avgSba  = sbaScores.reduce((a, b) => a + b, 0) / sbaScores.length;
-        const avgExam = examScores.reduce((a, b) => a + b, 0) / examScores.length;
-        const gap = Math.abs(avgSba - avgExam);
-        if (gap >= 20) {
-          const already = atRisk.find((r) => r.studentId === student.id);
-          if (!already) {
-            atRisk.push({
-              studentId:   student.id,
-              studentName: student.fullName,
-              reason:      `Widening SBA/exam gap: SBA avg ${avgSba.toFixed(1)} vs exam avg ${avgExam.toFixed(1)} (gap ${gap.toFixed(1)} pts)`,
-              severity:    gap >= 30 ? "HIGH" : "MEDIUM",
-            });
+        const curPct  = pctBySubject(curItems);
+        const prevPct = pctBySubject(prevItems);
+
+        for (const [subjectId, cur] of curPct) {
+          const prev = prevPct.get(subjectId);
+          if (prev === undefined) continue;
+          const drop = prev - cur;
+          if (drop >= 20) {
+            const already = atRisk.find((r) => r.studentId === student.id);
+            if (!already) {
+              atRisk.push({
+                studentId:   student.id,
+                studentName: student.fullName,
+                reason:      `Score dropped ${drop.toFixed(1)} points in a subject vs the previous period (${prev.toFixed(1)}% → ${cur.toFixed(1)}%)`,
+                severity:    drop >= 30 ? "HIGH" : "MEDIUM",
+              });
+            }
+            break;
           }
         }
       }

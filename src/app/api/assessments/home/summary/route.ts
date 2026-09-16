@@ -70,19 +70,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Find all current periods (one per framework — both 8-4-4 and CBE can
-  // have a current period simultaneously).
-  const currentPeriods = await db.assessmentPeriod.findMany({
+  // Periods are shared across every framework now — one current period for
+  // the whole school.
+  const currentPeriod = await db.assessmentPeriod.findFirst({
     where: { schoolId: user.schoolId!, isCurrent: true },
-    select: { id: true, frameworkId: true, framework: { select: { type: true } } },
-  }) as Array<{ id: string; frameworkId: string; framework: { type: string } }>;
-
-  // For summary aggregations, use all current period IDs together so classes
-  // from both frameworks show correct stats in the same dashboard view.
-  const currentPeriodIds = currentPeriods.map((p) => p.id);
-  // Keep a single "currentPeriod" for backwards-compatible code paths that
-  // expect one period (e.g. early-return empty state check).
-  const currentPeriod = currentPeriods[0] ?? null;
+    select: { id: true },
+  }) as { id: string } | null;
+  const currentPeriodIds = currentPeriod ? [currentPeriod.id] : [];
 
   // Determine classes in scope.
   let classQuery: Record<string, unknown> = { schoolId: user.schoolId! };

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
+import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -66,17 +67,18 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Validate period belongs to school's active CBE framework.
-  const period = await db.assessmentPeriod.findFirst({
-    where: {
-      id: periodId,
-      schoolId: user.schoolId!,
-      framework: { type: "CBE", isActive: true },
-    },
-    select: { id: true, frameworkId: true },
-  }) as { id: string; frameworkId: string } | null;
+  const [period, cbeFramework] = await Promise.all([
+    db.assessmentPeriod.findFirst({
+      where: { id: periodId, schoolId: user.schoolId! },
+      select: { id: true },
+    }) as Promise<{ id: string } | null>,
+    resolveActiveFramework(user.schoolId!, "CBE"),
+  ]);
   if (!period) {
     return NextResponse.json({ error: "Period not found.", code: "NOT_FOUND" }, { status: 404 });
+  }
+  if (!cbeFramework) {
+    return NextResponse.json({ error: "No active CBE framework found.", code: "NOT_FOUND" }, { status: 404 });
   }
 
   // Validate student belongs to school.
@@ -103,7 +105,7 @@ export async function PUT(req: NextRequest) {
     where: { item_substrand: { studentId, periodId, subStrandId } },
     create: {
       schoolId: user.schoolId!,
-      frameworkId:      period.frameworkId,
+      frameworkId:      cbeFramework.id,
       periodId,
       studentId,
       subStrandId,

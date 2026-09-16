@@ -48,30 +48,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ cards: [] });
   }
 
-  // A teacher can hold both 8-4-4 and CBE classes at once, and each
-  // framework has its own independent set of periods — one dropdown value
-  // can only ever belong to one framework. Every card must use the period
-  // for its OWN class's framework: the explicitly-picked period when that's
-  // its framework, otherwise that framework's own current period. There is
-  // no sensible fallback to a period of a different framework — the ids
-  // don't even correspond to the same AssessmentFramework, so silently
-  // reusing one always produces a wrong "entered" count for the mismatched
-  // classes (this is what caused CBE classes to look done/not-done at
-  // random depending on whichever period happened to be selected).
-  const [explicitPeriodRows, currentPeriods, assignments] = await Promise.all([
+  // Periods are shared across every framework — one resolved period for
+  // every class this teacher is assigned to, regardless of that class's
+  // own frameworkType.
+  const [resolvedPeriod, assignments] = await Promise.all([
     periodIdParam
-      ? db.assessmentPeriod.findMany({
+      ? db.assessmentPeriod.findFirst({
           where: { id: periodIdParam, schoolId: user.schoolId! },
-          select: { id: true, name: true, frameworkId: true,
-                    framework: { select: { type: true } } },
-        }) as Promise<Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>>
-      : Promise.resolve([]),
-
-    db.assessmentPeriod.findMany({
-      where: { schoolId: user.schoolId!, isCurrent: true },
-      select: { id: true, name: true, frameworkId: true,
-                framework: { select: { type: true } } },
-    }) as Promise<Array<{ id: string; name: string; frameworkId: string; framework: { type: string } }>>,
+          select: { id: true, name: true },
+        }) as Promise<{ id: string; name: string } | null>
+      : db.assessmentPeriod.findFirst({
+          where: { schoolId: user.schoolId!, isCurrent: true },
+          select: { id: true, name: true },
+        }) as Promise<{ id: string; name: string } | null>,
 
     db.classSubjectTeacher.findMany({
       where: { teacherId: teacher.id },
@@ -88,21 +77,6 @@ export async function GET(req: Request) {
       subject: { id: string; name: string; code: string };
     }>>,
   ]);
-
-  // Map framework type → period: the explicitly-picked one for its own
-  // framework, that framework's current period for everyone else.
-  const periodByFrameworkType = new Map<string, typeof currentPeriods[0]>();
-  for (const p of currentPeriods) {
-    periodByFrameworkType.set(p.framework.type, p);
-  }
-  const explicitPeriod = explicitPeriodRows[0] ?? null;
-  if (explicitPeriod) {
-    periodByFrameworkType.set(explicitPeriod.framework.type, explicitPeriod);
-  }
-
-  // Convenience: pick the best single period for the legacy resolvedPeriod
-  // return value (used by the UI's dropdown display only).
-  const resolvedPeriod = explicitPeriod ?? currentPeriods[0] ?? null;
 
   if (assignments.length === 0) {
     return NextResponse.json({ cards: [], currentPeriod: resolvedPeriod });
@@ -122,13 +96,11 @@ export async function GET(req: Request) {
     studentCountRows.map((r) => [r.classId, r._count.id])
   );
 
-  // Batch 2: entered student IDs per (subjectId, classId), using each
-  // class's own resolved (framework-correct) period — not just whichever
-  // period(s) happened to be "current" globally.
+  // Batch 2: entered student IDs per (subjectId, classId) for the resolved
+  // (shared) period.
   let enteredMap = new Map<string, number>(); // key: "classId:subjectId"
-  const resolvedPeriods = [...periodByFrameworkType.values()];
-  if (resolvedPeriods.length > 0) {
-    const allPeriodIds = resolvedPeriods.map((p) => p.id);
+  if (resolvedPeriod) {
+    const allPeriodIds = [resolvedPeriod.id];
     const enteredItems = await db.assessmentItem.findMany({
       where: {
         schoolId: user.schoolId!,
@@ -156,8 +128,7 @@ export async function GET(req: Request) {
   }
 
   const cards: TeacherClassCard[] = assignments.map((a) => {
-    // Pick the current period that matches this class's framework type.
-    const period = periodByFrameworkType.get(a.schoolClass.frameworkType) ?? resolvedPeriod;
+    const period = resolvedPeriod;
     return {
       classId: a.classId,
       className: a.schoolClass.name,

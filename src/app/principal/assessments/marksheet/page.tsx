@@ -27,19 +27,17 @@ export default async function MarksheetPage({
   const selectedClass  = classes.find((c) => c.id === defaultClassId);
   const framework      = (selectedClass?.frameworkType ?? "EIGHT_FOUR_FOUR") as string;
 
-  // Resolve the current period scoped to this class's framework so DoneBar
-  // always uses the right framework's active period.
+  // The class's active framework — still needed to scope Papers/LearningAreas.
   const classFramework = await db.assessmentFramework.findFirst({
     where: { schoolId: user.schoolId!, type: framework, isActive: true },
     select: { id: true },
   }) as { id: string } | null;
 
-  const currentPeriod = classFramework
-    ? await db.assessmentPeriod.findFirst({
-        where: { schoolId: user.schoolId!, frameworkId: classFramework.id, isCurrent: true },
-        select: { id: true },
-      }) as { id: string } | null
-    : null;
+  // Periods are shared across every framework now.
+  const currentPeriod = await db.assessmentPeriod.findFirst({
+    where: { schoolId: user.schoolId!, isCurrent: true },
+    select: { id: true },
+  }) as { id: string } | null;
 
   const currentPeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
