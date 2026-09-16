@@ -65,13 +65,22 @@ export default async function StaffPortalLayout({
     if (!admitted) redirect(user.role === "TEACHER" ? "/teacher" : "/login");
   }
 
-  const [school, roleLabel] = await Promise.all([
+  // The top bar shows the person's name, not their role/title — a teacher
+  // routed in here via Full Admin Access is still "Felix Njeri", not
+  // "Deputy Principal". ADMIN_STAFF/BURSAR logins have no name field of
+  // their own in the schema, so they fall back to the role display label.
+  const [school, teacher, roleDisplayLabel] = await Promise.all([
     prisma.school.findUnique({
       where: { id: user.schoolId! },
       select: { name: true, motto: true },
     }),
+    user.role === "TEACHER"
+      ? prisma.teacher.findUnique({ where: { userId: user.id }, select: { fullName: true } })
+      : Promise.resolve(null),
     getRoleDisplayLabel(user),
   ]);
+
+  const roleLabel = teacher?.fullName ?? roleDisplayLabel;
 
   const visibleHubs = getVisibleHubs(perms ?? {});
 

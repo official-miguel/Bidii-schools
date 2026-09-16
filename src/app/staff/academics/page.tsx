@@ -20,6 +20,9 @@ export default async function StaffAcademicsHub() {
     : "/teacher/timetable";
 
   const contextItems = [
+    ...(perms.DEPARTMENTS?.canView
+      ? [{ href: "/staff/departments", label: "Departments" }]
+      : []),
     ...(perms.CLASSES?.canView
       ? [{ href: "/staff/classes", label: "Classes" }]
       : []),

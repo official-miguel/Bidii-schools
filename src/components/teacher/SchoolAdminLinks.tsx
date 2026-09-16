@@ -19,6 +19,7 @@ import { useId } from "react";
 import Link from "next/link";
 import {
   CalendarDays, Users, UserCheck, Archive, Landmark, Library,
+  BookOpen, Building2,
   type LucideIcon,
 } from "lucide-react";
 import { usePermissions } from "@/components/PermissionProvider";
@@ -36,11 +37,10 @@ interface AdminArea {
  * Ordered so the areas a teacher is most likely to hold come first.
  * Every href points into the staff portal, which is where these screens live.
  *
- * Classes, Subjects and Accommodation are deliberately absent. Their pages
- * under /staff are one-line redirects into /principal, which admits nobody but
- * the Principal — so a card for them would be a link to the login screen. They
- * belong here once those screens exist outside the Principal portal, and not
- * before: a signpost to a dead end is worse than no signpost.
+ * Accommodation is deliberately absent — that page is still a one-line
+ * redirect into /principal. Classes, Subjects and Departments now have real
+ * screens under /staff (guarded by the matching module permission), so they
+ * are listed here too.
  */
 const ADMIN_AREAS: AdminArea[] = [
   {
@@ -54,6 +54,24 @@ const ADMIN_AREAS: AdminArea[] = [
     title: "School Students",
     description: "The full student register, beyond the classes you teach.",
     Icon: Users,
+  },
+  {
+    module: "CLASSES", href: "/staff/classes",
+    title: "Classes",
+    description: "Create classes, streams, and assign class teachers.",
+    Icon: Users,
+  },
+  {
+    module: "SUBJECTS", href: "/staff/subjects",
+    title: "Subjects",
+    description: "The master subject list, curriculum frameworks, and forms.",
+    Icon: BookOpen,
+  },
+  {
+    module: "DEPARTMENTS", href: "/staff/departments",
+    title: "Departments",
+    description: "Departments, heads of department, and subject grouping.",
+    Icon: Building2,
   },
   {
     module: "STAFF", href: "/staff/directory",

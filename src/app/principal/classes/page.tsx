@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/Modal";
 import {
@@ -31,6 +32,9 @@ function FrameworkBadge({ type }: { type: string }) {
 }
 
 export default function ClassesPage() {
+  // Rendered at both /principal/classes and /staff/classes (the latter for
+  // anyone granted CLASSES management, e.g. a teacher with Full Admin Access).
+  const basePath = usePathname().startsWith("/staff") ? "/staff" : "/principal";
   const [classes, setClasses] = useState<SchoolClass[] | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
 
@@ -112,12 +116,12 @@ export default function ClassesPage() {
   return (
     <div>
       <ContextNavigation items={[
-        { href: "/principal/classes",    label: "Classes" },
-        { href: "/principal/subjects",   label: "Subjects" },
-        { href: "/principal/timetable",  label: "Timetable" },
-        { href: "/principal/attendance", label: "Attendance" },
-        { href: "/principal/calendar",   label: "Calendar" },
-        { href: "/principal/assessments",label: "Exams & Analysis" },
+        { href: `${basePath}/classes`,    label: "Classes" },
+        { href: `${basePath}/subjects`,   label: "Subjects" },
+        { href: `${basePath}/timetable`,  label: "Timetable" },
+        { href: `${basePath}/attendance`, label: "Attendance" },
+        { href: `${basePath}/calendar`,   label: "Calendar" },
+        { href: `${basePath}/assessments`,label: "Exams & Analysis" },
       ]} />
 
       <PageHeader
@@ -225,7 +229,7 @@ export default function ClassesPage() {
                     {/* Actions */}
                     <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-0.5">
-                        <Link href={`/principal/timetable?classId=${c.id}`}>
+                        <Link href={`${basePath}/timetable?classId=${c.id}`}>
                           <ActionIconButton
                             icon={<CalendarDays className="h-4 w-4" />}
                             label="View timetable"
@@ -402,7 +406,7 @@ export default function ClassesPage() {
         onClose={() => setDrawerClassId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <StaffProfileDrawer
         staffId={drawerStaffId}
@@ -410,7 +414,7 @@ export default function ClassesPage() {
         onClose={() => setDrawerStaffId(null)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
         onOpenClass={(id) => openClassDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <DepartmentWorkspaceDrawer
         departmentId={drawerDeptId}
@@ -418,7 +422,7 @@ export default function ClassesPage() {
         onClose={() => setDrawerDeptId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <SubjectWorkspaceDrawer
         subjectId={drawerSubjId}
@@ -426,7 +430,7 @@ export default function ClassesPage() {
         onClose={() => setDrawerSubjId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/Modal";
 import {
@@ -39,6 +40,9 @@ type Subject = {
 type SchoolClass = { id: string; name: string; form: number; stream: string | null };
 
 export default function SubjectsPage() {
+  // Rendered at both /principal/subjects and /staff/subjects (the latter for
+  // anyone granted SUBJECTS management, e.g. a teacher with Full Admin Access).
+  const basePath = usePathname().startsWith("/staff") ? "/staff" : "/principal";
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -416,7 +420,7 @@ export default function SubjectsPage() {
                 </select>
                 <p className="text-xs text-slate mt-1.5">
                   School-wide default. Override per class by opening the class in the{" "}
-                  <Link href="/principal/classes" className="text-teal hover:underline">
+                  <Link href={`${basePath}/classes`} className="text-teal hover:underline">
                     Classes
                   </Link>{" "}tab.
                 </p>
@@ -483,7 +487,7 @@ export default function SubjectsPage() {
               {classes.length === 0 ? (
                 <p className="text-xs text-slate mt-1">
                   No classes found.{" "}
-                  <Link href="/principal/classes" className="text-teal underline">
+                  <Link href={`${basePath}/classes`} className="text-teal underline">
                     Add classes first
                   </Link>{" "}
                   to select which forms this subject applies to.
@@ -534,7 +538,7 @@ export default function SubjectsPage() {
         onClose={() => setDrawerSubjId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <StaffProfileDrawer
         staffId={drawerStaffId}
@@ -542,7 +546,7 @@ export default function SubjectsPage() {
         onClose={() => setDrawerStaffId(null)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
         onOpenClass={(id) => openClassDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <DepartmentWorkspaceDrawer
         departmentId={drawerDeptId}
@@ -550,7 +554,7 @@ export default function SubjectsPage() {
         onClose={() => setDrawerDeptId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <ClassWorkspaceDrawer
         classId={drawerClassId}
@@ -558,7 +562,7 @@ export default function SubjectsPage() {
         onClose={() => setDrawerClassId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
     </div>
   );

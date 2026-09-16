@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { requireSchoolPermission } from "@/lib/permissions";
 
 const updateSchema = z.object({
   name: z.string().trim().min(2).optional(),
@@ -9,7 +10,9 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("DEPARTMENTS", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));
@@ -69,7 +72,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("DEPARTMENTS", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const existing = await prisma.department.findFirst({

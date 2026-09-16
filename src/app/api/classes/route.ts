@@ -71,7 +71,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await requireSchoolRole("PRINCIPAL");
+  const user =
+    (await requireSchoolRole("PRINCIPAL")) ??
+    (await requireSchoolPermission("CLASSES", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));

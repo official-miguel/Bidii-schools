@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import Modal from "@/components/Modal";
 import {
   PageHeader,
@@ -53,6 +54,9 @@ type DeptSubject = {
 };
 
 export default function DepartmentsPage() {
+  // Rendered at both /principal/departments and /staff/departments (the latter
+  // for anyone granted DEPARTMENTS management, e.g. a teacher with Full Admin Access).
+  const basePath = usePathname().startsWith("/staff") ? "/staff" : "/principal";
   const [departments, setDepartments] = useState<Department[] | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -226,13 +230,13 @@ export default function DepartmentsPage() {
     <div>
       <ContextNavigation
         items={[
-          { href: "/principal/departments",    label: "Departments" },
-          { href: "/principal/classes",        label: "Classes" },
-          { href: "/principal/subjects",       label: "Subjects" },
-          { href: "/principal/timetable",      label: "Timetable" },
-          { href: "/principal/attendance",     label: "Attendance" },
-          { href: "/principal/calendar",       label: "Calendar" },
-          { href: "/principal/assessments",    label: "Exams & Analysis" },
+          { href: `${basePath}/departments`,    label: "Departments" },
+          { href: `${basePath}/classes`,        label: "Classes" },
+          { href: `${basePath}/subjects`,       label: "Subjects" },
+          { href: `${basePath}/timetable`,      label: "Timetable" },
+          { href: `${basePath}/attendance`,     label: "Attendance" },
+          { href: `${basePath}/calendar`,       label: "Calendar" },
+          { href: `${basePath}/assessments`,    label: "Exams & Analysis" },
         ]}
       />
       
@@ -482,7 +486,7 @@ export default function DepartmentsPage() {
                 </div>
                 <p className="text-xs text-slate mt-1">
                   Subjects here are from the school&apos;s registered subject list. To create new subjects go to the{" "}
-                  <a href="/principal/subjects" className="text-teal hover:underline">Subjects</a> page.
+                  <a href={`${basePath}/subjects`} className="text-teal hover:underline">Subjects</a> page.
                 </p>
               </div>
             )}
@@ -506,7 +510,7 @@ export default function DepartmentsPage() {
         onClose={() => setDrawerDeptId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <StaffProfileDrawer
         staffId={drawerStaffId}
@@ -514,7 +518,7 @@ export default function DepartmentsPage() {
         onClose={() => setDrawerStaffId(null)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
         onOpenClass={(id) => openClassDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <SubjectWorkspaceDrawer
         subjectId={drawerSubjId}
@@ -522,7 +526,7 @@ export default function DepartmentsPage() {
         onClose={() => setDrawerSubjId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenDepartment={(id) => openDeptDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
       <ClassWorkspaceDrawer
         classId={drawerClassId}
@@ -530,7 +534,7 @@ export default function DepartmentsPage() {
         onClose={() => setDrawerClassId(null)}
         onOpenStaff={(id) => openStaffDrawer(id)}
         onOpenSubject={(id) => openSubjDrawer(id)}
-        basePath="/principal"
+        basePath={basePath}
       />
     </div>
   );
