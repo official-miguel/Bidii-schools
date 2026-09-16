@@ -267,7 +267,10 @@ export default function CbeJuniorGrid({
   // -------------------------------------------------------------------------
 
   useEffect(() => {
-    fetch("/api/assessments/periods")
+    // type=CBE — omitting this defaults to the active 8-4-4 framework's
+    // periods (see the periods route), which would pick a period id none
+    // of this grid's CBE endpoints recognize.
+    fetch("/api/assessments/periods?type=CBE")
       .then((r) => r.json())
       .then((json) => {
         if (json.periods?.length) {

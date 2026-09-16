@@ -11,7 +11,11 @@ const db = prisma as any;
 // Returns all periods for a given framework.
 // Query params:
 //   frameworkId — if supplied, returns periods for that framework directly.
-//   (legacy)     — if omitted, falls back to the active 8-4-4 framework.
+//   type        — "EIGHT_FOUR_FOUR" | "CBE" — resolves to that framework's
+//                 periods without needing to know its id. Use this from any
+//                 CBE-specific view instead of omitting both params, which
+//                 defaults to 8-4-4 and silently returns the wrong periods.
+//   (neither)   — falls back to the active 8-4-4 framework.
 // ---------------------------------------------------------------------------
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -24,10 +28,23 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const frameworkIdParam = searchParams.get("frameworkId");
+  const typeParam = searchParams.get("type"); // "EIGHT_FOUR_FOUR" | "CBE" — convenience alt to frameworkId
 
   let frameworkId: string | null = frameworkIdParam;
 
-  if (!frameworkId) {
+  if (!frameworkId && typeParam) {
+    // Explicit framework type requested — e.g. CBE dashboards asking for CBE
+    // periods specifically, instead of silently falling back to 8-4-4 below.
+    const fw = await db.assessmentFramework.findFirst({
+      where: { schoolId: user.schoolId!, type: typeParam, isActive: true },
+      select: { id: true },
+    }) ?? await db.assessmentFramework.findFirst({
+      where: { schoolId: user.schoolId!, type: typeParam },
+      orderBy: { academicYear: "desc" },
+      select: { id: true },
+    });
+    frameworkId = fw?.id ?? null;
+  } else if (!frameworkId) {
     // Prefer an active 8-4-4 framework; fall back to any active framework;
     // final fallback to most-recent inactive 8-4-4 so periods remain visible
     // even after a year rollover deactivates the old framework.
