@@ -17,6 +17,8 @@
  */
 
 import ConditionalHubSidebar from "@/components/ConditionalHubSidebar";
+import PushRegistrar from "@/components/PushRegistrar";
+import ServerNotificationSync from "@/components/ServerNotificationSync";
 import TopAppBar  from "@/components/TopAppBar";
 import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
 import SomaAIProvider from "@/components/SomaAIProvider";
@@ -66,6 +68,8 @@ export default function DashboardShell({
     <MobileDrawerProvider>
       <SomaAIProvider role={role} schoolName={schoolName}>
         <div className="min-h-screen bg-background">
+          <PushRegistrar />
+          <ServerNotificationSync />
           {/*
            * ConditionalHubSidebar is a client component that reads the current
            * pathname and hides itself on routes that use their own sidebar

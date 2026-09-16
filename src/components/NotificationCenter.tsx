@@ -240,6 +240,16 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
     onClose();
   }
 
+  /** Server-backed notifications carry a "srv:<id>" local id — sync state back. */
+  function syncServerRead(id: string) {
+    if (!id.startsWith("srv:")) return;
+    fetch(`/api/notifications/${id.slice(4)}`, { method: "PATCH" }).catch(() => {});
+  }
+  function syncServerDismiss(id: string) {
+    if (!id.startsWith("srv:")) return;
+    fetch(`/api/notifications/${id.slice(4)}`, { method: "DELETE" }).catch(() => {});
+  }
+
   return (
     <>
       {/* Bell trigger button — always rendered so parent can position it */}
@@ -273,7 +283,14 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
               {count > 0 && (
                 <button
                   type="button"
-                  onClick={() => useProductivityStore.getState().markAllRead()}
+                  onClick={() => {
+                    useProductivityStore.getState().markAllRead();
+                    fetch("/api/notifications", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "read-all" }),
+                    }).catch(() => {});
+                  }}
                   title="Mark all as read"
                   className="flex items-center justify-center w-7 h-7 rounded-md
                              text-slate hover:bg-teal-50 hover:text-teal transition-colors"
@@ -359,8 +376,8 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                 <NotifCard
                   key={notif.id}
                   notif={notif}
-                  onRead={() => useProductivityStore.getState().markRead(notif.id)}
-                  onDismiss={() => useProductivityStore.getState().dismissNotification(notif.id)}
+                  onRead={() => { useProductivityStore.getState().markRead(notif.id); syncServerRead(notif.id); }}
+                  onDismiss={() => { useProductivityStore.getState().dismissNotification(notif.id); syncServerDismiss(notif.id); }}
                   onAction={handleAction}
                 />
               ))

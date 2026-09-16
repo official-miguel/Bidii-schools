@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { useParentStore } from "@/lib/stores/parentStore";
 import ParentNotificationBadge from "@/components/parent/ParentNotificationBadge";
+import { usePushNotifications } from "@/lib/push/usePushNotifications";
+import ServerNotificationSync from "@/components/ServerNotificationSync";
 
 // ── Nav definitions ──────────────────────────────────────────────────────────
 
@@ -112,6 +114,8 @@ export default function ParentPortalShell({
   const router     = useRouter();
   const activeSeg  = getActiveSeg(pathname);
   const userInits  = initials(parentName);
+
+  usePushNotifications();
 
   // Nav for modules this school has switched off is dropped, not disabled.
   const navItems    = PARENT_NAV.filter((i) => !i.seg || !hiddenSegs.includes(i.seg));
@@ -203,6 +207,7 @@ export default function ParentPortalShell({
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
+      <ServerNotificationSync />
 
       {/* ── Fixed top bar ──────────────────────────────────────────────── */}
       <header

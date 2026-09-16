@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRecordsPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { notifyParents } from "@/lib/parentNotifications";
+import { notifyUser } from "@/lib/notifications";
 
 const createSchema = z.object({
   studentId: z.string().min(1),
@@ -51,7 +52,12 @@ export async function POST(req: NextRequest) {
 
   const student = await prisma.student.findFirst({
     where: { id: d.studentId, schoolId: user.schoolId! },
-    select: { id: true, classId: true },
+    select: {
+      id: true,
+      classId: true,
+      fullName: true,
+      schoolClass: { select: { classTeacher: { select: { userId: true } } } },
+    },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
@@ -89,6 +95,42 @@ export async function POST(req: NextRequest) {
         dedupKey: `disc-${record.id}`,
       }).catch(() => {});
     }
+
+    // The student's class teacher should know about any case against one of
+    // their own students, independent of parent visibility.
+    const classTeacherUserId = student.schoolClass?.classTeacher?.userId;
+    if (classTeacherUserId && classTeacherUserId !== user.id) {
+      void notifyUser({
+        schoolId: user.schoolId!,
+        userId: classTeacherUserId,
+        type: "DISCIPLINE_CASE",
+        title: "Discipline case recorded",
+        body: `${student.fullName} — ${d.offence}`,
+        href: "/teacher/discipline",
+        dedupKey: `discipline-classteacher:${record.id}`,
+      });
+    }
+
+    // The Principal sees every case, regardless of who recorded it.
+    const principals = await prisma.user.findMany({
+      where: { schoolId: user.schoolId!, role: "PRINCIPAL", isActive: true },
+      select: { id: true },
+    });
+    void Promise.all(
+      principals
+        .filter((p) => p.id !== user.id)
+        .map((p) =>
+          notifyUser({
+            schoolId: user.schoolId!,
+            userId: p.id,
+            type: "PRINCIPAL_ALERT",
+            title: "Discipline case recorded",
+            body: `${student.fullName} — ${d.offence}`,
+            href: "/principal/records",
+            dedupKey: `discipline-principal:${record.id}:${p.id}`,
+          })
+        )
+    );
 
     return NextResponse.json(record, { status: 201 });
   } catch {

@@ -95,6 +95,8 @@ interface ProductivityState {
   notifFilter:        NotificationCategory | null;
 
   addNotification:    (n: Omit<AppNotification, "id" | "read" | "timestamp">) => void;
+  /** Merges server-fetched notifications in by id — skips ones already present. */
+  hydrateNotifications: (items: AppNotification[]) => void;
   markRead:           (id: string) => void;
   markAllRead:        () => void;
   dismissNotification:(id: string) => void;
@@ -136,6 +138,19 @@ export const useProductivityStore = create<ProductivityState>((set, get) => {
       set((s) => {
         // Cap at 100 notifications, newest first
         const updated = [n, ...s.notifications].slice(0, 100);
+        save(STORAGE_KEYS.notifications, updated);
+        return { notifications: updated };
+      });
+    },
+
+    hydrateNotifications(items) {
+      set((s) => {
+        const existingIds = new Set(s.notifications.map((n) => n.id));
+        const fresh = items.filter((n) => !existingIds.has(n.id));
+        if (fresh.length === 0) return s;
+        const updated = [...fresh, ...s.notifications]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 100);
         save(STORAGE_KEYS.notifications, updated);
         return { notifications: updated };
       });
