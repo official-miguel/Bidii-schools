@@ -116,6 +116,7 @@ export default function CbePathwayGrid({
   const [classId,  setClassId]  = useState(defaultClassId ?? classes[0]?.id ?? "");
 
   const [weights,  setWeights]  = useState<WeightConfig[]>([]);
+  const [weightsLoaded, setWeightsLoaded] = useState(false);
   const [rows,     setRows]     = useState<StudentRow[] | null>(null);
   const [edits,    setEdits]    = useState<Edits>(new Map());
 
@@ -159,10 +160,12 @@ export default function CbePathwayGrid({
 
   useEffect(() => {
     if (!classId) return;
+    setWeightsLoaded(false);
     fetch(`/api/assessments/cbe/pathway-weights?classId=${classId}`)
       .then((r) => r.json())
       .then((json) => { if (json.subjects) setWeights(json.subjects); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setWeightsLoaded(true));
   }, [classId]);
 
   // -------------------------------------------------------------------------
@@ -393,7 +396,10 @@ export default function CbePathwayGrid({
           </table>
         </div>
       )}
-      {!loading && rows?.length === 0 && <EmptyState message="No students in this class yet." />}
+      {weightsLoaded && weights.length === 0 && (
+        <EmptyState message="No subjects are configured for this class's form yet. Ask the principal to set which forms each subject applies to under Subjects, or set up this class's pathway weights under Settings." />
+      )}
+      {weights.length > 0 && !loading && rows?.length === 0 && <EmptyState message="No students in this class yet." />}
 
       {!loading && rows && rows.length > 0 && weights.length > 0 && (
         <>
