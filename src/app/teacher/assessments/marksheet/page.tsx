@@ -3,7 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
-import CbePathwayGrid from "@/components/assessment/CbePathwayGrid";
 import { resolveAssessmentActor, canEnterMarks, canViewMarksheet } from "@/lib/assessment/auth844";
 import MarksheetPageClient from "@/components/assessment/MarksheetPageClient";
 
@@ -174,7 +173,11 @@ export default async function TeacherMarksheetPage({
   const currentPeriod = allPeriods.find((p) => p.isCurrent) ?? allPeriods[0] ?? null;
   const activePeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
-  // ── CBE path ──────────────────────────────────────────────────────────────
+  // ── CBE Junior path — performance levels per learning area, not papers ────
+  // This is the only framework variant with a genuinely different entry
+  // model (EE/ME/AE/BE per learning area/strand, no numeric papers). Senior
+  // CBE ("Pathway") now shares the exact same paper-based entry as 8-4-4
+  // below — the only difference is which grading scale the grade badge uses.
   if (frameworkType === "CBE") {
     const cbeFramework = await db.assessmentFramework.findFirst({
       where: { schoolId, type: "CBE", isActive: true },
@@ -187,49 +190,42 @@ export default async function TeacherMarksheetPage({
         })) > 0
       : false;
 
-    const canEdit =
-      actor.isPrincipal ||
-      (classTeacherOfId === defaultClassId &&
-        actor.roles.some((r) => r.role === "CLASS_TEACHER")) ||
-      actor.roles.some((r) =>
-        ["SUBJECT_TEACHER", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)
-      ) ||
-      actor.assignedSubjectIds.size > 0;
+    if (hasLearningAreas) {
+      const canEdit =
+        actor.isPrincipal ||
+        (classTeacherOfId === defaultClassId &&
+          actor.roles.some((r) => r.role === "CLASS_TEACHER")) ||
+        actor.roles.some((r) =>
+          ["SUBJECT_TEACHER", "EXAM_OFFICER", "DIRECTOR"].includes(r.role)
+        ) ||
+        actor.assignedSubjectIds.size > 0;
 
-    return (
-      <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
-        <div className="space-y-4">
-          <div>
-            <h1 className="font-display text-xl font-semibold text-foreground">Mark Sheets</h1>
-            <p className="text-sm text-slate mt-0.5">
-              {canEdit
-                ? hasLearningAreas
+      return (
+        <MarksheetPageClient periods={allPeriods} activePeriodId={activePeriodId} isGridMode={true}>
+          <div className="space-y-4">
+            <div>
+              <h1 className="font-display text-xl font-semibold text-foreground">Mark Sheets</h1>
+              <p className="text-sm text-slate mt-0.5">
+                {canEdit
                   ? "CBE Junior — tap cells to record performance levels."
-                  : "CBE Pathway — enter SBA and exam scores."
-                : "View-only — contact the principal to be assigned an entry role."}
-            </p>
-          </div>
-          {hasLearningAreas ? (
+                  : "View-only — contact the principal to be assigned an entry role."}
+              </p>
+            </div>
             <CbeJuniorGrid
               classes={classes.map((c) => ({ id: c.id, name: c.name }))}
               defaultClassId={defaultClassId}
               lockClass={classes.length === 1}
               readOnly={!canEdit}
             />
-          ) : (
-            <CbePathwayGrid
-              classes={classes.map((c) => ({ id: c.id, name: c.name }))}
-              defaultClassId={defaultClassId}
-              lockClass={classes.length === 1}
-              readOnly={!canEdit}
-            />
-          )}
-        </div>
-      </MarksheetPageClient>
-    );
+          </div>
+        </MarksheetPageClient>
+      );
+    }
+    // No learning areas configured — fall through to the shared paper-based
+    // path below (same code as 8-4-4, graded on the CBE scale).
   }
 
-  // ── 8-4-4 path ───────────────────────────────────────────────────────────
+  // ── Paper-based path — 8-4-4 and CBE Pathway (senior) share this ─────────
   const allSubjects = await prisma.subject.findMany({
     where: { schoolId },
     orderBy: { name: "asc" },
@@ -280,6 +276,7 @@ export default async function TeacherMarksheetPage({
           lockClass={true}
           readOnly={!editAllowed}
           canManagePapers={canManagePapers}
+          gradingFramework={frameworkType === "CBE" ? "CBE" : "EIGHT_FOUR_FOUR"}
           summaryHref={
             activePeriodId && defaultClassId
               ? `/teacher/assessments/dashboard?${new URLSearchParams({ classId: defaultClassId, periodId: activePeriodId }).toString()}`

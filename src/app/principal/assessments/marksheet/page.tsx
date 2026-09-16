@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
-import CbePathwayGrid from "@/components/assessment/CbePathwayGrid";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -44,42 +43,39 @@ export default async function MarksheetPage({
 
   const currentPeriodId = searchParams.periodId ?? currentPeriod?.id ?? "";
 
-  // ---- CBE routing ----
+  // ---- CBE Junior routing — performance levels, not papers ----
+  // Senior CBE ("Pathway") now shares the same paper-based entry as 8-4-4
+  // below, graded on the CBE scale instead of KCSE — see MarksheetGrid's
+  // gradingFramework prop.
   if (framework === "CBE") {
-    // classFramework is already the CBE framework resolved above.
     const hasLearningAreas = classFramework
       ? (await db.learningArea.count({ where: { schoolId: user.schoolId!, frameworkId: classFramework.id } })) > 0
       : false;
 
-    const cbeClasses = classes.filter((c) => c.frameworkType === "CBE")
-      .map((c) => ({ id: c.id, name: c.name }));
+    if (hasLearningAreas) {
+      const cbeClasses = classes.filter((c) => c.frameworkType === "CBE")
+        .map((c) => ({ id: c.id, name: c.name }));
 
-    return (
-      <div>
-        <PageHeader
-          title="Marksheet"
-          description={hasLearningAreas ? "CBE junior — performance levels by sub-strand." : "CBE pathway — SBA and exam scores."}
-        />
-        {hasLearningAreas ? (
+      return (
+        <div>
+          <PageHeader
+            title="Marksheet"
+            description="CBE junior — performance levels by sub-strand."
+          />
           <CbeJuniorGrid
             classes={cbeClasses}
             defaultClassId={defaultClassId}
             lockClass={classes.length === 1}
             readOnly={false}
           />
-        ) : (
-          <CbePathwayGrid
-            classes={cbeClasses}
-            defaultClassId={defaultClassId}
-            lockClass={classes.length === 1}
-            readOnly={false}
-          />
-        )}
-      </div>
-    );
+        </div>
+      );
+    }
+    // No learning areas configured — fall through to the shared paper-based
+    // path below.
   }
 
-  // ---- 8-4-4 routing (default) ----
+  // ---- Paper-based routing — 8-4-4 and CBE Pathway (senior) share this ----
   // Pass all subjects — ExamFilterBar filters by applicableForms internally.
   const subjects = await prisma.subject.findMany({
     where: { schoolId: user.schoolId! },
@@ -96,12 +92,13 @@ export default async function MarksheetPage({
         description="Enter and review student scores per subject and period."
       />
       <MarksheetWithSaveBar
-        classes={classes.filter((c) => c.frameworkType === "EIGHT_FOUR_FOUR").map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+        classes={classes.filter((c) => c.frameworkType === framework).map((c) => ({ id: c.id, name: c.name, form: c.form }))}
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
         readOnly={false}
         canManagePapers={true}
+        gradingFramework={framework === "CBE" ? "CBE" : "EIGHT_FOUR_FOUR"}
         summaryHref={
           currentPeriodId && defaultClassId
             ? `/principal/assessments/dashboard?${new URLSearchParams({ classId: defaultClassId, periodId: currentPeriodId }).toString()}`

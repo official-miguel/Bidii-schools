@@ -9,6 +9,11 @@ import {
   type KcseGrade,
 } from "@/lib/assessment/grading844";
 import {
+  bandForPercentage,
+  cbePercentageColour,
+  type CbeBand,
+} from "@/lib/assessment/gradingCbe";
+import {
   ErrorBanner,
   EmptyState,
   inputClass,
@@ -144,6 +149,12 @@ type Props = {
    */
   canUseFormula?: boolean;
   /**
+   * Entry (papers, scores, save) is identical for every framework — only the
+   * grade shown per row differs: KCSE letter grades for 8-4-4, or the
+   * school's CBE band scale for CBE. Defaults to "EIGHT_FOUR_FOUR".
+   */
+  gradingFramework?: "EIGHT_FOUR_FOUR" | "CBE";
+  /**
    * Reports the current save state up to the parent page — the page renders
    * the single Save control (see MarksheetSaveBar) outside this component,
    * so the grid has no Save/Discard buttons of its own.
@@ -241,8 +252,19 @@ function ScoreCell({
 // Grade badge
 // ---------------------------------------------------------------------------
 
-function GradeBadge({ pct }: { pct: number | null }) {
+function GradeBadge({ pct, cbeBands }: { pct: number | null; cbeBands?: CbeBand[] }) {
   if (pct === null) return <span className="text-slate/50 text-xs">—</span>;
+
+  if (cbeBands) {
+    const band = bandForPercentage(pct, cbeBands);
+    const { bg, text } = cbePercentageColour(pct);
+    return (
+      <span className={`inline-flex items-center justify-center min-w-[2rem] rounded-md px-1.5 py-0.5 text-xs font-semibold ${bg} ${text}`}>
+        {band?.bandName ?? "—"}
+      </span>
+    );
+  }
+
   const { grade } = scoreToGrade(pct);
   const { bg, text } = gradeColour(grade as KcseGrade);
   return (
@@ -825,6 +847,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   readOnly = false,
   canManagePapers = false,
   canUseFormula,
+  gradingFramework = "EIGHT_FOUR_FOUR",
   onStateChange,
 }: Props, ref) {
   // ── Filter selection (driven by ExamFilterBar) ─────────────────────────
@@ -848,6 +871,18 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
       .then((d) => { if (d.periods) setPeriods(d.periods); })
       .catch(() => {/* non-critical */});
   }, []);
+
+  // The school's CBE grading scale (custom, or the KNEC default) — only
+  // needed when this grid is showing CBE classes, fetched once and reused
+  // for every row's grade badge.
+  const [cbeBands, setCbeBands] = useState<CbeBand[]>([]);
+  useEffect(() => {
+    if (gradingFramework !== "CBE") return;
+    fetch("/api/assessments/cbe/grading-scale")
+      .then((r) => r.json())
+      .then((json) => { if (json.bands) setCbeBands(json.bands); })
+      .catch(() => {});
+  }, [gradingFramework]);
 
   const [data, setData] = useState<MarksheetData | null>(null);
   const [edits, setEdits] = useState<Map<string, number | null>>(new Map());
@@ -1326,7 +1361,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <GradeBadge pct={pct} />
+                          <GradeBadge pct={pct} cbeBands={gradingFramework === "CBE" ? cbeBands : undefined} />
                         </td>
                       </tr>
                     );
