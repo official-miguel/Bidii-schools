@@ -58,8 +58,7 @@ type JuniorData = {
 // Senior CBE pathway
 type SubjectPathwayStat = {
   subject: { id: string; name: string; code: string };
-  classMeanSba: number | null; classMeanExam: number | null; classMeanWeighted: number | null;
-  sbaWeight: number; examWeight: number; studentCount: number;
+  classMeanWeighted: number | null; studentCount: number;
 };
 type TrackPerf = { track: string; subjectCount: number; classMeanWeighted: number | null };
 type StudentSummary = {
@@ -80,6 +79,13 @@ type Props = {
   defaultClassId?: string;
   /** If true, only show classes of type CBE. */
   cbeOnly?: boolean;
+  /**
+   * Hides the Class selector even when there are multiple CBE classes —
+   * used when drilling into one specific class (e.g. from a "My Classes"
+   * tile a teacher already teaches), where re-picking the class is
+   * redundant. Mirrors DashboardCharts' hideFilters prop.
+   */
+  hideClassFilter?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -189,31 +195,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // ---------------------------------------------------------------------------
-// SBA vs Exam split bar for one subject
+// Class mean % bar for one subject
 // ---------------------------------------------------------------------------
 
-function SplitBar({ sba, exam, sbaWeight, examWeight }: { sba: number | null; exam: number | null; sbaWeight: number; examWeight: number }) {
-  const sbaFill  = sba  !== null ? Math.max(0, Math.min(100, Math.round(sba)))  : 0;
-  const examFill = exam !== null ? Math.max(0, Math.min(100, Math.round(exam))) : 0;
+function SubjectMeanBar({ pct }: { pct: number | null }) {
+  const fill = pct !== null ? Math.max(0, Math.min(100, Math.round(pct))) : 0;
   return (
     <div className="flex items-center gap-2 w-full">
-      <div className="flex-1 flex items-center gap-1">
-        <div className="w-14 text-[10px] text-slate text-right tabular-nums">
-          {sba !== null ? `${sba.toFixed(1)}%` : "—"}
-        </div>
-        <div className="flex-1 h-2 bg-line rounded-full overflow-hidden">
-          <div className="h-full bg-blue-400 rounded-full" style={{ width: `${sbaFill}%` }} />
-        </div>
-        <span className="text-[10px] text-slate">SBA ({Math.round(sbaWeight * 100)}%)</span>
+      <div className="flex-1 h-2 bg-line rounded-full overflow-hidden">
+        <div className="h-full bg-teal rounded-full" style={{ width: `${fill}%` }} />
       </div>
-      <div className="flex-1 flex items-center gap-1">
-        <span className="text-[10px] text-slate">Exam ({Math.round(examWeight * 100)}%)</span>
-        <div className="flex-1 h-2 bg-line rounded-full overflow-hidden">
-          <div className="h-full bg-amber-400 rounded-full" style={{ width: `${examFill}%` }} />
-        </div>
-        <div className="w-14 text-[10px] text-slate tabular-nums">
-          {exam !== null ? `${exam.toFixed(1)}%` : "—"}
-        </div>
+      <div className="w-14 text-[10px] text-slate tabular-nums">
+        {pct !== null ? `${pct.toFixed(1)}%` : "—"}
       </div>
     </div>
   );
@@ -432,24 +425,19 @@ function PathwayView({ data }: { data: PathwayData }) {
         </Section>
       )}
 
-      {/* SBA vs Exam split per subject */}
+      {/* Class mean % per subject */}
       {data.subjectStats && data.subjectStats.length > 0 && (
-        <Section title="SBA vs exam score split by subject (class averages)">
-          <div className="flex gap-4 mb-3 text-xs">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> School-Based Assessment (SBA)</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> External Exam</span>
-          </div>
+        <Section title="Class mean score by subject">
           <div className="space-y-4">
             {data.subjectStats.filter((s) => s.studentCount > 0).map((s) => (
               <div key={s.subject.id}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-foreground">{s.subject.name}</span>
                   <span className="text-xs text-slate tabular-nums">
-                    Weighted avg: {s.classMeanWeighted !== null ? `${s.classMeanWeighted.toFixed(1)}%` : "—"}
-                    {" · "}{s.studentCount} student{s.studentCount !== 1 ? "s" : ""}
+                    {s.studentCount} student{s.studentCount !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <SplitBar sba={s.classMeanSba} exam={s.classMeanExam} sbaWeight={s.sbaWeight} examWeight={s.examWeight} />
+                <SubjectMeanBar pct={s.classMeanWeighted} />
               </div>
             ))}
           </div>
@@ -501,7 +489,7 @@ function PathwayView({ data }: { data: PathwayData }) {
 // Main enhanced CBE dashboard
 // ---------------------------------------------------------------------------
 
-export default function CbeDashboardEnhanced({ classes, defaultClassId, cbeOnly = true }: Props) {
+export default function CbeDashboardEnhanced({ classes, defaultClassId, cbeOnly = true, hideClassFilter = false }: Props) {
   const cbeClasses = cbeOnly ? classes.filter((c) => c.frameworkType === "CBE") : classes;
 
   const [periods,  setPeriods]  = useState<Period[]>([]);
@@ -575,7 +563,7 @@ export default function CbeDashboardEnhanced({ classes, defaultClassId, cbeOnly 
             </select>
           </div>
         )}
-        {cbeClasses.length > 1 && (
+        {!hideClassFilter && cbeClasses.length > 1 && (
           <div>
             <label className={labelClass}>Class</label>
             <select className={inputClass} value={classId} onChange={(e) => setClassId(e.target.value)}>

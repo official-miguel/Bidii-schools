@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
-import {
-  pathwayScore,
-  DEFAULT_PATHWAY_WEIGHT,
-} from "@/lib/assessment/gradingCbe";
+import { subjectScore } from "@/lib/assessment/grading844";
 import { resolveCbeGrade } from "@/lib/assessment/gradingScale";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,9 +12,14 @@ const db = prisma as any;
  * GET /api/assessments/cbe/pathway-dashboard?periodId=&classId=
  *
  * Returns Senior CBE pathway-level analytics:
- * - SBA vs exam score split per subject (class averages)
+ * - Class mean % per subject
  * - Subject-track performance (STEM / Social Sciences / Arts & Sports)
- * - Per-student weighted pathway scores across all subjects
+ * - Per-student overall score across all subjects, graded on the CBE scale
+ *
+ * Entry is now identical to 8-4-4 — one score per paper, any number of
+ * papers per subject — so this reads AssessmentItems the same generic way
+ * the 8-4-4 dashboard does (sum of scores weighted by each paper's max
+ * marks). There is no more fixed SBA+exam pairing to assume.
  */
 export async function GET(req: NextRequest) {
   const params   = req.nextUrl.searchParams;
@@ -85,21 +87,11 @@ export async function GET(req: NextRequest) {
   });
   const subjectIds = subjects.map((s) => s.id);
 
-  // rawWeights and papers both only need frameworkId + subjectIds — fetch in parallel.
-  const [rawWeights, papers] = await Promise.all([
-    db.pathwayWeight.findMany({
-      where: { frameworkId: framework.id, subjectId: { in: subjectIds } },
-      select: { subjectId: true, sbaWeight: true, examWeight: true, sbaMaxMarks: true, examMaxMarks: true },
-    }) as Promise<Array<{ subjectId: string; sbaWeight: number; examWeight: number; sbaMaxMarks: number; examMaxMarks: number }>>,
-
-    db.paper.findMany({
-      where: { frameworkId: framework.id, subjectId: { in: subjectIds } },
-      orderBy: { sortOrder: "asc" },
-      select: { id: true, name: true, maxMarks: true, subjectId: true, sortOrder: true },
-    }) as Promise<Array<{ id: string; name: string; maxMarks: number; subjectId: string; sortOrder: number }>>,
-  ]);
-
-  const weightMap = new Map(rawWeights.map((w) => [w.subjectId, w]));
+  const papers = await db.paper.findMany({
+    where: { frameworkId: framework.id, subjectId: { in: subjectIds } },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, name: true, maxMarks: true, subjectId: true, sortOrder: true },
+  }) as Array<{ id: string; name: string; maxMarks: number; subjectId: string; sortOrder: number }>;
 
   const papersBySubject = new Map<string, typeof papers>();
   for (const p of papers) {
@@ -125,66 +117,41 @@ export async function GET(req: NextRequest) {
   }
 
   // Build O(1) lookup: "studentId:subjectId:paperId" → numericScore.
-  // Replaces items.find(i => i.studentId===sid && i.subjectId===subj.id && i.paperId===...) everywhere.
   const itemScoreMap = new Map<string, number | null>();
   for (const item of items) {
     itemScoreMap.set(`${item.studentId}:${item.subjectId}:${item.paperId ?? ""}`, item.numericScore);
   }
 
-  // Pre-resolve sbaId/examId once per subject — avoids recomputing the regex find
-  // in both the subjectStats loop and the studentSummaries loop.
-  type PathwayWeight = { sbaWeight: number; examWeight: number; sbaMaxMarks: number; examMaxMarks: number };
-  type SubjectPaperIds = { sbaId: string | undefined; examId: string | undefined; w: PathwayWeight };
-  const subjectPaperIds = new Map<string, SubjectPaperIds>();
-  for (const subj of subjects) {
-    const sPapers = papersBySubject.get(subj.id) ?? [];
-    const sbaId  = (sPapers.find((p) => /sba|school/i.test(p.name))?.id ?? sPapers[0]?.id) as string | undefined;
-    const examId = (sPapers.find((p) => /exam|external/i.test(p.name))?.id ?? sPapers[1]?.id) as string | undefined;
-    const w = weightMap.get(subj.id) ?? DEFAULT_PATHWAY_WEIGHT;
-    subjectPaperIds.set(subj.id, { sbaId, examId, w });
+  /** A student's percentage for a subject, across however many papers it has. */
+  function studentSubjectPct(studentId: string, subjectId: string): number | null {
+    const sPapers = papersBySubject.get(subjectId) ?? [];
+    if (sPapers.length === 0) return null;
+    const scores   = sPapers.map((p) => itemScoreMap.get(`${studentId}:${subjectId}:${p.id}`) ?? null);
+    const maxMarks = sPapers.map((p) => p.maxMarks);
+    return subjectScore(scores, maxMarks);
   }
 
-  // ---- Build per-subject pathway stats ----
+  // ---- Build per-subject class stats ----
   type SubjectPathwayStat = {
     subject: { id: string; name: string; code: string };
-    classMeanSba:  number | null;
-    classMeanExam: number | null;
     classMeanWeighted: number | null;
-    sbaWeight:    number;
-    examWeight:   number;
     studentCount: number;
   };
 
   const subjectStats: SubjectPathwayStat[] = subjects.map((subj) => {
-    const { sbaId, examId, w } = subjectPaperIds.get(subj.id)!;
-
-    const sbas:  number[] = [];
-    const exams: number[] = [];
-    const weighted: number[] = [];
+    const pcts: number[] = [];
     let studentCount = 0;
 
     for (const sid of studentIds) {
-      // O(1) lookup instead of items.find()
-      const sbaScore  = itemScoreMap.has(`${sid}:${subj.id}:${sbaId  ?? ""}`) ? itemScoreMap.get(`${sid}:${subj.id}:${sbaId  ?? ""}`) ?? null : null;
-      const examScore = itemScoreMap.has(`${sid}:${subj.id}:${examId ?? ""}`) ? itemScoreMap.get(`${sid}:${subj.id}:${examId ?? ""}`) ?? null : null;
-
-      if (sbaScore !== null || examScore !== null) studentCount++;
-      if (sbaScore  !== null) sbas.push((sbaScore  / w.sbaMaxMarks)  * 100);
-      if (examScore !== null) exams.push((examScore / w.examMaxMarks) * 100);
-
-      const ws = pathwayScore(sbaScore, examScore, w.sbaWeight, w.examWeight, w.sbaMaxMarks, w.examMaxMarks);
-      if (ws !== null) weighted.push(ws);
+      const pct = studentSubjectPct(sid, subj.id);
+      if (pct !== null) { pcts.push(pct); studentCount++; }
     }
 
-    const avg = (arr: number[]) => arr.length === 0 ? null : Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+    const mean = pcts.length === 0 ? null : Math.round((pcts.reduce((a, b) => a + b, 0) / pcts.length) * 10) / 10;
 
     return {
       subject:           { id: subj.id, name: subj.name, code: subj.code },
-      classMeanSba:      avg(sbas),
-      classMeanExam:     avg(exams),
-      classMeanWeighted: avg(weighted),
-      sbaWeight:         w.sbaWeight,
-      examWeight:        w.examWeight,
+      classMeanWeighted: mean,
       studentCount,
     };
   });
@@ -213,15 +180,11 @@ export async function GET(req: NextRequest) {
   }).sort((a, b) => (b.classMeanWeighted ?? 0) - (a.classMeanWeighted ?? 0));
 
   // ---- Per-student summary row ----
-  // Uses pre-resolved subjectPaperIds and itemScoreMap — O(students × subjects), no find().
   const studentSummaries = await Promise.all(students.map(async (student) => {
     const scores: number[] = [];
     for (const subj of subjects) {
-      const { sbaId, examId, w } = subjectPaperIds.get(subj.id)!;
-      const sbaScore  = itemScoreMap.has(`${student.id}:${subj.id}:${sbaId  ?? ""}`) ? itemScoreMap.get(`${student.id}:${subj.id}:${sbaId  ?? ""}`) ?? null : null;
-      const examScore = itemScoreMap.has(`${student.id}:${subj.id}:${examId ?? ""}`) ? itemScoreMap.get(`${student.id}:${subj.id}:${examId ?? ""}`) ?? null : null;
-      const ws = pathwayScore(sbaScore, examScore, w.sbaWeight, w.examWeight, w.sbaMaxMarks, w.examMaxMarks);
-      if (ws !== null) scores.push(ws);
+      const pct = studentSubjectPct(student.id, subj.id);
+      if (pct !== null) scores.push(pct);
     }
     const overall = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null;
     // Resolve grade from school's active scale (falls back to govt default).

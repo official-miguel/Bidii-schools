@@ -274,7 +274,7 @@ export default function AssessmentAiPanel({
               {data.atRisk.prevPeriodName ? ` vs ${data.atRisk.prevPeriodName}` : " (no previous period to compare)"}
               .{" "}
               {framework === "CBE"
-                ? "CBE: flags learners with 2+ level drops per learning area or widening SBA/exam gap."
+                ? "CBE: flags learners with 2+ level drops per learning area, or a significant score drop between periods."
                 : "8-4-4: flags mean-grade drops ≥ 3 pts or E-grade students."}
             </p>
 

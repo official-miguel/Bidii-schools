@@ -206,6 +206,7 @@ export default function TeacherDashboardClient({
                   classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
                   cbeOnly={cbeOnlyFlag}
                   defaultClassId={drill.classId}
+                  hideClassFilter={true}
                 />
               ) : (
                 <DashboardCharts
