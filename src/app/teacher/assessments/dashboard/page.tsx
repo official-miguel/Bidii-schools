@@ -167,7 +167,6 @@ export default async function TeacherDashboardPage() {
         hasCbeOnly={schoolHasCbeOnly}
         kcseClasses={schoolKcseClasses}
         cbeClasses={schoolCbeClasses}
-        cbeOnlyFlag={false}
         allSubjects={allSubjects}
       />
     </div>

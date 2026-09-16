@@ -132,6 +132,22 @@ export function bandForPercentage(pct: number, bands: CbeBand[]): CbeBand | null
   return sorted.find((b) => clamped >= b.minPercentage) ?? sorted[sorted.length - 1];
 }
 
+/**
+ * Tailwind colour classes for an achievement band name (EE1, ME2, AE1, BE2…).
+ * Keyed on the EE/ME/AE/BE prefix so custom scales with any number of bands
+ * still colour consistently; unknown names fall back to neutral.
+ */
+export function bandColour(bandName: string | null): { bg: string; text: string } {
+  const prefix = (bandName ?? "").trim().slice(0, 2).toUpperCase();
+  switch (prefix) {
+    case "EE": return { bg: "bg-green-100",  text: "text-green-800"  };
+    case "ME": return { bg: "bg-blue-100",   text: "text-blue-800"   };
+    case "AE": return { bg: "bg-amber-100",  text: "text-amber-800"  };
+    case "BE": return { bg: "bg-red-100",    text: "text-red-800"    };
+    default:   return { bg: "bg-background", text: "text-slate"      };
+  }
+}
+
 /** Tailwind colour classes by percentage — used where a band has no fixed
  * colour of its own (custom scales can have arbitrary band counts/names). */
 export function cbePercentageColour(pct: number): { bg: string; text: string } {

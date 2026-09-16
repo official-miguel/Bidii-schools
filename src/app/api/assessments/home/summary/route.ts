@@ -126,9 +126,9 @@ export async function GET(req: NextRequest) {
   const classIds = classes.map((c) => c.id);
 
   // The mean-grade-points / weakest-subject / at-risk metrics below are a
-  // KCSE (8-4-4) concept — CBE is deliberately not ranked this way (see
-  // CbeDashboardEnhanced: "No numeric mean is computed — consistent with
-  // CBE non-ranking design"). Scope the KCSE aggregation to 8-4-4 classes
+  // KCSE (8-4-4) concept — CBE reports raw marks against its own achievement
+  // bands instead (see CbeAnalysis and /api/assessments/cbe/analysis), so the
+  // points scale never applies there. Scope the KCSE aggregation to 8-4-4 classes
   // only, so a CBE class's numeric pathway scores don't get converted
   // through the KCSE points scale and pollute these school/department-wide
   // stats with a grading system that doesn't apply to them.

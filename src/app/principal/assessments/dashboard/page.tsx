@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardCharts from "@/components/assessment/DashboardCharts";
-import CbeDashboardEnhanced from "@/components/assessment/CbeDashboardEnhanced";
+import CbeAnalysis from "@/components/assessment/CbeAnalysis";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -74,9 +74,9 @@ export default async function DashboardPage({
 
         {/* CBE only */}
         {tab === "cbe" && (
-          <CbeDashboardEnhanced
-            classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
-            cbeOnly={false}
+          <CbeAnalysis
+            classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+            subjects={subjects}
           />
         )}
 
@@ -98,9 +98,9 @@ export default async function DashboardPage({
                 <span className="inline-block rounded-full bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5">CBE</span>
                 CBE classes
               </h2>
-              <CbeDashboardEnhanced
-                classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
-                cbeOnly={false}
+              <CbeAnalysis
+                classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                subjects={subjects}
               />
             </div>
           </div>
@@ -115,11 +115,11 @@ export default async function DashboardPage({
       <div className="space-y-5">
         <div>
           <h1 className="font-display text-xl font-semibold text-foreground">In-depth Analysis</h1>
-          <p className="text-sm text-slate mt-0.5">CBE attainment — performance levels by sub-strand, learning area, and pathway.</p>
+          <p className="text-sm text-slate mt-0.5">CBE attainment — raw marks and achievement levels by learner, class, and subject.</p>
         </div>
-        <CbeDashboardEnhanced
-          classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
-          cbeOnly={false}
+        <CbeAnalysis
+          classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+          subjects={subjects}
         />
       </div>
     );

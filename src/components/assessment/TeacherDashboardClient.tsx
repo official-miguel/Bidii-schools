@@ -25,8 +25,8 @@ const DashboardCharts = dynamic(
   () => import("@/components/assessment/DashboardCharts"),
   { ssr: false }
 );
-const CbeDashboardEnhanced = dynamic(
-  () => import("@/components/assessment/CbeDashboardEnhanced"),
+const CbeAnalysis = dynamic(
+  () => import("@/components/assessment/CbeAnalysis"),
   { ssr: false }
 );
 
@@ -66,7 +66,6 @@ interface TeacherDashboardClientProps {
   hasCbeOnly: boolean;
   kcseClasses: AllClassShape[];
   cbeClasses: AllClassShape[];
-  cbeOnlyFlag: boolean;
 }
 
 type TopTab = "my_classes" | "full_school";
@@ -123,7 +122,6 @@ export default function TeacherDashboardClient({
   hasCbeOnly,
   kcseClasses,
   cbeClasses,
-  cbeOnlyFlag,
 }: TeacherDashboardClientProps) {
   const [topTab, setTopTab] = useState<TopTab>("my_classes");
   const [drill, setDrill] = useState<DrillState>(null);
@@ -202,11 +200,11 @@ export default function TeacherDashboardClient({
               </p>
 
               {drill.frameworkType === "CBE" ? (
-                <CbeDashboardEnhanced
-                  classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
-                  cbeOnly={cbeOnlyFlag}
+                <CbeAnalysis
+                  classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                  subjects={subjects}
                   defaultClassId={drill.classId}
-                  hideClassFilter={true}
+                  defaultSubjectId={drill.subjectId ?? undefined}
                 />
               ) : (
                 <DashboardCharts
@@ -285,9 +283,9 @@ export default function TeacherDashboardClient({
           )}
 
           {(fwTab === "cbe" || hasCbeOnly) && cbeClasses.length > 0 && (
-            <CbeDashboardEnhanced
-              classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, frameworkType: c.frameworkType }))}
-              cbeOnly={cbeOnlyFlag}
+            <CbeAnalysis
+              classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+              subjects={allSubjects}
             />
           )}
         </div>

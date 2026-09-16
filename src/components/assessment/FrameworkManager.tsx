@@ -384,8 +384,6 @@ function PeriodManager() {
   const [pName, setPName] = useState("");
   const [pYear, setPYear] = useState(new Date().getFullYear().toString());
   const [pTerm, setPTerm] = useState("");
-  const [pMaxMarks, setPMaxMarks] = useState("100");
-  const [pWeight, setPWeight] = useState("1");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -420,8 +418,6 @@ function PeriodManager() {
           name: pName,
           academicYear: pYear,
           term: pTerm ? parseInt(pTerm, 10) : null,
-          maxMarks: pMaxMarks ? parseFloat(pMaxMarks) : null,
-          weight: parseFloat(pWeight) || 1,
         }),
       });
       const data = await res.json();
@@ -474,8 +470,9 @@ function PeriodManager() {
       </p>
     );
 
-  // Term/Max Marks/Weight are generic period attributes now — periods are no
-  // longer tied to one framework, so there's nothing left to branch on here.
+  // Term is a generic period attribute now — periods are no longer tied to one
+  // framework, so there's nothing left to branch on here. Max marks and weight
+  // were removed: a period is just a name, a year and a term.
   const is844 = true;
 
   return (
@@ -498,8 +495,6 @@ function PeriodManager() {
                 <th className="px-4 py-2 font-medium">Period</th>
                 {is844 && <th className="px-4 py-2 font-medium">Term</th>}
                 <th className="px-4 py-2 font-medium">Year</th>
-                {is844 && <th className="px-4 py-2 font-medium">Max Marks</th>}
-                {is844 && <th className="px-4 py-2 font-medium">Weight</th>}
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium text-right">Actions</th>
               </tr>
@@ -517,16 +512,6 @@ function PeriodManager() {
                     </td>
                   )}
                   <td className="px-4 py-2.5 text-slate">{p.academicYear}</td>
-                  {is844 && (
-                    <td className="px-4 py-2.5 text-slate tabular-nums">
-                      {p.maxMarks ?? "—"}
-                    </td>
-                  )}
-                  {is844 && (
-                    <td className="px-4 py-2.5 text-slate tabular-nums">
-                      {p.weight}
-                    </td>
-                  )}
                   <td className="px-4 py-2.5">
                     {p.isCurrent ? (
                       <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5">
@@ -573,7 +558,7 @@ function PeriodManager() {
               {saveError}
             </p>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="col-span-2 sm:col-span-1">
               <label className={labelCls}>Period name</label>
               <input
@@ -607,34 +592,6 @@ function PeriodManager() {
                   <option value="2">Term 2</option>
                   <option value="3">Term 3</option>
                 </select>
-              </div>
-            )}
-            {is844 && (
-              <div>
-                <label className={labelCls}>Max marks</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={1000}
-                  step={1}
-                  value={pMaxMarks}
-                  onChange={(e) => setPMaxMarks(e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-            )}
-            {is844 && (
-              <div>
-                <label className={labelCls}>Weight</label>
-                <input
-                  type="number"
-                  min={0.1}
-                  max={10}
-                  step={0.1}
-                  value={pWeight}
-                  onChange={(e) => setPWeight(e.target.value)}
-                  className={inputCls}
-                />
               </div>
             )}
           </div>
