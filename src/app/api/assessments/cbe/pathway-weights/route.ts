@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import { DEFAULT_PATHWAY_WEIGHT } from "@/lib/assessment/gradingCbe";
+import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   const subjects = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
-      applicableForms: { has: schoolClass.form },
+      ...subjectFormWhere(schoolClass.form),
     },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true },

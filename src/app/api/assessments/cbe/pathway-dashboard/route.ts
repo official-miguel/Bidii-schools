@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { subjectScore } from "@/lib/assessment/grading844";
 import { resolveCbeGrade } from "@/lib/assessment/gradingScale";
+import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch subjects applicable to this class's form.
   const subjects = await prisma.subject.findMany({
-    where: { schoolId: user.schoolId!, applicableForms: { has: schoolClass.form } },
+    where: { schoolId: user.schoolId!, ...subjectFormWhere(schoolClass.form) },
     orderBy: { name: "asc" },
     select: { id: true, name: true, code: true, type: true },
   });

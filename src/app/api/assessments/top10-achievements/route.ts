@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { subjectScore, scoreToGrade, denseRank } from "@/lib/assessment/grading844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import { subjectAppliesToForm } from "@/lib/assessment/subjectScope";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   for (const form of formSet) {
     subjectsByForm.set(
       form,
-      allSubjectsForSchool.filter((s) => s.applicableForms.includes(form))
+      allSubjectsForSchool.filter((s) => subjectAppliesToForm(s, form))
     );
   }
 

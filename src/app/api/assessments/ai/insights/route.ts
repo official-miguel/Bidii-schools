@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser  } from "@/lib/auth";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { prisma } from "@/lib/prisma";
+import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 import {
   detectAtRisk,
   detectAnomalies,
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     if (fw) {
       const subjects = await prisma.subject.findMany({
-        where: { schoolId, applicableForms: { has: schoolClass?.form ?? 1 } },
+        where: { schoolId, ...subjectFormWhere(schoolClass?.form ?? 1) },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
       });

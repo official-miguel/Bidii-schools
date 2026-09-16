@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 import {
   subjectScore,
   scoreToGrade,
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
   const subjects = await prisma.subject.findMany({
     where: {
       schoolId: user.schoolId!,
-      applicableForms: { has: student.schoolClass.form },
+      ...subjectFormWhere(student.schoolClass.form),
     },
     select: { id: true },
   });

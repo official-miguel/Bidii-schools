@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 import {
   subjectScore,
   scoreToGrade,
@@ -129,7 +130,7 @@ async function scorecardHandler(req: NextRequest) {
       select: { id: true, fullName: true, admissionNumber: true, classId: true },
     }),
     prisma.subject.findMany({
-      where: { schoolId: user.schoolId!, applicableForms: { has: resolvedForm } },
+      where: { schoolId: user.schoolId!, ...subjectFormWhere(resolvedForm) },
       orderBy: { name: "asc" },
       select: { id: true, name: true, code: true },
     }),
