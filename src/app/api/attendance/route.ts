@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 function parseDateOnly(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -265,6 +266,8 @@ export async function GET(req: NextRequest) {
       class_id: string;
       class_name: string;
       form: number;
+      stage_name: string | null;
+      framework_type: string;
       stream: string | null;
       trend_present: bigint;
       trend_absent: bigint;
@@ -279,6 +282,8 @@ export async function GET(req: NextRequest) {
          sc.id                                                                AS class_id,
          sc."name"                                                            AS class_name,
          sc."form",
+         sc."stageName"                                                       AS stage_name,
+         sc."frameworkType"::text                                             AS framework_type,
          sc.stream,
          COALESCE(t.trend_present, 0)::bigint                                AS trend_present,
          COALESCE(t.trend_absent,  0)::bigint                                AS trend_absent
@@ -312,6 +317,11 @@ export async function GET(req: NextRequest) {
         classId:         r.class_id,
         className:       r.class_name,
         form:            r.form,
+        // The level as the school saved it — "Form 3", "Grade 11", "PP1".
+        levelLabel:      classLevelLabel({
+          name: r.class_name, form: r.form, stream: r.stream,
+          stageName: r.stage_name, frameworkType: r.framework_type,
+        }),
         stream:          r.stream ?? null,
         trend: {
           present: trendPresent,
@@ -348,7 +358,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid date range. Use YYYY-MM-DD." }, { status: 400 });
     }
 
-    type FormRow    = { form: number; present_count: bigint; absent_count: bigint };
+    type FormRow    = { form: number; stageName: string | null; frameworkType: string; present_count: bigint; absent_count: bigint };
     type StreamRow  = { class_id: string; class_name: string; stream: string | null; present_count: bigint; absent_count: bigint };
     type StudentRow = { student_id: string; full_name: string; admission_number: string; present_count: bigint; absent_count: bigint };
 
@@ -356,6 +366,8 @@ export async function GET(req: NextRequest) {
       // GROUP BY form
       prisma.$queryRaw<FormRow[]>`
         SELECT   sc."form",
+                  sc."stageName",
+                  sc."frameworkType"::text                              AS "frameworkType",
                   COUNT(*) FILTER (WHERE a.status = 'PRESENT')::bigint AS present_count,
                   COUNT(*) FILTER (WHERE a.status = 'ABSENT')::bigint  AS absent_count
          FROM     "Attendance" a
@@ -363,7 +375,7 @@ export async function GET(req: NextRequest) {
          WHERE    a."schoolId" = ${user.schoolId!}
            AND    a.date >= ${from}
            AND    a.date <= ${to}
-         GROUP BY sc."form"`,
+         GROUP BY sc."form", sc."stageName", sc."frameworkType"`,
 
       // GROUP BY class (stream)
       prisma.$queryRaw<StreamRow[]>`
@@ -408,7 +420,10 @@ export async function GET(req: NextRequest) {
 
     const byForm = formRows
       .map((r) => ({
-        key: String(r.form), label: `Form ${r.form}`,
+        // Levels are labelled the way the school saved them, so a CBE cohort
+        // reads "Grade 9" rather than "Form 9".
+        key: `${r.frameworkType}:${r.form}`,
+        label: classLevelLabel({ form: r.form, stageName: r.stageName, frameworkType: r.frameworkType }),
         ...addRate(r.present_count, r.absent_count),
       }))
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));

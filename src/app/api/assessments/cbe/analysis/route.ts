@@ -8,6 +8,9 @@ import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import { computeSubjectMark } from "@/lib/assessment/subjectMark";
 import { loadFormulaResolvers, NO_FORMULAS, type FormulaResolver } from "@/lib/assessment/subjectMarkFormulas";
 import { resolveScale, type GradeBand } from "@/lib/assessment/gradingScale";
+import {
+  CLASS_LABEL_SELECT, classLevelLabel, fallbackLevelLabel,
+} from "@/lib/curriculum/classLabels";
 
 /**
  * GET /api/assessments/cbe/analysis?periodId=&classId=&form=&subjectId=
@@ -90,7 +93,7 @@ async function analysisHandler(req: NextRequest) {
     prisma.schoolClass.findMany({
       where: classWhere,
       orderBy: [{ form: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, form: true },
+      select: { ...CLASS_LABEL_SELECT },
     }),
     resolveActiveFramework(user.schoolId!, "CBE"),
     resolveScale(user.schoolId!),
@@ -124,7 +127,7 @@ async function analysisHandler(req: NextRequest) {
       ? prisma.schoolClass.findMany({
           where: { schoolId: user.schoolId!, frameworkType: "CBE", form: classes[0].form },
           orderBy: [{ name: "asc" }],
-          select: { id: true, name: true, form: true },
+          select: { ...CLASS_LABEL_SELECT },
         })
       : Promise.resolve(null),
     prisma.student.findMany({
@@ -473,7 +476,10 @@ async function analysisHandler(req: NextRequest) {
     });
 
     scorecard = {
-      scopeLabel: classId ? (classNameMap.get(classId) ?? "Class") : `Form ${form}`,
+      scopeLabel: classId
+        ? (classNameMap.get(classId) ?? "Class")
+        // Every class here is CBE, so the level reads "Grade 11", not "Form 11".
+        : (classes[0] ? classLevelLabel(classes[0]) : fallbackLevelLabel(form!, "CBE")),
       subjects:   activeSubjects.map((s) => ({ id: s.id, name: s.name, code: s.code })),
       multiClass: classIds.length > 1,
       rows,

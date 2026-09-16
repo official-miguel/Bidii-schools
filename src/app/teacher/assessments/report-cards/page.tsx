@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui";
 import { resolveAssessmentActor, canGenerateReportCard } from "@/lib/assessment/auth844";
 import TeacherReportCardsSelector from "./TeacherReportCardsSelector";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -29,8 +30,8 @@ export default async function TeacherReportCardsPage({
   const allClasses = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   // Filter to those the teacher can generate report cards for.
   const accessibleClasses = allClasses.filter((c) => canGenerateReportCard(actor, c.id));

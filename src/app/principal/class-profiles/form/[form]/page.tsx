@@ -67,6 +67,8 @@ type ElectiveGroup = {
 
 type FormData = {
   form: number;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  levelLabel: string;
   classes: ClassInfo[];
   subjects: SubjectRow[];
   electiveGroups: ElectiveGroup[];
@@ -114,17 +116,18 @@ function TypeToggle({
 function ElectiveGroupsSummary({
   groups,
   classes,
-  formNum,
+  levelLabel,
 }: {
   groups: ElectiveGroup[];
   classes: ClassInfo[];
-  formNum: number;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  levelLabel: string;
 }) {
   if (groups.length === 0) {
     return (
       <div className="rounded-xl border border-violet-100 bg-violet-50/40 px-5 py-6 text-center mb-6">
         <Layers className="h-8 w-8 text-violet-300 mx-auto mb-2" />
-        <p className="text-sm font-medium text-violet-700">No elective groups for Form {formNum} yet.</p>
+        <p className="text-sm font-medium text-violet-700">No elective groups for {levelLabel} yet.</p>
         <p className="text-xs text-violet-500 mt-1 max-w-sm mx-auto">
           Create groups in{" "}
           <Link href="/principal/timetable/requirements"
@@ -186,7 +189,7 @@ function ElectiveGroupsSummary({
                 {group.lessonsPerWeek} lessons/wk
               </span>
               <span className="text-[10px] text-slate/60 shrink-0 hidden sm:block">
-                {group.scopeForm > 0 ? `Form ${group.scopeForm} · ` : ""}{streamLabel}
+                {group.scopeForm > 0 ? `${levelLabel} · ` : ""}{streamLabel}
               </span>
             </div>
 
@@ -350,7 +353,7 @@ export default function FormClassProfilePage({
       ) : (
         <>
           <PageHeader
-            title={`Form ${data.form} — Subject Profile`}
+            title={`${data.levelLabel} — Subject Profile`}
             description={`Configure core/elective type for all ${data.classes.length} class${data.classes.length !== 1 ? "es" : ""} in this form. Teacher assignment for elective groups is done per class.`}
             action={
               <div className="flex items-center gap-2">
@@ -390,7 +393,7 @@ export default function FormClassProfilePage({
           <ElectiveGroupsSummary
             groups={data.electiveGroups}
             classes={data.classes}
-            formNum={data.form}
+            levelLabel={data.levelLabel}
           />
 
           {/* ── Non-grouped subjects type editor ──────────────────── */}
@@ -456,7 +459,7 @@ export default function FormClassProfilePage({
                       <th className="px-5 py-3.5 w-[90px]">Code</th>
                       <th className="px-5 py-3.5 hidden md:table-cell">Department</th>
                       <th className="px-5 py-3.5 w-[80px] hidden sm:table-cell">Default</th>
-                      <th className="px-5 py-3.5 w-[200px]">Type for Form {data.form}</th>
+                      <th className="px-5 py-3.5 w-[200px]">Type for {data.levelLabel}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -502,7 +505,7 @@ export default function FormClassProfilePage({
                 <p className="text-xs text-slate">
                   <span className="text-teal font-medium">*</span> marks subjects where the
                   form assignment differs from the school-wide default. Changes apply to all{" "}
-                  {data.classes.length} class{data.classes.length !== 1 ? "es" : ""} in Form {data.form}.
+                  {data.classes.length} class{data.classes.length !== 1 ? "es" : ""} in {data.levelLabel}.
                 </p>
               </div>
             </div>

@@ -9,7 +9,10 @@ import Composer from "@/components/messaging/Composer";
 const BASE = "/teacher/communication";
 
 interface Group { id: string; name: string }
-interface SchoolClass { id: string; name: string; form: number; stream: string | null }
+interface SchoolClass {
+  id: string; name: string; form: number; stream: string | null;
+  stageName?: string | null; frameworkType?: string | null;
+}
 
 export default function TeacherCommunicationPage() {
   const [selectedId, setSelectedId]     = useState<string | null>(null);

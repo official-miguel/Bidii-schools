@@ -8,7 +8,10 @@ import Composer           from "@/components/messaging/Composer";
 import { useSearchParams } from "next/navigation";
 
 interface Group       { id: string; name: string }
-interface SchoolClass { id: string; name: string; form: number; stream: string | null }
+interface SchoolClass {
+  id: string; name: string; form: number; stream: string | null;
+  stageName?: string | null; frameworkType?: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Inner component — uses useSearchParams (needs Suspense wrapper)

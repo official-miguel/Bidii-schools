@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { pointsToGrade } from "@/lib/assessment/grading844";
 import { scoreToGradeSql } from "@/lib/assessment/gradingSql";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -18,11 +19,7 @@ export interface SummaryTilesPayload {
   learnersAtRisk: number;
   entryCompletionPct: number;
   totalTeachingStaff: number | null;
-  classes: Array<{
-    id: string;
-    name: string;
-    form: number;
-    frameworkType: string;
+  classes: Array<ClassOption & {
     meanPoints: number | null;
     meanGrade: string | null;
     entryCompletionPct: number;
@@ -101,8 +98,8 @@ export async function GET(req: NextRequest) {
   const classes = await db.schoolClass.findMany({
     where: classQuery,
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   if (currentPeriodIds.length === 0 || classes.length === 0) {
     return NextResponse.json({
@@ -236,6 +233,8 @@ export async function GET(req: NextRequest) {
       id:                  cls.id,
       name:                cls.name,
       form:                cls.form,
+      stream:              cls.stream,
+      stageName:           cls.stageName,
       frameworkType:       cls.frameworkType,
       meanPoints:          mp !== null ? Math.round(mp * 100) / 100 : null,
       meanGrade:           mg,

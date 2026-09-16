@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import UnifiedClassTable from "@/components/assessment/UnifiedClassTable";
 import type { ClassRow } from "@/components/assessment/UnifiedClassTable";
+import { CLASS_LABEL_SELECT, classLevelLabel } from "@/lib/curriculum/classLabels";
 
 interface PageProps {
   params: { form: string };
@@ -13,7 +14,17 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const formNum = parseInt(params.form, 10);
-  return { title: `Form ${formNum} Streams — Exams & Analysis` };
+  const user = await getCurrentUser();
+  // Title the page with the level as the school saved it ("Grade 11"), not
+  // with a "Form" prefix stuck on the rank.
+  const sample = user?.schoolId
+    ? await prisma.schoolClass.findFirst({
+        where: { schoolId: user.schoolId, form: formNum },
+        select: { ...CLASS_LABEL_SELECT },
+      })
+    : null;
+  const label = sample ? classLevelLabel(sample) : `Form ${formNum}`;
+  return { title: `${label} Streams — Exams & Analysis` };
 }
 
 export default async function FormStreamsPage({ params }: PageProps) {
@@ -33,7 +44,7 @@ export default async function FormStreamsPage({ params }: PageProps) {
   const classes = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId!, form: formNum },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, form: true, frameworkType: true },
+    select: { ...CLASS_LABEL_SELECT },
   });
 
   if (classes.length === 0) notFound();
@@ -150,7 +161,7 @@ export default async function FormStreamsPage({ params }: PageProps) {
       {/* Page heading */}
       <div>
         <h1 className="text-xl font-semibold text-foreground">
-          Form {formNum}
+          {classLevelLabel(classes[0])}
         </h1>
         <p className="text-sm text-slate mt-0.5">
           {rows.length} stream{rows.length !== 1 ? "s" : ""} — select one to view marks or dashboard.

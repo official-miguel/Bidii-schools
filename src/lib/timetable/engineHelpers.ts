@@ -355,7 +355,7 @@ export function buildLinkedClassGroups(
       if (overlap) {
         anchorConflicts.push(
           `Subject "${anchorA}" is the anchor of both group "${a.name ?? a.id}" and group ` +
-          `"${b.name ?? b.id}" within the same scope (${a.scopeForm === 0 ? "school-wide" : `Form ${a.scopeForm}`}). ` +
+          `"${b.name ?? b.id}" within the same scope (${a.scopeForm === 0 ? "school-wide" : `level ${a.scopeForm}`}). ` +
           `This creates contradictory solver constraints. Remove the subject from one ` +
           `group's anchor position before generating.`,
         );

@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 async function guard() {
   return (
@@ -92,7 +93,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, fullName: true, admissionNumber: true,
           dateOfBirth: true, archivedAt: true, archiveType: true,
-          schoolClass: { select: { id: true, name: true, form: true, stream: true } },
+          schoolClass: { select: { ...CLASS_LABEL_SELECT } },
           files: {
             where: { mimeType: { startsWith: "image/" } },
             orderBy: { createdAt: "desc" },

@@ -8,6 +8,7 @@ import {
 import { gradeColour, ALL_GRADES, type KcseGrade } from "@/lib/assessment/grading844";
 import { ErrorBanner, EmptyState } from "@/components/ui";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
+import { type ClassOption } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Types (mirrors the /api/assessments/dashboard response shape)
@@ -94,7 +95,7 @@ type DashboardData = {
 // ---------------------------------------------------------------------------
 
 type Props = {
-  classes: { id: string; name: string; form: number }[];
+  classes: ClassOption[];
   subjects: { id: string; name: string; applicableForms: number[] }[];
   /** Pre-select a class in ExamFilterBar on first render (used by tile drill-down). */
   defaultClassId?: string;

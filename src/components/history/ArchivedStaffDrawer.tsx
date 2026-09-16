@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Avatar, Chip } from "@/components/ui";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,10 @@ type ArchivedTeacher = {
   user: { email: string; role: string; isActive: boolean } | null;
   timetableSlots: {
     subject: { name: string; code: string };
-    schoolClass: { name: string; form: number };
+    schoolClass: {
+      name: string; form: number;
+      stream?: string | null; stageName?: string | null; frameworkType?: string | null;
+    };
   }[];
 };
 
@@ -121,7 +125,7 @@ function StaffProfileBody({ teacher }: { teacher: ArchivedTeacher }) {
   // Deduplicate class assignments from timetable slots
   const classesSet = new Map<string, string>();
   teacher.timetableSlots.forEach((s) => {
-    classesSet.set(s.schoolClass.name, `Form ${s.schoolClass.form}`);
+    classesSet.set(s.schoolClass.name, classLevelLabel(s.schoolClass));
   });
 
   return (

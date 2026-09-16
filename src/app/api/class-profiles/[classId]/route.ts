@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 /**
  * GET /api/class-profiles/[classId]
@@ -47,11 +48,7 @@ export async function GET(
   const cls = await prisma.schoolClass.findFirst({
     where: { id: params.classId, schoolId: user.schoolId! },
     select: {
-      id: true,
-      name: true,
-      form: true,
-      stream: true,
-      frameworkType: true,
+      ...CLASS_LABEL_SELECT,
       classTeacher: { select: { id: true, fullName: true } },
     },
   });

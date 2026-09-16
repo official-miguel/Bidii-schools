@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { Chip, ProgressBar } from "@/components/ui";
 import { BarChart2, FileSpreadsheet } from "lucide-react";
+import { classLevelLabel, type ClassOption } from "@/lib/curriculum/classLabels";
 
-export interface ClassRow {
+export interface ClassRow extends ClassOption {
   id: string;
   name: string;
   form: number;
@@ -83,7 +84,7 @@ export default function UnifiedClassTable({ rows, role }: UnifiedClassTableProps
                 {/* Class name */}
                 <td className="px-5 py-3.5">
                   <p className="text-sm font-semibold text-foreground">{row.name}</p>
-                  <p className="text-xs text-slate/60">Form {row.form}</p>
+                  <p className="text-xs text-slate/60">{classLevelLabel(row)}</p>
                 </td>
 
                 {/* Framework */}

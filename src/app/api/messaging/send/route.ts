@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       await resolveRecipients(descriptors as never, user.schoolId!);
 
     // Update recipient summary
-    const summary = buildRecipientSummary(descriptors as never, resolved.length);
+    const summary = await buildRecipientSummary(descriptors as never, resolved.length, user.schoolId!);
     await prisma.message.update({
       where: { id: message.id },
       data:  { recipientSummary: summary },

@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { groupToken } from "@/lib/messaging/placeholders";
+import { levelLabelForForm } from "@/lib/curriculum/levelLabelServer";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -182,18 +183,26 @@ export async function resolveRecipients(
   return { resolved, skipped };
 }
 
-/** Build a human-readable recipient summary string for the history list. */
-export function buildRecipientSummary(
+/**
+ * Build a human-readable recipient summary string for the history list.
+ *
+ * A "form" descriptor carries only the numeric rank, so the level name is read
+ * back off the school's own classes — a CBE cohort reads "Grade 11", not
+ * "Form 11".
+ */
+export async function buildRecipientSummary(
   descriptors: RecipientDescriptor[],
-  resolvedCount: number
-): string {
+  resolvedCount: number,
+  schoolId: string
+): Promise<string> {
   if (descriptors.length === 1) {
     const d = descriptors[0];
     if (d.type === "school")      return `Entire school — ${resolvedCount} recipients`;
     if (d.type === "allParents")  return `All parents — ${resolvedCount} recipients`;
     if (d.type === "allTeachers") return `All teachers — ${resolvedCount} recipients`;
     if (d.type === "allStaff")    return `All staff — ${resolvedCount} recipients`;
-    if (d.type === "form")        return `Form ${d.form} — ${resolvedCount} recipients`;
+    if (d.type === "form")
+      return `${await levelLabelForForm(schoolId, d.form)} — ${resolvedCount} recipients`;
   }
   return `${resolvedCount} recipient${resolvedCount === 1 ? "" : "s"}`;
 }

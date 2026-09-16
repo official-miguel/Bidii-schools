@@ -6,6 +6,7 @@ import { subjectScore, scoreToGrade, denseRank } from "@/lib/assessment/grading8
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import { subjectAppliesToForm } from "@/lib/assessment/subjectScope";
 import { loadCbeMarks } from "@/lib/assessment/cbeMarks";
+import { CLASS_LABEL_SELECT, classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   const classes = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
+    select: { ...CLASS_LABEL_SELECT },
   });
 
   if (classes.length === 0) {
@@ -300,15 +301,17 @@ export async function POST(req: NextRequest) {
 
   // ── Form-level achievements — for students top-10 in their form ───────────
   for (const formClasses of classesByForm.values()) {
-    const form = formClasses[0].form;
+    // Group label as the school saved it — "Form 2" or "Grade 9", never a
+    // "Form" prefix slapped on a CBE rank.
+    const levelLabel = classLevelLabel(formClasses[0]);
     const formTopStudentIds = [...top10ByForm.keys()].filter((id) => {
       return formClasses.some((c) => allStudents.find((s) => s.id === id)?.classId === c.id);
     });
 
     if (formTopStudentIds.length === 0) continue;
 
-    const title = `Top 10 — Form ${form} · ${periodLabel}`;
-    const description = `Recognised for ranking in the top 10 of Form ${form} during ${periodLabel}.`;
+    const title = `Top 10 — ${levelLabel} · ${periodLabel}`;
+    const description = `Recognised for ranking in the top 10 of ${levelLabel} during ${periodLabel}.`;
 
     const existing = await prisma.achievement.findFirst({
       where: {
@@ -338,7 +341,7 @@ export async function POST(req: NextRequest) {
           description,
           achievementDate: new Date(),
           awardLevel: "Form Top 10",
-          aiSummary: `Top 10 academic performers across Form ${form} for ${periodLabel}.`,
+          aiSummary: `Top 10 academic performers across ${levelLabel} for ${periodLabel}.`,
           students: {
             create: formTopStudentIds.map((studentId) => ({ studentId })),
           },

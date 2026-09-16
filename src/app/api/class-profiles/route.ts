@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 /**
  * GET /api/class-profiles
@@ -20,11 +21,7 @@ export async function GET() {
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
     select: {
-      id: true,
-      name: true,
-      form: true,
-      stream: true,
-      frameworkType: true,
+      ...CLASS_LABEL_SELECT,
       classTeacher: { select: { id: true, fullName: true } },
       _count: { select: { students: true } },
     },

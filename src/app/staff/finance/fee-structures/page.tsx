@@ -7,14 +7,17 @@ import {
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
   premiumTdClass, premiumTrClass,
 } from "@/components/ui";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface SchoolClass {
-  id:     string;
-  name:   string;
-  form:   number;
-  stream: string | null;
+  id:          string;
+  name:        string;
+  form:        number;
+  stream:      string | null;
+  stageName?:      string | null;
+  frameworkType?:  string | null;
 }
 
 interface FinancialTermName {
@@ -43,7 +46,9 @@ function classLabel(s: FeeStructure, classes: SchoolClass[]) {
   const cls =
     classes.find(c => c.form === s.form && (c.stream ?? null) === (s.stream ?? null)) ??
     classes.find(c => c.form === s.form);
-  return cls ? cls.name : `Form ${s.form}${s.stream ? ` – ${s.stream}` : ""}`;
+  if (cls) return cls.name;
+  // No matching class on file — fall back to the plain rank.
+  return `Form ${s.form}${s.stream ? ` – ${s.stream}` : ""}`;
 }
 
 const inputCls =
@@ -247,7 +252,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
                   const rep = classes.find(c => c.form === f && !c.stream) ?? classes.find(c => c.form === f);
                   return (
                     <option key={f} value={f}>
-                      {rep ? rep.name.replace(/\s*[-–]\s*\w+$/, "") || `Form ${f}` : `Form ${f}`}
+                      {rep ? classLevelLabel(rep) : `Form ${f}`}
                     </option>
                   );
                 })}

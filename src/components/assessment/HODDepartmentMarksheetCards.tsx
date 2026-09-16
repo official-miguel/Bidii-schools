@@ -136,14 +136,12 @@ function FilterBar({
   onChange: (f: FilterState) => void;
 }) {
   // Derive available options from loaded cards
+  // Levels come from the class row itself — "Form 3" / "Grade 11" / "PP1" —
+  // rather than being guessed out of the class name.
   const forms = useMemo(() => {
-    const formNums = new Set<number>();
-    // Infer form from className (e.g. "Form 3 North" or "3 North")
-    for (const c of cards) {
-      const m = c.className.match(/\d+/);
-      if (m) formNums.add(parseInt(m[0], 10));
-    }
-    return [...formNums].sort((a, b) => a - b);
+    const byForm = new Map<number, string>();
+    for (const c of cards) if (!byForm.has(c.form)) byForm.set(c.form, c.levelLabel);
+    return [...byForm.entries()].sort((a, b) => a[0] - b[0]);
   }, [cards]);
 
   const classes = useMemo(() => {
@@ -181,9 +179,9 @@ function FilterBar({
           className={selectClass}
           style={{ minWidth: 100 }}
         >
-          <option value="">All forms</option>
-          {forms.map((f) => (
-            <option key={f} value={String(f)}>Form {f}</option>
+          <option value="">All levels</option>
+          {forms.map(([f, label]) => (
+            <option key={f} value={String(f)}>{label}</option>
           ))}
         </select>
         <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
@@ -418,11 +416,7 @@ export default function HODDepartmentMarksheetCards({
     return allCards.filter((c) => {
       if (filters.classId && c.classId !== filters.classId) return false;
       if (filters.subjectId && c.subjectId !== filters.subjectId) return false;
-      if (filters.form) {
-        const m = c.className.match(/\d+/);
-        const cardForm = m ? String(parseInt(m[0], 10)) : "";
-        if (cardForm !== filters.form) return false;
-      }
+      if (filters.form && String(c.form) !== filters.form) return false;
       return true;
     });
   }, [allCards, filters]);

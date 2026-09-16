@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronRight, Lightbulb, BarChart3,
 } from "lucide-react";
 import { Badge, PageHeader, Spinner } from "@/components/ui";
+import { useLevelLabels } from "@/lib/curriculum/useLevelLabels";
 
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ function statCard(label: string, value: string | number, icon: React.ReactNode, 
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function BookIntelligencePage() {
+  const { levelLabel } = useLevelLabels();
   const { id } = useParams<{ id: string }>();
   const [data, setData]       = useState<IntelData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function BookIntelligencePage() {
 
   return (
     <div>
-      <PageHeader title={catalogue.title} description={[catalogue.author, catalogue.subject, catalogue.form ? `Form ${catalogue.form}` : null, catalogue.bookNumber].filter(Boolean).join(" · ")} />
+      <PageHeader title={catalogue.title} description={[catalogue.author, catalogue.subject, catalogue.form ? levelLabel(catalogue.form) : null, catalogue.bookNumber].filter(Boolean).join(" · ")} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

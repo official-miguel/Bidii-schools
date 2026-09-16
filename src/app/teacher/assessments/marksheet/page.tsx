@@ -5,6 +5,7 @@ import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
 import { resolveAssessmentActor, canEnterMarks, canViewMarksheet } from "@/lib/assessment/auth844";
 import MarksheetPageClient from "@/components/assessment/MarksheetPageClient";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -110,8 +111,8 @@ export default async function TeacherMarksheetPage({
   const allClasses = await db.schoolClass.findMany({
     where: { schoolId },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   const assignedClassIds = actor.teacher?.id
     ? new Set(
@@ -254,7 +255,7 @@ export default async function TeacherMarksheetPage({
           </p>
         </div>
         <MarksheetWithSaveBar
-          classes={classes.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+          classes={classes}
           subjects={viewableSubjects}
           defaultClassId={defaultClassId}
           defaultSubjectId={defaultSubjectId}

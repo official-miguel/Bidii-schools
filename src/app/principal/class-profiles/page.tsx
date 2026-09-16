@@ -11,6 +11,7 @@ import { SkeletonTable } from "@/components/ui/ProgressivePage";
 import ContextNavigation from "@/components/ContextNavigation";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import { Users, BookOpen, ChevronRight } from "lucide-react";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ type ClassProfile = {
   name: string;
   form: number;
   stream: string | null;
+  stageName: string | null;
   frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: { id: string; fullName: string } | null;
   _count: { students: number };
@@ -27,6 +29,8 @@ type ClassProfile = {
 
 type FormGroup = {
   form: number;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  label: string;
   classes: ClassProfile[];
   totalStudents: number;
   subjectCounts: { core: number; elective: number; total: number };
@@ -67,6 +71,7 @@ export default function ClassProfilesPage() {
       .sort(([a], [b]) => a - b)
       .map(([form, classes]) => ({
         form,
+        label: classLevelLabel(classes[0]),
         classes,
         totalStudents: classes.reduce((s, c) => s + c._count.students, 0),
         // Subject counts come from the first class in the form (they share the same subjects)
@@ -78,7 +83,7 @@ export default function ClassProfilesPage() {
     const q = search.toLowerCase();
     if (!q) return true;
     return (
-      `form ${g.form}`.includes(q) ||
+      g.label.toLowerCase().includes(q) ||
       g.classes.some((c) => c.name.toLowerCase().includes(q))
     );
   });
@@ -153,7 +158,7 @@ export default function ClassProfilesPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors">
-                      Form {group.form}
+                      {group.label}
                     </p>
                     <p className="text-xs text-slate mt-0.5">
                       {group.classes.length} class{group.classes.length !== 1 ? "es" : ""}

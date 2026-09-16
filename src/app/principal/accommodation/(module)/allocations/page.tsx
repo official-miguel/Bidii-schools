@@ -16,6 +16,9 @@ import SearchableSelect from "@/components/SearchableSelect";
 import Modal from "@/components/Modal";
 import ContextNavigation from "@/components/ContextNavigation";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
+import {
+  buildLevelLabelMap, levelLabelFor, allLevelsLabelFor, levelNounFor,
+} from "@/lib/curriculum/classLabels";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,7 +57,10 @@ interface AllocRecord {
   sleepingPosition: { id: string; position: string | null; customLabel: string | null } | null;
   allocatedBy: { email: string } | null;
 }
-interface SchoolClass { id: string; name: string; form: number; }
+interface SchoolClass {
+  id: string; name: string; form: number;
+  stream?: string | null; stageName?: string | null; frameworkType?: string | null;
+}
 
 const NAV_ITEMS = [
   { href: "/principal/accommodation/overview",      label: "Overview",    exact: true },
@@ -95,8 +101,12 @@ function OccupancyBar({ pct }: { pct: number }) {
 
 // ── DormCard — visual dorm picker ─────────────────────────────────────────────
 function DormCard({
-  dorm, selected, onSelect,
-}: { dorm: DormOption; selected: boolean; onSelect: () => void }) {
+  dorm, selected, onSelect, levelLabels,
+}: {
+  dorm: DormOption; selected: boolean; onSelect: () => void;
+  /** Level rank → the name the school saved ("Form 3", "Grade 11", "PP1"). */
+  levelLabels?: Map<number, string>;
+}) {
   const pct = dorm.totalCapacity > 0
     ? Math.round((dorm.occupiedCount / dorm.totalCapacity) * 100) : 0;
   const isFull = dorm.availableCount === 0 && dorm.totalCapacity > 0;
@@ -121,7 +131,7 @@ function DormCard({
             </span>
             {dorm.allocationPolicy === "RESTRICTED_BY_FORM" && dorm.permittedForms.length > 0 && (
               <span className="text-[10px] text-slate">
-                F{dorm.permittedForms.join(",")}
+                {dorm.permittedForms.map((f) => levelLabelFor(levelLabels, f)).join(", ")}
               </span>
             )}
           </div>
@@ -143,8 +153,13 @@ function DormCard({
 
 // ── AllocateModal — single student ────────────────────────────────────────────
 function AllocateModal({
-  student, dorms, onClose, onSaved,
-}: { student: StudentRow; dorms: DormOption[]; onClose: () => void; onSaved: () => void }) {
+  student, dorms, levelLabels, onClose, onSaved,
+}: {
+  student: StudentRow; dorms: DormOption[];
+  /** Level rank → the name the school saved ("Form 3", "Grade 11", "PP1"). */
+  levelLabels: Map<number, string>;
+  onClose: () => void; onSaved: () => void;
+}) {
   const [dormId, setDormId]         = useState(student.currentAllocation?.dormId ?? "");
   const [cubicles, setCubicles]     = useState<CubicleOption[]>([]);
   const [cubicleId, setCubicleId]   = useState("");
@@ -225,7 +240,7 @@ function AllocateModal({
           <p className="text-sm font-medium text-foreground mb-2">Select dormitory</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
             {dorms.map((d) => (
-              <DormCard key={d.id} dorm={d} selected={dormId === d.id}
+              <DormCard key={d.id} dorm={d} selected={dormId === d.id} levelLabels={levelLabels}
                 onSelect={() => { setDormId(d.id); setCubicleId(""); setPositionId(""); }} />
             ))}
           </div>
@@ -378,8 +393,10 @@ function BulkAllocateModal({
   const [preview, setPreview]   = useState<{ studentId: string; studentName: string; className: string }[] | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
-  // Derive distinct sorted form numbers from the classes the school has registered
+  // Derive distinct sorted form numbers from the classes the school has registered,
+  // labelled the way each level was actually saved (Form 3 / Grade 11 / PP1).
   const schoolForms = [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b);
+  const levelLabels = buildLevelLabelMap(classes);
 
   async function handlePreview() {
     if (!dormId) { setError("Select a dormitory first."); return; }
@@ -428,7 +445,7 @@ function BulkAllocateModal({
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Mode tabs */}
         <div className="flex rounded-lg border border-border overflow-hidden">
-          {([["unallocated","Unallocated students"],["form","By form"],["class","By class"]] as [typeof mode, string][]).map(([m, label]) => (
+          {([["unallocated","Unallocated students"],["form",`By ${levelNounFor(classes)}`],["class","By class"]] as [typeof mode, string][]).map(([m, label]) => (
             <button key={m} type="button" onClick={() => setMode(m)}
               className={`flex-1 py-2 text-xs font-medium transition-colors ${mode === m ? "bg-teal text-white" : "bg-card text-slate hover:bg-background"}`}>
               {label}
@@ -437,12 +454,12 @@ function BulkAllocateModal({
         </div>
         {/* Filter */}
         {mode === "form" && (
-          <FormField label="Select forms">
+          <FormField label={`Select ${levelNounFor(classes)}s`}>
             <div className="flex flex-wrap gap-2 mt-1">
               {schoolForms.map((f) => (
                 <button key={f} type="button" onClick={() => setForms((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f])}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${forms.includes(f) ? "bg-teal text-white border-teal" : "border-border text-slate hover:border-teal/40"}`}>
-                  Form {f}
+                  {levelLabelFor(levelLabels, f)}
                 </button>
               ))}
             </div>
@@ -465,7 +482,7 @@ function BulkAllocateModal({
           <p className="text-sm font-medium text-foreground mb-2">Destination dormitory</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {dorms.filter((d) => d.availableCount > 0).map((d) => (
-              <DormCard key={d.id} dorm={d} selected={dormId === d.id} onSelect={() => setDormId(d.id)} />
+              <DormCard key={d.id} dorm={d} selected={dormId === d.id} levelLabels={levelLabels} onSelect={() => setDormId(d.id)} />
             ))}
           </div>
           {selectedDorm && (
@@ -734,6 +751,8 @@ export default function AllocationsPage() {
   function flash(msg: string) { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 4000); }
 
   const filteredStudents = students.filter((s) => !formFilter || String(s.form) === formFilter);
+  // Level labels come from how the school saved each class, not from the rank.
+  const levelLabels = buildLevelLabelMap(classes);
 
   const allocatedCount   = filteredStudents.filter((s) => s.currentAllocation).length;
   const unallocatedCount = filteredStudents.filter((s) => !s.currentAllocation).length;
@@ -834,8 +853,8 @@ export default function AllocationsPage() {
           </div>
           <select className="text-xs border border-border rounded-lg px-2 py-1.5 bg-card"
             value={formFilter} onChange={(e) => setFormFilter(e.target.value)}>
-            <option value="">All forms</option>
-            {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => <option key={f} value={String(f)}>Form {f}</option>)}
+            <option value="">{allLevelsLabelFor(classes)}</option>
+            {[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b).map((f) => <option key={f} value={String(f)}>{levelLabelFor(levelLabels, f)}</option>)}
           </select>
           <WorkspaceToolbar.ViewSwitcher value={viewMode} onChange={(m) => setViewMode(m as "table" | "list")} modes={["table","list"]} />
           <WorkspaceToolbar.RefreshButton onClick={() => { loadStudents(search); loadDorms(); }} />
@@ -887,7 +906,7 @@ export default function AllocationsPage() {
                       className="h-4 w-4 rounded border-border text-teal" />
                   </th>
                   <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3 w-[90px]">Form</th>
+                  <th className="px-4 py-3 w-[90px] capitalize">{levelNounFor(classes)}</th>
                   <th className="px-4 py-3">Current accommodation</th>
                   <th className="px-4 py-3 w-[180px] text-right">Actions</th>
                 </tr>
@@ -906,7 +925,7 @@ export default function AllocationsPage() {
                       </Link>
                       <p className="text-xs text-slate">{s.admissionNumber} · {s.className}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate">Form {s.form}</td>
+                    <td className="px-4 py-3 text-sm text-slate">{levelLabelFor(levelLabels, s.form)}</td>
                     <td className="px-4 py-3">
                       {s.currentAllocation ? (
                         <div>
@@ -1013,7 +1032,7 @@ export default function AllocationsPage() {
 
       {/* Modals */}
       {allocatingStudent && (
-        <AllocateModal student={allocatingStudent} dorms={dormOptions} onClose={() => setAllocatingStudent(null)}
+        <AllocateModal student={allocatingStudent} dorms={dormOptions} levelLabels={levelLabels} onClose={() => setAllocatingStudent(null)}
           onSaved={() => { setAllocatingStudent(null); flash(`${allocatingStudent.fullName} allocated successfully.`); loadStudents(search); loadDorms(); }} />
       )}
       {deallocatingStudent && (

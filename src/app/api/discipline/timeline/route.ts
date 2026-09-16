@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRecordsPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 /// Chronological discipline timeline for one student. Each entry carries the
 /// class/form the student was in when the offence happened (snapshotted on
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   const classes = classIds.length
     ? await prisma.schoolClass.findMany({
         where: { id: { in: classIds } },
-        select: { id: true, name: true, form: true },
+        select: { ...CLASS_LABEL_SELECT },
       })
     : [];
   const classMap = new Map(classes.map((c) => [c.id, c]));

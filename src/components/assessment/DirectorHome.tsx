@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { SummaryTilesPayload } from "@/app/api/assessments/home/summary/route";
 import type { ClassRow } from "./UnifiedClassTable";
+import { classLevelLabel, levelNounFor } from "@/lib/curriculum/classLabels";
 import { SkeletonStatCard } from "@/components/ui/ProgressivePage";
 import { Chip, ProgressBar } from "@/components/ui";
 import { ChevronRight } from "lucide-react";
@@ -100,7 +101,7 @@ export default function DirectorHome() {
         />
       </div>
 
-      {/* All classes — grouped by Form */}
+      {/* All classes — grouped by level (Form / Grade) */}
       <div>
         <h2 className="text-sm font-semibold text-foreground mb-3">All Classes</h2>
         <FormGroupTable classes={data.classes} />
@@ -113,6 +114,8 @@ export default function DirectorHome() {
 
 interface FormGroup {
   form: number;
+  /** How this level is actually written — "Form 3", "Grade 11", "PP1". */
+  label: string;
   streams: ClassRow[];
   /** aggregated mean points across all streams (null when none have data) */
   meanPoints: number | null;
@@ -157,6 +160,7 @@ function buildFormGroups(classes: ClassRow[]): FormGroup[] {
 
     groups.push({
       form,
+      label: classLevelLabel(streams[0]),
       streams,
       meanPoints,
       meanGrade: best?.meanGrade ?? null,
@@ -231,7 +235,7 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
         <table className="w-full text-sm min-w-[560px]">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
-              <th className="px-5 py-3.5">Form</th>
+              <th className="px-5 py-3.5 capitalize">{levelNounFor(classes)}</th>
               <th className="px-5 py-3.5 w-[100px]">Streams</th>
               <th className="px-5 py-3.5 w-[160px]">Avg mean grade</th>
               <th className="px-5 py-3.5">Entry completion</th>
@@ -251,7 +255,7 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
                     className="block"
                   >
                     <p className="text-sm font-semibold text-foreground group-hover:text-royal transition-colors">
-                      Form {g.form}
+                      {g.label}
                     </p>
                     <p className="text-xs text-slate/60">
                       {g.streams.length} stream
@@ -293,7 +297,7 @@ function FormGroupTable({ classes }: { classes: ClassRow[] }) {
                   <Link
                     href={`/principal/assessments/forms/${g.form}`}
                     className="flex items-center justify-end text-slate/40 group-hover:text-royal transition-colors"
-                    aria-label={`View Form ${g.form} streams`}
+                    aria-label={`View ${g.label} streams`}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Link>

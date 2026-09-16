@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // GET /api/history/staff/[id]
@@ -34,7 +35,7 @@ export async function GET(
         take: 20,
         include: {
           subject:    { select: { name: true, code: true } },
-          schoolClass: { select: { name: true, form: true } },
+          schoolClass: { select: { ...CLASS_LABEL_SELECT } },
         },
       },
     },

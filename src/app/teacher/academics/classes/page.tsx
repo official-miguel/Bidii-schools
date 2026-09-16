@@ -26,6 +26,9 @@ import StaffProfileDrawer from "@/components/entity-drawers/StaffProfileDrawer";
 import SubjectWorkspaceDrawer from "@/components/entity-drawers/SubjectWorkspaceDrawer";
 import DepartmentWorkspaceDrawer from "@/components/entity-drawers/DepartmentWorkspaceDrawer";
 import { ExternalLink, Users, Star } from "lucide-react";
+import {
+  buildLevelLabelMap, levelLabelFor, levelNounFor, allLevelsLabelFor, classLevelLabel,
+} from "@/lib/curriculum/classLabels";
 
 // ── Nav (shared across teacher academics sub-pages) ─ imported from lib ──
 
@@ -33,6 +36,7 @@ import { ExternalLink, Users, Star } from "lucide-react";
 type Teacher = { id: string; fullName: string };
 type SchoolClass = {
   id: string; name: string; form: number; stream: string | null;
+  stageName: string | null;
   frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: Teacher | null;
   _count: { students: number };
@@ -105,6 +109,9 @@ export default function TeacherClassesPage() {
   useEffect(() => { load(); }, [load]);
 
   const distinctForms = [...new Set((classes ?? []).map((c) => c.form))].sort((a, b) => a - b);
+  // Levels read the way the school saved them — "Form 3", "Grade 11", "PP1".
+  const levelLabels = buildLevelLabelMap(classes ?? []);
+  const levelNoun   = levelNounFor(classes ?? []);
 
   const visibleClasses = (classes ?? []).filter((c) =>
     (!filterForm      || c.form === Number(filterForm)) &&
@@ -143,10 +150,11 @@ export default function TeacherClassesPage() {
 
       <WorkspaceToolbar>
         <WorkspaceToolbar.Filter
-          label="Form" value={filterForm}
+          label={levelNoun === "level" ? "Level" : levelNoun === "grade" ? "Grade" : "Form"}
+          value={filterForm}
           options={[
-            { value: "", label: "All forms" },
-            ...distinctForms.map((f) => ({ value: String(f), label: `Form ${f}` })),
+            { value: "", label: allLevelsLabelFor(classes ?? []) },
+            ...distinctForms.map((f) => ({ value: String(f), label: levelLabelFor(levelLabels, f) })),
           ]}
           onChange={setFilterForm}
         />
@@ -186,7 +194,7 @@ export default function TeacherClassesPage() {
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-border bg-slate-50/80 text-left text-xs font-semibold text-slate uppercase tracking-wide">
                   <th className="px-5 py-3.5">Class</th>
-                  <th className="px-5 py-3.5 w-[80px]">Form</th>
+                  <th className="px-5 py-3.5 w-[80px] capitalize">{levelNoun}</th>
                   <th className="px-5 py-3.5 w-[110px]">Framework</th>
                   <th className="px-5 py-3.5">Class teacher</th>
                   <th className="px-5 py-3.5 w-[90px]">Students</th>
@@ -229,7 +237,7 @@ export default function TeacherClassesPage() {
 
                       {/* Form */}
                       <td className="px-5 py-3.5">
-                        <span className="text-sm text-slate">Form {c.form}</span>
+                        <span className="text-sm text-slate">{classLevelLabel(c)}</span>
                       </td>
 
                       {/* Framework */}

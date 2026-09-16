@@ -17,6 +17,10 @@ import Modal from "@/components/Modal";
 import ContextNavigation from "@/components/ContextNavigation";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
+import {
+  buildLevelLabelMap, levelLabelFor, levelNounFor,
+  type ClassLabelSource,
+} from "@/lib/curriculum/classLabels";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,7 +38,7 @@ interface DormRow {
 
 interface StaffOption { id: string; fullName: string; staffId: string; }
 interface StudentOption { id: string; fullName: string; admissionNumber: string; className: string; }
-interface SchoolClass { id: string; form: number; }
+interface SchoolClass extends ClassLabelSource { id: string; form: number; }
 
 // ── Wizard step types ─────────────────────────────────────────────────────────
 
@@ -247,7 +251,11 @@ function Step2Structure({ data, onChange }: { data: WizardData; onChange: (p: Pa
 
 // ── Wizard Step 3: Allocation policy ─────────────────────────────────────────
 
-function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChange: (p: Partial<WizardData>) => void; schoolForms: number[] }) {
+function Step3Policy({ data, onChange, classes }: { data: WizardData; onChange: (p: Partial<WizardData>) => void; classes: SchoolClass[] }) {
+  // Levels are labelled the way the school saved them (Form 3 / Grade 11 / PP1).
+  const schoolForms  = [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b);
+  const levelLabels  = buildLevelLabelMap(classes);
+  const noun         = levelNounFor(classes);
   const toggleForm = (f: number) => {
     const current = data.permittedForms;
     onChange({ permittedForms: current.includes(f) ? current.filter((x) => x !== f) : [...current, f] });
@@ -259,8 +267,8 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
       </p>
       <div className="grid grid-cols-1 gap-3">
         {([
-          { value: "MIXED_FORMS",       icon: Users,       label: "Mixed Forms",        desc: "Students from all forms and classes may share this dormitory together." },
-          { value: "RESTRICTED_BY_FORM", icon: ShieldCheck, label: "Restricted by Form", desc: "Only students from the selected forms may be allocated here." },
+          { value: "MIXED_FORMS",       icon: Users,       label: `Mixed ${noun}s`,        desc: `Students from all ${noun}s and classes may share this dormitory together.` },
+          { value: "RESTRICTED_BY_FORM", icon: ShieldCheck, label: `Restricted by ${noun}`, desc: `Only students from the selected ${noun}s may be allocated here.` },
         ] as { value: string; icon: typeof Users; label: string; desc: string }[]).map(({ value, icon: Icon, label, desc }) => {
           const active = data.allocationPolicy === value;
           return (
@@ -288,7 +296,7 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
 
       {data.allocationPolicy === "RESTRICTED_BY_FORM" && (
         <div>
-          <label className={labelClass}>Permitted forms</label>
+          <label className={labelClass}>Permitted {noun}s</label>
           <div className="flex flex-wrap gap-2 mt-1">
             {schoolForms.map((f) => {
               const on = data.permittedForms.includes(f);
@@ -298,14 +306,14 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
                     on ? "bg-teal text-white border-teal" : "border-border text-slate hover:border-teal/40"
                   }`}
                 >
-                  {on && <Check className="h-3 w-3" />} Form {f}
+                  {on && <Check className="h-3 w-3" />} {levelLabelFor(levelLabels, f)}
                 </button>
               );
             })}
           </div>
           {data.permittedForms.length === 0 && (
             <p className="text-xs text-warn mt-2 flex items-center gap-1">
-              <AlertTriangle className="h-3.5 w-3.5" /> Select at least one form.
+              <AlertTriangle className="h-3.5 w-3.5" /> Select at least one {noun}.
             </p>
           )}
         </div>
@@ -336,7 +344,7 @@ function Step3Policy({ data, onChange, schoolForms }: { data: WizardData; onChan
 const STEP_LABELS = ["Basics", "Structure", "Allocation Policy"];
 
 function DormWizard({
-  onClose, onSaved, editDorm, staffList, studentList, schoolPolicy, schoolForms,
+  onClose, onSaved, editDorm, staffList, studentList, schoolPolicy, classes,
 }: {
   onClose: () => void;
   onSaved: (dorm: DormRow) => void;
@@ -344,7 +352,7 @@ function DormWizard({
   staffList: StaffOption[];
   studentList: StudentOption[];
   schoolPolicy: SchoolPolicy;
-  schoolForms: number[];
+  classes: SchoolClass[];
 }) {
   const dormWizardDraftKey = `bidii_draft_dorm_wizard_${editDorm?.id ?? "new"}`;
 
@@ -459,7 +467,7 @@ function DormWizard({
       <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }}>
         {step === 0 && <Step1Basics data={data} onChange={patch} staffList={staffList} studentList={studentList} schoolPolicy={schoolPolicy} />}
         {step === 1 && <Step2Structure data={data} onChange={patch} />}
-        {step === 2 && <Step3Policy data={data} onChange={patch} schoolForms={schoolForms} />}
+        {step === 2 && <Step3Policy data={data} onChange={patch} classes={classes} />}
 
         <div className="flex items-center justify-between gap-3 mt-6">
           <button type="button" onClick={() => { if (!editDorm) clearWizDraft(); onClose(); }} className={secondaryButtonClass}>Cancel</button>
@@ -694,7 +702,7 @@ export default function DormitoriesPage() {
           staffList={staffList}
           studentList={studentList}
           schoolPolicy={schoolPolicy}
-          schoolForms={[...new Set(classes.map((c) => c.form))].sort((a, b) => a - b)}
+          classes={classes}
         />
       )}
 

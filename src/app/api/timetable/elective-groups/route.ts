@@ -20,6 +20,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { scopeLabelForForm } from "@/lib/curriculum/levelLabelServer";
 
 // ── Auth helper ────────────────────────────────────────────────────────────
 
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
     where: { schoolId, name, scopeForm },
   });
   if (existing) {
-    const scope = scopeForm === 0 ? "school-wide" : `Form ${scopeForm}`;
+    const scope = await scopeLabelForForm(schoolId, scopeForm);
     return NextResponse.json(
       { error: `A group named "${name}" already exists for ${scope}.` },
       { status: 409 },
@@ -199,7 +200,7 @@ export async function PATCH(req: NextRequest) {
       where: { schoolId, name, scopeForm: group.scopeForm, id: { not: id } },
     });
     if (clash) {
-      const scope = group.scopeForm === 0 ? "school-wide" : `Form ${group.scopeForm}`;
+      const scope = await scopeLabelForForm(schoolId, group.scopeForm);
       return NextResponse.json(
         { error: `A group named "${name}" already exists for ${scope}.` },
         { status: 409 },

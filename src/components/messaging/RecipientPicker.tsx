@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { searchRecipientsLocal, seedRecipientsCache } from "@/lib/messaging/offlineSync";
 import type { RecipientDescriptor } from "@/lib/messaging/resolve";
+import { buildLevelLabelMap, levelLabelFor } from "@/lib/curriculum/classLabels";
 
 interface Group { id: string; name: string }
-interface SchoolClass { id: string; name: string; form: number; stream: string | null }
+interface SchoolClass {
+  id: string; name: string; form: number; stream: string | null;
+  stageName?: string | null; frameworkType?: string | null;
+}
 
 interface Props {
   schoolId:  string;
@@ -106,10 +110,12 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
 
   // Per-form chips — derived entirely from the school's registered classes.
   // If no classes are loaded yet, no form chips are shown (avoids fake fallbacks).
+  // Levels are named the way the school saved them — "Form 3", "Grade 11".
+  const levelLabels = buildLevelLabelMap(classes);
   const forms = Array.from(new Set(classes.map((c) => c.form))).sort((a, b) => a - b);
   const formChips = forms.map((f) => ({
     key: `form:${f}`,
-    label: `Form ${f} (all)`,
+    label: `${levelLabelFor(levelLabels, f)} (all)`,
     descriptor: { type: "form" as const, form: f },
   }));
 
@@ -136,7 +142,7 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
     else if (d.type === "allParents")  label = "All Parents";
     else if (d.type === "allTeachers") label = "All Teachers";
     else if (d.type === "allStaff")    label = "All Staff";
-    else if (d.type === "form")        label = `Form ${d.form} (all)`;
+    else if (d.type === "form")        label = `${levelLabelFor(levelLabels, d.form)} (all)`;
     else if (d.type === "class") {
       const cls = classes.find((c) => c.id === d.classId);
       label = cls?.name ?? "Class";
@@ -209,9 +215,9 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
         </div>
       </div>
 
-      {/* By form */}
+      {/* By level */}
       <div>
-        <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">By form (all students)</p>
+        <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">By level (all students)</p>
         <div className="flex flex-wrap gap-1.5">
           {formChips.map((c) => <Chip key={c.key} k={c.key} label={c.label} descriptor={c.descriptor} />)}
         </div>

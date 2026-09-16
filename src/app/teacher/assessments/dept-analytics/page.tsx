@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
 import DeptAnalyticsPage from "@/components/assessment/DeptAnalyticsPage";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -113,8 +114,8 @@ export default async function TeacherDeptAnalyticsPage() {
   const classes = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId!, ...classFilter },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   // Subjects — teacher's assigned subjects or all if wide access
   const subjectIds = isWideAccess || !actor.teacher?.id

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
 import HODFormulaSettings from "@/components/assessment/HODFormulaSettings";
+import { CLASS_LABEL_SELECT, buildLevelLabelMap } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -163,23 +164,15 @@ export default async function HODAssessmentSettingsPage() {
   console.log('[HOD Settings] Fetching school class forms...');
   const schoolClassForms = await prisma.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
-    select: { form: true, stageName: true, frameworkType: true },
+    select: { ...CLASS_LABEL_SELECT },
     orderBy: [{ form: "asc" }, { name: "asc" }],
   });
   console.log('[HOD Settings] Found', schoolClassForms.length, 'class forms');
 
   console.log('[HOD Settings] Deduplicating levels...');
-  const schoolForms: number[] = [];
-  const schoolFormLabels: Record<number, string> = {};
-  for (const c of schoolClassForms) {
-    if (c.form in schoolFormLabels) continue;
-    schoolForms.push(c.form);
-    // stageName is the canonical, stream-free level name. Legacy rows without
-    // one fall back to the framework's own naming.
-    schoolFormLabels[c.form] =
-      c.stageName?.trim() ||
-      (c.frameworkType === "CBE" ? `Grade ${c.form}` : `Form ${c.form}`);
-  }
+  const levelLabels    = buildLevelLabelMap(schoolClassForms);
+  const schoolForms    = [...levelLabels.keys()];
+  const schoolFormLabels = Object.fromEntries(levelLabels);
   console.log('[HOD Settings] Unique levels:', schoolForms);
 
   console.log('[HOD Settings] Page data loaded successfully, rendering...');

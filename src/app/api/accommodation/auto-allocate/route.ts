@@ -6,6 +6,7 @@ import {
   type GenderPolicy,
   studentMatchesDormGender,
 } from "@/lib/accommodation/genderPolicy";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 async function manageGuard() {
   return (
@@ -196,7 +197,7 @@ export async function POST(req: NextRequest) {
       fullName: true,
       admissionNumber: true,
       gender: true,
-      schoolClass: { select: { name: true, form: true } },
+      schoolClass: { select: { name: true, form: true, stream: true, stageName: true, frameworkType: true } },
       accommodationAllocations: {
         where: { status: "CURRENT" },
         select: { dormId: true },
@@ -294,7 +295,7 @@ export async function POST(req: NextRequest) {
       unplaceable.push({
         studentId: student.id,
         studentName: student.fullName,
-        reason: `No eligible dormitory with available capacity for Form ${studentForm}${genderNote}`,
+        reason: `No eligible dormitory with available capacity for ${classLevelLabel(student.schoolClass)}${genderNote}`,
       });
       continue;
     }

@@ -19,6 +19,7 @@ import { postLedgerEntry } from "./ledger";
 import { nextInvoiceNumber } from "./receipts";
 import { computeProratedAmount } from "./proration";
 import { notifyParents } from "@/lib/parentNotifications";
+import { CLASS_LABEL_SELECT, classLevelLabel } from "@/lib/curriculum/classLabels";
 
 export interface BatchInvoicingResult {
   succeeded:          number;
@@ -112,7 +113,7 @@ export async function runBatchInvoicing(
       admissionNumber: true,
       fullName: true,
       boardingStatus: true,
-      schoolClass: { select: { form: true, stream: true } },
+      schoolClass: { select: { ...CLASS_LABEL_SELECT } },
     },
   });
 
@@ -195,7 +196,7 @@ export async function runBatchInvoicing(
         missingFeeClasses.set(classKey, {
           form,
           stream,
-          className: `Form ${form}${stream ? ` – ${stream}` : ""}`,
+          className: student.schoolClass.name,
         });
       }
       continue;
@@ -204,7 +205,7 @@ export async function runBatchInvoicing(
     // Build invoice line items
     const lineItems: Array<{ description: string; amount: number; type: string }> = [
       {
-        description: `Term fees — Form ${form}`,
+        description: `Term fees — ${classLevelLabel(student.schoolClass)}`,
         amount:      parseFloat(structure.amountPerTerm.toString()),
         type:        "BASE_FEE",
       },

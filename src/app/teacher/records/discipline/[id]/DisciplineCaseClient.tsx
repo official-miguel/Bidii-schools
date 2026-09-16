@@ -8,6 +8,7 @@ import {
 } from "@/components/ui";
 import { CheckCircle2, Clock, FileText, MessageSquare, X } from "lucide-react";
 import { formatCreator } from "@/components/records/shared";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,10 @@ type DisciplineCaseClientRecord = {
     id: string;
     fullName: string;
     admissionNumber: string;
-    schoolClass: { name: string; form: number };
+    schoolClass: {
+      name: string; form: number;
+      stream?: string | null; stageName?: string | null; frameworkType?: string | null;
+    };
   };
 };
 
@@ -290,7 +294,7 @@ export default function DisciplineCaseClient({
               <p className="text-xs font-semibold text-foreground">Class / Form</p>
               <p className="text-xs text-slate mt-0.5">
                 {record.student.schoolClass.name}
-                <span className="ml-1.5 text-slate/60">(Form {record.student.schoolClass.form})</span>
+                <span className="ml-1.5 text-slate/60">({classLevelLabel(record.student.schoolClass)})</span>
               </p>
             </li>
           </ol>

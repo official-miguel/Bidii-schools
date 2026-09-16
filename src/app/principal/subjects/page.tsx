@@ -22,6 +22,9 @@ import StaffProfileDrawer    from "@/components/entity-drawers/StaffProfileDrawe
 import DepartmentWorkspaceDrawer from "@/components/entity-drawers/DepartmentWorkspaceDrawer";
 import ClassWorkspaceDrawer  from "@/components/entity-drawers/ClassWorkspaceDrawer";
 import { ExternalLink } from "lucide-react";
+import {
+  buildLevelLabelMap, levelLabelFor, allLevelsLabelFor,
+} from "@/lib/curriculum/classLabels";
 
 type Department = { id: string; name: string };
 type Subject = {
@@ -37,7 +40,10 @@ type Subject = {
   memberOfGroups?: { id: string; name: string }[];
 };
 
-type SchoolClass = { id: string; name: string; form: number; stream: string | null };
+type SchoolClass = {
+  id: string; name: string; form: number; stream: string | null;
+  stageName?: string | null; frameworkType?: string | null;
+};
 
 export default function SubjectsPage() {
   // Rendered at both /principal/subjects and /staff/subjects (the latter for
@@ -152,17 +158,9 @@ export default function SubjectsPage() {
     load();
   }
 
-  // Build a map of form number → display label from the school's registered
-  // classes, stripping the stream suffix so "Grade 10 A" → "Grade 10".
-  const formLabels = new Map<number, string>();
-  for (const c of classes) {
-    if (!formLabels.has(c.form)) {
-      const label = c.stream
-        ? c.name.replace(new RegExp(`\\s*${c.stream}\\s*$`, "i"), "").trim()
-        : c.name.trim();
-      formLabels.set(c.form, label || c.name);
-    }
-  }
+  // Form number → level label ("Form 3", "Grade 10", "PP1") from the school's
+  // own classes.
+  const formLabels = buildLevelLabelMap(classes);
 
   return (
     <div>
@@ -297,7 +295,7 @@ export default function SubjectsPage() {
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5 sm:hidden">
                         <span className="text-xs font-mono text-slate bg-slate-50 border border-border rounded px-1 py-0.5">{s.code}</span>
                         {(s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
-                          <Chip key={f} variant="default" size="xs">{formLabels.get(f) ?? `Form ${f}`}</Chip>
+                          <Chip key={f} variant="default" size="xs">{levelLabelFor(formLabels, f)}</Chip>
                         ))}
                       </div>
                     </td>
@@ -341,10 +339,10 @@ export default function SubjectsPage() {
                     <td className="px-4 py-3.5 hidden sm:table-cell">
                       <div className="flex flex-wrap gap-0.5">
                         {(s.applicableForms ?? []).length === 0 ? (
-                          <Chip variant="default" size="xs">All forms</Chip>
+                          <Chip variant="default" size="xs">{allLevelsLabelFor(classes)}</Chip>
                         ) : (
                           (s.applicableForms ?? []).sort((a, b) => a - b).map(f => (
-                            <Chip key={f} variant="default" size="xs">{formLabels.get(f) ?? `Form ${f}`}</Chip>
+                            <Chip key={f} variant="default" size="xs">{levelLabelFor(formLabels, f)}</Chip>
                           ))
                         )}
                       </div>

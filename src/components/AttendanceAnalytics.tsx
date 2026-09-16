@@ -14,7 +14,7 @@ type Analytics = {
 };
 
 const TABS = [
-  { key: "byForm", label: "By Form/Class" },
+  { key: "byForm", label: "By Level" },
   { key: "byStream", label: "By Stream" },
   { key: "byStudent", label: "By Student" },
 ] as const;

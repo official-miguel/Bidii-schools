@@ -4,6 +4,7 @@ import { getTeacherEffectivePermissions } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import DisciplineCaseClient from "./DisciplineCaseClient";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 export default async function TeacherDisciplineCasePage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -23,7 +24,7 @@ export default async function TeacherDisciplineCasePage({ params }: { params: { 
           id: true,
           fullName: true,
           admissionNumber: true,
-          schoolClass: { select: { name: true, form: true } },
+          schoolClass: { select: { ...CLASS_LABEL_SELECT } },
         },
       },
       recordedBy: {

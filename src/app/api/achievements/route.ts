@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRecordsPermission } from "@/lib/permissions";
 import { summarizeAchievement } from "@/lib/ai/recordsSummary";
 import { notifyParents } from "@/lib/parentNotifications";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 const categoryEnum = z.enum(["SPORTS", "LEADERSHIP", "MUSIC_FESTIVAL", "ACADEMICS", "INNOVATION", "OTHER"]);
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     orderBy: { achievementDate: "desc" },
     include: {
       students: {
-        include: { student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { id: true, name: true, form: true, stream: true } } } } },
+        include: { student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { ...CLASS_LABEL_SELECT } } } } },
       },
       recordedBy: { select: { email: true } },
     },

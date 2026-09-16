@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
+import {
+  CLASS_LABEL_SELECT, classLevelLabel, type ClassOption,
+} from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -9,6 +12,10 @@ const db = prisma as any;
 export interface HODDeptCard {
   classId: string;
   className: string;
+  /** Numeric rank of the class's level, for level filters. */
+  form: number;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  levelLabel: string;
   subjectId: string;
   subjectName: string;
   subjectCode: string;
@@ -114,8 +121,8 @@ export async function GET(req: Request) {
   const allClasses = await db.schoolClass.findMany({
     where: classWhere,
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   if (allClasses.length === 0) {
     return NextResponse.json({ cards: [], departmentName, currentPeriod: null });
@@ -231,6 +238,8 @@ export async function GET(req: Request) {
     return {
       classId,
       className: cls.name,
+      form: cls.form,
+      levelLabel: classLevelLabel(cls),
       subjectId,
       subjectName: subj.name,
       subjectCode: subj.code,

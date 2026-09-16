@@ -23,6 +23,7 @@ import {
 } from "@/components/ui";
 import { SkeletonTable } from "@/components/ui/ProgressivePage";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
+import { type ClassOption } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Virtual papers — always available in the formula calculator
@@ -82,7 +83,7 @@ type MarksheetData = {
 
 type Props = {
   /** All classes the user can pick from (must include `form` for the filter chain). */
-  classes: { id: string; name: string; form: number }[];
+  classes: ClassOption[];
   /** All subjects the user can pick from (must include `applicableForms`). */
   subjects: { id: string; name: string; applicableForms: number[] }[];
   /** Pre-selected classId (e.g. locked to teacher's own class). */

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardCharts from "@/components/assessment/DashboardCharts";
 import CbeAnalysis from "@/components/assessment/CbeAnalysis";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -18,8 +19,8 @@ export default async function DashboardPage({
   const allClasses = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   const subjects = await prisma.subject.findMany({
     where: { schoolId: user.schoolId! },
@@ -67,7 +68,7 @@ export default async function DashboardPage({
         {/* 8-4-4 only */}
         {tab === "844" && (
           <DashboardCharts
-            classes={kcseClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+            classes={kcseClasses}
             subjects={subjects}
           />
         )}
@@ -75,7 +76,7 @@ export default async function DashboardPage({
         {/* CBE only */}
         {tab === "cbe" && (
           <CbeAnalysis
-            classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+            classes={cbeClasses}
             subjects={subjects}
           />
         )}
@@ -89,7 +90,7 @@ export default async function DashboardPage({
                 KCSE classes
               </h2>
               <DashboardCharts
-                classes={kcseClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                classes={kcseClasses}
                 subjects={subjects}
               />
             </div>
@@ -99,7 +100,7 @@ export default async function DashboardPage({
                 CBE classes
               </h2>
               <CbeAnalysis
-                classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                classes={cbeClasses}
                 subjects={subjects}
               />
             </div>
@@ -118,7 +119,7 @@ export default async function DashboardPage({
           <p className="text-sm text-slate mt-0.5">CBE attainment — raw marks and achievement levels by learner, class, and subject.</p>
         </div>
         <CbeAnalysis
-          classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+          classes={cbeClasses}
           subjects={subjects}
         />
       </div>
@@ -133,7 +134,7 @@ export default async function DashboardPage({
         <p className="text-sm text-slate mt-0.5">Aggregate performance metrics across periods, classes, and subjects.</p>
       </div>
       <DashboardCharts
-        classes={kcseClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+        classes={kcseClasses}
         subjects={subjects}
       />
     </div>

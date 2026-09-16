@@ -3,7 +3,7 @@
 /**
  * ExamFilterBar
  *
- * Cascading filter bar: Exam Period → Form → Stream → Subject
+ * Cascading filter bar: Exam Period → Level (Form/Grade) → Stream → Subject
  *
  * Design principles:
  * - State is driven by explicit user actions and a single "initialise" effect
@@ -17,6 +17,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import SearchableSelect from "@/components/SearchableSelect";
 import { labelClass } from "@/components/ui";
 import { AlertCircle } from "lucide-react";
+import {
+  buildLevelLabelMap, levelLabelFor, levelNounFor, allLevelsLabelFor,
+  type ClassOption,
+} from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -39,7 +43,7 @@ type Period = {
 };
 
 export type ExamFilterBarProps = {
-  classes: { id: string; name: string; form: number }[];
+  classes: ClassOption[];
   subjects: { id: string; name: string; applicableForms: number[] }[];
   hideSubject?: boolean;
   onChange: (selection: FilterSelection) => void;
@@ -219,10 +223,15 @@ export default function ExamFilterBar({
     [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b),
   [classes]);
 
+  // Levels are named the way the school saved them — "Form 3" for 8-4-4,
+  // "Grade 11"/"PP1" for CBE — never `Form ${rank}`.
+  const levelLabels = useMemo(() => buildLevelLabelMap(classes), [classes]);
+  const levelNoun   = useMemo(() => levelNounFor(classes), [classes]);
+
   const formOptions = useMemo(() => [
-    { id: "", label: "All forms" },
-    ...availableForms.map((f) => ({ id: String(f), label: `Form ${f}` })),
-  ], [availableForms]);
+    { id: "", label: allLevelsLabelFor(classes) },
+    ...availableForms.map((f) => ({ id: String(f), label: levelLabelFor(levelLabels, f) })),
+  ], [availableForms, levelLabels, classes]);
 
   const availableStreams = useMemo(() => {
     if (form === "") return [];
@@ -337,12 +346,12 @@ export default function ExamFilterBar({
       {/* Form */}
       <FilterField
         id="ef-form"
-        label="Form"
+        label={levelNoun === "level" ? "Level" : levelNoun === "grade" ? "Grade" : "Form"}
         value={form === "" ? "" : String(form)}
         onChange={handleFormChange}
         options={formOptions}
-        placeholder="Select form"
-        searchPlaceholder="Search forms…"
+        placeholder={`Select ${levelNoun}`}
+        searchPlaceholder={`Search ${levelNoun}s…`}
         disabled={formDisabled}
       />
 

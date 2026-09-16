@@ -22,6 +22,7 @@ import { bandColour } from "@/lib/assessment/gradingCbe";
 import { ErrorBanner, EmptyState } from "@/components/ui";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
 import AssessmentAiPanel from "@/components/assessment/AssessmentAiPanel";
+import { type ClassOption } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Types — mirrors the /api/assessments/cbe/analysis response
@@ -89,7 +90,7 @@ type AnalysisData = {
 };
 
 type Props = {
-  classes: { id: string; name: string; form: number }[];
+  classes: ClassOption[];
   subjects: { id: string; name: string; applicableForms: number[] }[];
   defaultClassId?: string;
   defaultSubjectId?: string;

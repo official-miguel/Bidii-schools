@@ -50,6 +50,9 @@ import {
   type LiveSlot, type ConflictEngineConfig, type ConflictSummary, type CellConflict,
 } from "@/lib/timetable/liveConflictDetector";
 import { TIMETABLE_NAV } from "@/lib/timetable/navItems";
+import {
+  buildLevelLabelMap, levelLabelFor, classLevelLabel,
+} from "@/lib/curriculum/classLabels";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -73,7 +76,10 @@ const WARN_CELL     = "bg-warn-bg border-warn text-warn";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Version      = { id: string; name: string; status: string; slotCount: number };
-type SchoolClass  = { id: string; name: string; form: number };
+type SchoolClass  = {
+  id: string; name: string; form: number;
+  stream?: string | null; stageName?: string | null; frameworkType?: string | null;
+};
 type Subject      = { 
   id: string; 
   name: string; 
@@ -2089,13 +2095,16 @@ function SchoolTimetableView({
   );
 
   // Group and filter classes by form
+  // Levels read the way the school saved them — "Form 3", "Grade 11", "PP1".
+  const levelLabels = useMemo(() => buildLevelLabelMap(classes), [classes]);
+
   const filteredByForm = useMemo(() => {
     const q = searchFilter.trim().toLowerCase();
     const map = new Map<number, SchoolClass[]>();
     for (const cls of classes) {
       const match = !q
         || cls.name.toLowerCase().includes(q)
-        || `form ${cls.form}`.includes(q)
+        || classLevelLabel(cls).toLowerCase().includes(q)
         || String(cls.form) === q;
       if (!match) continue;
       if (!map.has(cls.form)) map.set(cls.form, []);
@@ -2227,7 +2236,7 @@ function SchoolTimetableView({
                               ? <ChevronDown className="h-3.5 w-3.5" />
                               : <ChevronUp   className="h-3.5 w-3.5" />
                             }
-                            Form {form}
+                            {levelLabelFor(levelLabels, form)}
                             <span className="text-slate font-normal">
                               — {formClasses.length} class{formClasses.length !== 1 ? "es" : ""}
                             </span>

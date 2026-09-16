@@ -27,6 +27,7 @@ import {
   CheckCircle2, Layers, User, Plus, X,
   ExternalLink, Info, BookOpen, Users,
 } from "lucide-react";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ type ClassInfo = {
   name: string;
   form: number;
   stream: string | null;
+  stageName: string | null;
   frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: { id: string; fullName: string } | null;
 };
@@ -140,6 +142,7 @@ function TypeToggle({
 function ElectiveGroupsClassView({
   groups,
   classId: _classId,
+  levelLabel,
   allTeachers,
   onAddTeacher,
   onRemoveTeacher,
@@ -147,6 +150,8 @@ function ElectiveGroupsClassView({
 }: {
   groups: ElectiveGroup[];
   classId: string;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  levelLabel: string;
   allTeachers: StaffTeacher[];
   onAddTeacher: (groupId: string, subjectId: string, teacherId: string) => Promise<void>;
   onRemoveTeacher: (groupId: string, subjectId: string, teacherId: string) => Promise<void>;
@@ -230,7 +235,7 @@ function ElectiveGroupsClassView({
               </span>
               {group.scopeForm > 0 && (
                 <span className="text-[10px] text-slate/60 shrink-0 hidden sm:block">
-                  Form {group.scopeForm} · {streamLabel}
+                  {levelLabel} · {streamLabel}
                 </span>
               )}
             </div>
@@ -594,7 +599,7 @@ export default function ClassProfilePage({
         <>
           <PageHeader
             title={data.class.name}
-            description={`${frameworkLabel[data.class.frameworkType]} · Form ${data.class.form}${data.class.stream ? ` · ${data.class.stream} stream` : ""}${data.class.classTeacher ? ` · Class teacher: ${data.class.classTeacher.fullName}` : ""}`}
+            description={`${frameworkLabel[data.class.frameworkType]} · ${classLevelLabel(data.class)}${data.class.stream ? ` · ${data.class.stream} stream` : ""}${data.class.classTeacher ? ` · Class teacher: ${data.class.classTeacher.fullName}` : ""}`}
             action={
               <div className="flex items-center gap-2">
                 {saved && !dirty && (
@@ -627,6 +632,7 @@ export default function ClassProfilePage({
           <ElectiveGroupsClassView
             groups={data.electiveGroups}
             classId={classId}
+            levelLabel={classLevelLabel(data.class)}
             allTeachers={allTeachers}
             onAddTeacher={handleAddTeacher}
             onRemoveTeacher={handleRemoveTeacher}

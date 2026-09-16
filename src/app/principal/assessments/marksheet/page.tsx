@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -20,8 +21,8 @@ export default async function MarksheetPage({
   const classes = await (prisma as any).schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   const defaultClassId = searchParams.classId ?? classes[0]?.id ?? "";
   const selectedClass  = classes.find((c) => c.id === defaultClassId);
@@ -90,7 +91,7 @@ export default async function MarksheetPage({
         description="Enter and review student scores per subject and period."
       />
       <MarksheetWithSaveBar
-        classes={classes.filter((c) => c.frameworkType === framework).map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+        classes={classes.filter((c) => c.frameworkType === framework)}
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}

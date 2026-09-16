@@ -26,6 +26,7 @@ import RemoveStudentDialog, { type RemoveStudentTarget } from "@/components/stud
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 import ClassWorkspaceDrawer from "@/components/entity-drawers/ClassWorkspaceDrawer";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Debounce hook
@@ -44,7 +45,11 @@ function useDebounced<T>(value: T, ms: number): T {
 // Types
 // ---------------------------------------------------------------------------
 
-type SchoolClass = { id: string; name: string; form: number; frameworkType?: "EIGHT_FOUR_FOUR" | "CBE" };
+type SchoolClass = {
+  id: string; name: string; form: number;
+  stream?: string | null; stageName?: string | null;
+  frameworkType?: "EIGHT_FOUR_FOUR" | "CBE";
+};
 type Subject     = { id: string; name: string; code: string; type: "CORE" | "ELECTIVE"; applicableForms: number[] };
 type SchoolPolicy = {
   genderPolicy: string;
@@ -1307,7 +1312,7 @@ export default function StudentsWorkspace({
                 </div>
               ) : availableElectives.length === 0 ? (
                 <p className="text-sm text-slate">
-                  No elective subjects are configured for Form {selectedClass.form}.
+                  No elective subjects are configured for {classLevelLabel(selectedClass)}.
                 </p>
               ) : (
                 <div>

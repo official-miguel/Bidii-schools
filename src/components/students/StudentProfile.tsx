@@ -12,6 +12,7 @@ import {
 } from "@/components/records/shared";
 import AccommodationProfileCard from "@/components/students/AccommodationProfileCard";
 import { Camera, X } from "lucide-react";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,7 +29,10 @@ type StudentBio = {
   parentContact: string | null;
   photoUrl: string | null;
   enrolledAt: string;
-  schoolClass: { id: string; name: string; form: number; stream: string | null };
+  schoolClass: {
+    id: string; name: string; form: number; stream: string | null;
+    stageName?: string | null; frameworkType?: string | null;
+  };
   subjects: SubjectEntry[];
 };
 
@@ -303,7 +307,7 @@ export default function StudentProfile({
               {student.schoolClass.name}
               {student.schoolClass.stream && <span className="ml-1">({student.schoolClass.stream})</span>}
               <span className="mx-1.5">·</span>
-              Form {student.schoolClass.form}
+              {classLevelLabel(student.schoolClass)}
             </p>
             {/* Summary pills */}
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -508,7 +512,7 @@ export default function StudentProfile({
                       <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-medium shrink-0 ${badge}`}>{label}</span>
                     </div>
                     <p className="text-xs text-slate mt-0.5">
-                      <span className="font-medium text-foreground/70">Form {student.schoolClass.form}</span>
+                      <span className="font-medium text-foreground/70">{classLevelLabel(student.schoolClass)}</span>
                       <span className="mx-1">·</span>
                       {fmtDate(d.dateOfOffence)}
                     </p>

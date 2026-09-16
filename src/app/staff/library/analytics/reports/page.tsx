@@ -7,6 +7,7 @@ import {
   CHART_COLORS, exportToCSV, printSection,
 } from "../_shared";
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui";
+import { useLevelLabels } from "@/lib/curriculum/useLevelLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ const PRESETS = [
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const { levelLabel } = useLevelLabels();
   const printId = useId().replace(/:/g, "");
   const [from, setFrom]       = useState(isoMonthsAgo(3));
   const [to, setTo]           = useState(isoToday());
@@ -293,7 +295,7 @@ export default function ReportsPage() {
             <Section title="Top Classes">
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {data.topClasses.slice(0, 10).map((c, i) => (
-                  <RankRow key={c.classId} rank={i+1} primary={c.className} secondary={`Form ${c.form}`} value={c.count} valueLabel="borrows" highlight={i===0} />
+                  <RankRow key={c.classId} rank={i+1} primary={c.className} secondary={levelLabel(c.form)} value={c.count} valueLabel="borrows" highlight={i===0} />
                 ))}
                 {data.topClasses.length === 0 && <p className="text-sm text-slate px-4 py-6 text-center">No data for period.</p>}
               </div>

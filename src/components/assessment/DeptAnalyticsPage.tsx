@@ -6,6 +6,7 @@ import type { DeptAnalyticsPayload } from "@/app/api/assessments/department/anal
 import type { DeptComparePayload } from "@/app/api/assessments/department/compare/route";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
 import { labelClass, inputClass } from "@/components/ui";
+import { type ClassOption } from "@/lib/curriculum/classLabels";
 
 // Recharts-based chart components — loaded only when the analytics panel mounts.
 const DeptMeanTrend      = dynamic(() => import("./DeptMeanTrend"),       { ssr: false });
@@ -22,7 +23,7 @@ interface DeptAnalyticsPageProps {
   departments: Department[];
   defaultDepartmentId?: string;
   /** Classes available to this user (role-scoped by the server page). */
-  classes: { id: string; name: string; form: number; frameworkType?: string }[];
+  classes: ClassOption[];
   /** Subjects available to this user (role-scoped by the server page). */
   subjects: { id: string; name: string; applicableForms: number[] }[];
   /** Default period ID — passed to ExamFilterBar as a hint but ExamFilterBar

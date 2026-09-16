@@ -28,6 +28,8 @@ type AbsentStudent = {
   classId:         string;
   className:       string;
   form:            number;
+  /** The level as the school saved it — "Form 3", "Grade 11", "PP1". */
+  levelLabel:      string;
   stream:          string | null;
   trend:           Trend;
 };
@@ -316,7 +318,7 @@ export default function AbsentTodayPage() {
               <tr>
                 <th className={premiumThClass}>Student</th>
                 <th className={premiumThClass}>Adm. No.</th>
-                <th className={premiumThClass}>Form</th>
+                <th className={premiumThClass}>Level</th>
                 <th className={`${premiumThClass} min-w-[180px]`}>30-day trend</th>
                 <th className={premiumThClass}></th>
               </tr>
@@ -403,14 +405,14 @@ function StudentRow({
         {s.admissionNumber}
       </td>
 
-      {/* Class (flat view) OR Form (grouped view) */}
+      {/* Class (flat view) OR level (grouped view) */}
       {showClass ? (
         <td className={premiumTdClass}>
           <Badge variant="default">{s.className}</Badge>
         </td>
       ) : (
         <td className={`${premiumTdClass} text-slate`}>
-          Form {s.form}
+          {s.levelLabel}
           {s.stream && (
             <span className="ml-1 text-xs text-slate/60">{s.stream}</span>
           )}

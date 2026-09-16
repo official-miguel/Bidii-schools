@@ -10,6 +10,7 @@ import {
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import SlideOver from "@/components/workspace/SlideOver";
 import Modal from "@/components/Modal";
+import { useLevelLabels } from "@/lib/curriculum/useLevelLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-KE", { day: "n
 // ── Create Reservation Modal ───────────────────────────────────────────────
 
 function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { levelLabel } = useLevelLabels();
   const [rType, setRType]       = useState("INDIVIDUAL");
   const [catalogueQ, setCatalogueQ] = useState("");
   const [catalogues, setCatalogues] = useState<CatalogueOption[]>([]);
@@ -144,7 +146,7 @@ function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; o
                     <li key={c.id}><button onClick={() => { setSelectedCat(c); setCatalogues([]); setCatalogueQ(""); }}
                       className="w-full text-left px-4 py-3 hover:bg-teal-50/40 text-sm transition-colors">
                       <p className="font-medium text-foreground">{c.title}</p>
-                      <p className="text-xs text-slate">{[c.subject, c.form ? `Form ${c.form}` : null, c.bookNumber].filter(Boolean).join(" · ")}</p>
+                      <p className="text-xs text-slate">{[c.subject, c.form ? levelLabel(c.form) : null, c.bookNumber].filter(Boolean).join(" · ")}</p>
                     </button></li>
                   ))}
                 </ul>
@@ -217,6 +219,7 @@ function CreateReservationModal({ onClose, onCreated }: { onClose: () => void; o
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export default function ReservationsPage() {
+  const { levelLabel } = useLevelLabels();
   const [items, setItems]         = useState<Reservation[]>([]);
   const [loading, setLoading]     = useState(true);
   const [filterStatus, setFilterStatus] = useState("");
@@ -298,7 +301,7 @@ export default function ReservationsPage() {
                   onClick={() => setSlideItem(r)}>
                   <td className="px-4 py-3.5">
                     <p className="font-medium text-foreground truncate max-w-[220px]">{r.catalogue.title}</p>
-                    {r.catalogue.subject && <p className="text-xs text-slate">{r.catalogue.subject}{r.catalogue.form ? ` · Form ${r.catalogue.form}` : ""}</p>}
+                    {r.catalogue.subject && <p className="text-xs text-slate">{r.catalogue.subject}{r.catalogue.form ? ` · ${levelLabel(r.catalogue.form)}` : ""}</p>}
                   </td>
                   <td className="px-4 py-3.5">
                     <span className="inline-flex items-center gap-1 text-xs text-slate">{TYPE_ICONS[r.reservationType]}{r.reservationType}</span>

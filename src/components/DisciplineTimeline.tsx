@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 interface TimelineEvent {
   id: string;
@@ -14,6 +15,9 @@ interface TimelineEvent {
     id: string;
     name: string;
     form: number;
+    stream?: string | null;
+    stageName?: string | null;
+    frameworkType?: string | null;
   } | null;
   events: Array<{
     id: string;
@@ -64,7 +68,7 @@ export default function DisciplineTimeline({ studentId }: { studentId: string })
             date: new Date(record.dateOfOffence).toLocaleDateString(),
             title: record.offence,
             description: record.actionTaken || "No action recorded",
-            className: record.classAtTime ? `${record.classAtTime.name} (Form ${record.classAtTime.form})` : "Unknown class",
+            className: record.classAtTime ? `${record.classAtTime.name} (${classLevelLabel(record.classAtTime)})` : "Unknown class",
             status: record.status,
             aiSummary: record.aiSummary,
             type: "offence",

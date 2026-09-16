@@ -18,9 +18,13 @@ import {
   ClipboardList, ArrowRight, ExternalLink, Users, XCircle,
 } from "lucide-react";
 import { PageHeader, ErrorBanner, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui";
+import { buildLevelLabelMap, levelLabelFor } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
-type SchoolClass = { id: string; name: string; form: number };
+type SchoolClass = {
+  id: string; name: string; form: number;
+  stream?: string | null; stageName?: string | null; frameworkType?: string | null;
+};
 
 type PreCheckIssue = {
   type: string; severity: "BLOCKING" | "WARNING" | "INFO";
@@ -197,6 +201,8 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
   }, [draftName]);
 
   const forms = useMemo(() => [...new Set(classes.map((c) => c.form))].sort((a, b) => a - b), [classes]);
+  // Levels read the way the school saved them — "Form 3", "Grade 11", "PP1".
+  const levelLabels = useMemo(() => buildLevelLabelMap(classes), [classes]);
 
   function toggleClass(id: string) {
     setSelClassIds((p) => { const n = new Set(p); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; });
@@ -336,7 +342,7 @@ export default function TimetableGenerate({ basePath }: TimetableGenerateProps) 
                   <div key={form}>
                     <button type="button" onClick={() => toggleForm(form)}
                       className="text-xs font-semibold text-slate uppercase tracking-wide mb-1.5 hover:text-teal transition-colors">
-                      Form {form} — select all
+                      {levelLabelFor(levelLabels, form)} — select all
                     </button>
                     <div className="flex flex-wrap gap-2">
                       {classes.filter((c) => c.form === form).map((c) => (

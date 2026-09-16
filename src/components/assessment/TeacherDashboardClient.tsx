@@ -20,6 +20,7 @@ import {
   GraduationCap,
   School,
 } from "lucide-react";
+import { type ClassOption } from "@/lib/curriculum/classLabels";
 
 const DashboardCharts = dynamic(
   () => import("@/components/assessment/DashboardCharts"),
@@ -40,10 +41,7 @@ interface ClassTile {
   frameworkType: string;
 }
 
-interface AllClassShape {
-  id: string;
-  name: string;
-  form: number;
+interface AllClassShape extends ClassOption {
   frameworkType: string;
 }
 
@@ -201,14 +199,14 @@ export default function TeacherDashboardClient({
 
               {drill.frameworkType === "CBE" ? (
                 <CbeAnalysis
-                  classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                  classes={cbeClasses}
                   subjects={subjects}
                   defaultClassId={drill.classId}
                   defaultSubjectId={drill.subjectId ?? undefined}
                 />
               ) : (
                 <DashboardCharts
-                  classes={kcseClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+                  classes={kcseClasses}
                   subjects={subjects}
                   defaultClassId={drill.classId}
                   defaultSubjectId={drill.subjectId ?? undefined}
@@ -277,14 +275,14 @@ export default function TeacherDashboardClient({
 
           {(fwTab === "844" || !hasBoth) && kcseClasses.length > 0 && (
             <DashboardCharts
-              classes={kcseClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+              classes={kcseClasses}
               subjects={allSubjects}
             />
           )}
 
           {(fwTab === "cbe" || hasCbeOnly) && cbeClasses.length > 0 && (
             <CbeAnalysis
-              classes={cbeClasses.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
+              classes={cbeClasses}
               subjects={allSubjects}
             />
           )}

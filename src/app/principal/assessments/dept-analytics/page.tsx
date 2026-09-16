@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import DeptAnalyticsPage from "@/components/assessment/DeptAnalyticsPage";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 export default async function DeptAnalyticsRoute() {
   const user = await getCurrentUser();
@@ -33,8 +34,8 @@ export default async function DeptAnalyticsRoute() {
   const classes = await (prisma as any).schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   // Subjects — all, ExamFilterBar filters by applicableForms internally.
   const subjects = await prisma.subject.findMany({

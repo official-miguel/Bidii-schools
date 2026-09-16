@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         message.schoolId
       );
 
-      const summary = buildRecipientSummary(message.recipientDescriptor as never, resolved.length);
+      const summary = await buildRecipientSummary(message.recipientDescriptor as never, resolved.length, message.schoolId);
       await prisma.message.update({
         where: { id: message.id },
         data:  { recipientSummary: summary },

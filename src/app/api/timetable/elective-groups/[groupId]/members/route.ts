@@ -42,6 +42,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { scopeLabelForForm, levelLabelForForm } from "@/lib/curriculum/levelLabelServer";
 
 async function auth() {
   return (
@@ -140,7 +141,7 @@ export async function POST(
   ) {
     return NextResponse.json(
       {
-        error: `"${subject.name}" does not apply to Form ${group.scopeForm}. Check the subject's applicable forms.`,
+        error: `"${subject.name}" does not apply to ${await levelLabelForForm(schoolId, group.scopeForm)}. Check the subject's applicable forms.`,
       },
       { status: 422 },
     );
@@ -175,8 +176,7 @@ export async function POST(
 
     for (const sib of overlapping) {
       if (sib.members[0]?.subjectId === subjectId) {
-        const scopeLabel =
-          group.scopeForm === 0 ? "school-wide" : `Form ${group.scopeForm}`;
+        const scopeLabel = await scopeLabelForForm(schoolId, group.scopeForm);
         return NextResponse.json(
           {
             error:
@@ -270,8 +270,7 @@ export async function DELETE(
           where: { id: newAnchorId },
           select: { name: true, code: true },
         });
-        const scopeLabel =
-          group.scopeForm === 0 ? "school-wide" : `Form ${group.scopeForm}`;
+        const scopeLabel = await scopeLabelForForm(schoolId, group.scopeForm);
         return NextResponse.json(
           {
             error:

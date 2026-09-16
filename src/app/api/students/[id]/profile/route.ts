@@ -7,6 +7,7 @@ import {
   meanGrade,
   pointsToGrade,
 } from "@/lib/assessment/grading844";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -46,7 +47,7 @@ export async function GET(
       id: true, fullName: true, admissionNumber: true,
       dateOfBirth: true, parentName: true, parentContact: true,
       photoUrl: true, classId: true, createdAt: true,
-      schoolClass: { select: { id: true, name: true, form: true, stream: true } },
+      schoolClass: { select: { ...CLASS_LABEL_SELECT } },
       electives: {
         select: { subject: { select: { id: true, name: true, code: true, type: true } } },
       },

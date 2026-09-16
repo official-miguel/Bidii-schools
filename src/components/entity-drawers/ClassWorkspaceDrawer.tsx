@@ -20,6 +20,7 @@ import {
   Users, BookOpen, CalendarDays, ClipboardList,
   ExternalLink, XCircle, UserCheck, Pencil, ChevronDown, Layers, Plus, X,
 } from "lucide-react";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,6 +31,7 @@ interface ClassDetail {
   name: string;
   form: number;
   stream: string | null;
+  stageName: string | null;
   frameworkType: "EIGHT_FOUR_FOUR" | "CBE";
   classTeacher: { id: string; fullName: string; email: string | null } | null;
   students: { id: string; fullName: string; admissionNumber: string }[];
@@ -415,7 +417,7 @@ export default function ClassWorkspaceDrawer({
       open={open}
       onClose={onClose}
       title={cls?.name ?? "Class workspace"}
-      description={cls ? `Form ${cls.form}${cls.stream ? ` · ${cls.stream} stream` : ""}` : undefined}
+      description={cls ? `${classLevelLabel(cls)}${cls.stream ? ` · ${cls.stream} stream` : ""}` : undefined}
       size="lg"
     >
       {loading && (
@@ -440,7 +442,7 @@ export default function ClassWorkspaceDrawer({
               <div>
                 <h2 className="text-base font-semibold text-foreground">{cls.name}</h2>
                 <p className="text-sm text-slate mt-0.5">
-                  Form {cls.form}{cls.stream ? ` · ${cls.stream} stream` : ""}
+                  {classLevelLabel(cls)}{cls.stream ? ` · ${cls.stream} stream` : ""}
                 </p>
               </div>
               <FrameworkBadge type={cls.frameworkType} />

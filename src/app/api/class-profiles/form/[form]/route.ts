@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT, classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Shared helper: fetch elective groups for a form (including school-wide) ──
 
@@ -94,10 +95,7 @@ export async function GET(
     where: { schoolId: user.schoolId!, form: formNum },
     orderBy: { name: "asc" },
     select: {
-      id: true,
-      name: true,
-      stream: true,
-      frameworkType: true,
+      ...CLASS_LABEL_SELECT,
       _count: { select: { students: true } },
     },
   });
@@ -170,6 +168,8 @@ export async function GET(
 
   return NextResponse.json({
     form: formNum,
+    // The level as the school saved it — "Form 3", "Grade 11", "PP1".
+    levelLabel: classLevelLabel(classes[0]),
     classes,
     subjects: subjectsWithEffective,
     electiveGroups: await fetchElectiveGroups(user.schoolId!, formNum),

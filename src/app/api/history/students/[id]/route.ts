@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
 // GET /api/history/students/[id]
@@ -23,7 +24,7 @@ export async function GET(
   const student = await prisma.student.findFirst({
     where: { id: params.id, schoolId: user.schoolId!, archivedAt: { not: null } },
     include: {
-      schoolClass: { select: { id: true, name: true, form: true, stream: true } },
+      schoolClass: { select: { ...CLASS_LABEL_SELECT } },
       electives: {
         include: {
           subject: { select: { id: true, name: true, code: true, type: true } },

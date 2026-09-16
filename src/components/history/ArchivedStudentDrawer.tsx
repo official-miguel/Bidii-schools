@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { X, ArrowLeftRight, UserX, GraduationCap } from "lucide-react";
 import { Avatar, Chip } from "@/components/ui";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,10 @@ type ArchivedStudent = {
   archivedAt: string;
   archiveType: string | null;
   archiveReason: string | null;
-  schoolClass: { id: string; name: string; form: number; stream: string | null };
+  schoolClass: {
+    id: string; name: string; form: number; stream: string | null;
+    stageName?: string | null; frameworkType?: string | null;
+  };
   electives: { subject: SubjectEntry }[];
   archivedBy: { email: string } | null;
   disciplineRecords: {
@@ -199,7 +203,7 @@ function ProfileBody({ data }: { data: ProfileData }) {
               <span className="mx-1.5">·</span>
               {student.schoolClass.name}
               <span className="mx-1.5">·</span>
-              Form {student.schoolClass.form}
+              {classLevelLabel(student.schoolClass)}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-2">
               <ArchiveBadge type={student.archiveType} />

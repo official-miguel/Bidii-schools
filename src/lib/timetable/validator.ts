@@ -158,9 +158,6 @@ function checkTeacherDoubleBooking(
     }
   }
 
-  // Quick lookup: classId → form number (for error message detail)
-  const classFormMap = new Map(input.classes.map((c) => [c.id, c.form]));
-
   // key: "teacherId|day|period"
   // value: array of { classId, subjectId } seen so far at that slot
   const teacherSlots = new Map<string, Array<{ classId: string; subjectId: string }>>();
@@ -170,8 +167,6 @@ function checkTeacherDoubleBooking(
     const timeKey = `${slot.teacherId}|${slot.dayOfWeek}|${slot.period}`;
     if (!teacherSlots.has(timeKey)) teacherSlots.set(timeKey, []);
     const seen = teacherSlots.get(timeKey)!;
-
-    const slotForm = classFormMap.get(slot.classId) ?? -1;
 
     // Track whether THIS slot caused a conflict so we know whether to push it.
     let slotIsConflict = false;
@@ -188,7 +183,6 @@ function checkTeacherDoubleBooking(
       }
 
       // Everything else is a real double-booking
-      const priorForm = classFormMap.get(prior.classId) ?? -2;
       const teacher   = input.teachers.find((t) => t.id === slot.teacherId);
       const subjectA  = sameSubject ? null : input.subjects.find((s) => s.id === prior.subjectId);
       const subjectB  = sameSubject ? null : input.subjects.find((s) => s.id === slot.subjectId);
@@ -196,7 +190,7 @@ function checkTeacherDoubleBooking(
       const clsB      = input.classes.find((c) => c.id === slot.classId);
 
       const detail = sameSubject
-        ? `same subject (${input.subjects.find((s) => s.id === slot.subjectId)?.code ?? slot.subjectId}) for ${clsA?.name ?? prior.classId} (Form ${priorForm}) and ${clsB?.name ?? slot.classId} (Form ${slotForm}) — not part of a shared elective group`
+        ? `same subject (${input.subjects.find((s) => s.id === slot.subjectId)?.code ?? slot.subjectId}) for ${clsA?.name ?? prior.classId} and ${clsB?.name ?? slot.classId} — not part of a shared elective group`
         : `different subjects (${subjectA?.code ?? prior.subjectId} for ${clsA?.name ?? prior.classId} and ${subjectB?.code ?? slot.subjectId} for ${clsB?.name ?? slot.classId})`;
 
       issues.push({

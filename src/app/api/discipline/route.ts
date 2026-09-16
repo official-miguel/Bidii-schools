@@ -5,6 +5,7 @@ import { requireRecordsPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { notifyParents } from "@/lib/parentNotifications";
 import { notifyUser } from "@/lib/notifications";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 const createSchema = z.object({
   studentId: z.string().min(1),
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     where: { schoolId: user.schoolId!, ...(studentId ? { studentId } : {}) },
     orderBy: { dateOfOffence: "desc" },
     include: {
-      student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { id: true, name: true, form: true, stream: true } } } },
+      student: { select: { id: true, fullName: true, admissionNumber: true, schoolClass: { select: { ...CLASS_LABEL_SELECT } } } },
       recordedBy: { select: { email: true, role: true, teacher: { select: { fullName: true } } } },
       _count: { select: { files: true, caseNotes: true } },
     },

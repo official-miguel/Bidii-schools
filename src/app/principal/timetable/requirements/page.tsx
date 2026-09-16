@@ -21,10 +21,14 @@ import {
   inputClass, primaryButtonClass, secondaryButtonClass,
 } from "@/components/ui";
 import { TIMETABLE_NAV } from "@/lib/timetable/navItems";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type SchoolClass = { id: string; name: string; form: number; stream: string | null };
+type SchoolClass = {
+  id: string; name: string; form: number; stream: string | null;
+  stageName?: string | null; frameworkType?: string | null;
+};
 
 type SubjectMeta = {
   id: string; code: string; name: string; internalCode: number; doubleLesson: boolean;
@@ -501,17 +505,11 @@ export default function RequirementsPage() {
   const selectionForm  = selection?.startsWith("form-") ? Number(selection.replace("form-", "")) : null;
   const selectionClass = selection && !selection.startsWith("form-") && selection !== "all" ? classes.find((c) => c.id === selection) : null;
 
+  // The level as the school saved it — "Form 3", "Grade 11", "PP1".
   function formGroupLabel(form: number): string {
     const formClasses = classesByForm.get(form) ?? [];
     if (formClasses.length === 0) return `Form ${form}`;
-    const names   = formClasses.map((c) => c.name);
-    const streams = new Set(formClasses.map((c) => c.stream).filter(Boolean));
-    const tokens  = names[0].split(/\s+/);
-    const commonTokens = tokens.filter((t) => !streams.has(t) && names.every((n) => n.includes(t)));
-    if (commonTokens.length > 0) return commonTokens.join(" ");
-    const parts = names[0].trim().split(/\s+/);
-    if (parts.length > 1) return parts.slice(0, -1).join(" ");
-    return names[0];
+    return classLevelLabel(formClasses[0]);
   }
 
   const selectionTitle = selectionAll
@@ -778,7 +776,7 @@ export default function RequirementsPage() {
                             availableForGroup={availableForGroup}
                             availableStreams={availableStreams}
                             isAllClassesView={selectionAll}
-                            availableForms={selectionAll ? [...classesByForm.keys()].sort((a, b) => a - b) : []}
+                            availableForms={selectionAll ? [...classesByForm.keys()].sort((a, b) => a - b).map((f) => ({ form: f, label: formGroupLabel(f) })) : []}
                             allClassesCreateForm={allClassesCreateForm}
                             onAllClassesCreateFormChange={(f) => { setAllClassesCreateForm(f); }}
                             onStartCreate={() => { setEditingGroup("new"); setGroupDraft({ name: "", lessonsPerWeek: 3, doublesPerWeek: 0, scopeStreams: [] }); setAllClassesCreateForm(null); }}
@@ -1068,7 +1066,7 @@ type ElectiveGroupsSectionProps = {
   /** True when rendered in the "All Classes" bulk view — shows a form picker when creating */
   isAllClassesView?: boolean;
   /** Sorted list of form numbers available in the school (used by the form picker) */
-  availableForms?: number[];
+  availableForms?: { form: number; label: string }[];
   /** The form the user has selected in the form picker (null = nothing picked yet) */
   allClassesCreateForm?: number | null;
   onAllClassesCreateFormChange?: (form: number | null) => void;
@@ -1129,7 +1127,7 @@ function ElectiveGroupsSection({
                   Form this group belongs to <span className="text-rose-500">*</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {availableForms.map((f) => (
+                  {availableForms.map(({ form: f, label }) => (
                     <button key={f} type="button"
                       onClick={() => onAllClassesCreateFormChange?.(allClassesCreateForm === f ? null : f)}
                       className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
@@ -1137,7 +1135,7 @@ function ElectiveGroupsSection({
                           ? "bg-violet-600 text-white border-violet-600"
                           : "bg-card text-slate border-border hover:border-violet-400 hover:text-violet-700"
                       }`}>
-                      Form {f}
+                      {label}
                     </button>
                   ))}
                 </div>

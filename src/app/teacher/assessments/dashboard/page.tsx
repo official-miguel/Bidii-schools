@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor } from "@/lib/assessment/auth844";
 import TeacherDashboardClient from "@/components/assessment/TeacherDashboardClient";
+import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -48,15 +49,15 @@ export default async function TeacherDashboardPage() {
   const allClasses = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId!, ...classFilter },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   // ── ALL school classes (for Full School Analysis tab) ────────────────────
   const schoolClasses = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId! },
     orderBy: [{ form: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, form: true, frameworkType: true },
-  }) as Array<{ id: string; name: string; form: number; frameworkType: string }>;
+    select: { ...CLASS_LABEL_SELECT },
+  }) as ClassOption[];
 
   // ── Subjects scoped to this teacher ──────────────────────────────────────
   const assignmentSubjectIds = isWideAccess || !actor.teacher?.id

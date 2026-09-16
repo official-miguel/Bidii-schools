@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canGenerateReportCard } from "@/lib/assessment/auth844";
 import { callGemini, AiServiceError } from "@/lib/ai/gemini";
+import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
   // Guard: canGenerateReportCard for this student's class.
   const student = await prisma.student.findFirst({
     where: { id: studentId, schoolId: user.schoolId! },
-    select: { id: true, fullName: true, classId: true, schoolClass: { select: { name: true, form: true } } },
+    select: { id: true, fullName: true, classId: true, schoolClass: { select: { name: true, form: true, stream: true, stageName: true, frameworkType: true } } },
   });
   if (!student) return NextResponse.json({ error: "Student not found." }, { status: 404 });
 
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
     const prompt = `You are a Kenyan secondary school class teacher writing a brief end-of-term report card comment for a student.
 
 Student: ${student.fullName}
-Class: ${student.schoolClass.name} (Form ${student.schoolClass.form})
+Class: ${student.schoolClass.name} (${classLevelLabel(student.schoolClass)})
 Subject scores this term: ${summaryLines || "No scores entered yet."}
 
 Write a 2–3 sentence teacher comment suitable for printing on a report card. Be warm, specific, and constructive. Do not use vague filler phrases. Do not mention exact percentage scores — focus on strengths and one area for growth. Write in second-person ("Student name has...").`;

@@ -11,6 +11,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
+import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
 
 type Params = { params: { studentId: string } };
 
@@ -55,7 +56,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     select: {
       id: true, fullName: true, admissionNumber: true,
       dateOfBirth: true, archivedAt: true, archiveType: true,
-      schoolClass: { select: { id: true, name: true, form: true, stream: true } },
+      schoolClass: { select: { ...CLASS_LABEL_SELECT } },
       files: {
         where: { mimeType: { startsWith: "image/" } },
         orderBy: { createdAt: "desc" },
