@@ -4,10 +4,10 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import { Trash2, X, FileText, Delete, Plus, Lock } from "lucide-react";
 import {
   scoreToGrade,
-  subjectScore,
   gradeColour,
   type KcseGrade,
 } from "@/lib/assessment/grading844";
+import { computeSubjectMark, evaluateFormula } from "@/lib/assessment/subjectMark";
 import {
   bandForPercentage,
   cbePercentageColour,
@@ -40,49 +40,6 @@ function mergeWithVirtuals(realPapers: Paper[]): Paper[] {
   const realNames = new Set(realPapers.map((p) => p.name.trim().toLowerCase()));
   const virtuals = VIRTUAL_PAPERS.filter((v) => !realNames.has(v.name.toLowerCase()));
   return [...realPapers, ...virtuals].sort((a, b) => a.sortOrder - b.sortOrder);
-}
-
-// ---------------------------------------------------------------------------
-// Formula evaluator
-// ---------------------------------------------------------------------------
-// Evaluates a formula string like:
-//   (Paper 1 / 80) * 40 + (Paper 2 / 100) * 60
-// where paper names are replaced with their numeric raw score before eval.
-//
-// Returns null if any referenced paper has a null score (not entered yet) or
-// if the formula itself is syntactically invalid / produces NaN/Infinity.
-//
-function evaluateFormula(
-  formula: string,
-  papers: Paper[],
-  scores: (number | null)[]   // parallel to papers array
-): number | null {
-  if (!formula.trim()) return null;
-
-  let expr = formula;
-
-  // Replace paper names (longest first to avoid partial matches)
-  const sorted = [...papers].sort((a, b) => b.name.length - a.name.length);
-  for (let i = 0; i < sorted.length; i++) {
-    const paper = sorted[i];
-    const idx = papers.findIndex((p) => p.id === paper.id);
-    const score = scores[idx];
-    if (score === null) return null; // incomplete → no result
-    // Escape special regex chars in paper name then replace globally
-    const escaped = paper.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    expr = expr.replace(new RegExp(escaped, "g"), String(score));
-  }
-
-  try {
-    // Use Function constructor — safe here because the user built the formula
-    // themselves through the button keyboard (no free-text injection path).
-    // eslint-disable-next-line no-new-func
-    const result = new Function(`"use strict"; return (${expr});`)() as number;
-    if (typeof result !== "number" || !isFinite(result) || isNaN(result)) return null;
-    return result;
-  } catch {
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1185,27 +1142,19 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
     return sampleRows;
   }, [data, resolveScore]);
 
-  // Memoised array of paper maxMarks — avoids a new array allocation per row
-  // in the render loop below.
-  const paperMaxMarks = useMemo(
-    () => data?.papers.map((p) => p.maxMarks) ?? [],
-    [data?.papers]
-  );
-
   // Pre-resolve all scores so each row render reads from a plain array rather
   // than calling resolveScore (which closes over edits Map) multiple times.
+  // computeSubjectMark is the same helper the analysis routes use, so a mark
+  // shown here and the same mark in In-depth Analysis can never diverge.
   const resolvedRows = useMemo(() => {
     if (!data) return [];
     return data.rows.map((row) => {
       const scores = data.papers.map((p) =>
         resolveScore(row.student.id, p.id, row.scores[p.id] ?? null)
       );
-      const pct = customFormula.trim()
-        ? evaluateFormula(customFormula, data.papers, scores)
-        : subjectScore(scores, paperMaxMarks);
-      return { row, scores, pct };
+      return { row, scores, pct: computeSubjectMark(data.papers, scores, customFormula) };
     });
-  }, [data, resolveScore, paperMaxMarks, customFormula]);
+  }, [data, resolveScore, customFormula]);
 
   return (
     <div>

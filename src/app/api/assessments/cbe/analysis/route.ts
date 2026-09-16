@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/auth844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
-import { subjectScore } from "@/lib/assessment/grading844";
+import { computeSubjectMark } from "@/lib/assessment/subjectMark";
+import { loadFormulaResolvers, NO_FORMULAS, type FormulaResolver } from "@/lib/assessment/subjectMarkFormulas";
 import { resolveScale, type GradeBand } from "@/lib/assessment/gradingScale";
 
 /**
@@ -31,7 +32,7 @@ const db = prisma as any;
 const STUDENT_LIMIT = 5_000;
 
 type PeriodRow = { id: string; name: string; academicYear: string; term: number | null };
-type PaperRow  = { id: string; subjectId: string; maxMarks: number };
+type PaperRow  = { id: string; subjectId: string; name: string; maxMarks: number };
 type ItemRow   = { studentId: string; subjectId: string | null; paperId: string | null; numericScore: number | null };
 type TrendItemRow = ItemRow & { periodId: string };
 
@@ -149,7 +150,8 @@ async function analysisHandler(req: NextRequest) {
   const [papers, subjects, allPeriods] = await Promise.all([
     db.paper.findMany({
       where: papersWhere,
-      select: { id: true, subjectId: true, maxMarks: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, subjectId: true, name: true, maxMarks: true },
     }) as Promise<PaperRow[]>,
     prisma.subject.findMany({
       where: subjectsWhere,
@@ -173,7 +175,8 @@ async function analysisHandler(req: NextRequest) {
 
   const allPeriodIds = allPeriods.map((p) => p.id);
 
-  const [items, trendItems] = await Promise.all([
+  const [formulaResolvers, items, trendItems] = await Promise.all([
+    loadFormulaResolvers(user.schoolId!, allPeriodIds.length > 0 ? allPeriodIds : [periodId]),
     db.assessmentItem.findMany({
       where: itemsWhere,
       select: { studentId: true, subjectId: true, paperId: true, numericScore: true },
@@ -191,13 +194,11 @@ async function analysisHandler(req: NextRequest) {
       : Promise.resolve([] as TrendItemRow[]),
   ]);
 
-  const papersBySubject = new Map<string, Array<{ id: string; maxMarks: number }>>();
-  const subjectByPaper  = new Map<string, string>();
+  const papersBySubject = new Map<string, Array<{ id: string; name: string; maxMarks: number }>>();
   for (const p of papers) {
     const arr = papersBySubject.get(p.subjectId) ?? [];
-    arr.push({ id: p.id, maxMarks: p.maxMarks });
+    arr.push({ id: p.id, name: p.name, maxMarks: p.maxMarks });
     papersBySubject.set(p.subjectId, arr);
-    subjectByPaper.set(p.id, p.subjectId);
   }
 
   const markByPaper   = new Map<string, number>();
@@ -209,13 +210,20 @@ async function analysisHandler(req: NextRequest) {
   }
 
   /**
-   * A learner's mark for one subject, out of 100. Subjects with no papers
-   * configured take the single subject-level score verbatim — that is how a
-   * raw 80 stays an 80.
+   * A learner's mark for one subject — resolved exactly as the mark sheet
+   * resolves it, so the two screens never disagree:
+   *
+   *   • Subjects with no papers configured take the subject-level score
+   *     verbatim. That is how a raw 80 stays an 80.
+   *   • Subjects with papers go through computeSubjectMark, which applies the
+   *     department's formula for this (subject, class level, period) when one
+   *     is set and totals the papers otherwise.
    */
   function markFor(
     studentId: string,
     subjId: string,
+    form: number,
+    formulaFor: FormulaResolver,
     byPaper: Map<string, number | null>,
     bySubject: Map<string, number | null>
   ): number | null {
@@ -228,8 +236,10 @@ async function analysisHandler(req: NextRequest) {
       const v = byPaper.get(`${studentId}:${p.id}`);
       return v === undefined ? null : v;
     });
-    return subjectScore(scores, sPapers.map((p) => p.maxMarks));
+    return computeSubjectMark(sPapers, scores, formulaFor(subjId, form));
   }
+
+  const formulaFor = formulaResolvers.get(periodId) ?? NO_FORMULAS;
 
   const round2 = (n: number) => Math.round(n * 100) / 100;
   const mean   = (xs: number[]) => (xs.length === 0 ? null : round2(xs.reduce((a, b) => a + b, 0) / xs.length));
@@ -237,6 +247,14 @@ async function analysisHandler(req: NextRequest) {
   // ── Per student × subject marks ───────────────────────────────────────────
   type Result = { studentId: string; classId: string; subjectId: string; mark: number | null };
   const studentClassMap = new Map(students.map((s) => [s.id, s.classId]));
+  // Formulas are scoped to a class LEVEL, so every stream at that level shares
+  // one formula — map each learner to their class's form.
+  const formByClass = new Map<string, number>([
+    ...classes.map((c) => [c.id, c.form] as const),
+    ...heatmapClasses.map((c) => [c.id, c.form] as const),
+  ]);
+  const formOf = (sid: string) => formByClass.get(studentClassMap.get(sid) ?? "") ?? 0;
+
   const results: Result[] = [];
   for (const s of subjects) {
     for (const student of students) {
@@ -244,7 +262,7 @@ async function analysisHandler(req: NextRequest) {
         studentId: student.id,
         classId:   studentClassMap.get(student.id)!,
         subjectId: s.id,
-        mark:      markFor(student.id, s.id, markByPaper, markBySubject),
+        mark:      markFor(student.id, s.id, formOf(student.id), formulaFor, markByPaper, markBySubject),
       });
     }
   }
@@ -335,10 +353,11 @@ async function analysisHandler(req: NextRequest) {
   const trendData = allPeriods.map((p) => {
     const byPaper   = trendByPaper.get(p.id)   ?? new Map<string, number | null>();
     const bySubject = trendBySubject.get(p.id) ?? new Map<string, number | null>();
+    const periodFormulaFor = formulaResolvers.get(p.id) ?? NO_FORMULAS;
     const perStudent = students
       .map((student) => {
         const marks = subjects
-          .map((s) => markFor(student.id, s.id, byPaper, bySubject))
+          .map((s) => markFor(student.id, s.id, formOf(student.id), periodFormulaFor, byPaper, bySubject))
           .filter((v): v is number => v !== null);
         return mean(marks);
       })
@@ -387,7 +406,8 @@ async function analysisHandler(req: NextRequest) {
 
       for (const s of subjects) {
         for (const student of extraStudents) {
-          const markVal = markFor(student.id, s.id, extraByPaper, extraBySubject);
+          const extraForm = formByClass.get(student.classId) ?? 0;
+          const markVal = markFor(student.id, s.id, extraForm, formulaFor, extraByPaper, extraBySubject);
           if (markVal === null) continue;
           const key  = `${s.id}:${student.classId}`;
           const cell = heatAcc.get(key) ?? { sum: 0, count: 0 };

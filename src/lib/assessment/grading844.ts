@@ -59,10 +59,13 @@ export function scoreToGrade(percentage: number): GradeResult {
 }
 
 /**
- * Compute the subject score (0–100 percentage) from one or two papers.
+ * Compute the subject score (0–100 percentage) from any number of papers.
+ *
+ * The score is the total marks earned over the total marks available, so each
+ * paper contributes in proportion to its own maxMarks:
  *
  * - Single paper: `(score / maxMarks) * 100`
- * - Two papers:   `(s1 * m1 + s2 * m2) / (m1 + m2) * 100` (weighted average)
+ * - Two papers:   `(s1 + s2) / (m1 + m2) * 100`
  *
  * Returns null if ANY required paper score is null (Not_Entered).
  * A score of exactly 0 is a valid Genuine_Zero and IS included.
@@ -83,15 +86,15 @@ export function subjectScore(
     if (s === null) return null;
   }
 
-  const totalWeightedScore = (paperScores as number[]).reduce(
-    (sum, score, i) => sum + score * paperMaxMarks[i],
-    0
-  );
+  // Marks earned, not marks scaled by their own ceiling: multiplying each
+  // score by its maxMarks inflated every result by a factor of maxMarks
+  // (a single 98/100 paper came out as 9800 instead of 98).
+  const totalScore    = (paperScores as number[]).reduce((sum, score) => sum + score, 0);
   const totalMaxMarks = paperMaxMarks.reduce((sum, m) => sum + m, 0);
 
   if (totalMaxMarks === 0) return null;
 
-  return (totalWeightedScore / totalMaxMarks) * 100;
+  return (totalScore / totalMaxMarks) * 100;
 }
 
 /**
