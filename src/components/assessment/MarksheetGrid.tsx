@@ -153,15 +153,22 @@ function ScoreCell({
   value,
   maxMarks,
   onChange,
+  onErrorChange,
   readOnly,
 }: {
   value: number | null;
   maxMarks: number;
   onChange: (v: number | null) => void;
+  onErrorChange?: (hasError: boolean) => void;
   readOnly: boolean;
 }) {
   const [raw, setRaw] = useState(value === null ? "" : String(value));
-  const [error, setError] = useState(false);
+  const [error, setErrorState] = useState(false);
+
+  function setError(next: boolean) {
+    setErrorState(next);
+    onErrorChange?.(next);
+  }
 
   const prevValue = useRef(value);
   useEffect(() => {
@@ -170,6 +177,9 @@ function ScoreCell({
       setError(false);
       prevValue.current = value;
     }
+    // Clear any reported error state on unmount (e.g. filters change away).
+    return () => onErrorChange?.(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -177,7 +187,7 @@ function ScoreCell({
     setRaw(text);
     if (text === "") { setError(false); onChange(null); return; }
     const num = parseFloat(text);
-    if (isNaN(num) || num < 0 || num > maxMarks) { setError(true); return; }
+    if (!Number.isFinite(num) || num < 0 || num > maxMarks) { setError(true); return; }
     setError(false);
     onChange(num);
   }
@@ -821,6 +831,10 @@ export default function MarksheetGrid({
 
   const [data, setData] = useState<MarksheetData | null>(null);
   const [edits, setEdits] = useState<Map<string, number | null>>(new Map());
+  // Cells currently showing an invalid (out-of-range/NaN) pending keystroke.
+  // Save must stay disabled while any of these exist — otherwise the invalid
+  // keystroke is silently discarded and the teacher never finds out.
+  const [cellErrors, setCellErrors] = useState<Set<string>>(new Set());
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -902,6 +916,16 @@ export default function MarksheetGrid({
   const handleScoreChange = useCallback((studentId: string, paperId: string, value: number | null) => {
     setEdits((prev) => { const next = new Map(prev); next.set(`${studentId}:${paperId}`, value); return next; });
     setSavedAt(null);
+  }, []);
+
+  const handleCellErrorChange = useCallback((cellKey: string, hasError: boolean) => {
+    setCellErrors((prev) => {
+      const alreadyHas = prev.has(cellKey);
+      if (hasError === alreadyHas) return prev;
+      const next = new Set(prev);
+      if (hasError) next.add(cellKey); else next.delete(cellKey);
+      return next;
+    });
   }, []);
 
   // Memoised resolver: given a studentId+paperId, returns the pending edit
@@ -1245,6 +1269,7 @@ export default function MarksheetGrid({
                               value={resolvedScores[pi]}
                               maxMarks={p.maxMarks}
                               onChange={(v) => handleScoreChange(row.student.id, p.id, v)}
+                              onErrorChange={(hasError) => handleCellErrorChange(`${row.student.id}:${p.id}`, hasError)}
                               readOnly={readOnly}
                             />
                           </td>
@@ -1275,7 +1300,11 @@ export default function MarksheetGrid({
           {!readOnly && (
             <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
               <p className="text-sm">
-                {hasEdits ? (
+                {cellErrors.size > 0 ? (
+                  <span className="text-danger font-medium">
+                    Fix {cellErrors.size} invalid score{cellErrors.size !== 1 ? "s" : ""} before saving.
+                  </span>
+                ) : hasEdits ? (
                   <span className="text-warn font-medium">
                     {edits.size} unsaved change{edits.size !== 1 ? "s" : ""}
                   </span>
@@ -1288,7 +1317,7 @@ export default function MarksheetGrid({
                   <button
                     type="button"
                     className={secondaryButtonClass}
-                    onClick={() => { setEdits(new Map()); setSavedAt(null); }}
+                    onClick={() => { setEdits(new Map()); setCellErrors(new Set()); setSavedAt(null); }}
                   >
                     Discard
                   </button>
@@ -1296,7 +1325,7 @@ export default function MarksheetGrid({
                 <button
                   type="button"
                   className={primaryButtonClass}
-                  disabled={saving || !hasEdits}
+                  disabled={saving || !hasEdits || cellErrors.size > 0}
                   onClick={handleSave}
                 >
                   {saving ? "Saving…" : "Save marks"}

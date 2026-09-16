@@ -48,10 +48,17 @@ export async function PUT(req: NextRequest) {
 
   const student = await prisma.student.findFirst({
     where: { id: studentId, schoolId: user.schoolId! },
-    select: { id: true },
+    select: { id: true, classId: true },
   });
   if (!student) {
     return NextResponse.json({ error: "Student not found.", code: "NOT_FOUND" }, { status: 404 });
+  }
+
+  // The top-level check above is subject-wide; a teacher assigned this
+  // subject via the timetable in one class is not automatically authorized
+  // to enter marks for a different class's student in the same subject.
+  if (!canEnterMarks(actor, subjectId, student.classId)) {
+    return NextResponse.json({ error: "You are not authorized to enter marks for this student's class." }, { status: 403 });
   }
 
   const paper: { id: string; maxMarks: number } | null = await db.paper.findFirst({

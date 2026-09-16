@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     prisma.student.findMany({
       where: { id: { in: uniqueStudentIds }, schoolId: user.schoolId! },
-      select: { id: true },
+      select: { id: true, classId: true },
     }),
 
     db.paper.findMany({
@@ -99,19 +99,21 @@ export async function POST(req: NextRequest) {
     }) as Promise<PaperRow[]>,
   ]);
 
-  const periodMap        = new Map(periodsRaw.map((p) => [p.id, p]));
-  const validStudentIds  = new Set(students.map((s) => s.id));
-  const paperMap         = new Map(papersRaw.map((p) => [p.id, p]));
+  const periodMap  = new Map(periodsRaw.map((p) => [p.id, p]));
+  const studentMap = new Map(students.map((s) => [s.id, s]));
+  const paperMap   = new Map(papersRaw.map((p) => [p.id, p]));
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const errors: Array<{ index: number; message: string }> = [];
+  let authFailure = false;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (!periodMap.has(item.periodId)) {
       errors.push({ index: i, message: `Period ${item.periodId} not found.` });
       continue;
     }
-    if (!validStudentIds.has(item.studentId)) {
+    const student = studentMap.get(item.studentId);
+    if (!student) {
       errors.push({ index: i, message: `Student ${item.studentId} not found.` });
       continue;
     }
@@ -119,8 +121,22 @@ export async function POST(req: NextRequest) {
       errors.push({ index: i, message: `Paper ${item.paperId} not found.` });
       continue;
     }
+    // A subject teacher assigned via the timetable to teach this subject in
+    // one class is not automatically authorized for a different class — the
+    // top-level canEnterMarks check above is subject-wide, this is the
+    // authoritative per-student, per-class check.
+    if (!canEnterMarks(actor, subjectId, student.classId)) {
+      errors.push({ index: i, message: `You are not authorized to enter marks for this student's class.` });
+      authFailure = true;
+      continue;
+    }
+    const period = periodMap.get(item.periodId)!;
+    const paper  = paperMap.get(item.paperId)!;
+    if (paper.frameworkId !== period.frameworkId) {
+      errors.push({ index: i, message: `Paper ${item.paperId} belongs to a different curriculum framework than this exam period.` });
+      continue;
+    }
     if (item.score !== null) {
-      const paper = paperMap.get(item.paperId)!;
       if (item.score < 0 || item.score > paper.maxMarks) {
         errors.push({ index: i, message: `Score ${item.score} is out of range (max ${paper.maxMarks}).` });
       }
@@ -128,6 +144,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (errors.length > 0) {
+    if (authFailure) {
+      return NextResponse.json({ error: "VALIDATION_ERROR", items: errors }, { status: 403 });
+    }
     return NextResponse.json({ error: "VALIDATION_ERROR", items: errors }, { status: 422 });
   }
 
@@ -153,8 +172,12 @@ export async function POST(req: NextRequest) {
           const period = periodMap.get(item.periodId)!;
           // Each row: (id, schoolId, frameworkId, periodId, studentId, paperId, subjectId,
           //            resultKind, numericScore, enteredById)
-          const id = `ai_${item.studentId}_${item.periodId}_${item.paperId}`.slice(0, 25)
-            + `_${Date.now().toString(36)}`;
+          // A crypto-random id — the previous scheme truncated the source ids
+          // and appended a millisecond timestamp, which could collide for two
+          // rows built in the same batch/millisecond and throw a raw duplicate
+          // key error (the ON CONFLICT target is (studentId,periodId,paperId),
+          // not id, so it does not de-dupe this).
+          const id = `ai_${crypto.randomUUID()}`;
           valuePlaceholders.push(
             `($${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},$${idx++},'NUMERIC',$${idx++},$${idx++},NOW(),NOW())`
           );
@@ -222,8 +245,8 @@ export async function POST(req: NextRequest) {
       toUpsertCount: toUpsert.length,
       toDeleteCount: toDelete.length,
     });
-    return NextResponse.json({ 
-      error: `Database error: ${(dbError as Error).message || 'Unknown database error. Please contact support.'}` 
+    return NextResponse.json({
+      error: "Couldn't save marks — please try again. If this keeps happening, contact support."
     }, { status: 500 });
   }
 }

@@ -54,6 +54,13 @@ export interface AssessmentActor {
    * AssessmentRole rows have been configured for the teacher.
    */
   assignedSubjectIds: Set<string>;
+  /**
+   * The specific (classId, subjectId) pairs backing assignedSubjectIds, keyed
+   * as `${classId}::${subjectId}`. A teacher assigned a subject in one class
+   * is NOT automatically authorized to enter marks for a different class —
+   * this is what canEnterMarks checks against when a classId is supplied.
+   */
+  assignedClassSubjectPairs: Set<string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,8 +93,8 @@ export async function resolveAssessmentActor(
     select: {
       id: true,
       classTeacherOf: { select: { id: true } },
-      subjectAssignments: { select: { subjectId: true } },
-      classElectiveGroupTeachers: { select: { subjectId: true } },
+      subjectAssignments: { select: { subjectId: true, classId: true } },
+      classElectiveGroupTeachers: { select: { subjectId: true, classId: true } },
     },
   });
 
@@ -98,6 +105,14 @@ export async function resolveAssessmentActor(
   const assignedSubjectIds = new Set<string>([
     ...(teacherRow?.subjectAssignments.map((a) => a.subjectId) ?? []),
     ...(teacherRow?.classElectiveGroupTeachers.map((a) => a.subjectId) ?? []),
+  ]);
+
+  // The (classId, subjectId) pairs backing the set above — a subject teacher
+  // assigned to teach Biology in Form 2 East should not be able to enter
+  // marks for Biology in a class they were never assigned.
+  const assignedClassSubjectPairs = new Set<string>([
+    ...(teacherRow?.subjectAssignments.map((a) => `${a.classId}::${a.subjectId}`) ?? []),
+    ...(teacherRow?.classElectiveGroupTeachers.map((a) => `${a.classId}::${a.subjectId}`) ?? []),
   ]);
 
   // Fetch assessment roles for this teacher across ALL frameworks in this school.
@@ -118,6 +133,7 @@ export async function resolveAssessmentActor(
     adminCanView,
     adminCanManage,
     assignedSubjectIds,
+    assignedClassSubjectPairs,
   };
 }
 
@@ -143,14 +159,26 @@ function hasRoleForSubject(
 // Public guard functions
 // ---------------------------------------------------------------------------
 
-export function canEnterMarks(actor: AssessmentActor, subjectId: string): boolean {
+/**
+ * @param classId The class the marks are being entered for. When supplied,
+ *   the timetable fallback (assignedSubjectIds) is scoped to only the
+ *   classes this teacher is actually assigned that subject in — being the
+ *   Biology teacher for Form 2 East does not authorize entering Biology
+ *   marks for Form 3 West. Omit only for subject-wide operations that are
+ *   not tied to a specific class (e.g. defining a paper for a subject).
+ */
+export function canEnterMarks(actor: AssessmentActor, subjectId: string, classId?: string): boolean {
   if (actor.user.role === "ADMIN_STAFF") return actor.adminCanManage;
   if (actor.isPrincipal) return true;
   if (hasRole(actor, "DIRECTOR", "EXAM_OFFICER")) return true;
   if (actor.classTeacherOfId !== null && hasRole(actor, "CLASS_TEACHER")) return true;
   if (hasRoleForSubject(actor, "SUBJECT_TEACHER", subjectId)) return true;
   // Fallback: teacher assigned via timetable (ClassSubjectTeacher / elective group)
-  if (actor.assignedSubjectIds.has(subjectId)) return true;
+  if (classId) {
+    if (actor.assignedClassSubjectPairs.has(`${classId}::${subjectId}`)) return true;
+  } else if (actor.assignedSubjectIds.has(subjectId)) {
+    return true;
+  }
   return false;
 }
 
