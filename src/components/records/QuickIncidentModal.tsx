@@ -9,7 +9,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui";
-import { Avatar, StudentLite, STATUS_LABELS, fmtSize } from "./shared";
+import { Avatar, StudentLite, fmtSize } from "./shared";
 import { X, Loader2, Sparkles, Paperclip } from "lucide-react";
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 
@@ -78,7 +78,7 @@ export default function QuickIncidentModal({
     location:    "",
     witnesses:   "",
     actionTaken: "",
-    status:      "OPEN",
+    isVisibleToParent: false,
   });
 
   const [text, setText]             = useState(draft.text);
@@ -95,7 +95,7 @@ export default function QuickIncidentModal({
   const [location, setLocation]     = useState(draft.location);
   const [witnesses, setWitnesses]   = useState(draft.witnesses);
   const [actionTaken, setActionTaken] = useState(draft.actionTaken);
-  const [status, setStatus]         = useState(draft.status);
+  const [isVisibleToParent, setIsVisibleToParent] = useState(draft.isVisibleToParent);
   const [files, setFiles]           = useState<PendingFile[]>([]);
   const [dragOver, setDragOver]     = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -105,8 +105,8 @@ export default function QuickIncidentModal({
 
   // Persist draft on change (skip file objects — not serialisable)
   useEffect(() => {
-    setDraft({ text, studentId, title, aiSummary, severity, date, time, location, witnesses, actionTaken, status });
-  }, [text, studentId, title, aiSummary, severity, date, time, location, witnesses, actionTaken, status, setDraft]);
+    setDraft({ text, studentId, title, aiSummary, severity, date, time, location, witnesses, actionTaken, isVisibleToParent });
+  }, [text, studentId, title, aiSummary, severity, date, time, location, witnesses, actionTaken, isVisibleToParent, setDraft]);
 
   useEffect(() => textRef.current?.focus(), []);
 
@@ -214,7 +214,7 @@ export default function QuickIncidentModal({
         description: descParts.join("\n"),
         actionTaken: actionTaken.trim() || suggestion?.suggestedAction || "",
         dateOfOffence: date,
-        status,
+        isVisibleToParent,
         aiSummary: aiSummary.trim(),
       }),
     });
@@ -596,21 +596,24 @@ export default function QuickIncidentModal({
                     placeholder={suggestion?.suggestedAction || "Describe the action taken"}
                   />
                 </div>
-                <div>
-                  <label className={labelClass}>Status</label>
-                  <select
-                    className={inputClass}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
+              <label className="mt-4 flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-border text-teal focus:ring-teal/30"
+                  checked={isVisibleToParent}
+                  onChange={(e) => setIsVisibleToParent(e.target.checked)}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-foreground">
+                    Notify the parent
+                  </span>
+                  <span className="block text-xs text-slate mt-0.5">
+                    The parent sees this case in their portal and is notified immediately.
+                    Leave unchecked to keep it staff-only.
+                  </span>
+                </span>
+              </label>
             </div>
           )}
         </div>

@@ -12,8 +12,6 @@ import {
   DisciplineRecord,
   StudentLite,
   CATEGORY_META,
-  STATUS_BADGE,
-  STATUS_LABELS,
   Skeleton,
   StatCard,
   fmtDate,
@@ -92,7 +90,7 @@ export default function RecordsDashboard({
   const q = useDebounced(search.trim().toLowerCase(), 250);
   const [classId, setClassId] = useState("");
   const [stream, setStream] = useState("");
-  const [status, setStatus] = useState("");
+  const [visibility, setVisibility] = useState(""); // "" | "parent" | "staff"
   const [category, setCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -143,14 +141,14 @@ export default function RecordsDashboard({
   }, [classes]);
 
   const stats = useMemo(() => {
-    const activeCases = records?.filter((r) => r.status === "OPEN" || r.status === "UNDER_REVIEW").length ?? 0;
+    const parentNotified = records?.filter((r) => r.isVisibleToParent).length ?? 0;
     const withRecords = new Set<string>();
     records?.forEach((r) => withRecords.add(r.student.id));
     achievements?.forEach((a) => a.students.forEach((s) => withRecords.add(s.student.id)));
     return {
       discipline: records?.length ?? 0,
       achievements: achievements?.length ?? 0,
-      activeCases,
+      parentNotified,
       studentsWithRecords: withRecords.size,
     };
   }, [records, achievements]);
@@ -178,7 +176,8 @@ export default function RecordsDashboard({
     if (!records) return [];
     return records.filter((r) => {
       if (!matchesStudent(r.student)) return false;
-      if (status && r.status !== status) return false;
+      if (visibility === "parent" && !r.isVisibleToParent) return false;
+      if (visibility === "staff" && r.isVisibleToParent) return false;
       if (!inDateRange(r.dateOfOffence)) return false;
       if (hasFiles && r._count.files === 0) return false;
       if (hasAi && !r.aiSummary) return false;
@@ -188,7 +187,7 @@ export default function RecordsDashboard({
       }
       return true;
     });
-  }, [records, q, status, matchesStudent, inDateRange, hasFiles, hasAi]);
+  }, [records, q, visibility, matchesStudent, inDateRange, hasFiles, hasAi]);
 
   const filteredAchievements = useMemo(() => {
     if (!achievements) return [];
@@ -230,12 +229,12 @@ export default function RecordsDashboard({
       .slice(0, 6);
   }, [records, achievements]);
 
-  const activeFilters = !!(classId || stream || status || category || dateFrom || dateTo || hasFiles || hasAi);
+  const activeFilters = !!(classId || stream || visibility || category || dateFrom || dateTo || hasFiles || hasAi);
 
   function clearFilters() {
     setClassId("");
     setStream("");
-    setStatus("");
+    setVisibility("");
     setCategory("");
     setDateFrom("");
     setDateTo("");
@@ -284,7 +283,7 @@ export default function RecordsDashboard({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatCard label="Discipline cases" value={stats.discipline} icon="🚫" loading={loading} />
         <StatCard label="Achievements" value={stats.achievements} icon="🏆" loading={loading} />
-        <StatCard label="Active cases" value={stats.activeCases} icon="⏳" loading={loading} />
+        <StatCard label="Parent notified" value={stats.parentNotified} icon="👪" loading={loading} />
         <StatCard label="Students with records" value={stats.studentsWithRecords} icon="👥" loading={loading} />
       </div>
 
@@ -326,11 +325,10 @@ export default function RecordsDashboard({
             </select>
           )}
           {tab === "discipline" ? (
-            <select className={selectClass} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
-              <option value="">Any status</option>
-              {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
+            <select className={selectClass} value={visibility} onChange={(e) => setVisibility(e.target.value)} aria-label="Filter by parent visibility">
+              <option value="">Any visibility</option>
+              <option value="parent">Parent notified</option>
+              <option value="staff">Staff only</option>
             </select>
           ) : (
             <select className={selectClass} value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
@@ -394,8 +392,8 @@ export default function RecordsDashboard({
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-foreground">{r.offence}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status] || ""}`}>
-                            {STATUS_LABELS[r.status] || r.status}
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${r.isVisibleToParent ? "bg-royal-50 text-royal" : "bg-line text-slate"}`}>
+                            {r.isVisibleToParent ? "Parent notified" : "Staff only"}
                           </span>
                           {r._count.files > 0 && <span className="text-xs text-slate">📎 {r._count.files}</span>}
                         </span>

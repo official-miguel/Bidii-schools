@@ -8,8 +8,6 @@ import {
   StudentFileMeta,
   StudentLite,
   CATEGORY_META,
-  STATUS_BADGE,
-  STATUS_LABELS,
   Skeleton,
   fmtDate,
   fmtSize,
@@ -63,8 +61,8 @@ const DisciplineItem = memo(function DisciplineItem({
       >
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground truncate">{r.offence}</p>
-          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STATUS_BADGE[r.status] || ""}`}>
-            {STATUS_LABELS[r.status] || r.status}
+          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${r.isVisibleToParent ? "bg-royal-50 text-royal" : "bg-line text-slate"}`}>
+            {r.isVisibleToParent ? "Parent notified" : "Staff only"}
           </span>
         </div>
         <p className="text-xs text-slate mt-0.5">
@@ -266,7 +264,6 @@ export default function StudentWorkspace({
   }
 
   const loading = discipline === null || achievements === null || files === null;
-  const activeCases = discipline?.filter((r) => r.status === "OPEN" || r.status === "UNDER_REVIEW").length ?? 0;
 
   const insights = useMemo(() => {
     if (!discipline || !achievements) return null;
@@ -356,7 +353,6 @@ export default function StudentWorkspace({
                   <>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-danger-bg text-danger">{discipline!.length} discipline</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-success-bg text-success">{achievements!.length} achievements</span>
-                    {activeCases > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-warn-bg text-warn">{activeCases} active</span>}
                   </>
                 )}
               </div>
@@ -422,7 +418,9 @@ export default function StudentWorkspace({
                 <div className="bg-card border border-border rounded-xl p-3">
                   <p className="text-xs text-slate">Discipline cases</p>
                   <p className="font-display text-xl font-semibold text-foreground">{discipline!.length}</p>
-                  <p className="text-xs text-slate mt-0.5">{activeCases} active</p>
+                  <p className="text-xs text-slate mt-0.5">
+                    {discipline!.filter((r) => r.isVisibleToParent).length} parent-notified
+                  </p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-3">
                   <p className="text-xs text-slate">Achievements</p>

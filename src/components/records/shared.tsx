@@ -14,6 +14,7 @@ export type DisciplineRecord = {
   actionTaken: string | null;
   resolution: string | null;
   status: string;
+  isVisibleToParent: boolean;
   dateOfOffence: string;
   aiSummary: string | null;
   createdAt: string;

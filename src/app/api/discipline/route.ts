@@ -38,7 +38,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireRecordsPermission("RECORDS_DISCIPLINE", "manage");
+  // "create" (not "manage") — every teacher holds RECORDS_DISCIPLINE canCreate
+  // as a baseline grant (see computeTeacherEffectivePermissions), and adding a
+  // case is meant to be open to any teacher or the Principal, not just staff
+  // explicitly granted "manage". Only Librarian/Bursar-only staff, who hold
+  // neither RECORDS_DISCIPLINE nor RECORDS at all, are excluded.
+  const user = await requireRecordsPermission("RECORDS_DISCIPLINE", "create");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
