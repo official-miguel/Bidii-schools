@@ -192,14 +192,23 @@ export async function POST(req: NextRequest) {
         // varies at runtime (one tuple per score item). The SQL structure itself
         // (column names, ON CONFLICT target) is static. All values are bound via
         // positional $N placeholders in valueArgs — no user-supplied string is
-        // interpolated directly into the query template. The constraint name
-        // "item_paper" is a fixed literal.
+        // interpolated directly into the query template.
+        //
+        // The ON CONFLICT target is the column list, not a named constraint —
+        // the Prisma schema declares this as @@unique(..., name: "item_paper"),
+        // but that name was never actually applied to the live database (it
+        // exists only as an unnamed unique index, auto-named
+        // AssessmentItem_studentId_periodId_paperId_key). "ON CONFLICT ON
+        // CONSTRAINT item_paper" therefore does not exist as far as Postgres
+        // is concerned and made every batch save fail. Column-list targeting
+        // matches any unique index/constraint over these columns regardless
+        // of its name, so it works without depending on the naming drift.
         await tx.$executeRawUnsafe(
           `INSERT INTO "AssessmentItem"
            ("id","schoolId","frameworkId","periodId","studentId","paperId","subjectId",
             "resultKind","numericScore","enteredById","createdAt","updatedAt")
          VALUES ${valuePlaceholders.join(",")}
-         ON CONFLICT ON CONSTRAINT "item_paper"
+         ON CONFLICT ("studentId","periodId","paperId")
          DO UPDATE SET
            "numericScore" = EXCLUDED."numericScore",
            "enteredById"  = EXCLUDED."enteredById",

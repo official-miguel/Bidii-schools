@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { getTeacherEffectivePermissions } from "@/lib/permissions";
 import type { User, Module } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
@@ -61,6 +62,16 @@ export interface AssessmentActor {
    * this is what canEnterMarks checks against when a classId is supplied.
    */
   assignedClassSubjectPairs: Set<string>;
+  /**
+   * True when a TEACHER holds ASSESSMENTS canManage through the general RBAC
+   * system (e.g. granted "Full Admin Access" via a StaffRole) — separate from
+   * this module's own AssessmentRole/timetable-based grants, which only ever
+   * cover a teacher's own classes and subjects. Without this, a teacher given
+   * school-wide rights through Full Admin Access could see the marksheet
+   * screens but every save would 403, because canEnterMarks had no idea that
+   * grant existed.
+   */
+  teacherFullAccess: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +126,17 @@ export async function resolveAssessmentActor(
     ...(teacherRow?.classElectiveGroupTeachers.map((a) => `${a.classId}::${a.subjectId}`) ?? []),
   ]);
 
+  // A teacher holding ASSESSMENTS canManage through the general RBAC system
+  // (Full Admin Access or an explicit module grant) gets full access here
+  // too — this module's own role/timetable grants only ever cover a
+  // teacher's own classes, which would otherwise leave a school-wide grant
+  // with no effect on the marksheet screens at all.
+  let teacherFullAccess = false;
+  if (user.role === "TEACHER") {
+    const teacherPerms = await getTeacherEffectivePermissions(user);
+    teacherFullAccess = !!teacherPerms.ASSESSMENTS?.canManage;
+  }
+
   // Fetch assessment roles for this teacher across ALL frameworks in this school.
   // Roles are not tied to a specific academic year — a HOD/subject teacher
   // assignment remains valid even after a new framework is created for a new year.
@@ -134,6 +156,7 @@ export async function resolveAssessmentActor(
     adminCanManage,
     assignedSubjectIds,
     assignedClassSubjectPairs,
+    teacherFullAccess,
   };
 }
 
@@ -170,6 +193,7 @@ function hasRoleForSubject(
 export function canEnterMarks(actor: AssessmentActor, subjectId: string, classId?: string): boolean {
   if (actor.user.role === "ADMIN_STAFF") return actor.adminCanManage;
   if (actor.isPrincipal) return true;
+  if (actor.teacherFullAccess) return true;
   if (hasRole(actor, "DIRECTOR", "EXAM_OFFICER")) return true;
   if (actor.classTeacherOfId !== null && hasRole(actor, "CLASS_TEACHER")) return true;
   if (hasRoleForSubject(actor, "SUBJECT_TEACHER", subjectId)) return true;
@@ -185,6 +209,7 @@ export function canEnterMarks(actor: AssessmentActor, subjectId: string, classId
 export function canViewMarksheet(actor: AssessmentActor, subjectId?: string): boolean {
   if (actor.user.role === "ADMIN_STAFF") return actor.adminCanView || actor.adminCanManage;
   if (actor.isPrincipal) return true;
+  if (actor.teacherFullAccess) return true;
   if (hasRole(actor, "DIRECTOR", "EXAM_OFFICER")) return true;
   if (actor.classTeacherOfId !== null && hasRole(actor, "CLASS_TEACHER")) return true;
   if (subjectId && hasRoleForSubject(actor, "SUBJECT_TEACHER", subjectId)) return true;
@@ -215,6 +240,7 @@ export function canAccessDashboard(actor: AssessmentActor): boolean {
 export function canGenerateReportCard(actor: AssessmentActor, classId: string): boolean {
   if (actor.user.role === "ADMIN_STAFF") return actor.adminCanView || actor.adminCanManage;
   if (actor.isPrincipal) return true;
+  if (actor.teacherFullAccess) return true;
   if (hasRole(actor, "DIRECTOR", "EXAM_OFFICER")) return true;
   if (actor.classTeacherOfId === classId && hasRole(actor, "CLASS_TEACHER")) return true;
   return false;

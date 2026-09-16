@@ -2,10 +2,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
-import MarksheetGrid from "@/components/assessment/MarksheetGrid";
+import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
 import CbePathwayGrid from "@/components/assessment/CbePathwayGrid";
-import DoneBar from "@/components/assessment/DoneBar";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -96,18 +95,19 @@ export default async function MarksheetPage({
         title="Marksheet"
         description="Enter and review student scores per subject and period."
       />
-      <MarksheetGrid
+      <MarksheetWithSaveBar
         classes={classes.filter((c) => c.frameworkType === "EIGHT_FOUR_FOUR").map((c) => ({ id: c.id, name: c.name, form: c.form }))}
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
         readOnly={false}
         canManagePapers={true}
+        summaryHref={
+          currentPeriodId && defaultClassId
+            ? `/principal/assessments/dashboard?${new URLSearchParams({ classId: defaultClassId, periodId: currentPeriodId }).toString()}`
+            : undefined
+        }
       />
-      {currentPeriodId && defaultClassId && (
-        <DoneBar role="principal" classId={defaultClassId} periodId={currentPeriodId} />
-      )}
-      {currentPeriodId && defaultClassId && <div className="h-20" />}
     </div>
   );
 }

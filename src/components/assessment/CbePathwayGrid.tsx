@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { pathwayScore } from "@/lib/assessment/gradingCbe";
-import { scoreToGrade, gradeColour } from "@/lib/assessment/grading844";
+import { pathwayScore, bandForPercentage, cbePercentageColour, type CbeBand } from "@/lib/assessment/gradingCbe";
 import {
   EmptyState,
   ErrorBanner,
@@ -125,6 +124,7 @@ export default function CbePathwayGrid({
   const [saving,    setSaving]    = useState(false);
   const [saveErr,   setSaveErr]   = useState<string | null>(null);
   const [savedAt,   setSavedAt]   = useState<number | null>(null);
+  const [bands,     setBands]     = useState<CbeBand[]>([]);
 
   // -------------------------------------------------------------------------
   // Load periods on mount
@@ -140,6 +140,16 @@ export default function CbePathwayGrid({
           setPeriodId(cur.id);
         }
       })
+      .catch(() => {});
+  }, []);
+
+  // The school's active CBE grading scale (custom, or the KNEC default) —
+  // fetched once and reused for every cell so grades here always match the
+  // report card, instead of the KCSE (8-4-4) scale this grid used before.
+  useEffect(() => {
+    fetch("/api/assessments/cbe/grading-scale")
+      .then((r) => r.json())
+      .then((json) => { if (json.bands) setBands(json.bands); })
       .catch(() => {});
   }, []);
 
@@ -432,8 +442,8 @@ export default function CbePathwayGrid({
                       const sba  = resolve(row.student.id, w.subject.id, "sba");
                       const exam = resolve(row.student.id, w.subject.id, "exam");
                       const pct  = pathwayScore(sba, exam, w.sbaWeight, w.examWeight, w.sbaMaxMarks, w.examMaxMarks);
-                      const gr   = pct !== null ? scoreToGrade(pct) : null;
-                      const { bg, text } = gr ? gradeColour(gr.grade) : { bg: "", text: "text-slate" };
+                      const band = pct !== null ? bandForPercentage(pct, bands) : null;
+                      const { bg, text } = pct !== null ? cbePercentageColour(pct) : { bg: "", text: "text-slate" };
 
                       return (
                         <>
@@ -458,7 +468,7 @@ export default function CbePathwayGrid({
                           <td key={`${row.student.id}:${w.subject.id}:pct`} className="px-2 py-2 text-center">
                             {pct !== null ? (
                               <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${bg} ${text}`}>
-                                {gr?.grade} {Math.round(pct)}%
+                                {band?.bandName} {Math.round(pct)}%
                               </span>
                             ) : (
                               <span className="text-slate text-xs">—</span>

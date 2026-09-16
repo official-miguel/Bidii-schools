@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import MarksheetGrid from "@/components/assessment/MarksheetGrid";
+import MarksheetWithSaveBar from "@/components/assessment/MarksheetWithSaveBar";
 import CbeJuniorGrid from "@/components/assessment/CbeJuniorGrid";
 import CbePathwayGrid from "@/components/assessment/CbePathwayGrid";
 import { resolveAssessmentActor, canEnterMarks, canViewMarksheet } from "@/lib/assessment/auth844";
-import DoneBar from "@/components/assessment/DoneBar";
 import MarksheetPageClient from "@/components/assessment/MarksheetPageClient";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -273,7 +272,7 @@ export default async function TeacherMarksheetPage({
               : "View-only — you don't have edit access for this subject."}
           </p>
         </div>
-        <MarksheetGrid
+        <MarksheetWithSaveBar
           classes={classes.map((c) => ({ id: c.id, name: c.name, form: c.form }))}
           subjects={viewableSubjects}
           defaultClassId={defaultClassId}
@@ -281,11 +280,12 @@ export default async function TeacherMarksheetPage({
           lockClass={true}
           readOnly={!editAllowed}
           canManagePapers={canManagePapers}
+          summaryHref={
+            activePeriodId && defaultClassId
+              ? `/teacher/assessments/dashboard?${new URLSearchParams({ classId: defaultClassId, periodId: activePeriodId }).toString()}`
+              : undefined
+          }
         />
-        {activePeriodId && defaultClassId && (
-          <DoneBar role="teacher" classId={defaultClassId} periodId={activePeriodId} />
-        )}
-        {activePeriodId && defaultClassId && <div className="h-20" />}
       </div>
     </MarksheetPageClient>
   );

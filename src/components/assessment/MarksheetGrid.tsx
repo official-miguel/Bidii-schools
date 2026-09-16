@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Trash2, X, FileText, Delete, Plus } from "lucide-react";
 import {
   scoreToGrade,
@@ -143,7 +143,26 @@ type Props = {
    * Defaults to the value of canManagePapers when not explicitly set.
    */
   canUseFormula?: boolean;
+  /**
+   * Reports the current save state up to the parent page — the page renders
+   * the single Save control (see MarksheetSaveBar) outside this component,
+   * so the grid has no Save/Discard buttons of its own.
+   */
+  onStateChange?: (state: MarksheetSaveState) => void;
 };
+
+export interface MarksheetSaveState {
+  hasEdits: boolean;
+  editCount: number;
+  cellErrorCount: number;
+  saving: boolean;
+  saveError: string | null;
+}
+
+export interface MarksheetGridHandle {
+  save: () => Promise<void>;
+  discard: () => void;
+}
 
 // ---------------------------------------------------------------------------
 // Cell component — a single score input
@@ -797,7 +816,7 @@ function AddPaperModal({
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function MarksheetGrid({
+const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetGrid({
   classes,
   subjects,
   defaultClassId,
@@ -806,7 +825,8 @@ export default function MarksheetGrid({
   readOnly = false,
   canManagePapers = false,
   canUseFormula,
-}: Props) {
+  onStateChange,
+}: Props, ref) {
   // ── Filter selection (driven by ExamFilterBar) ─────────────────────────
   const [periodId,  setPeriodId]  = useState<string>("");
   const [classId,   setClassId]   = useState<string>(defaultClassId ?? classes[0]?.id ?? "");
@@ -1071,6 +1091,26 @@ export default function MarksheetGrid({
   const hasEdits = edits.size > 0;
   const currentPeriodLabel = periods.find((p) => p.id === periodId);
 
+  // Report save state to the parent page, which renders the single Save
+  // control (MarksheetSaveBar) outside this component.
+  useEffect(() => {
+    onStateChange?.({
+      hasEdits,
+      editCount: edits.size,
+      cellErrorCount: cellErrors.size,
+      saving,
+      saveError,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasEdits, edits.size, cellErrors.size, saving, saveError]);
+
+  // No deps array: handleSave closes over data/edits/periodId/subjectId, so
+  // it (and this handle) intentionally recreate every render to stay fresh.
+  useImperativeHandle(ref, () => ({
+    save: handleSave,
+    discard: () => { setEdits(new Map()); setCellErrors(new Set()); setSavedAt(null); },
+  }));
+
   // Preview rows for the formula calculator.
   // When no marks have been entered yet we fall back to using each paper's
   // maxMarks as a sample value so the HOD can verify the formula shape even
@@ -1296,43 +1336,6 @@ export default function MarksheetGrid({
             </div>
           </div>
 
-          {/* ---- Save bar ---- */}
-          {!readOnly && (
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
-              <p className="text-sm">
-                {cellErrors.size > 0 ? (
-                  <span className="text-danger font-medium">
-                    Fix {cellErrors.size} invalid score{cellErrors.size !== 1 ? "s" : ""} before saving.
-                  </span>
-                ) : hasEdits ? (
-                  <span className="text-warn font-medium">
-                    {edits.size} unsaved change{edits.size !== 1 ? "s" : ""}
-                  </span>
-                ) : (
-                  <span className="text-slate/70">All changes saved.</span>
-                )}
-              </p>
-              <div className="flex gap-2">
-                {hasEdits && (
-                  <button
-                    type="button"
-                    className={secondaryButtonClass}
-                    onClick={() => { setEdits(new Map()); setCellErrors(new Set()); setSavedAt(null); }}
-                  >
-                    Discard
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={primaryButtonClass}
-                  disabled={saving || !hasEdits || cellErrors.size > 0}
-                  onClick={handleSave}
-                >
-                  {saving ? "Saving…" : "Save marks"}
-                </button>
-              </div>
-            </div>
-          )}
         </>
       )}
 
@@ -1359,4 +1362,6 @@ export default function MarksheetGrid({
       )}
     </div>
   );
-}
+});
+
+export default MarksheetGrid;

@@ -106,6 +106,41 @@ export function pathwayScore(
 /** All performance levels in descending order (EE → BE). */
 export const ALL_LEVELS: PerformanceLevel[] = ["EE", "ME", "AE", "BE"];
 
+/**
+ * A single grading band as returned by GET /api/assessments/cbe/grading-scale
+ * (school custom scale if configured, government KNEC default otherwise).
+ */
+export interface CbeBand {
+  bandName: string;
+  minPercentage: number;
+  points: number;
+}
+
+/**
+ * Client-safe percentage → band lookup, mirroring the matching rule in
+ * resolveCbeGrade() (src/lib/assessment/gradingScale.ts, server-only): bands
+ * sorted by minPercentage descending, return the first one the percentage
+ * meets or exceeds. Used by CBE pathway grids/report views, which render
+ * many cells synchronously and can't await a server call per cell — instead
+ * they fetch `bands` once and resolve every cell against that same array,
+ * so the grade shown always matches what the report card computes.
+ */
+export function bandForPercentage(pct: number, bands: CbeBand[]): CbeBand | null {
+  if (bands.length === 0) return null;
+  const sorted = [...bands].sort((a, b) => b.minPercentage - a.minPercentage);
+  const clamped = Math.max(0, Math.min(100, pct));
+  return sorted.find((b) => clamped >= b.minPercentage) ?? sorted[sorted.length - 1];
+}
+
+/** Tailwind colour classes by percentage — used where a band has no fixed
+ * colour of its own (custom scales can have arbitrary band counts/names). */
+export function cbePercentageColour(pct: number): { bg: string; text: string } {
+  if (pct >= 75) return { bg: "bg-green-100",  text: "text-green-800" };
+  if (pct >= 60) return { bg: "bg-blue-100",   text: "text-blue-800"  };
+  if (pct >= 40) return { bg: "bg-amber-100",  text: "text-amber-800" };
+  return             { bg: "bg-red-100",    text: "text-red-800"   };
+}
+
 /** Default pathway weights when no PathwayWeight row is configured. */
 export const DEFAULT_PATHWAY_WEIGHT = {
   sbaWeight:    0.6,
