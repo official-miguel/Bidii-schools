@@ -19,23 +19,49 @@ export default async function ParentMessagesPage() {
   const parent = await requireParent();
   if (!parent) redirect("/login");
 
-  const rawMessages = await prisma.message.findMany({
-    where:   { schoolId: parent.schoolId },
-    orderBy: { createdAt: "desc" },
-    take:    50,
-    select: {
-      id:               true,
-      body:             true,
-      recipientSummary: true,
-      channel:          true,
-      status:           true,
-      createdAt:        true,
-      sender: { select: { email: true } },
-    },
-  });
+  const studentIds = parent.students.map((ps) => ps.studentId);
+
+  const [rawMessages, disciplineRecords] = await Promise.all([
+    prisma.message.findMany({
+      where:   { schoolId: parent.schoolId },
+      orderBy: { createdAt: "desc" },
+      take:    50,
+      select: {
+        id:               true,
+        body:             true,
+        recipientSummary: true,
+        channel:          true,
+        status:           true,
+        createdAt:        true,
+        sender: { select: { email: true } },
+      },
+    }),
+    studentIds.length === 0
+      ? Promise.resolve([])
+      : prisma.disciplineRecord.findMany({
+          where:   { studentId: { in: studentIds }, isVisibleToParent: true },
+          orderBy: { createdAt: "desc" },
+          take:    50,
+          select: {
+            id:            true,
+            offence:       true,
+            description:   true,
+            status:        true,
+            createdAt:     true,
+            student:       { select: { fullName: true } },
+          },
+        }),
+  ]);
+
+  // Marks this visit as "caught up" for the unread-messages nav badge —
+  // fire-and-forget, doesn't block the page render.
+  void prisma.parent.update({
+    where: { id: parent.id },
+    data:  { messagesLastReadAt: new Date() },
+  }).catch(() => {});
 
   // Serialise dates for the client component
-  const messages: MessageItem[] = rawMessages.map((m) => ({
+  const messageItems: MessageItem[] = rawMessages.map((m) => ({
     id:               m.id,
     body:             m.body,
     recipientSummary: m.recipientSummary,
@@ -43,7 +69,25 @@ export default async function ParentMessagesPage() {
     status:           m.status as string,
     createdAt:        m.createdAt.toISOString(),
     sender:           { name: m.sender?.email ?? null },
+    kind:             "MESSAGE",
   }));
+
+  const disciplineItems: MessageItem[] = disciplineRecords.map((d) => ({
+    id:               `discipline-${d.id}`,
+    body:             d.description || d.offence,
+    recipientSummary: "",
+    channel:          "IN_APP",
+    status:           d.status,
+    createdAt:        d.createdAt.toISOString(),
+    sender:           { name: "School" },
+    kind:             "DISCIPLINE",
+    disciplineStatus: d.status,
+    studentName:      d.student.fullName,
+  }));
+
+  const messages = [...messageItems, ...disciplineItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return (
     <div className="space-y-6">

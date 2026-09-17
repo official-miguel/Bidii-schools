@@ -117,7 +117,11 @@ export default function ServerNotificationSync({ userScope, includeParent }: Pro
       try {
         const res = await fetch("/api/notifications?limit=50", { cache: "no-store" });
         if (!res.ok || cancelled) return;
-        const rows: ServerNotification[] = await res.json();
+        let rows: ServerNotification[] = await res.json();
+
+        // Discipline cases surface in the parent's Messages tab (tagged with
+        // a Discipline badge), not the bell — see /parent/messages.
+        if (includeParent) rows = rows.filter((n) => n.type !== "DISCIPLINE_CASE");
 
         useProductivityStore.getState().hydrateNotifications(
           rows.map((n) => ({
@@ -144,8 +148,12 @@ export default function ServerNotificationSync({ userScope, includeParent }: Pro
         const data: { notifications?: ParentNotificationRow[] } = await res.json();
         if (!Array.isArray(data.notifications)) return;
 
+        // Discipline/behaviour notifications surface in the Messages tab
+        // (tagged with a Discipline badge) instead of the bell.
+        const notifications = data.notifications.filter((n) => n.module !== "BEHAVIOUR");
+
         useProductivityStore.getState().hydrateNotifications(
-          data.notifications.map((n) => ({
+          notifications.map((n) => ({
             id:        `${PARENT_PREFIX}${n.id}`,
             category:  MODULE_TO_CATEGORY[n.module] ?? "administrative",
             title:     n.title,

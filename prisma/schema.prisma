@@ -2598,6 +2598,11 @@ model AssessmentPeriod {
   closingDate    DateTime?
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
+  /// Set when a bulk results SMS/WhatsApp batch for this period completes
+  /// with at least one successful send. Gates the parent-facing Results
+  /// Analysis tile — parents only see AI analysis for a period once the
+  /// school has actually notified them their child's results are out.
+  resultsSmsSentAt DateTime?
   school         School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   items          AssessmentItem[]
   reportRemarks  ReportRemark[]
@@ -4355,6 +4360,11 @@ model Parent {
   schoolId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  /// Timestamp of the last time this parent opened /parent/messages.
+  /// Messages (and visible discipline records) created after this
+  /// timestamp count toward the unread badge. Null = never opened;
+  /// treated as "now" on first computation so old history isn't a flood.
+  messagesLastReadAt DateTime?
 
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   school        School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)

@@ -7,6 +7,7 @@ import { deliverMessage } from "@/lib/messaging/deliver";
 import {
   initBatch, incrementSent, incrementFailed, addSkipped, markDone,
 } from "@/lib/messaging/batchProgress";
+import { notifyParents } from "@/lib/parentNotifications";
 import { randomBytes } from "crypto";
 import type { MessageChannel } from "@prisma/client";
 
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
 
   // Fire-and-forget bulk send
   (async () => {
+    let sentAny = false;
     for (let i = 0; i < studentIds.length; i += batchSize) {
       const slice = studentIds.slice(i, i + batchSize);
 
@@ -115,9 +117,31 @@ export async function POST(req: NextRequest) {
         // Shared delivery path: platform SMS key + logging.
         const outcome = await deliverMessage(message.id, undefined, { keepSummary: true });
 
-        if (outcome.sent > 0) incrementSent(batchId);
-        else incrementFailed(batchId);
+        if (outcome.sent > 0) {
+          incrementSent(batchId);
+          sentAny = true;
+
+          // Results Analysis is now visible in the app for this child — tell
+          // their parent(s) via the in-app bell, not just the SMS itself.
+          void notifyParents({
+            schoolId: user.schoolId!,
+            studentId,
+            module:   "ACADEMIC",
+            priority: "NORMAL",
+            title:    `${period.name} results are ready to view`,
+            body:     `Your child's results and analysis for ${period.name} (${period.academicYear}) are now available in the app.`,
+            dedupKey: `results-analysis:${periodId}:${studentId}`,
+          }).catch(() => {});
+        } else {
+          incrementFailed(batchId);
+        }
       }));
+    }
+    if (sentAny) {
+      await prisma.assessmentPeriod.update({
+        where: { id: periodId },
+        data:  { resultsSmsSentAt: new Date() },
+      }).catch(() => {});
     }
     markDone(batchId);
   })().catch(() => markDone(batchId));

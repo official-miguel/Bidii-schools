@@ -7,6 +7,7 @@ import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
 import MustChangePasswordGate from "@/components/MustChangePasswordGate";
 import SomaAIProvider from "@/components/SomaAIProvider";
 import { getEnabledOptionalModules } from "@/lib/moduleAccess";
+import { getDiaryDueSoonCount, getMessagesUnreadCount } from "@/lib/parent/badgeCounts";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,16 @@ export default async function ParentLayout({
   const enabledModules = await getEnabledOptionalModules(parent.schoolId);
   const hiddenSegs     = enabledModules.has("FEES") ? [] : ["fees"];
 
+  const studentIds = parent.students.map((ps) => ps.studentId);
+
+  const [diaryBadge, messagesBadge, notificationsUnread] = await Promise.all([
+    getDiaryDueSoonCount(parent.schoolId, studentIds),
+    getMessagesUnreadCount(parent.schoolId, studentIds, parent.messagesLastReadAt, parent.createdAt),
+    prisma.parentNotification.count({
+      where: { parentId: parent.id, isRead: false, module: { not: "BEHAVIOUR" } },
+    }),
+  ]);
+
   return (
     <MustChangePasswordGate
       mustChangePassword={user.mustChangePassword}
@@ -88,6 +99,9 @@ export default async function ParentLayout({
           avatarUrl={user.avatarUrl ?? null}
           schoolName={parent.school.name}
           hiddenSegs={hiddenSegs}
+          diaryBadge={diaryBadge}
+          messagesBadge={messagesBadge}
+          unreadCount={notificationsUnread}
         >
           <ParentHydrator />
           {children}

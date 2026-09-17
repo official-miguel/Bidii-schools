@@ -12,9 +12,11 @@ import { redirect } from "next/navigation";
 import { requireParent, ownsStudent } from "@/lib/parentAuth";
 import { prisma } from "@/lib/prisma";
 import { computePeriodStats } from "@/lib/parentUtils";
+import { getResultsAnalysis } from "@/lib/parent/resultsAnalysis";
 import type { ResultPeriod } from "@/app/api/parent/results/route";
 import ResultsTable from "@/components/parent/ResultsTable";
 import ResultsTrendChart from "@/components/parent/ResultsTrendChart";
+import ResultsAnalysisCard from "@/components/parent/ResultsAnalysisCard";
 
 export const dynamic = "force-dynamic";
 
@@ -156,6 +158,14 @@ export default async function ParentResultsPage({ searchParams }: Props) {
   // Filter periods with actual data for the trend chart
   const hasAnyResults = results.some((r) => r.items.length > 0);
 
+  // 7. Results Analysis — one scrollable tile per period, gated on the
+  //    school having actually sent that period's results SMS to parents.
+  const analysisPeriods = await getResultsAnalysis(parent.schoolId, studentId);
+  const comparablePeriods = analysisPeriods.map((a) => ({
+    id: a.period.id,
+    label: `${a.period.name} (${a.period.academicYear}${a.period.term != null ? `, Term ${a.period.term}` : ""})`,
+  }));
+
   return (
     <div className="space-y-6">
       <PageHeader studentName={student?.fullName} />
@@ -172,6 +182,29 @@ export default async function ParentResultsPage({ searchParams }: Props) {
         </div>
       ) : (
         <>
+          {/* Results Analysis — per-period tiles, only for SMS-released periods */}
+          <div>
+            <h2 className="text-sm font-semibold text-foreground mb-3">Results Analysis</h2>
+            {analysisPeriods.length === 0 ? (
+              <div className="bg-card border border-border rounded-xl p-6 text-center">
+                <p className="text-sm text-slate">
+                  Analysis for a term appears here once the school sends out that term&apos;s results SMS.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {analysisPeriods.map((a) => (
+                  <ResultsAnalysisCard
+                    key={a.period.id}
+                    studentId={studentId}
+                    analysis={a}
+                    comparablePeriods={comparablePeriods}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Trend chart — only shown when there's numeric data */}
           <ResultsTrendChart results={results} />
 

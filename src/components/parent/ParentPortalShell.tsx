@@ -52,9 +52,9 @@ export const PARENT_NAV = [
   { label: "Home",             href: "/parent",               Icon: Home,          seg: null           },
   { label: "Academics",        href: "/parent/results",       Icon: GraduationCap, seg: "results"      },
   { label: "Attendance",       href: "/parent/attendance",    Icon: CalendarCheck, seg: "attendance"   },
-  { label: "Diary",            href: "/parent/diary",         Icon: BookOpen,      seg: "diary"        },
+  { label: "Diary",            href: "/parent/diary",         Icon: BookOpen,      seg: "diary", badgeKey: "diary" },
   { label: "School Fees",      href: "/parent/fees",          Icon: CreditCard,    seg: "fees"         },
-  { label: "Messages",         href: "/parent/messages",      Icon: MessageSquare, seg: "messages", badge: true },
+  { label: "Messages",         href: "/parent/messages",      Icon: MessageSquare, seg: "messages", badgeKey: "messages" },
   { label: "School Calendar",  href: "/parent/calendar",      Icon: Calendar,      seg: "calendar"     },
 ] as const;
 
@@ -62,8 +62,8 @@ export const PARENT_NAV = [
 const BOTTOM_TABS = [
   { label: "Home",      href: "/parent",           Icon: Home,          seg: null      },
   { label: "Academics", href: "/parent/results",   Icon: GraduationCap, seg: "results" },
-  { label: "Diary",     href: "/parent/diary",     Icon: BookOpen,      seg: "diary", badge: 2 },
-  { label: "Messages",  href: "/parent/messages",  Icon: MessageSquare, seg: "messages", badge: 3 },
+  { label: "Diary",     href: "/parent/diary",     Icon: BookOpen,      seg: "diary", badgeKey: "diary" },
+  { label: "Messages",  href: "/parent/messages",  Icon: MessageSquare, seg: "messages", badgeKey: "messages" },
   { label: "More",      href: null,                Icon: LayoutDashboard, seg: "__more" },
 ] as const;
 
@@ -89,8 +89,12 @@ interface ParentPortalShellProps {
   userEmail:   string;
   avatarUrl?:  string | null;
   schoolName?: string;
-  /** Unread message/notification count */
+  /** Unread message/notification count (drives the profile-menu Notifications row) */
   unreadCount?: number;
+  /** Diary entries (assignments/homework) due within the next 7 days, across all children */
+  diaryBadge?: number;
+  /** Unread items in the Messages tab: broadcast messages + visible discipline records */
+  messagesBadge?: number;
   /**
    * Route segments to leave out of the nav entirely — used for optional
    * modules the school has switched off (e.g. "fees" when Finance is off).
@@ -108,6 +112,8 @@ export default function ParentPortalShell({
   avatarUrl,
   schoolName: _schoolName,
   unreadCount = 0,
+  diaryBadge = 0,
+  messagesBadge = 0,
   hiddenSegs = [],
 }: ParentPortalShellProps) {
   const pathname   = usePathname();
@@ -116,6 +122,9 @@ export default function ParentPortalShell({
   const userInits  = initials(parentName);
 
   usePushNotifications();
+
+  // Real, data-backed counts keyed by badgeKey — no hardcoded literals.
+  const badgeCounts: Record<string, number> = { diary: diaryBadge, messages: messagesBadge };
 
   // Nav for modules this school has switched off is dropped, not disabled.
   const navItems    = PARENT_NAV.filter((i) => !i.seg || !hiddenSegs.includes(i.seg));
@@ -410,8 +419,9 @@ export default function ParentPortalShell({
         {/* Main nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
           {navItems.map(({ label, href, Icon, seg, ...rest }) => {
-            const active  = isActive(seg);
-            const hasBadge = "badge" in rest && rest.badge;
+            const active   = isActive(seg);
+            const badgeKey = "badgeKey" in rest ? rest.badgeKey : undefined;
+            const count    = badgeKey ? badgeCounts[badgeKey] ?? 0 : 0;
             return (
               <Link
                 key={href}
@@ -430,10 +440,10 @@ export default function ParentPortalShell({
                   aria-hidden="true"
                 />
                 <span className="flex-1">{label}</span>
-                {hasBadge && unreadCount > 0 && (
+                {count > 0 && (
                   <span className="flex items-center justify-center min-w-[20px] h-5 px-1
                                    rounded-full bg-teal text-white text-[10px] font-bold">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                    {count > 99 ? "99+" : count}
                   </span>
                 )}
               </Link>
@@ -572,7 +582,8 @@ export default function ParentPortalShell({
             <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
               {navItems.map(({ label, href, Icon, seg, ...rest }) => {
                 const active   = isActive(seg);
-                const hasBadge = "badge" in rest && rest.badge;
+                const badgeKey = "badgeKey" in rest ? rest.badgeKey : undefined;
+                const count    = badgeKey ? badgeCounts[badgeKey] ?? 0 : 0;
                 return (
                   <Link
                     key={href}
@@ -588,8 +599,8 @@ export default function ParentPortalShell({
                   >
                     <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
                     <span className="flex-1">{label}</span>
-                    {hasBadge && unreadCount > 0 && (
-                      <span className="text-xs font-bold text-danger">{unreadCount}</span>
+                    {count > 0 && (
+                      <span className="text-xs font-bold text-danger">{count > 99 ? "99+" : count}</span>
                     )}
                   </Link>
                 );
@@ -662,7 +673,8 @@ export default function ParentPortalShell({
         }}
       >
         {bottomTabs.map(({ label, href, Icon, seg, ...rest }) => {
-          const badgeCount = "badge" in rest ? (rest as { badge?: number }).badge ?? 0 : 0;
+          const badgeKey   = "badgeKey" in rest ? rest.badgeKey : undefined;
+          const badgeCount = badgeKey ? badgeCounts[badgeKey] ?? 0 : 0;
           const active = href
             ? (seg === null ? activeSeg === null : activeSeg === seg)
             : false;
@@ -701,7 +713,7 @@ export default function ParentPortalShell({
                                min-w-[16px] h-4 px-0.5 rounded-full
                                bg-danger text-white text-[9px] font-bold leading-none"
                   >
-                    {badgeCount}
+                    {badgeCount > 99 ? "99+" : badgeCount}
                   </span>
                 )}
               </span>

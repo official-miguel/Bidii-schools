@@ -12,7 +12,8 @@
  * Requirements: 11.3, 11.4
  */
 
-import { MessageSquare } from "lucide-react";
+import Link from "next/link";
+import { MessageSquare, ShieldAlert } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -26,6 +27,12 @@ export interface MessageItem {
   status:           string;
   createdAt:        string; // ISO string
   sender:           { name: string | null; email?: string | null };
+  /** "DISCIPLINE" tiles are discipline/behaviour records surfaced in the
+   *  Messages tab instead of the notification bell (per-tile badge). */
+  kind?:            "MESSAGE" | "DISCIPLINE";
+  /** For DISCIPLINE tiles: OPEN/RESOLVED etc, and the linked child's name. */
+  disciplineStatus?: string;
+  studentName?:      string;
 }
 
 interface Props {
@@ -80,41 +87,72 @@ export default function MessageList({ messages }: Props) {
 
   return (
     <div className="space-y-3">
-      {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className="rounded-xl border border-border bg-card p-4 shadow-xs"
-        >
-          {/* Header row */}
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">
-                {msg.sender.name ?? "School"}
+      {messages.map((msg) => {
+        const isDiscipline = msg.kind === "DISCIPLINE";
+        const card = (
+          <div
+            className={`rounded-xl border p-4 shadow-xs ${
+              isDiscipline ? "border-warn/30 bg-warn-bg/40" : "border-border bg-card"
+            }`}
+          >
+            {/* Header row */}
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-foreground">
+                  {isDiscipline ? (msg.studentName ?? "Discipline") : (msg.sender.name ?? "School")}
+                </p>
+                {isDiscipline ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5
+                                    rounded-full bg-warn text-white">
+                    <ShieldAlert className="h-3 w-3" aria-hidden="true" />
+                    Discipline
+                  </span>
+                ) : (
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${channelBadgeClass(msg.channel)}`}
+                  >
+                    {msg.channel}
+                  </span>
+                )}
+                {isDiscipline && msg.disciplineStatus && (
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      msg.disciplineStatus === "RESOLVED"
+                        ? "bg-success-bg text-success"
+                        : "bg-warn-bg text-warn"
+                    }`}
+                  >
+                    {msg.disciplineStatus}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate shrink-0">
+                {relativeTime(msg.createdAt)}
               </p>
-              <span
-                className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${channelBadgeClass(msg.channel)}`}
-              >
-                {msg.channel}
-              </span>
             </div>
-            <p className="text-xs text-slate shrink-0">
-              {relativeTime(msg.createdAt)}
+
+            {/* Body */}
+            <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">
+              {msg.body}
             </p>
+
+            {/* Recipient summary */}
+            {msg.recipientSummary && !isDiscipline && (
+              <p className="text-[11px] text-slate mt-2">
+                To: {msg.recipientSummary}
+              </p>
+            )}
           </div>
+        );
 
-          {/* Body */}
-          <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">
-            {msg.body}
-          </p>
-
-          {/* Recipient summary */}
-          {msg.recipientSummary && (
-            <p className="text-[11px] text-slate mt-2">
-              To: {msg.recipientSummary}
-            </p>
-          )}
-        </div>
-      ))}
+        return isDiscipline ? (
+          <Link key={msg.id} href="/parent/behaviour" className="block">
+            {card}
+          </Link>
+        ) : (
+          <div key={msg.id}>{card}</div>
+        );
+      })}
     </div>
   );
 }
