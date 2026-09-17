@@ -856,14 +856,17 @@ async function getTeacherList(scope: UserScope): Promise<string> {
   const total = await prisma.teacher.count({ where: { schoolId: scope.schoolId } });
   if (total === 0) return "No teachers found.";
 
+  // Only fullName is selected — email/phone are contact details and must
+  // never be surfaced to non-admin roles (teachers, parents, students) who
+  // can also call this tool.
   const teachers = await prisma.teacher.findMany({
     where: { schoolId: scope.schoolId },
-    select: { fullName: true, email: true },
+    select: { fullName: true },
     orderBy: { fullName: "asc" },
     take: 30,
   });
 
-  const lines = teachers.map((t) => `  • ${t.fullName ?? t.email ?? "Unknown"}`);
+  const lines = teachers.map((t) => `  • ${t.fullName ?? "Unknown"}`);
   return `**Teachers (${total}):**\n\n${lines.join("\n")}${total > 30 ? `\n  … and ${total - 30} more` : ""}`;
 }
 

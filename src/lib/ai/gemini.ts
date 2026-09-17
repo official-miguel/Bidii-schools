@@ -56,9 +56,15 @@ const DEFAULT_RETRIES = 2; // retry once on transient failures; 429s get their o
 const _cache = new Map<string, { expires: number; value: string }>();
 
 function cacheKey(schoolId: string, prompt: string, options: CallOptions) {
+  // Normalize whitespace/case so trivially-different phrasings of the same
+  // question (extra spaces, capitalization) still hit the shared cache —
+  // this matters a lot when many users ask near-identical questions
+  // ("who is absent today?" / "Who is absent today"), which is common
+  // enough on a free-tier key that it meaningfully cuts request volume.
+  const normalizedPrompt = prompt.trim().toLowerCase().replace(/\s+/g, " ");
   return JSON.stringify([
     schoolId,
-    prompt,
+    normalizedPrompt,
     options.systemInstruction,
     options.responseSchema,
     options.model,
@@ -67,6 +73,79 @@ function cacheKey(schoolId: string, prompt: string, options: CallOptions) {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ---------------------------------------------------------------------------
+// Per-school concurrency throttle
+// ---------------------------------------------------------------------------
+//
+// Free-tier Gemini keys have a low requests-per-minute ceiling. A school with
+// several staff/parents chatting with Soma at once can easily fire enough
+// simultaneous requests to blow through it, even though the *total* volume
+// over a minute would have been fine. Rather than let bursts collide and
+// bounce off 429s, we cap how many Gemini calls a single school can have
+// in flight at once and queue the rest FIFO — so the first request to arrive
+// is always the first one served, and everyone still gets an answer instead
+// of a rate-limit error.
+const MAX_CONCURRENT_PER_SCHOOL = 2;
+const MAX_QUEUE_WAIT_MS = 20_000;
+
+const _activeBySchool = new Map<string, number>();
+const _queueBySchool = new Map<string, Array<() => void>>();
+
+function releaseSlot(schoolId: string): void {
+  const active = (_activeBySchool.get(schoolId) ?? 1) - 1;
+  _activeBySchool.set(schoolId, Math.max(0, active));
+
+  const queue = _queueBySchool.get(schoolId);
+  const next = queue?.shift();
+  if (next) next();
+}
+
+/**
+ * Waits for a free "slot" for this school's Gemini traffic, then returns a
+ * release function the caller MUST invoke (in a finally block) once its
+ * request completes. Throws AiServiceError if the queue doesn't clear within
+ * MAX_QUEUE_WAIT_MS, so a caller never hangs indefinitely under heavy load.
+ */
+async function acquireSchoolSlot(schoolId: string): Promise<() => void> {
+  const active = _activeBySchool.get(schoolId) ?? 0;
+  if (active < MAX_CONCURRENT_PER_SCHOOL) {
+    _activeBySchool.set(schoolId, active + 1);
+    return () => releaseSlot(schoolId);
+  }
+
+  return new Promise<() => void>((resolve, reject) => {
+    let settled = false;
+    const queue = _queueBySchool.get(schoolId) ?? [];
+
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      const q = _queueBySchool.get(schoolId);
+      if (q) {
+        const idx = q.indexOf(onTurn);
+        if (idx !== -1) q.splice(idx, 1);
+      }
+      reject(
+        new AiServiceError(
+          "Soma AI is handling a lot of questions right now. Please try again in a few seconds.",
+          false
+        )
+      );
+    }, MAX_QUEUE_WAIT_MS);
+
+    function onTurn() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      _activeBySchool.set(schoolId, (_activeBySchool.get(schoolId) ?? 0) + 1);
+      resolve(() => releaseSlot(schoolId));
+    }
+
+    queue.push(onTurn);
+    _queueBySchool.set(schoolId, queue);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +327,8 @@ export async function callGemini(
   const retries = options.retries ?? DEFAULT_RETRIES;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
+  const releaseSchoolSlot = await acquireSchoolSlot(schoolId);
+  try {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
@@ -371,6 +452,9 @@ export async function callGemini(
     false,
     lastError
   );
+  } finally {
+    releaseSchoolSlot();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -639,6 +723,14 @@ export async function streamGeminiWithTools(opts: {
   // Build the mutable conversation we extend on each tool round
   const conversation: GeminiContent[] = [...opts.contents];
 
+  const releaseSchoolSlot = await acquireSchoolSlot(opts.schoolId);
+  try {
+    return await runStreamWithTools();
+  } finally {
+    releaseSchoolSlot();
+  }
+
+  async function runStreamWithTools(): Promise<string> {
   // ── Tool-calling rounds (non-streaming, fast model) ────────────────────
   if (hasFunctions) {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -829,6 +921,7 @@ export async function streamGeminiWithTools(opts: {
     return fullText;
   } finally {
     clearTimeout(timeout);
+  }
   }
 }
 
