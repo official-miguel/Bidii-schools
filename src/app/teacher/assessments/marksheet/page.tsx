@@ -262,6 +262,7 @@ export default async function TeacherMarksheetPage({
           defaultClassId={defaultClassId}
           defaultSubjectId={defaultSubjectId}
           lockClass={true}
+          unrestrictedSubjects={isWideAccess}
           readOnly={!editAllowed}
           canManagePapers={canManagePapers}
           gradingFramework={frameworkType === "CBE" ? "CBE" : "EIGHT_FOUR_FOUR"}

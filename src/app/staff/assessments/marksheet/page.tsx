@@ -100,6 +100,7 @@ export default async function StaffMarksheetPage({
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
+        unrestrictedSubjects={true}
         readOnly={readOnly}
         canManagePapers={!readOnly}
         gradingFramework={framework === "CBE" ? "CBE" : "EIGHT_FOUR_FOUR"}

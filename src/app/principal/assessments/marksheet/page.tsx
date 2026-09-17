@@ -95,6 +95,7 @@ export default async function MarksheetPage({
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
+        unrestrictedSubjects={true}
         readOnly={false}
         canManagePapers={true}
         gradingFramework={framework === "CBE" ? "CBE" : "EIGHT_FOUR_FOUR"}

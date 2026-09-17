@@ -92,6 +92,15 @@ type Props = {
   defaultSubjectId?: string;
   /** When true the Stream selector is hidden and the single class is auto-selected. */
   lockClass?: boolean;
+  /**
+   * When true the Subject filter shows every subject passed in regardless of
+   * its applicableForms — for Principal/Full Admin, who manage the whole
+   * school's data (including fixing a class/subject applicableForms mismatch)
+   * rather than only their own assigned classes. Regular teachers keep the
+   * applicableForms-scoped list so they aren't shown subjects that don't
+   * apply to the class they're viewing.
+   */
+  unrestrictedSubjects?: boolean;
   /** Read-only — no save button or cell editing. */
   readOnly?: boolean;
   /**
@@ -802,6 +811,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   defaultClassId,
   defaultSubjectId,
   lockClass = false,
+  unrestrictedSubjects = false,
   readOnly = false,
   canManagePapers = false,
   canUseFormula,
@@ -1166,6 +1176,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
         lockClass={lockClass}
+        unrestrictedSubjects={unrestrictedSubjects}
         onChange={handleFilterChange}
       />
 

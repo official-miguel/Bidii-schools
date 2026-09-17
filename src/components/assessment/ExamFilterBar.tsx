@@ -51,6 +51,14 @@ export type ExamFilterBarProps = {
   defaultSubjectId?: string;
   lockClass?: boolean;
   frameworkId?: string;
+  /**
+   * When true, show every subject passed in regardless of applicableForms —
+   * for Principal/Full Admin managing the whole school's data. Without this,
+   * a subject whose applicableForms was never tagged for a given form/grade
+   * (a data setup gap, not a permission one) silently empties the Subject
+   * dropdown and the marksheet never has anything to show for that class.
+   */
+  unrestrictedSubjects?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -111,6 +119,7 @@ export default function ExamFilterBar({
   defaultSubjectId,
   lockClass = false,
   frameworkId,
+  unrestrictedSubjects = false,
 }: ExamFilterBarProps) {
   // ── Remote data ────────────────────────────────────────────────────────────
   const [periods, setPeriods] = useState<Period[]>([]);
@@ -182,7 +191,7 @@ export default function ExamFilterBar({
             } else {
               // Auto-select the first subject applicable to the resolved form
               const resolvedForm = typeof initialForm === "number" ? initialForm : null;
-              const firstSubject = resolvedForm !== null
+              const firstSubject = (resolvedForm !== null && !unrestrictedSubjects)
                 ? subjects.find((s) => s.applicableForms.includes(resolvedForm))
                 : subjects[0];
               if (firstSubject) setSubjectId(firstSubject.id);
@@ -250,11 +259,14 @@ export default function ExamFilterBar({
   }, [availableStreams]);
 
   const availableSubjects = useMemo(() => {
+    if (unrestrictedSubjects) {
+      return [...subjects].sort((a, b) => a.name.localeCompare(b.name));
+    }
     if (form === "") return [];
     return subjects
       .filter((s) => s.applicableForms.includes(form as number))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [subjects, form]);
+  }, [subjects, form, unrestrictedSubjects]);
 
   const subjectOptions = useMemo(() =>
     availableSubjects.map((s) => ({ id: s.id, label: s.name })),
@@ -289,7 +301,9 @@ export default function ExamFilterBar({
     setForm(newForm);
     setClassId("");
     if (!hideSubject && typeof newForm === "number") {
-      const first = subjects.find((s) => s.applicableForms.includes(newForm));
+      const first = unrestrictedSubjects
+        ? subjects[0]
+        : subjects.find((s) => s.applicableForms.includes(newForm));
       setSubjectId(first?.id ?? "");
     } else {
       setSubjectId("");
