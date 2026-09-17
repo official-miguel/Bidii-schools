@@ -83,6 +83,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Guard: a parent cannot keep a child's admission number as the password ──
+  // That number is their first-login password and must be retired here, exactly
+  // like the school slug is for staff.
+  if (user.role === "PARENT") {
+    const parent = await prisma.parent.findUnique({
+      where:  { userId: user.id },
+      select: { students: { select: { student: { select: { admissionNumber: true } } } } },
+    });
+    const typed = newPassword.trim().toLowerCase();
+    const reusesAdmission = (parent?.students ?? []).some(
+      (l) => (l.student.admissionNumber ?? "").trim().toLowerCase() === typed
+    );
+    if (reusesAdmission) {
+      return NextResponse.json(
+        {
+          error:
+            "You cannot use your child's admission number as your password. " +
+            "Please choose a personal password.",
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   const newHash = await hashPassword(newPassword);
 
   // Save new password and clear the force-change flag

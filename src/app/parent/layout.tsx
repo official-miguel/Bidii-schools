@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import ParentPortalShell from "@/components/parent/ParentPortalShell";
 import ParentHydrator    from "@/components/parent/ParentHydrator";
 import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
+import MustChangePasswordGate from "@/components/MustChangePasswordGate";
 import SomaAIProvider from "@/components/SomaAIProvider";
 import { getEnabledOptionalModules } from "@/lib/moduleAccess";
 
@@ -75,6 +76,10 @@ export default async function ParentLayout({
   const hiddenSegs     = enabledModules.has("FEES") ? [] : ["fees"];
 
   return (
+    <MustChangePasswordGate
+      mustChangePassword={user.mustChangePassword}
+      initialPassword="admission-number"
+    >
     <MobileDrawerProvider>
       <SomaAIProvider role="parent" schoolName={parent.school.name}>
         <ParentPortalShell
@@ -89,5 +94,6 @@ export default async function ParentLayout({
         </ParentPortalShell>
       </SomaAIProvider>
     </MobileDrawerProvider>
+    </MustChangePasswordGate>
   );
 }

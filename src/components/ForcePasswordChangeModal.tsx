@@ -58,9 +58,14 @@ function requirements(p: string): Requirement[] {
 
 interface Props {
   mustChange: boolean;
+  /** Staff sign in with the school username, parents with a child's admission number. */
+  initialPassword?: "school-username" | "admission-number";
 }
 
-export default function ForcePasswordChangeModal({ mustChange }: Props) {
+export default function ForcePasswordChangeModal({
+  mustChange,
+  initialPassword = "school-username",
+}: Props) {
   const [visible, setVisible] = useState(mustChange);
   useEffect(() => { setVisible(mustChange); }, [mustChange]);
 
@@ -142,8 +147,9 @@ export default function ForcePasswordChangeModal({ mustChange }: Props) {
           <div className="flex gap-3 bg-teal-50 border border-teal/20 rounded-xl px-4 py-3 mb-5">
             <ShieldCheck className="h-4 w-4 text-teal mt-0.5 shrink-0" aria-hidden="true" />
             <p className="text-sm text-teal-dark leading-relaxed">
-              You signed in with your school&apos;s username. Create a secure
-              personal password — the school username cannot be used again.
+              {initialPassword === "admission-number"
+                ? "You signed in with your child's admission number. Create a secure personal password — the admission number cannot be used again."
+                : "You signed in with your school's username. Create a secure personal password — the school username cannot be used again."}
             </p>
           </div>
 

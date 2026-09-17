@@ -7,6 +7,13 @@
  *   Looked up via raw SQL (bypasses the Prisma-generated Role enum so the
  *   query works even before `prisma generate` picks up SUPER_ADMIN).
  *
+ * First-login flow for parents:
+ *   • Parents sign in with their phone number.
+ *   • Initial password = the admission number of any of their children.
+ *   • It is accepted only while they still have no personal password
+ *     (mustChangePassword / empty hash), then the force-change modal makes them
+ *     set one through the usual /api/auth/change-password form.
+ *
  * First-login flow for teachers / staff:
  *   • Initial password = school slug (e.g. "kianyaga").
  *   • mustChangePassword=true forces a password set on first login.
@@ -289,6 +296,30 @@ export async function POST(req: NextRequest) {
         if (ok) {
           user = parent.user as unknown as UserRow;
           passwordAlreadyVerified = true;
+        } else if (parent.user.mustChangePassword || !parent.user.passwordHash) {
+          // First login: the admission number of any of their children is the
+          // initial password. It only works while the parent has not yet set a
+          // personal password, so it is retired the moment they do.
+          const links = await prisma.parentStudent.findMany({
+            where:  { parentId: parent.id },
+            select: { student: { select: { admissionNumber: true } } },
+          });
+          const typed = password.trim().toLowerCase();
+          const matchesAdmission = links.some(
+            (l) => (l.student.admissionNumber ?? "").trim().toLowerCase() === typed && typed.length > 0
+          );
+          if (matchesAdmission) {
+            // Persist the flag so the force-change gate also fires on the
+            // server-rendered portal, not just on this response.
+            if (!parent.user.mustChangePassword) {
+              await prisma.user.update({
+                where: { id: parent.user.id },
+                data:  { mustChangePassword: true },
+              }).catch(() => {});
+            }
+            user = { ...(parent.user as unknown as UserRow), mustChangePassword: true };
+            passwordAlreadyVerified = true;
+          }
         }
       }
     }

@@ -14,14 +14,20 @@ import ForcePasswordChangeModal from "./ForcePasswordChangeModal";
 
 interface Props {
   mustChangePassword: boolean;
+  /** Which initial password the user signed in with — changes the modal copy. */
+  initialPassword?: "school-username" | "admission-number";
   children: ReactNode;
 }
 
-export default function MustChangePasswordGate({ mustChangePassword, children }: Props) {
+export default function MustChangePasswordGate({
+  mustChangePassword,
+  initialPassword = "school-username",
+  children,
+}: Props) {
   return (
     <>
       {children}
-      <ForcePasswordChangeModal mustChange={mustChangePassword} />
+      <ForcePasswordChangeModal mustChange={mustChangePassword} initialPassword={initialPassword} />
     </>
   );
 }
