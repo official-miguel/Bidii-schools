@@ -21,7 +21,6 @@ export const MODULE_INFO: Record<
   CLASSES:              { label: "Classes",                   description: "Manage classes/streams",                                             hub: "academic" },
   STUDENTS:             { label: "Students",                  description: "Manage student records",                                             hub: "people" },
   TIMETABLE:            { label: "Timetable",                 description: "Build and edit the weekly timetable",                               hub: "academic" },
-  EXAM_PERIODS:         { label: "Exam Periods (legacy)",     description: "Legacy module — superseded by ASSESSMENTS",                         hub: "academic" },
   RESULTS:              { label: "Results (legacy)",          description: "Legacy module — superseded by ASSESSMENTS",                         hub: "academic" },
   ASSESSMENTS:          { label: "Assessments",               description: "Enter and view assessment results across all frameworks",            hub: "academic" },
   ASSESSMENT_FRAMEWORK: { label: "Assessment Framework",      description: "Configure learning areas, strands, papers, and competency units",   hub: "academic" },

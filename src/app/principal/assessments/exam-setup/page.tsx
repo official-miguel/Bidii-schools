@@ -10,8 +10,8 @@ export default async function ExamSetupPage() {
   return (
     <div>
       <PageHeader
-        title="Exam Setup"
-        description="Configure assessment frameworks, exam periods, and grading weights — everything the system needs before marks can be entered."
+        title="Period Setup"
+        description="Configure assessment frameworks, periods, and grading weights — everything the system needs before marks can be entered."
       />
       <ExamSetupTabs />
     </div>

@@ -2272,7 +2272,6 @@ enum Module {
   CLASSES
   STUDENTS
   TIMETABLE
-  EXAM_PERIODS
   RESULTS
   TOD
   COMMUNICATION
@@ -2284,7 +2283,7 @@ enum Module {
   RECORDS_ACHIEVEMENTS
   ANALYTICS
   /// Multi-framework assessment: framework config, sitting periods, and
-  /// item entry. Split from the old EXAM_PERIODS / RESULTS pair so scoped
+  /// item entry. Split from the old RESULTS module so scoped
   /// roles (e.g. CBC class teacher, CBE assessor) can be granted
   /// independently of the legacy modules.
   ASSESSMENTS

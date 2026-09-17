@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ExamSetupTabs — tabbed shell inside the Exam Setup hub.
+ * ExamSetupTabs — tabbed shell inside the Period Setup hub.
  *
  * Tab 1 — Frameworks & Periods  : FrameworkManager
  * Tab 2 — Pathway Weights       : shortcut to /principal/assessments/pathway-weights
@@ -258,7 +258,7 @@ export default function ExamSetupTabs() {
             </h2>
             <p className="text-sm text-slate">
               A framework ties together a curriculum type (8-4-4 or CBE), an
-              academic year, and the exam periods within it. Create one framework
+              academic year, and the periods within it. Create one framework
               per curriculum type per year, then add the periods teachers will use
               to enter marks.
             </p>

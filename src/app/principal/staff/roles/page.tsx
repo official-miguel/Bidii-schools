@@ -36,7 +36,7 @@ const PERM_GROUPS: { id: string; label: string; modules: string[]; adminSwitch?:
   { id: "fees",              label: "Fees",                modules: ["FEES"] },
   { id: "library",           label: "Library",             modules: ["LIBRARY"] },
   { id: "timetable",         label: "Timetable",           modules: ["TIMETABLE"] },
-  { id: "examination",       label: "Examination",         modules: ["ASSESSMENT_FRAMEWORK", "EXAM_PERIODS", "RESULTS", "ASSESSMENTS"] },
+  { id: "examination",       label: "Examination",         modules: ["ASSESSMENT_FRAMEWORK", "RESULTS", "ASSESSMENTS"] },
   { id: "students-academic", label: "Students & Academic", modules: ["SUBJECTS", "CLASSES", "STUDENTS"] },
   { id: "student-life",      label: "Student Life",        modules: ["ACCOMMODATION"] },
   { id: "communication",     label: "Communication",       modules: ["COMMUNICATION", "CALENDAR"] },

@@ -12,7 +12,6 @@ export { useTimetableStore }   from "./timetableStore";
 export { useCalendarStore }    from "./calendarStore";
 export { useDisciplineStore }  from "./disciplineStore";
 export { useStaffRolesStore }  from "./staffRolesStore";
-export { useExamPeriodsStore } from "./examPeriodsStore";
 export { useSyncStatusStore }  from "./syncStatusStore";
 export { useParentStore }      from "./parentStore";
 export type { ChildSummary }   from "./parentStore";

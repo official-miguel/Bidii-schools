@@ -123,7 +123,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     id:      "examination",
     label:   "Examination",
-    modules: ["ASSESSMENT_FRAMEWORK", "EXAM_PERIODS", "RESULTS", "ASSESSMENTS"],
+    modules: ["ASSESSMENT_FRAMEWORK", "RESULTS", "ASSESSMENTS"],
   },
   {
     id:      "students-academic",

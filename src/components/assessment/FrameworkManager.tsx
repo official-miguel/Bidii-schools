@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * FrameworkManager — manages assessment frameworks and exam periods.
+ * FrameworkManager — manages assessment frameworks and periods.
  *
- * Used inside the Exam Setup hub. The principal can:
+ * Used inside the Period Setup hub. The principal can:
  *  - See all frameworks (active / inactive) — a framework governs which
  *    grading scale a class's marks are graded on (8-4-4 KCSE bands, or the
  *    school's CBE scale), decided by SchoolClass.frameworkType.
  *  - Create a new framework (type + label + academic year)
  *  - Toggle active/inactive on existing ones
  *
- * Exam periods (e.g. "Term 3 Opener 2026") are a SEPARATE, single shared
+ * Periods (e.g. "Term 3 Opener 2026") are a SEPARATE, single shared
  * list below the frameworks — one period is used by every class in the
  * school regardless of its framework, so there is exactly one period list
  * and one "Current" period, not one per framework.
@@ -358,10 +358,10 @@ export default function FrameworkManager() {
         </button>
       )}
 
-      {/* Exam periods — one shared list, used by every class regardless of
+      {/* Periods — one shared list, used by every class regardless of
           its own framework. */}
       <div className="pt-2">
-        <p className="text-sm font-semibold text-foreground mb-1">Exam Periods</p>
+        <p className="text-sm font-semibold text-foreground mb-1">Periods</p>
         <p className="text-xs text-slate mb-3">
           One period per term, shared by every class — 8-4-4 or CBE. Which grading
           scale applies is decided by each class&apos;s own framework, not by the period.

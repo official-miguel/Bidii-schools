@@ -3,7 +3,7 @@
 /**
  * ExamFilterBar
  *
- * Cascading filter bar: Exam Period → Level (Form/Grade) → Stream → Subject
+ * Cascading filter bar: Period → Level (Form/Grade) → Stream → Subject
  *
  * Design principles:
  * - State is driven by explicit user actions and a single "initialise" effect
@@ -317,9 +317,9 @@ export default function ExamFilterBar({
   return (
     <div className="flex flex-wrap items-end gap-4 mb-6">
 
-      {/* Exam Period */}
+      {/* Period */}
       <div className="flex flex-col gap-1.5 min-w-[200px]">
-        <label htmlFor="ef-period" className={labelClass}>Exam period</label>
+        <label htmlFor="ef-period" className={labelClass}>Period</label>
         {periodsLoading ? (
           <div className="h-[42px] rounded-lg border border-border bg-background animate-pulse" />
         ) : periodsError ? (
