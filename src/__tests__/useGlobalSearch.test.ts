@@ -131,14 +131,21 @@ describe('useGlobalSearch Hook - Task 1.2 Verification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Setup default successful API responses
+    // Setup default successful API responses.
+    //
+    // Students are no longer fetched with a bare '/api/students'. The hook goes
+    // through fetchAllStudents(), which pages '/api/students?limit=500' and
+    // follows the X-Next-Cursor response header, so this mock matches on prefix
+    // and must expose `headers` — returning no cursor ends the loop at one page.
     mockFetch.mockImplementation((url: string) => {
+      if (url.startsWith('/api/students')) {
+        return Promise.resolve({
+          ok: true,
+          headers: { get: () => null },
+          json: () => Promise.resolve(mockStudents),
+        });
+      }
       switch (url) {
-        case '/api/students':
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockStudents),
-          });
         case '/api/staff':
           return Promise.resolve({
             ok: true,
@@ -175,8 +182,9 @@ describe('useGlobalSearch Hook - Task 1.2 Verification', () => {
         expect(result.current.loading).toBe(false);
       }, { timeout: 3000 });
 
-      // Verify API calls were made
-      expect(mockFetch).toHaveBeenCalledWith('/api/students');
+      // Verify API calls were made. Students go through the paginated helper,
+      // so assert on the paged URL rather than a bare '/api/students'.
+      expect(mockFetch).toHaveBeenCalledWith('/api/students?limit=500', { cache: 'no-store' });
       expect(mockFetch).toHaveBeenCalledWith('/api/staff');
       expect(mockFetch).toHaveBeenCalledWith('/api/departments');
       expect(mockFetch).toHaveBeenCalledWith('/api/subjects');
@@ -479,14 +487,15 @@ describe('useGlobalSearch Hook - Task 1.2 Verification', () => {
       }));
 
       mockFetch.mockImplementation((url: string) => {
-        if (url === '/api/students') {
+        if (url.startsWith('/api/students')) {
           return Promise.resolve({
             ok: true,
+            headers: { get: () => null },
             json: () => Promise.resolve([...mockStudents, ...extraStudents]),
           });
         }
         // Return empty for other endpoints to focus on students
-        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+        return Promise.resolve({ ok: true, headers: { get: () => null }, json: () => Promise.resolve([]) });
       });
 
       const { result } = renderHook(() => useGlobalSearch('student', 'principal'));

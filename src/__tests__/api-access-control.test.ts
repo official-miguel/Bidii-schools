@@ -1,5 +1,12 @@
 /**
+ * @jest-environment node
+ *
  * Access control integration tests — Task 15.1
+ *
+ * Runs in the node environment, not the project default of jsdom: importing
+ * `next/server` needs the Node fetch globals (Request/Response), which jsdom
+ * does not provide. Without this pragma the whole suite fails at import and
+ * these access-control assertions silently never run.
  *
  * Validates Requirement 12: all 6 new Stage 6 endpoints must reject
  * unauthenticated requests with a non-2xx status and must enforce
@@ -99,13 +106,15 @@ const ACTOR_NO_DASHBOARD = {
 describe("GET /api/assessments/home/teacher", () => {
   test("returns 401 when not authenticated", async () => {
     mockGetCurrentUser.mockResolvedValue(null);
-    const res = await teacherHomeGET();
+    // The handler reads req.url before the auth check, so it needs a real
+    // request object — calling it bare throws before the assertion is reached.
+    const res = await teacherHomeGET(makeReq("http://localhost/api/assessments/home/teacher"));
     expect(res.status).toBe(401);
   });
 
   test("returns 403 when authenticated but not a TEACHER role", async () => {
     mockGetCurrentUser.mockResolvedValue({ ...TEACHER_USER, role: "PRINCIPAL" } as typeof TEACHER_USER);
-    const res = await teacherHomeGET();
+    const res = await teacherHomeGET(makeReq("http://localhost/api/assessments/home/teacher"));
     expect(res.status).toBe(403);
   });
 });
