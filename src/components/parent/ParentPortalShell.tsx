@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { SchoolBrandingProvider } from "@/components/SchoolBrandingProvider";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
@@ -89,6 +90,8 @@ interface ParentPortalShellProps {
   userEmail:   string;
   avatarUrl?:  string | null;
   schoolName?: string;
+  /** The school's own logo. Null falls back to the Bidii logo. */
+  schoolLogoUrl?: string | null;
   /** Unread message/notification count (drives the profile-menu Notifications row) */
   unreadCount?: number;
   /** Diary entries (assignments/homework) due within the next 7 days, across all children */
@@ -110,7 +113,8 @@ export default function ParentPortalShell({
   parentName,
   userEmail,
   avatarUrl,
-  schoolName: _schoolName,
+  schoolName,
+  schoolLogoUrl,
   unreadCount = 0,
   diaryBadge = 0,
   messagesBadge = 0,
@@ -217,6 +221,7 @@ export default function ParentPortalShell({
   }
 
   return (
+    <SchoolBrandingProvider logoUrl={schoolLogoUrl ?? null} schoolName={schoolName ?? null}>
     <div className="min-h-screen bg-[#F5F7FA]">
       <ServerNotificationSync userScope={userEmail} includeParent />
 
@@ -243,13 +248,12 @@ export default function ParentPortalShell({
         {/* Logo — visible on mobile only (desktop has sidebar logo) */}
         <Link
           href="/parent"
-          aria-label="Bidii Parent Portal home"
+          aria-label={`${schoolName || "Bidii"} home`}
           className="md:hidden flex items-center gap-2 shrink-0"
         >
-          <Logo height={30} width={30} alt="Bidii" className="object-contain" />
-          <span className="font-bold text-sm text-foreground leading-tight">
-            BIDII<br />
-            <span className="text-[10px] font-normal text-slate tracking-wide">PARENT PORTAL</span>
+          <Logo height={30} width={30} alt={schoolName || "Bidii"} className="object-contain" />
+          <span className="font-bold text-sm text-foreground leading-tight truncate max-w-[10rem]">
+            {schoolName || "Bidii"}
           </span>
         </Link>
 
@@ -406,12 +410,11 @@ export default function ParentPortalShell({
           }}
         >
           <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0">
-            <Logo height={36} width={36} alt="Bidii" className="object-contain" />
+            <Logo height={36} width={36} alt={schoolName || "Bidii"} className="object-contain" />
           </div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-foreground tracking-wide">BIDII</p>
-            <p className="text-[10px] text-slate tracking-widest uppercase">
-              Parent Portal
+          <div className="leading-tight min-w-0">
+            <p className="text-sm font-bold text-foreground tracking-wide truncate">
+              {schoolName || "Bidii"}
             </p>
           </div>
         </div>
@@ -545,10 +548,11 @@ export default function ParentPortalShell({
             {/* Header */}
             <div className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-border">
               <Link href="/parent" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2.5">
-                <Logo height={32} width={32} alt="Bidii" className="object-contain" />
-                <div>
-                  <p className="text-sm font-bold text-foreground leading-none">BIDII</p>
-                  <p className="text-[10px] text-slate tracking-widest">PARENT PORTAL</p>
+                <Logo height={32} width={32} alt={schoolName || "Bidii"} className="object-contain" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground leading-none truncate">
+                    {schoolName || "Bidii"}
+                  </p>
                 </div>
               </Link>
               <button
@@ -730,5 +734,6 @@ export default function ParentPortalShell({
         })}
       </nav>
     </div>
+    </SchoolBrandingProvider>
   );
 }

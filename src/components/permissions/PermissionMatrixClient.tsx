@@ -62,7 +62,8 @@ export interface ModuleData {
 
 interface StaffUser {
   id: string;
-  email: string;
+  /** Null for parent accounts, which sign in by phone. */
+  email: string | null;
   role: string;
   staffRoleId: string | null;
   userStaffRoles: { staffRoleId: string }[];
@@ -871,7 +872,7 @@ function AssignUsersPanel({
         ) : (
           <div className="rounded-xl border border-border overflow-hidden">
             {assigned.map((u) => {
-              const displayName = u.teacher?.fullName ?? u.email;
+              const displayName = u.teacher?.fullName ?? u.email ?? "Unknown user";
               const subtitle    = u.teacher?.classTeacherOf
                 ? `Class Teacher · ${u.teacher.classTeacherOf.name}`
                 : u.role === "TEACHER"
@@ -930,7 +931,7 @@ function SearchResultRow({
 }) {
   const isTeacher      = user.role === "TEACHER";
   const isClassTeacher = Boolean(user.classTeacher);
-  const displayName    = user.fullName ?? user.email;
+  const displayName    = user.fullName ?? user.email ?? "Unknown user";
 
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-2.5

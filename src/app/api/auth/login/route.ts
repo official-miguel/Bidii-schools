@@ -54,7 +54,8 @@ import { phoneLookupVariants } from "@/lib/phone";
 // ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
   id:                 string;
-  email:              string;
+  /// Null for parent accounts — they sign in by phone, not email.
+  email:              string | null;
   passwordHash:       string | null;
   role:               string;
   mustChangePassword: boolean;

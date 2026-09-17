@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolRole } from "@/lib/auth";
+import { portalStudents } from "@/lib/parentAuth";
 import { resolveStatus } from "../_lib";
 
 export async function GET(req: NextRequest) {
@@ -9,16 +10,13 @@ export async function GET(req: NextRequest) {
 
   const studentIdParam = req.nextUrl.searchParams.get("studentId") ?? undefined;
 
-  // Find all students linked to this parent/student account
-  const students = await prisma.student.findMany({
-    where: {
-      schoolId:   user.schoolId,
-      archivedAt: null,
-      OR: [
-        { userId:        user.id },
-        { parentContact: user.email },
-      ],
-    },
+  // Children come from the ParentStudent link table. The previous lookup
+  // matched `parentContact: user.email` — a phone column against an email —
+  // so it never matched and the diary always came back empty for parents.
+  const portal = await portalStudents(user);
+
+  const students = portal.length === 0 ? [] : await prisma.student.findMany({
+    where: { id: { in: portal.map((s) => s.id) } },
     select: {
       id:          true,
       fullName:    true,

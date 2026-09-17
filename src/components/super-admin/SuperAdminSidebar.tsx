@@ -129,7 +129,7 @@ export default function SuperAdminSidebar({ isOwner = false, mobileOpen = false,
       onClick={onMobileClose}
       className="flex items-center gap-2 hover:opacity-90 transition-opacity"
     >
-      <Logo height={32} width={32} alt="Bidii" className="object-contain" />
+      <Logo height={32} width={32} alt="Bidii" className="object-contain" forceBidii />
       <div className="flex flex-col -space-y-0.5">
         <span className="text-white font-bold text-base leading-tight">Bidii</span>
         <span className="text-white/80 text-[10px] font-medium uppercase tracking-wider leading-tight">

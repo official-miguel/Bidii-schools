@@ -20,7 +20,7 @@ import { phoneLookupVariants, toE164Kenya } from "./phone";
 
 export type ResolvedUser = {
   id:                 string;
-  email:              string;
+  email:              string | null;
   passwordHash:       string | null;
   role:               string;
   mustChangePassword: boolean;

@@ -72,7 +72,7 @@ export default async function StaffPortalLayout({
   const [school, teacher, roleDisplayLabel] = await Promise.all([
     prisma.school.findUnique({
       where: { id: user.schoolId! },
-      select: { name: true, motto: true },
+      select: { name: true, motto: true, logoUrl: true },
     }),
     user.role === "TEACHER"
       ? prisma.teacher.findUnique({ where: { userId: user.id }, select: { fullName: true } })
@@ -89,9 +89,10 @@ export default async function StaffPortalLayout({
       <DashboardShell
         role="staff"
         roleLabel={roleLabel}
-        userEmail={user.email}
+        userEmail={user.email ?? ""}
         avatarUrl={user.avatarUrl ?? null}
         schoolName={school?.name}
+        schoolLogoUrl={school?.logoUrl ?? null}
         motto={school?.motto}
         visibleHubs={visibleHubs}
       >

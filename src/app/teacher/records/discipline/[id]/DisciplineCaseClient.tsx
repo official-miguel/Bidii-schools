@@ -21,7 +21,7 @@ type DisciplineCaseClientRecord = {
   resolution: string | null;
   dateOfOffence: string;
   createdAt: string;
-  recordedBy: { email: string; role: string; name: string | null } | null;
+  recordedBy: { email: string | null; role: string; name: string | null } | null;
   student: {
     id: string;
     fullName: string;
@@ -37,7 +37,7 @@ type DisciplineCaseNote = {
   id: string;
   body: string;
   createdAt: string;
-  createdBy: { email: string; role: string; name: string | null } | null;
+  createdBy: { email: string | null; role: string; name: string | null } | null;
 };
 
 type DisciplineCaseFile = {

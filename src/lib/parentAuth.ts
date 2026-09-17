@@ -65,3 +65,54 @@ export function ownsStudent(
 ): boolean {
   return parentStudentIds(parent).has(studentId);
 }
+
+/** A child as the parent-facing surfaces need it. */
+export interface PortalStudent {
+  id:       string;
+  classId:  string;
+  fullName: string;
+}
+
+/**
+ * The students a portal user is entitled to see.
+ *
+ *  - PARENT  → children linked through the ParentStudent join table
+ *  - STUDENT → their own record, via Student.userId
+ *
+ * Use this rather than querying Student directly. Several call sites used to
+ * match `{ parentContact: user.email }`, which compares a phone column against
+ * an email address and therefore never matched — every parent silently saw an
+ * empty list. The ParentStudent rows written by syncParentForStudent are the
+ * only reliable link.
+ */
+export async function portalStudents(
+  user: { id: string; role: string; schoolId: string | null }
+): Promise<PortalStudent[]> {
+  if (!user.schoolId) return [];
+
+  const select = { id: true, classId: true, fullName: true } as const;
+
+  if (user.role === "STUDENT") {
+    const self = await prisma.student.findFirst({
+      where:  { schoolId: user.schoolId, userId: user.id, archivedAt: null },
+      select,
+    });
+    return self ? [self] : [];
+  }
+
+  if (user.role !== "PARENT") return [];
+
+  const parent = await prisma.parent.findUnique({
+    where:  { userId: user.id },
+    select: { id: true },
+  });
+  if (!parent) return [];
+
+  const links = await prisma.parentStudent.findMany({
+    where:   { parentId: parent.id, student: { archivedAt: null, schoolId: user.schoolId } },
+    select:  { student: { select } },
+    orderBy: { isPrimary: "desc" },
+  });
+
+  return links.map((l) => l.student);
+}

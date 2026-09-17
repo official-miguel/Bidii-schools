@@ -357,7 +357,7 @@ export async function POST(req: NextRequest) {
   const systemInstruction = buildSystemPrompt({
     role: displayRole,
     schoolName: parsed.context?.schoolName ?? "your school",
-    userEmail: user.email,
+    userEmail: user.email ?? "",
     displayName: scope.displayName,
     studentIds: scope.studentIds,
     classIds: scope.classIds,

@@ -17,6 +17,7 @@
  */
 
 import ConditionalHubSidebar from "@/components/ConditionalHubSidebar";
+import { SchoolBrandingProvider } from "@/components/SchoolBrandingProvider";
 import PushRegistrar from "@/components/PushRegistrar";
 import OfflineSyncRegistrar from "@/components/OfflineSyncRegistrar";
 import ServerNotificationSync from "@/components/ServerNotificationSync";
@@ -46,6 +47,8 @@ interface DashboardShellProps {
   /** Optional profile photo URL for the current user. */
   avatarUrl?:    string | null;
   schoolName?:   string;
+  /** The school's own logo. Null/undefined falls back to the Bidii logo. */
+  schoolLogoUrl?: string | null;
   motto?:        string | null;
   /** Hubs this user may see. undefined = all (PRINCIPAL/TEACHER). */
   visibleHubs?:  Set<NavHub>;
@@ -59,6 +62,7 @@ export default function DashboardShell({
   userEmail,
   avatarUrl,
   schoolName,
+  schoolLogoUrl,
   motto,
   visibleHubs,
   warnUnlinked,
@@ -66,6 +70,7 @@ export default function DashboardShell({
   const userInitials = initials(userEmail, roleLabel);
 
   return (
+    <SchoolBrandingProvider logoUrl={schoolLogoUrl ?? null} schoolName={schoolName ?? null}>
     <MobileDrawerProvider>
       <SomaAIProvider role={role} schoolName={schoolName}>
         <div className="min-h-screen bg-background">
@@ -131,5 +136,6 @@ export default function DashboardShell({
         </div>
       </SomaAIProvider>
     </MobileDrawerProvider>
+    </SchoolBrandingProvider>
   );
 }

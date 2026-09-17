@@ -401,7 +401,9 @@ async function processStaff(rows: Record<string, string>[], schoolId: string, ct
 
   // Pre-load existing User emails for this school to avoid duplicate account creation
   const existingUsers = await prisma.user.findMany({ where: { schoolId }, select: { email: true } });
-  const existingUserEmails = new Set(existingUsers.map(u => u.email.toLowerCase()));
+  const existingUserEmails = new Set(
+    existingUsers.flatMap(u => (u.email ? [u.email.toLowerCase()] : []))
+  );
 
   // Process in parallel batches of 20
   const BATCH = 20;

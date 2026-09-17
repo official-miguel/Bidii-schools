@@ -19,7 +19,7 @@ export default async function SuperAdminLayout({
 
   return (
     <MustChangePasswordGate mustChangePassword={user.mustChangePassword}>
-      <SuperAdminShell userEmail={user.email} isOwner={user.isPlatformOwner}>
+      <SuperAdminShell userEmail={user.email ?? ""} isOwner={user.isPlatformOwner}>
         {children}
       </SuperAdminShell>
     </MustChangePasswordGate>

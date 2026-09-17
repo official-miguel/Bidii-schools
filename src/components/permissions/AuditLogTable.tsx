@@ -6,7 +6,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 interface AuditEntry {
   id:          string;
   action:      string;
-  performedBy: string;
+  performedBy: string | null;
   targetUser:  string | null;
   staffRoleId: string | null;
   module:      string | null;

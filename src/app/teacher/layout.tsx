@@ -14,7 +14,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   if (!user || user.role !== "TEACHER") redirect("/login");
 
   const [school, teacher, perms] = await Promise.all([
-    prisma.school.findUnique({ where: { id: user.schoolId! }, select: { name: true, motto: true } }),
+    prisma.school.findUnique({ where: { id: user.schoolId! }, select: { name: true, motto: true, logoUrl: true } }),
     prisma.teacher.findUnique({ where: { userId: user.id }, select: { fullName: true } }),
     getEffectivePermissions(user),  // now always calls getTeacherEffectivePermissions
   ]);
@@ -40,9 +40,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       <DashboardShell
         role="teacher"
         roleLabel={roleLabel}
-        userEmail={user.email}
+        userEmail={user.email ?? ""}
         avatarUrl={user.avatarUrl ?? null}
         schoolName={school?.name}
+        schoolLogoUrl={school?.logoUrl ?? null}
         motto={school?.motto}
         visibleHubs={visibleHubs as Parameters<typeof DashboardShell>[0]["visibleHubs"]}
       >

@@ -14,7 +14,7 @@
  *   TEACHER    → classIds = classes they are assigned to teach
  *                teacherId = their Teacher row id
  *                studentIds = all students in those classes
- *   PARENT     → studentIds = only children linked via userId or parentContact
+ *   PARENT     → studentIds = children linked through the ParentStudent table
  *   STUDENT    → studentIds = [their own student row only]
  *
  * If a user tries to access data outside their scope, resolveUserScope()
@@ -25,6 +25,7 @@
 import type { User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePermissions } from "@/lib/permissions";
+import { portalStudents } from "@/lib/parentAuth";
 import type { Module } from "@prisma/client";
 
 export interface UserScope {
@@ -55,7 +56,7 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
     schoolId: user.schoolId!,
     role: user.role,
     moduleGrants: {} as UserScope["moduleGrants"],
-    displayName: user.email,
+    displayName: user.email ?? "User",
   };
 
   // ── Principal — full access ─────────────────────────────────────────────
@@ -112,7 +113,7 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
         classIds: [],
         studentIds: [],
         teacherId: null,
-        displayName: user.email,
+        displayName: user.email ?? "User",
       };
     }
 
@@ -137,31 +138,31 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
       classIds,
       studentIds: students.map((s) => s.id),
       teacherId: teacher.id,
-      displayName: teacher.fullName ?? user.email,
+      displayName: teacher.fullName ?? user.email ?? "Teacher",
     };
   }
 
   // ── Parent — only own children ──────────────────────────────────────────
   if (user.role === "PARENT") {
-    const children = await prisma.student.findMany({
-      where: {
-        schoolId: user.schoolId!,
-        archivedAt: null,
-        OR: [
-          { userId: user.id },
-          { parentContact: user.email },
-        ],
-      },
-      select: { id: true, classId: true, fullName: true },
+    // Resolved through ParentStudent. The previous lookup matched
+    // `parentContact: user.email` — a phone column against an email — so it
+    // never matched and every parent reached Soma AI with an empty studentIds,
+    // leaving the assistant unable to say anything about their own child.
+    const children = await portalStudents(user);
+
+    const parent = await prisma.parent.findUnique({
+      where:  { userId: user.id },
+      select: { name: true },
     });
 
     return {
       ...base,
       isAdmin: false,
-      classIds: children.map((c) => c.classId),
+      classIds: [...new Set(children.map((c) => c.classId))],
       studentIds: children.map((c) => c.id),
       teacherId: null,
-      displayName: user.email,
+      // Their own name, never the synthetic login address.
+      displayName: parent?.name?.trim() || "Parent",
     };
   }
 
@@ -192,7 +193,7 @@ export async function resolveUserScope(user: User): Promise<UserScope> {
       classIds: [student.classId],
       studentIds: [student.id],
       teacherId: null,
-      displayName: student.fullName ?? user.email,
+      displayName: student.fullName ?? user.email ?? "Student",
     };
   }
 

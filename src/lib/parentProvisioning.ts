@@ -66,7 +66,10 @@ export async function syncParentForStudent(
   if (!parent) {
     const user = await db.user.create({
       data: {
-        email:              `parent_${phone}@bidii.internal`,
+        // Parents have no email address — they sign in with their phone.
+        // Minting a synthetic "parent_<phone>@bidii.internal" address here is
+        // what used to surface in the portal as the parent's name.
+        email:              null,
         passwordHash:       null,
         role:               "PARENT",
         mustChangePassword: true,

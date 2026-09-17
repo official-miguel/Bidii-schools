@@ -26,7 +26,7 @@ export default async function ParentLayout({
     where: { userId: user.id },
     include: {
       school: {
-        select: { name: true, motto: true },
+        select: { name: true, motto: true, logoUrl: true },
       },
       students: {
         include: {
@@ -51,8 +51,8 @@ export default async function ParentLayout({
       <MobileDrawerProvider>
         <SomaAIProvider role="parent" schoolName="">
           <ParentPortalShell
-            parentName={user.email.split("@")[0]}
-            userEmail={user.email}
+            parentName="Parent"
+            userEmail=""
             schoolName=""
           >
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
@@ -95,7 +95,11 @@ export default async function ParentLayout({
       <SomaAIProvider role="parent" schoolName={parent.school.name}>
         <ParentPortalShell
           parentName={parent.name}
-          userEmail={user.email}
+          schoolLogoUrl={parent.school.logoUrl}
+          // Parents have no email — show the phone they actually sign in with.
+          // It is unique per school, so it also works as the notification
+          // store's scope key.
+          userEmail={parent.phone}
           avatarUrl={user.avatarUrl ?? null}
           schoolName={parent.school.name}
           hiddenSegs={hiddenSegs}

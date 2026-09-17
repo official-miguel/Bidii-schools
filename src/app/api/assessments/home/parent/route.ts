@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { portalStudents } from "@/lib/parentAuth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -17,15 +18,13 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Find students linked to this user via parentContact or userId.
-  const linkedStudents = await prisma.student.findMany({
-    where: {
-      schoolId: user.schoolId!,
-      OR: [
-        { userId: user.id },
-        { parentContact: user.email },
-      ],
-    },
+  // Children come from the ParentStudent link table. The previous lookup
+  // matched `parentContact: user.email` — a phone column against an email —
+  // so it never matched and every parent saw an empty dashboard.
+  const portal = await portalStudents(user);
+
+  const linkedStudents = portal.length === 0 ? [] : await prisma.student.findMany({
+    where: { id: { in: portal.map((s) => s.id) } },
     select: {
       id: true,
       fullName: true,

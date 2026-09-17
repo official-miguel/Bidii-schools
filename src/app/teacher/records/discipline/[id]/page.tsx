@@ -53,7 +53,7 @@ export default async function TeacherDisciplineCasePage({ params }: { params: { 
   const canManage = permissions.RECORDS_DISCIPLINE?.canCreate === true;
 
   // Normalise the user shape for the client component
-  function normUser(u: { email: string; role: string; teacher: { fullName: string } | null } | null) {
+  function normUser(u: { email: string | null; role: string; teacher: { fullName: string } | null } | null) {
     if (!u) return null;
     return { email: u.email, role: u.role, name: u.teacher?.fullName ?? null };
   }

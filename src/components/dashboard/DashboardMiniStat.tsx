@@ -48,15 +48,19 @@ export default function DashboardMiniStat({
   const { iconBg, iconColor } = colorMap[color];
 
   const inner = (
-    <div className="bg-card border border-border rounded-xl p-3 shadow-xs h-full
+    <div className="bg-card border border-border rounded-xl p-2.5 sm:p-3 shadow-xs h-full
                     hover:border-teal/30 hover:shadow-sm transition-all duration-150">
       {/* Icon */}
       <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${iconBg}`}>
         <Icon className={`h-4 w-4 ${iconColor}`} strokeWidth={1.8} aria-hidden="true" />
       </div>
 
-      {/* Label */}
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate mb-1 truncate leading-tight">
+      {/* Label
+          Wraps rather than truncates: at four columns on a phone a tile is
+          ~70px wide, which clipped "PRESENT TODAY" to "PRESENT T…". Letting it
+          run onto a second line keeps every label readable in full while the
+          grid stays exactly four across — h-full keeps the row even. */}
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate mb-1 leading-tight break-words">
         {label}
       </p>
 
@@ -71,7 +75,7 @@ export default function DashboardMiniStat({
           {badge}
         </p>
       ) : (
-        <p className="text-[10px] text-slate mt-1 leading-tight truncate">
+        <p className="text-[10px] text-slate mt-1 leading-tight break-words">
           {sub}
         </p>
       )}

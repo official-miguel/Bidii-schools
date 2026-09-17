@@ -7,7 +7,7 @@ import {
   premiumTableContainerClass, premiumTheadClass, premiumThClass,
   premiumTdClass, premiumTrClass,
 } from "@/components/ui";
-import { classLevelLabel } from "@/lib/curriculum/classLabels";
+import { classLevelLabel, fallbackLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,8 +47,10 @@ function classLabel(s: FeeStructure, classes: SchoolClass[]) {
     classes.find(c => c.form === s.form && (c.stream ?? null) === (s.stream ?? null)) ??
     classes.find(c => c.form === s.form);
   if (cls) return cls.name;
-  // No matching class on file — fall back to the plain rank.
-  return `Form ${s.form}${s.stream ? ` – ${s.stream}` : ""}`;
+  // No matching class on file — fall back to the plain rank, but take the
+  // wording from the school's own framework so a CBE school never sees "Form".
+  const level = fallbackLevelLabel(s.form, classes[0]?.frameworkType);
+  return `${level}${s.stream ? ` – ${s.stream}` : ""}`;
 }
 
 const inputCls =
@@ -252,7 +254,7 @@ function FeeStructureModal({ existing, classes, termNames, onClose, onSaved }: M
                   const rep = classes.find(c => c.form === f && !c.stream) ?? classes.find(c => c.form === f);
                   return (
                     <option key={f} value={f}>
-                      {rep ? classLevelLabel(rep) : `Form ${f}`}
+                      {rep ? classLevelLabel(rep) : fallbackLevelLabel(f, classes[0]?.frameworkType)}
                     </option>
                   );
                 })}

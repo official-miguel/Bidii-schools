@@ -7,6 +7,11 @@ import { resolveAssessmentActor, canAccessDashboard } from "@/lib/assessment/aut
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
 import { subjectFormWhere } from "@/lib/assessment/subjectScope";
 import {
+  CLASS_LABEL_SELECT,
+  buildLevelLabelMap,
+  levelLabelFor,
+} from "@/lib/curriculum/classLabels";
+import {
   subjectScore,
   scoreToGrade,
   meanGrade,
@@ -88,7 +93,9 @@ async function scorecardHandler(req: NextRequest) {
     scopeLabel   = schoolClass.name;
   } else {
     resolvedForm = form!;
-    scopeLabel   = `Form ${form}`;
+    // Provisional only — replaced below with the school's own saved stage name
+    // once its classes on this rank have been loaded.
+    scopeLabel   = "";
   }
 
   // ── Batch 2: classes + rankingConfig — run concurrently ───────────────────
@@ -106,13 +113,25 @@ async function scorecardHandler(req: NextRequest) {
     prisma.schoolClass.findMany({
       where: classWhere,
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: CLASS_LABEL_SELECT,
     }),
     prisma.rankingConfig.findUnique({
       where: { schoolId: user.schoolId! },
       select: { meanFlagThreshold: true },
     }),
   ]);
+
+  // Whole-form scope: label it with the school's own saved stage name for this
+  // rank ("Senior 2", "Grade 10") rather than assuming the 8-4-4 wording. With
+  // no classes registered on the rank this falls back to "Form N", which is
+  // right here because the route is 8-4-4-only.
+  if (!classId) {
+    scopeLabel = levelLabelFor(
+      buildLevelLabelMap(classes),
+      resolvedForm,
+      "EIGHT_FOUR_FOUR"
+    );
+  }
 
   if (classes.length === 0)
     return NextResponse.json({

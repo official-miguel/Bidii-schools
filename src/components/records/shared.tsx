@@ -19,7 +19,7 @@ export type DisciplineRecord = {
   aiSummary: string | null;
   createdAt: string;
   student: StudentLite;
-  recordedBy: { email: string; role: string; teacher: { fullName: string } | null } | null;
+  recordedBy: { email: string | null; role: string; teacher: { fullName: string } | null } | null;
   _count: { files: number; caseNotes: number };
 };
 
@@ -58,13 +58,13 @@ const ROLE_LABELS: Record<string, string> = {
  * Priority: teacher full name → role label → email.
  */
 export function formatCreator(
-  u: { email: string; role?: string; name?: string | null; teacher?: { fullName: string } | null } | null
+  u: { email: string | null; role?: string; name?: string | null; teacher?: { fullName: string } | null } | null
 ): string {
   if (!u) return "System";
   if (u.teacher?.fullName) return u.teacher.fullName;
   if (u.name) return u.name;
   if (u.role && ROLE_LABELS[u.role]) return ROLE_LABELS[u.role];
-  return u.email;
+  return u.email ?? "Unknown";
 }
 
 export const STATUS_LABELS: Record<string, string> = {

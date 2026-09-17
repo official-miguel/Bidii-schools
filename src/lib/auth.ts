@@ -114,7 +114,8 @@ export type OfflineTokenPayload = {
   userId:      string;
   schoolId:    string | null;
   role:        string;
-  email:       string;
+  /** Null for parent accounts — they sign in by phone, not email. */
+  email:       string | null;
   staffRoleId: string | null;
   expiresAt:   number;
   sig:         string;
@@ -128,7 +129,9 @@ export function buildOfflineToken(user: User): OfflineTokenPayload {
   const secret    = process.env.SESSION_SECRET ?? "dev-secret";
   const expiresAt = Date.now() + SESSION_TTL_MS;
   const schoolId  = user.schoolId! ?? null;
-  const payload   = `${user.id}|${schoolId ?? ""}|${user.role}|${user.email}|${expiresAt}`;
+  // `?? ""` keeps the signed payload deterministic for parent accounts,
+  // whose email is null.
+  const payload   = `${user.id}|${schoolId ?? ""}|${user.role}|${user.email ?? ""}|${expiresAt}`;
   const sig       = createHmac("sha256", secret).update(payload).digest("hex");
 
   return {

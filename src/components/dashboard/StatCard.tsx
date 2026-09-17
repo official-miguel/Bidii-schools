@@ -34,7 +34,11 @@ export default function StatCard({ label, value, href, icon: Icon, color = "teal
                     hover:border-teal/40 hover:shadow-sm transition-all duration-150">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-slate truncate">
+          {/* Wraps rather than truncates — beside the icon on a phone there is
+              too little room for labels like "Marks entered" to fit on one
+              line, and clipping them lost the word that carried the meaning.
+              h-full on the card keeps the row even when one label wraps. */}
+          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-slate leading-tight break-words">
             {label}
           </p>
           <p className="text-xl sm:text-3xl font-semibold text-foreground mt-1 leading-tight break-words tabular-nums">

@@ -72,18 +72,22 @@ export default async function ParentDashboard() {
     select: { name: true },
   }).catch(() => null);
 
-  // Derive a greeting name: prefer "Baba/Mama <FirstName>" style from parent record
-  const parentName = parentRecord?.name ?? user.email.split("@")[0];
+  // Derive a greeting name: prefer "Baba/Mama <FirstName>" style from parent
+  // record. Never fall back to the login address — parent accounts have no real
+  // email, so that rendered as "parent_0725801550".
+  const parentName = parentRecord?.name?.trim() || "Parent";
 
   // ── Find linked students ──────────────────────────────────────────────────
+  // parentLinks (ParentStudent) is the real link. The old `parentContact:
+  // user.email` clause compared a phone column against an email and never
+  // matched, so it is dropped rather than left to mislead.
   const students = await prisma.student.findMany({
     where: {
       schoolId,
       archivedAt: null,
       OR: [
-        { userId:        user.id },
-        { parentContact: user.email },
-        { parentLinks:   { some: { parent: { userId: user.id } } } },
+        { userId:      user.id },
+        { parentLinks: { some: { parent: { userId: user.id } } } },
       ],
     },
     select: {
