@@ -63,10 +63,13 @@ export async function POST(req: NextRequest) {
   const { newPassword } = parsed.data;
 
   // ── Guard: new password cannot be the school's slug ─────────────────────
-  const school = await prisma.school.findUnique({
-    where:  { id: user.schoolId! },
-    select: { slug: true },
-  });
+  // Super admins have no schoolId, so skip this check for them.
+  const school = user.schoolId
+    ? await prisma.school.findUnique({
+        where:  { id: user.schoolId },
+        select: { slug: true },
+      })
+    : null;
 
   if (school) {
     const normNew  = newPassword.replace(/^@/, "").toLowerCase();
