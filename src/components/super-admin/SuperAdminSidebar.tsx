@@ -20,7 +20,6 @@ import {
   HardDrive,
   Upload,
   Settings,
-  HelpCircle,
   LogOut,
 } from "lucide-react";
 
@@ -112,16 +111,6 @@ export default function SuperAdminSidebar({ isOwner = false }: { isOwner?: boole
 
       {/* Bottom section */}
       <div className="flex flex-col gap-1 px-3 pb-4 pt-3 border-t border-teal-700/50">
-        <Link
-          href="/super-admin/support"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg
-                     text-white/90 hover:bg-teal-700/50 hover:text-white
-                     transition-all duration-150"
-        >
-          <HelpCircle className="h-5 w-5 shrink-0" strokeWidth={1.8} aria-hidden />
-          <span className="text-sm">Support</span>
-        </Link>
-        
         <button
           type="button"
           onClick={handleLogout}

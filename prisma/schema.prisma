@@ -279,7 +279,11 @@ model Department {
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   schoolId       String
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId    String?
   headTeacher    Teacher?                  @relation("DepartmentHead", fields: [headTeacherId], references: [id])
+  importJob      ImportJob?                @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school         School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   subjects       Subject[]
   teachers       Teacher[]                 @relation("TeacherPrimaryDepartment")
@@ -287,6 +291,7 @@ model Department {
 
   @@unique([schoolId, name])
   @@index([schoolId])
+  @@index([importJobId])
 }
 
 /// Section 2A.1 — the master subject list every downstream module reads from.
@@ -315,6 +320,9 @@ model Subject {
   doubleLesson               Boolean                     @default(false)
   /// What kind of room this subject requires, e.g. "Lab", "Computer Lab"
   requiresSpecialRoom        String?
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId                String?
   classTeachers              ClassSubjectTeacher[]
   studentElectives           StudentElective[]
   electiveGroupMembers       ElectiveGroupMember[]
@@ -326,6 +334,7 @@ model Subject {
   assessmentRoles            AssessmentRole[]
   pathwayWeights             PathwayWeight[]
   department                 Department                  @relation(fields: [departmentId], references: [id])
+  importJob                  ImportJob?                  @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school                     School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacherSubjects            TeacherSubject[]
   timetableSlots             TimetableSlot[]
@@ -341,6 +350,7 @@ model Subject {
   @@unique([schoolId, internalCode])
   @@index([departmentId])
   @@index([schoolId])
+  @@index([importJobId])
 }
 
 /// Section 2B — staff registry. userId is optional so a teacher record can be
@@ -371,6 +381,9 @@ model Teacher {
   employmentStartDate        DateTime?
   designationSnapshot        String?
   departmentSnapshot         String?
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId                String?
   attendancesRecorded        Attendance[]
   subjectAssignments         ClassSubjectTeacher[]
   departmentHeadOf           Department?                 @relation("DepartmentHead")
@@ -379,6 +392,7 @@ model Teacher {
   assessmentRoles            AssessmentRole[]
   classTeacherOf             SchoolClass?                @relation("ClassTeacher")
   primaryDepartment          Department?                 @relation("TeacherPrimaryDepartment", fields: [primaryDepartmentId], references: [id])
+  importJob                  ImportJob?                  @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school                     School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   user                       User?                       @relation(fields: [userId], references: [id])
   archivedBy                 User?                       @relation("TeacherArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
@@ -404,6 +418,7 @@ model Teacher {
   /// Same lookup with no schoolSlug (identifier alone could match >1 school) —
   /// without this, every phone-based login/OTP request was a full table scan.
   @@index([phone])
+  @@index([importJobId])
 }
 
 /// Tracks staff IDs that have been freed by departing staff and can be
@@ -543,13 +558,18 @@ model SchoolIntegration {
 
 /// Join table: which subjects a teacher is assigned to teach (2B.1).
 model TeacherSubject {
-  teacherId String
-  subjectId String
-  createdAt DateTime @default(now())
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId   String
+  subjectId   String
+  createdAt   DateTime   @default(now())
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId String?
+  importJob   ImportJob? @relation(fields: [importJobId], references: [id], onDelete: SetNull)
+  subject     Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher     Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@id([teacherId, subjectId])
+  @@index([importJobId])
 }
 
 /// e.g. "Form 3 North". Name and classTeacherId are unique per school.
@@ -598,9 +618,13 @@ model SchoolClass {
   /// promotesToClassId changes.
   skipStageConfirmed Boolean @default(false)
 
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId                String?
   attendances                Attendance[]
   subjectTeachers            ClassSubjectTeacher[]
   classTeacher               Teacher?                    @relation("ClassTeacher", fields: [classTeacherId], references: [id])
+  importJob                  ImportJob?                  @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school                     School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   stream_rel                 Stream?                     @relation(fields: [streamId], references: [id])
   students                   Student[]
@@ -620,6 +644,7 @@ model SchoolClass {
   @@unique([schoolId, name])
   @@index([schoolId, form])
   @@index([schoolId, streamId])
+  @@index([importJobId])
 }
 
 /// A named stream/cohort within a school, e.g. "North", "Science", "A".
@@ -673,11 +698,15 @@ model Student {
   archiveReason            String?
   /// User who performed the archive action
   archivedById             String?
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId              String?
   attendances              Attendance[]
   /// Assessment framework back-relations
   assessmentItems          AssessmentItem[]
   reportRemarks            ReportRemark[]
   schoolClass              SchoolClass                @relation(fields: [classId], references: [id])
+  importJob                ImportJob?                 @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school                   School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   user                     User?                      @relation(fields: [userId], references: [id])
   archivedBy               User?                      @relation("StudentArchivedBy", fields: [archivedById], references: [id], onDelete: SetNull)
@@ -716,18 +745,24 @@ model Student {
   @@index([schoolId, classId, archivedAt])
   // PERF: C2B webhook exact admissionNumber match with active-only filter.
   @@index([schoolId, admissionNumber, archivedAt])
+  @@index([importJobId])
 }
 
 /// Section 4B — elective subject selections, distinct from core subjects
 /// (core subjects apply to a student automatically via Subject.applicableForms).
 model StudentElective {
-  studentId String
-  subjectId String
-  createdAt DateTime @default(now())
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studentId   String
+  subjectId   String
+  createdAt   DateTime   @default(now())
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId String?
+  importJob   ImportJob? @relation(fields: [importJobId], references: [id], onDelete: SetNull)
+  student     Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject     Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@id([studentId, subjectId])
+  @@index([importJobId])
 }
 
 /// Section 2C — the weekly timetable grid. dayOfWeek: 0=Mon..4=Fri, period:
@@ -2233,9 +2268,27 @@ model ImportJob {
   createdBy    String? /// super_admin user id
   rollbackAt   DateTime? /// deadline for rollback (createdAt + 24h)
   rolledBackAt DateTime?
+  /// Snapshot of the previous values of every row this job UPDATED (as opposed
+  /// to created), so a rollback can restore them. Array of
+  /// { model, id, previous: { ...only the fields the importer overwrote } }.
+  changeLog    Json?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  /// Rows created by this job — tagged so rollback can delete exactly these.
+  departments       Department[]
+  classes           SchoolClass[]
+  subjects          Subject[]
+  teachers          Teacher[]
+  teacherSubjects   TeacherSubject[]
+  students          Student[]
+  studentElectives  StudentElective[]
+  dormitories       Dormitory[]
+  cubicles          Cubicle[]
+  beds              Bed[]
+  sleepingPositions SleepingPosition[]
+  allocations       AllocationRecord[]
 
   @@index([schoolId])
   @@index([status])
@@ -2529,25 +2582,25 @@ model AssessmentFramework {
 /// names and no shared identity, causing marks entered under one to be
 /// invisible to anything that resolved the other.
 model AssessmentPeriod {
-  id            String           @id @default(cuid())
-  schoolId      String
-  name          String
-  academicYear  String
-  term          Int? /// 1, 2, or 3 for Kenyan terms
+  id             String                    @id @default(cuid())
+  schoolId       String
+  name           String
+  academicYear   String
+  term           Int? /// 1, 2, or 3 for Kenyan terms
   /// Relative weight when combining periods (8-4-4 use case).
-  weight        Float            @default(1)
+  weight         Float                     @default(1)
   /// What numeric marks are out of (8-4-4 use case).
-  maxMarks      Float?
-  isCurrent     Boolean          @default(false)
+  maxMarks       Float?
+  isCurrent      Boolean                   @default(false)
   /// When marks entry opens (optional — informational only).
-  openingDate   DateTime?
+  openingDate    DateTime?
   /// Deadline for marks submission — shown as a countdown in teacher dashboards.
-  closingDate   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  school        School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  items         AssessmentItem[]
-  reportRemarks ReportRemark[]
+  closingDate    DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  school         School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  items          AssessmentItem[]
+  reportRemarks  ReportRemark[]
   formulaConfigs DepartmentFormulaConfig[]
 
   @@unique([schoolId, name, academicYear])
@@ -3416,9 +3469,13 @@ model Dormitory {
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 
-  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  boardingMaster Teacher? @relation("DormBoardingMaster", fields: [boardingMasterId], references: [id], onDelete: SetNull)
-  dormCaptain    Student? @relation("DormCaptain", fields: [dormCaptainId], references: [id], onDelete: SetNull)
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId    String?
+  importJob      ImportJob? @relation(fields: [importJobId], references: [id], onDelete: SetNull)
+  school         School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  boardingMaster Teacher?   @relation("DormBoardingMaster", fields: [boardingMasterId], references: [id], onDelete: SetNull)
+  dormCaptain    Student?   @relation("DormCaptain", fields: [dormCaptainId], references: [id], onDelete: SetNull)
 
   cubicles          Cubicle[]
   beds              Bed[]
@@ -3431,6 +3488,7 @@ model Dormitory {
   @@unique([schoolId, name])
   @@index([schoolId])
   @@index([schoolId, status])
+  @@index([importJobId])
 }
 
 /// Permitted form/class levels for a dormitory (when allocationPolicy = RESTRICTED_BY_FORM).
@@ -3464,6 +3522,10 @@ model Cubicle {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId       String?
+  importJob         ImportJob?             @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   dorm              Dormitory              @relation(fields: [dormId], references: [id], onDelete: Cascade)
   school            School?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   beds              Bed[]
@@ -3474,6 +3536,7 @@ model Cubicle {
   @@unique([dormId, name])
   @@index([dormId])
   @@index([schoolId])
+  @@index([importJobId])
 }
 
 /// Permitted form levels for a specific cubicle (when it has its own policy).
@@ -3505,6 +3568,10 @@ model Bed {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId String?
+  importJob   ImportJob?         @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school      School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   dorm        Dormitory          @relation(fields: [dormId], references: [id], onDelete: Cascade)
   cubicle     Cubicle?           @relation(fields: [cubicleId], references: [id], onDelete: SetNull)
@@ -3515,6 +3582,7 @@ model Bed {
   @@index([dormId])
   @@index([cubicleId])
   @@index([schoolId])
+  @@index([importJobId])
 }
 
 /// One atomic sleeping space. For a SINGLE bed there is exactly one position.
@@ -3535,6 +3603,10 @@ model SleepingPosition {
   isOccupied  Boolean      @default(false)
   createdAt   DateTime     @default(now())
 
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId String?
+  importJob   ImportJob?         @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school      School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   bed         Bed                @relation(fields: [bedId], references: [id], onDelete: Cascade)
   dorm        Dormitory?         @relation(fields: [dormId], references: [id], onDelete: Cascade)
@@ -3546,6 +3618,7 @@ model SleepingPosition {
   // PERF: auto-allocate free-position lookup (dormId + isOccupied filter).
   @@index([dormId, isOccupied])
   @@index([schoolId, dormId, isOccupied])
+  @@index([importJobId])
 }
 
 // =============================================================================
@@ -3571,6 +3644,10 @@ model AllocationRecord {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
+  /// Set when this row was created by a bulk import — lets a rollback delete
+  /// exactly the rows that import produced. Null for rows created any other way.
+  importJobId      String?
+  importJob        ImportJob?        @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   school           School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
   dorm             Dormitory         @relation(fields: [dormId], references: [id], onDelete: Cascade)
@@ -3590,6 +3667,7 @@ model AllocationRecord {
   // PERF: dorm-management bulk ops (MAINTENANCE_CLOSE / BULK_REMOVE / EMERGENCY_RELOCATION).
   // Leading schoolId keeps RLS fast; dormId+status covers the bulk-update filter.
   @@index([schoolId, dormId, status])
+  @@index([importJobId])
 }
 
 // =============================================================================

@@ -838,8 +838,17 @@ function HistoryTab() {
       const res = await fetch(`/api/super-admin/imports/${jobId}/rollback`, { method: "POST" });
       const j   = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Rollback failed");
-      setRollbackMsg(`Import ${jobId.slice(0, 8)}… rolled back`);
-      setTimeout(() => setRollbackMsg(null), 3000);
+      // The API returns a per-model count of what it actually reverted —
+      // show it so the owner can see the undo really touched the data.
+      const reverted = (j.reverted ?? {}) as Record<string, number>;
+      const detail   = Object.entries(reverted)
+        .filter(([, n]) => n > 0)
+        .map(([k, n]) => `${n} ${k.replace(/([A-Z])/g, " $1").toLowerCase().trim()}`)
+        .join(", ");
+      setRollbackMsg(
+        `Import ${jobId.slice(0, 8)}… rolled back${detail ? ` — reverted ${detail}` : " — nothing left to revert"}`
+      );
+      setTimeout(() => setRollbackMsg(null), 8000);
       await load(page);
     } catch (e) { setApiError(e instanceof Error ? e.message : String(e)); }
     finally { setRollbackBusy(null); }

@@ -512,11 +512,29 @@ export default function HealthPage() {
   }
 
   async function handleResolveIncident(id: string) {
-    // Optimistic
+    setApiError(null);
+    // Optimistic — reverted below if the server rejects it.
+    const previous = data;
     setData(prev => prev ? {
       ...prev,
       incidents: prev.incidents.map(i => i.id === id ? { ...i, resolvedAt: new Date().toISOString() } : i),
     } : prev);
+
+    try {
+      const res = await fetch(`/api/super-admin/health/incidents/${id}`, { method: "PATCH" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Failed to resolve incident");
+      }
+      const { incident } = await res.json();
+      setData(prev => prev ? {
+        ...prev,
+        incidents: prev.incidents.map(i => i.id === id ? { ...i, resolvedAt: incident.resolvedAt } : i),
+      } : prev);
+    } catch (e) {
+      setData(previous);
+      setApiError(e instanceof Error ? e.message : String(e));
+    }
   }
 
   async function handleSaveSystemStatus(status: string, message: string) {

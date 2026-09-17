@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma }                     from "@/lib/prisma";
 import { requireSuperAdmin }          from "@/lib/super-admin";
+import { fetchSupabaseDiskUsage }     from "@/lib/supabase/managementApi";
 
 /** GET /api/super-admin/storage — per-school storage table + breakdown */
 export async function GET(req: NextRequest) {
@@ -61,5 +62,28 @@ export async function GET(req: NextRequest) {
   const totalUsedGb = rows.reduce((acc, r) => acc + r.usedGb, 0);
   const totalQuotaGb = rows.reduce((acc, r) => acc + r.quotaGb, 0);
 
-  return NextResponse.json({ rows: sorted, totalUsedGb: +totalUsedGb.toFixed(2), totalQuotaGb: +totalQuotaGb.toFixed(2) });
+  // Breakdown by type across every school. Built from the same per-school
+  // byType figures as the table, so the tiles and the rows always agree — a
+  // groupBy over StorageUsage would instead sum every historical snapshot.
+  const systemByType: Record<string, bigint> = {};
+  for (const r of rows) {
+    for (const [type, bytes] of Object.entries(r.byType)) {
+      systemByType[type] = (systemByType[type] ?? BigInt(0)) + BigInt(bytes);
+    }
+  }
+  const systemTotals = Object.fromEntries(
+    Object.entries(systemByType).map(([k, v]) => [k, v.toString()])
+  );
+
+  // Live disk usage of the Supabase project itself — "not configured" unless
+  // a Management API access token has been provided.
+  const supabase = await fetchSupabaseDiskUsage();
+
+  return NextResponse.json({
+    rows: sorted,
+    totalUsedGb:  +totalUsedGb.toFixed(2),
+    totalQuotaGb: +totalQuotaGb.toFixed(2),
+    systemTotals,
+    supabase,
+  });
 }

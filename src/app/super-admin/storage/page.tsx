@@ -13,7 +13,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter }                         from "next/navigation";
 import {
   HardDrive, ChevronUp, ChevronDown, ChevronsUpDown,
-  RefreshCw, TrendingUp, Minus,
+  RefreshCw, TrendingUp, Minus, Database,
 } from "lucide-react";
 import {
   PageHeader, Card, Spinner, ErrorBanner, ProgressBar,
@@ -31,10 +31,18 @@ interface StorageRow {
   byType:     Record<string, string>; // bytes as string (BigInt serialized)
 }
 
+type SupabaseUsage =
+  | { configured: false; reason: string }
+  | { configured: true; usedBytes: number; totalBytes: number; fetchedAt: string };
+
 interface StorageData {
-  rows:         StorageRow[];
-  totalUsedGb:  number;
-  totalQuotaGb: number;
+  rows:          StorageRow[];
+  totalUsedGb:   number;
+  totalQuotaGb:  number;
+  /** System-wide bytes per type (BigInt serialized as string). */
+  systemTotals:  Record<string, string>;
+  /** Live disk usage of the Supabase project itself. */
+  supabase:      SupabaseUsage;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -98,7 +106,11 @@ function TrendIndicator({ pct }: { pct: number }) {
 
 // ── System-wide summary card ──────────────────────────────────────────────────
 
-function SystemSummary({ totalUsedGb, totalQuotaGb }: { totalUsedGb: number; totalQuotaGb: number }) {
+function SystemSummary({
+  totalUsedGb, totalQuotaGb, systemTotals,
+}: {
+  totalUsedGb: number; totalQuotaGb: number; systemTotals: Record<string, string>;
+}) {
   const pct     = totalQuotaGb > 0 ? (totalUsedGb / totalQuotaGb) * 100 : 0;
   const variant = pct > 90 ? "danger" : pct > 70 ? "warn" : "teal";
 
@@ -123,22 +135,90 @@ function SystemSummary({ totalUsedGb, totalQuotaGb }: { totalUsedGb: number; tot
       <Card className="sm:col-span-2">
         <h3 className="text-sm font-semibold text-foreground mb-3">System-wide Breakdown by Type</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {TYPE_ORDER.map(type => (
-            <div key={type}
-              className="rounded-lg bg-background border border-border p-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${TYPE_COLORS[type]}`} aria-hidden />
-                <span className="text-xs text-slate capitalize font-medium">{type}</span>
+          {TYPE_ORDER.map(type => {
+            const gb      = bytesToGb(systemTotals[type]);
+            const ofTotal = totalUsedGb > 0 ? (gb / totalUsedGb) * 100 : 0;
+            return (
+              <div key={type}
+                className="rounded-lg bg-background border border-border p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${TYPE_COLORS[type]}`} aria-hidden />
+                  <span className="text-xs text-slate capitalize font-medium">{type}</span>
+                </div>
+                <p className="text-sm font-semibold text-foreground tabular-nums">{fmtGb(gb)}</p>
+                <p className="text-[10px] text-slate mt-0.5">{ofTotal.toFixed(1)}% of used</p>
               </div>
-              <p className="text-sm font-semibold text-foreground">—</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="text-[10px] text-slate mt-3">
           Per-school breakdown visible in each school&apos;s detail row below.
         </p>
       </Card>
     </div>
+  );
+}
+
+// ── Supabase project disk card ────────────────────────────────────────────────
+
+/**
+ * How much room is left on the Supabase project itself — a different question
+ * from the per-school quotas above, which are figures Bidii assigns. Shown as
+ * an explicit "not configured" state rather than a guessed number when no
+ * Management API token is present.
+ */
+function SupabaseDiskCard({ usage }: { usage: SupabaseUsage }) {
+  if (!usage.configured) {
+    return (
+      <Card>
+        <div className="flex items-start gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 shrink-0">
+            <Database className="h-5 w-5 text-slate" strokeWidth={1.8} aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold text-foreground">Supabase project storage</h3>
+              <span className="inline-flex items-center rounded-full border border-border bg-slate-100
+                               px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate">
+                Not configured
+              </span>
+            </div>
+            <p className="text-xs text-slate mt-1.5 leading-relaxed">{usage.reason}</p>
+            <p className="text-[11px] text-slate mt-2 leading-relaxed">
+              To show live disk usage and remaining space for the Supabase project, add a{" "}
+              <code className="font-mono text-[10px] bg-background border border-border rounded px-1 py-0.5">SUPABASE_ACCESS_TOKEN</code>{" "}
+              (a personal access token from the Supabase dashboard) and{" "}
+              <code className="font-mono text-[10px] bg-background border border-border rounded px-1 py-0.5">SUPABASE_PROJECT_REF</code>{" "}
+              to the deployment environment. Until then only the per-school figures below are available.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  const usedGb      = usage.usedBytes  / 1024 ** 3;
+  const totalGb     = usage.totalBytes / 1024 ** 3;
+  const remainingGb = Math.max(totalGb - usedGb, 0);
+  const pct         = totalGb > 0 ? (usedGb / totalGb) * 100 : 0;
+  const variant     = pct > 90 ? "danger" : pct > 70 ? "warn" : "teal";
+
+  return (
+    <Card>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-teal-50 shrink-0">
+          <Database className="h-5 w-5 text-teal" strokeWidth={1.8} aria-hidden />
+        </div>
+        <div>
+          <p className="text-2xl font-semibold text-foreground tabular-nums">{fmtGb(remainingGb)}</p>
+          <p className="text-xs text-slate">Remaining in Supabase</p>
+        </div>
+      </div>
+      <ProgressBar value={pct} max={100} size="md" variant={variant} animated showLabel />
+      <p className="text-xs text-slate mt-1.5">
+        {fmtGb(usedGb)} used of {fmtGb(totalGb)} provisioned disk
+      </p>
+    </Card>
   );
 }
 
@@ -206,10 +286,16 @@ export default function StoragePage() {
         <>
           {/* System summary */}
           {data && (
-            <SystemSummary
-              totalUsedGb={data.totalUsedGb}
-              totalQuotaGb={data.totalQuotaGb}
-            />
+            <>
+              <SystemSummary
+                totalUsedGb={data.totalUsedGb}
+                totalQuotaGb={data.totalQuotaGb}
+                systemTotals={data.systemTotals ?? {}}
+              />
+              <SupabaseDiskCard
+                usage={data.supabase ?? { configured: false, reason: "Not reported by the API." }}
+              />
+            </>
           )}
 
           {/* Type legend */}

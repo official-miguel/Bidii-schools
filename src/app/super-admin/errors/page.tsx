@@ -39,6 +39,8 @@ interface ErrorRow {
 
 interface TrendBucket { severity: string; _count: { id: number } }
 
+interface SchoolOption { id: string; name: string }
+
 // ── Severity badge ────────────────────────────────────────────────────────────
 
 function SeverityBadge({ s }: { s: string }) {
@@ -294,7 +296,8 @@ export default function ErrorsPage() {
   const [sortDir, setSortDir]     = useState<"asc"|"desc">("desc");
 
   // Filters
-  const [fSchool, _setFSchool]   = useState("");
+  const [schools,   setSchools]   = useState<SchoolOption[]>([]);
+  const [fSchool,   setFSchool]   = useState("");
   const [fSeverity, setFSeverity] = useState("");
   const [fStatus,   setFStatus]   = useState("");
   const [fModule,   setFModule]   = useState("");
@@ -327,6 +330,14 @@ export default function ErrorsPage() {
   }, [fSchool, fSeverity, fStatus, fModule, fFrom, fTo]);
 
   useEffect(() => { load(1); }, [load]);
+
+  // School options for the filter — same source the Imports page uses.
+  useEffect(() => {
+    fetch("/api/super-admin/schools?limit=200")
+      .then(r => r.ok ? r.json() : { schools: [] })
+      .then(j => setSchools((j.schools ?? []).map((s: SchoolOption) => ({ id: s.id, name: s.name }))))
+      .catch(() => setSchools([]));
+  }, []);
 
   // Open drawer if ?id= param is present after data loads
   useEffect(() => {
@@ -379,7 +390,15 @@ export default function ErrorsPage() {
       <TrendChart trend={trend} />
 
       {/* Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <select value={fSchool} onChange={e => setFSchool(e.target.value)} aria-label="Filter by school"
+          className="rounded-xl border border-border bg-card
+                     px-3 py-2.5 text-sm text-foreground
+                     focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15 shadow-xs">
+          <option value="">All schools</option>
+          {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+
         {[
           { label:"Severity", value:fSeverity, set:setFSeverity,
             opts:[["","All severities"],["CRITICAL","Critical"],["HIGH","High"],["MEDIUM","Medium"],["LOW","Low"]] },

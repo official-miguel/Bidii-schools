@@ -21,6 +21,28 @@ export const maxDuration = 300;
 type RowError = { row: number; field: string; message: string };
 type PResult  = Promise<{ succeeded: number; errors: RowError[] }>;
 
+/**
+ * Rows this job CREATED are tagged with `importJobId` on the row itself, so
+ * rollback finds them with a plain deleteMany. Everything else a processor
+ * touches is recorded here instead:
+ *
+ *   previous: {...}  → the row already existed and the importer overwrote
+ *                      exactly these fields; rollback writes them back.
+ *   previous: null   → the row was created by this job but its model has no
+ *                      importJobId column (User login accounts); rollback
+ *                      deletes it.
+ *
+ * Persisted to ImportJob.changeLog when the run finishes.
+ */
+type ChangeLogEntry = {
+  model:    string;
+  id:       string;
+  previous: Record<string, unknown> | null;
+};
+
+/** Context threaded through every process* function for rollback tagging. */
+type JobCtx = { jobId: string; changeLog: ChangeLogEntry[] };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CSV parser — handles quoted fields and embedded commas
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +87,7 @@ function norm(s: string) { return s.toLowerCase().trim(); }
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── 1a. Departments ──────────────────────────────────────────────────────────
-async function processDepartments(rows: Record<string, string>[], schoolId: string): PResult {
+async function processDepartments(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   const errors: RowError[] = [];
 
   // Validate all rows first, collect valid names
@@ -92,7 +114,7 @@ async function processDepartments(rows: Record<string, string>[], schoolId: stri
   if (toCreate.length > 0) {
     try {
       await prisma.department.createMany({
-        data: toCreate.map(r => ({ name: r.name, schoolId })),
+        data: toCreate.map(r => ({ name: r.name, schoolId, importJobId: ctx.jobId })),
         skipDuplicates: true,
       });
       succeeded += toCreate.length;
@@ -103,7 +125,7 @@ async function processDepartments(rows: Record<string, string>[], schoolId: stri
           await prisma.department.upsert({
             where:  { schoolId_name: { schoolId, name: r.name } },
             update: {},
-            create: { name: r.name, schoolId },
+            create: { name: r.name, schoolId, importJobId: ctx.jobId },
           });
           succeeded++;
         } catch (err) { errors.push({ row: r.rowNum, field: "name", message: String(err) }); }
@@ -114,7 +136,7 @@ async function processDepartments(rows: Record<string, string>[], schoolId: stri
 }
 
 // ── 1b. Classes (with framework) ─────────────────────────────────────────────
-async function processClasses(rows: Record<string, string>[], schoolId: string): PResult {
+async function processClasses(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
   const VALID_FW = new Set(["EIGHT_FOUR_FOUR", "CBE"]);
@@ -149,9 +171,10 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
   // Fetch all existing classes in one query
   const existingClasses = await prisma.schoolClass.findMany({
     where:  { schoolId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, form: true, stream: true },
   });
   const existingMap = new Map(existingClasses.map(c => [c.name, c.id]));
+  const previousByName = new Map(existingClasses.map(c => [c.name, { form: c.form, stream: c.stream }]));
 
   const toCreate = validRows.filter(r => !existingMap.has(r.name));
   const toUpdate = validRows.filter(r =>  existingMap.has(r.name));
@@ -160,7 +183,7 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
   if (toCreate.length > 0) {
     try {
       await prisma.schoolClass.createMany({
-        data: toCreate.map(r => ({ name: r.name, form: r.form, stream: r.stream, frameworkType: r.frameworkType, schoolId })),
+        data: toCreate.map(r => ({ name: r.name, form: r.form, stream: r.stream, frameworkType: r.frameworkType, schoolId, importJobId: ctx.jobId })),
         skipDuplicates: true,
       });
       succeeded += toCreate.length;
@@ -168,7 +191,7 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
       // Fall back per-row
       for (const r of toCreate) {
         try {
-          await prisma.schoolClass.create({ data: { name: r.name, form: r.form, stream: r.stream, frameworkType: r.frameworkType, schoolId } });
+          await prisma.schoolClass.create({ data: { name: r.name, form: r.form, stream: r.stream, frameworkType: r.frameworkType, schoolId, importJobId: ctx.jobId } });
           succeeded++;
         } catch (err) { errors.push({ row: r.rowNum, field: "name", message: String(err) }); }
       }
@@ -182,6 +205,9 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
     await Promise.all(chunk.map(async r => {
       const id = existingMap.get(r.name)!;
       try {
+        // Snapshot only the two fields this update overwrites, so rollback
+        // can put the class back exactly as the school had it.
+        ctx.changeLog.push({ model: "SchoolClass", id, previous: previousByName.get(r.name) ?? {} });
         await prisma.schoolClass.update({ where: { id }, data: { form: r.form, stream: r.stream } });
         succeeded++;
       } catch (err) { errors.push({ row: r.rowNum, field: "name", message: String(err) }); }
@@ -192,7 +218,7 @@ async function processClasses(rows: Record<string, string>[], schoolId: string):
 }
 
 // ── 1c. Subjects ─────────────────────────────────────────────────────────────
-async function processSubjects(rows: Record<string, string>[], schoolId: string): PResult {
+async function processSubjects(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -238,9 +264,12 @@ async function processSubjects(rows: Record<string, string>[], schoolId: string)
   // Fetch all existing subjects in one query
   const existingSubjects = await prisma.subject.findMany({
     where:  { schoolId },
-    select: { id: true, code: true },
+    select: { id: true, code: true, name: true, type: true, departmentId: true, applicableForms: true },
   });
   const existingMap = new Map(existingSubjects.map(s => [s.code, s.id]));
+  const previousByCode = new Map(existingSubjects.map(s => [s.code, {
+    name: s.name, type: s.type, departmentId: s.departmentId, applicableForms: s.applicableForms,
+  }]));
 
   const toCreate = validRows.filter(r => !existingMap.has(r.code));
   const toUpdate = validRows.filter(r =>  existingMap.has(r.code));
@@ -252,6 +281,7 @@ async function processSubjects(rows: Record<string, string>[], schoolId: string)
         data: toCreate.map(r => ({
           name: r.name, code: r.code, internalCode: nextCode++,
           type: r.type, departmentId: r.departmentId, schoolId, applicableForms: r.applicableForms,
+          importJobId: ctx.jobId,
         })),
         skipDuplicates: true,
       });
@@ -259,7 +289,7 @@ async function processSubjects(rows: Record<string, string>[], schoolId: string)
     } catch {
       for (const r of toCreate) {
         try {
-          await prisma.subject.create({ data: { name: r.name, code: r.code, internalCode: nextCode++, type: r.type, departmentId: r.departmentId, schoolId, applicableForms: r.applicableForms } });
+          await prisma.subject.create({ data: { name: r.name, code: r.code, internalCode: nextCode++, type: r.type, departmentId: r.departmentId, schoolId, applicableForms: r.applicableForms, importJobId: ctx.jobId } });
           succeeded++;
         } catch (err) { errors.push({ row: r.rowNum, field: "code", message: String(err) }); }
       }
@@ -273,6 +303,7 @@ async function processSubjects(rows: Record<string, string>[], schoolId: string)
     await Promise.all(chunk.map(async r => {
       const id = existingMap.get(r.code)!;
       try {
+        ctx.changeLog.push({ model: "Subject", id, previous: previousByCode.get(r.code) ?? {} });
         await prisma.subject.update({ where: { id }, data: { name: r.name, type: r.type, departmentId: r.departmentId, applicableForms: r.applicableForms } });
         succeeded++;
       } catch (err) { errors.push({ row: r.rowNum, field: "code", message: String(err) }); }
@@ -290,7 +321,7 @@ async function processSubjects(rows: Record<string, string>[], schoolId: string)
 // TeacherSubject: upserted per subject code → no duplicates.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processStaff(rows: Record<string, string>[], schoolId: string): PResult {
+async function processStaff(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -301,8 +332,18 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
   const subMap   = new Map(subjects.map(s => [norm(s.code), s.id]));
 
   // Pre-load all existing teachers for this school in one query
-  const existingTeachers = await prisma.teacher.findMany({ where: { schoolId }, select: { id: true, staffId: true } });
+  const existingTeachers = await prisma.teacher.findMany({
+    where:  { schoolId },
+    select: {
+      id: true, staffId: true, fullName: true, email: true, phone: true,
+      designation: true, primaryDepartmentId: true, userId: true,
+    },
+  });
   const teacherMap = new Map(existingTeachers.map(t => [t.staffId, t.id]));
+  const previousByStaffId = new Map(existingTeachers.map(t => [t.staffId, {
+    fullName: t.fullName, email: t.email, phone: t.phone,
+    designation: t.designation, primaryDepartmentId: t.primaryDepartmentId, userId: t.userId,
+  }]));
 
   type ValidStaff = {
     rowNum: number; staffId: string; fullName: string; email: string | null;
@@ -371,7 +412,9 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
         let teacherId: string;
         const existingId = teacherMap.get(r.staffId);
         if (existingId) {
-          // Update existing teacher record
+          // Update existing teacher record — snapshot the overwritten fields
+          // (plus userId, which the login provisioning below may also change).
+          ctx.changeLog.push({ model: "Teacher", id: existingId, previous: previousByStaffId.get(r.staffId) ?? {} });
           await prisma.teacher.update({
             where: { id: existingId },
             data:  { fullName: r.fullName, email: r.email, phone: r.phone, designation: r.designation, primaryDepartmentId: r.primaryDepartmentId },
@@ -390,6 +433,9 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
                 },
                 select: { id: true },
               });
+              // User has no importJobId column — record the creation so
+              // rollback can delete the account it provisioned.
+              ctx.changeLog.push({ model: "User", id: newUser.id, previous: null });
               await prisma.teacher.update({ where: { id: teacherId }, data: { userId: newUser.id } });
               existingUserEmails.add(r.email.toLowerCase());
             } catch {
@@ -412,6 +458,7 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
                 select: { id: true },
               });
               userId = newUser.id;
+              ctx.changeLog.push({ model: "User", id: newUser.id, previous: null });
               existingUserEmails.add(r.email.toLowerCase());
             } catch {
               // Non-fatal — login can be provisioned manually from the drawer
@@ -423,6 +470,7 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
               phone: r.phone, designation: r.designation,
               primaryDepartmentId: r.primaryDepartmentId, schoolId,
               userId,
+              importJobId: ctx.jobId,
             },
           });
           teacherId = created.id;
@@ -430,7 +478,7 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
         }
         if (r.resolvedSubjectIds.length > 0) {
           await prisma.teacherSubject.createMany({
-            data:           r.resolvedSubjectIds.map(subjectId => ({ teacherId, subjectId })),
+            data:           r.resolvedSubjectIds.map(subjectId => ({ teacherId, subjectId, importJobId: ctx.jobId })),
             skipDuplicates: true,
           });
         }
@@ -451,7 +499,7 @@ async function processStaff(rows: Record<string, string>[], schoolId: string): P
 // here (they apply automatically via Subject.applicableForms).
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processStudents(rows: Record<string, string>[], schoolId: string): PResult {
+async function processStudents(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -467,9 +515,16 @@ async function processStudents(rows: Record<string, string>[], schoolId: string)
   // Pre-load all existing students for this school in one query
   const existingStudents = await prisma.student.findMany({
     where:  { schoolId },
-    select: { id: true, admissionNumber: true },
+    select: {
+      id: true, admissionNumber: true, fullName: true, classId: true,
+      gender: true, boardingStatus: true, dateOfBirth: true,
+    },
   });
   const studentMap = new Map(existingStudents.map(s => [s.admissionNumber, s.id]));
+  const previousByAdmNo = new Map(existingStudents.map(s => [s.admissionNumber, {
+    fullName: s.fullName, classId: s.classId, gender: s.gender,
+    boardingStatus: s.boardingStatus, dateOfBirth: s.dateOfBirth,
+  }]));
 
   type ValidStudent = {
     rowNum: number; admissionNumber: string; fullName: string; classId: string;
@@ -535,12 +590,12 @@ async function processStudents(rows: Record<string, string>[], schoolId: string)
       await Promise.all(chunk.map(async r => {
         try {
           const created = await prisma.student.create({
-            data: { admissionNumber: r.admissionNumber, fullName: r.fullName, classId: r.classId, gender: r.gender, boardingStatus: r.boardingStatus, dateOfBirth: r.dateOfBirth, schoolId },
+            data: { admissionNumber: r.admissionNumber, fullName: r.fullName, classId: r.classId, gender: r.gender, boardingStatus: r.boardingStatus, dateOfBirth: r.dateOfBirth, schoolId, importJobId: ctx.jobId },
           });
           studentMap.set(r.admissionNumber, created.id);
           if (r.electiveIds.length > 0) {
             await prisma.studentElective.createMany({
-              data: r.electiveIds.map(subjectId => ({ studentId: created.id, subjectId })),
+              data: r.electiveIds.map(subjectId => ({ studentId: created.id, subjectId, importJobId: ctx.jobId })),
               skipDuplicates: true,
             });
           }
@@ -559,13 +614,14 @@ async function processStudents(rows: Record<string, string>[], schoolId: string)
     await Promise.all(chunk.map(async r => {
       const id = studentMap.get(r.admissionNumber)!;
       try {
+        ctx.changeLog.push({ model: "Student", id, previous: previousByAdmNo.get(r.admissionNumber) ?? {} });
         await prisma.student.update({
           where: { id },
           data:  { fullName: r.fullName, classId: r.classId, gender: r.gender, boardingStatus: r.boardingStatus, dateOfBirth: r.dateOfBirth },
         });
         if (r.electiveIds.length > 0) {
           await prisma.studentElective.createMany({
-            data: r.electiveIds.map(subjectId => ({ studentId: id, subjectId })),
+            data: r.electiveIds.map(subjectId => ({ studentId: id, subjectId, importJobId: ctx.jobId })),
             skipDuplicates: true,
           });
         }
@@ -584,7 +640,7 @@ async function processStudents(rows: Record<string, string>[], schoolId: string)
 //   existing CURRENT is vacated before creating the new one.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processStudentDorm(rows: Record<string, string>[], schoolId: string): PResult {
+async function processStudentDorm(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -680,7 +736,18 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
 
     try {
       await prisma.$transaction(async tx => {
-        // Vacate any existing CURRENT allocation
+        // Vacate any existing CURRENT allocation — snapshot each one first so
+        // a rollback can put the student back in their original bed.
+        const superseded = await tx.allocationRecord.findMany({
+          where:  { studentId, schoolId, status: "CURRENT" },
+          select: { id: true, status: true, vacatedDate: true },
+        });
+        for (const a of superseded) {
+          ctx.changeLog.push({
+            model: "AllocationRecord", id: a.id,
+            previous: { status: a.status, vacatedDate: a.vacatedDate },
+          });
+        }
         await tx.allocationRecord.updateMany({
           where: { studentId, schoolId, status: "CURRENT" },
           data:  { status: "VACATED", vacatedDate: new Date() },
@@ -692,6 +759,10 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
           select:  { sleepingPositionId: true },
         });
         if (prev?.sleepingPositionId) {
+          ctx.changeLog.push({
+            model: "SleepingPosition", id: prev.sleepingPositionId,
+            previous: { isOccupied: true },
+          });
           await tx.sleepingPosition.update({
             where: { id: prev.sleepingPositionId },
             data:  { isOccupied: false },
@@ -699,10 +770,14 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
         }
         // Create new allocation
         await tx.allocationRecord.create({
-          data: { schoolId, studentId, dormId, cubicleId, bedId, sleepingPositionId, notes, status: "CURRENT", allocationDate: new Date() },
+          data: { schoolId, studentId, dormId, cubicleId, bedId, sleepingPositionId, notes, status: "CURRENT", allocationDate: new Date(), importJobId: ctx.jobId },
         });
         // Mark position occupied
         if (sleepingPositionId) {
+          ctx.changeLog.push({
+            model: "SleepingPosition", id: sleepingPositionId,
+            previous: { isOccupied: false },
+          });
           await tx.sleepingPosition.update({ where: { id: sleepingPositionId }, data: { isOccupied: true } });
         }
       });
@@ -722,16 +797,19 @@ async function processStudentDorm(rows: Record<string, string>[], schoolId: stri
 // Duplicate guard: student found by admission_number — update if exists.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processParents(rows: Record<string, string>[], schoolId: string): PResult {
+async function processParents(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
   // Pre-load all students once
   const allStudents = await prisma.student.findMany({
     where:  { schoolId },
-    select: { id: true, admissionNumber: true },
+    select: { id: true, admissionNumber: true, parentName: true, parentContact: true },
   });
   const studentMap = new Map(allStudents.map(s => [s.admissionNumber, s.id]));
+  const previousById = new Map(allStudents.map(s => [s.id, {
+    parentName: s.parentName, parentContact: s.parentContact,
+  }]));
 
   type ValidParent = { rowNum: number; studentId: string; displayName: string; parentContact: string | null };
   const validRows: ValidParent[] = [];
@@ -764,6 +842,7 @@ async function processParents(rows: Record<string, string>[], schoolId: string):
     const chunk = validRows.slice(b, b + BATCH);
     await Promise.all(chunk.map(async r => {
       try {
+        ctx.changeLog.push({ model: "Student", id: r.studentId, previous: previousById.get(r.studentId) ?? {} });
         await prisma.student.update({
           where: { id: r.studentId },
           data:  { parentName: r.displayName, parentContact: r.parentContact },
@@ -796,7 +875,7 @@ async function processParents(rows: Record<string, string>[], schoolId: string):
 //   Positions → only created for NEW beds (skipDuplicates guard)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processDormSetup(rows: Record<string, string>[], schoolId: string): PResult {
+async function processDormSetup(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -815,9 +894,19 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
 
   // Pre-load existing dorms and cubicles for this school
   const existingDorms = await prisma.dormitory.findMany({
-    where: { schoolId }, select: { id: true, name: true },
+    where:  { schoolId },
+    select: {
+      id: true, name: true, genderPolicy: true, structure: true,
+      allocationPolicy: true, description: true,
+    },
   });
   existingDorms.forEach(d => dormCache.set(norm(d.name), d.id));
+  // Pre-existing dorms are UPDATED rather than created, so their overwritten
+  // fields are snapshotted instead of being tagged with importJobId.
+  const dormPrevious = new Map(existingDorms.map(d => [d.id, {
+    genderPolicy: d.genderPolicy, structure: d.structure,
+    allocationPolicy: d.allocationPolicy, description: d.description,
+  }]));
 
   const existingCubicles = await prisma.cubicle.findMany({
     where: { schoolId }, select: { id: true, name: true, dormId: true },
@@ -853,6 +942,10 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
       }
 
       try {
+        const priorId = dormCache.get(norm(dormName));
+        const prior   = priorId ? dormPrevious.get(priorId) : undefined;
+        if (priorId && prior) ctx.changeLog.push({ model: "Dormitory", id: priorId, previous: prior });
+
         const dorm = await prisma.dormitory.upsert({
           where:  { schoolId_name: { schoolId, name: dormName } },
           update: {
@@ -868,6 +961,7 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
             allocationPolicy: allocRaw  as never,
             description: desc,
             schoolId,
+            importJobId: ctx.jobId,
           },
         });
         dormCache.set(norm(dormName), dorm.id);
@@ -900,7 +994,7 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
       } else {
         try {
           const nc = await prisma.cubicle.create({
-            data: { name: cubicleName, dormId, schoolId, capacity: 4 },
+            data: { name: cubicleName, dormId, schoolId, capacity: 4, importJobId: ctx.jobId },
           });
           cubicleCache.set(cacheKey, nc.id);
           cubicleId = nc.id;
@@ -920,6 +1014,10 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
 
       if (existing) {
         // Update metadata but don't regenerate positions (would cause duplicates)
+        ctx.changeLog.push({
+          model: "Bed", id: existing.id,
+          previous: { bedType: existing.bedType, cubicleId: existing.cubicleId, customOccupancy: existing.customOccupancy },
+        });
         await prisma.bed.update({
           where: { id: existing.id },
           data:  { bedType: bedTypeRaw as never, cubicleId, customOccupancy },
@@ -927,25 +1025,25 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
       } else {
         // Create bed + generate sleeping positions atomically
         const bed = await prisma.bed.create({
-          data: { label: bedLabel, bedType: bedTypeRaw as never, dormId, cubicleId, customOccupancy, schoolId },
+          data: { label: bedLabel, bedType: bedTypeRaw as never, dormId, cubicleId, customOccupancy, schoolId, importJobId: ctx.jobId },
         });
 
         if (bedTypeRaw === "SINGLE") {
           await prisma.sleepingPosition.create({
-            data: { bedId: bed.id, dormId, cubicleId, schoolId, position: null },
+            data: { bedId: bed.id, dormId, cubicleId, schoolId, position: null, importJobId: ctx.jobId },
           });
         } else if (bedTypeRaw === "DOUBLE_DECKER") {
           await prisma.sleepingPosition.createMany({
             data: [
-              { bedId: bed.id, dormId, cubicleId, schoolId, position: "UPPER" },
-              { bedId: bed.id, dormId, cubicleId, schoolId, position: "LOWER" },
+              { bedId: bed.id, dormId, cubicleId, schoolId, position: "UPPER", importJobId: ctx.jobId },
+              { bedId: bed.id, dormId, cubicleId, schoolId, position: "LOWER", importJobId: ctx.jobId },
             ],
           });
         } else if (bedTypeRaw === "CUSTOM" && customOccupancy) {
           await prisma.sleepingPosition.createMany({
             data: Array.from({ length: customOccupancy }, (_, idx) => ({
               bedId: bed.id, dormId, cubicleId, schoolId,
-              position: null, customLabel: `Space ${idx + 1}`,
+              position: null, customLabel: `Space ${idx + 1}`, importJobId: ctx.jobId,
             })),
           });
         }
@@ -984,7 +1082,7 @@ async function processDormSetup(rows: Record<string, string>[], schoolId: string
 //     the bursar should void duplicates from the ledger if needed.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processStudentOpeningBalance(rows: Record<string, string>[], schoolId: string): PResult {
+async function processStudentOpeningBalance(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
 
@@ -1056,6 +1154,11 @@ async function processStudentOpeningBalance(rows: Record<string, string>[], scho
           amount,
           description,
           postedById:  fallbackPosterId,
+          // Ledger history is immutable, so these entries are never deleted.
+          // referenceId/referenceType is how a rollback finds them again and
+          // posts a compensating CREDIT_ADJUSTMENT for each.
+          referenceId:   ctx.jobId,
+          referenceType: "IMPORT_JOB",
         });
       });
 
@@ -1072,9 +1175,20 @@ async function processStudentOpeningBalance(rows: Record<string, string>[], scho
 // Legacy processors (kept for backward-compat with old import jobs)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function processDormitories(rows: Record<string, string>[], schoolId: string): PResult {
+async function processDormitories(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
+
+  // Split create from update up front so rollback can tell them apart.
+  const existingDorms = await prisma.dormitory.findMany({
+    where:  { schoolId },
+    select: {
+      id: true, name: true, genderPolicy: true, structure: true,
+      totalCapacity: true, allocationPolicy: true, description: true,
+    },
+  });
+  const dormByName = new Map(existingDorms.map(d => [d.name, d]));
+
   // A dormitory is Boys Only or Girls Only. MIXED is rejected here exactly as
   // the UI rejects it — a MIXED dorm would accept any student and defeat the
   // gender checks on every placement path.
@@ -1101,10 +1215,21 @@ async function processDormitories(rows: Record<string, string>[], schoolId: stri
     if (capacityRaw && isNaN(totalCapacity)) { errors.push({ row: rowNum, field: "total_capacity", message: "Must be a number" }); continue; }
 
     try {
+      const prior = dormByName.get(name);
+      if (prior) {
+        ctx.changeLog.push({
+          model: "Dormitory", id: prior.id,
+          previous: {
+            genderPolicy: prior.genderPolicy, structure: prior.structure,
+            totalCapacity: prior.totalCapacity, allocationPolicy: prior.allocationPolicy,
+            description: prior.description,
+          },
+        });
+      }
       await prisma.dormitory.upsert({
         where:  { schoolId_name: { schoolId, name } },
         update: { genderPolicy: genderPolicyRaw as never, structure: structureRaw as never, totalCapacity, allocationPolicy: allocPolicyRaw as never, description },
-        create: { name, genderPolicy: genderPolicyRaw as never, structure: structureRaw as never, totalCapacity, allocationPolicy: allocPolicyRaw as never, description, schoolId },
+        create: { name, genderPolicy: genderPolicyRaw as never, structure: structureRaw as never, totalCapacity, allocationPolicy: allocPolicyRaw as never, description, schoolId, importJobId: ctx.jobId },
       });
       succeeded++;
     } catch (e) { errors.push({ row: rowNum, field: "name", message: String(e) }); }
@@ -1112,7 +1237,7 @@ async function processDormitories(rows: Record<string, string>[], schoolId: stri
   return { succeeded, errors };
 }
 
-async function processBeds(rows: Record<string, string>[], schoolId: string): PResult {
+async function processBeds(rows: Record<string, string>[], schoolId: string, ctx: JobCtx): PResult {
   let succeeded = 0;
   const errors: RowError[] = [];
   const VALID_BED = new Set(["SINGLE", "DOUBLE_DECKER", "CUSTOM"]);
@@ -1141,7 +1266,7 @@ async function processBeds(rows: Record<string, string>[], schoolId: string): PR
     if (cubicleName) {
       let cub = cubicles.find(c => c.dormId === dormId && norm(c.name) === norm(cubicleName));
       if (!cub) {
-        const nc = await prisma.cubicle.create({ data: { name: cubicleName, dormId, schoolId, capacity: 4 } });
+        const nc = await prisma.cubicle.create({ data: { name: cubicleName, dormId, schoolId, capacity: 4, importJobId: ctx.jobId } });
         cubicles.push({ id: nc.id, name: nc.name, dormId });
         cub = nc;
       }
@@ -1154,19 +1279,23 @@ async function processBeds(rows: Record<string, string>[], schoolId: string): PR
       const existing = await prisma.bed.findFirst({ where: { dormId, label: bedLabel } });
       let bed: { id: string };
       if (existing) {
+        ctx.changeLog.push({
+          model: "Bed", id: existing.id,
+          previous: { bedType: existing.bedType, cubicleId: existing.cubicleId, customOccupancy: existing.customOccupancy },
+        });
         bed = await prisma.bed.update({ where: { id: existing.id }, data: { bedType: bedTypeRaw as never, cubicleId, customOccupancy } });
       } else {
-        bed = await prisma.bed.create({ data: { label: bedLabel, bedType: bedTypeRaw as never, dormId, cubicleId, customOccupancy, schoolId } });
+        bed = await prisma.bed.create({ data: { label: bedLabel, bedType: bedTypeRaw as never, dormId, cubicleId, customOccupancy, schoolId, importJobId: ctx.jobId } });
         if (bedTypeRaw === "SINGLE") {
-          await prisma.sleepingPosition.create({ data: { bedId: bed.id, dormId, cubicleId, schoolId, position: null } });
+          await prisma.sleepingPosition.create({ data: { bedId: bed.id, dormId, cubicleId, schoolId, position: null, importJobId: ctx.jobId } });
         } else if (bedTypeRaw === "DOUBLE_DECKER") {
           await prisma.sleepingPosition.createMany({ data: [
-            { bedId: bed.id, dormId, cubicleId, schoolId, position: "UPPER" },
-            { bedId: bed.id, dormId, cubicleId, schoolId, position: "LOWER" },
+            { bedId: bed.id, dormId, cubicleId, schoolId, position: "UPPER", importJobId: ctx.jobId },
+            { bedId: bed.id, dormId, cubicleId, schoolId, position: "LOWER", importJobId: ctx.jobId },
           ]});
         } else if (bedTypeRaw === "CUSTOM" && customOccupancy && customOccupancy > 0) {
           await prisma.sleepingPosition.createMany({ data: Array.from({ length: customOccupancy }, (_, idx) => ({
-            bedId: bed.id, dormId, cubicleId, schoolId, position: null, customLabel: `Space ${idx + 1}`,
+            bedId: bed.id, dormId, cubicleId, schoolId, position: null, customLabel: `Space ${idx + 1}`, importJobId: ctx.jobId,
           }))});
         }
         const posCount = await prisma.sleepingPosition.count({ where: { dormId, schoolId } });
@@ -1217,23 +1346,28 @@ export async function POST(req: NextRequest) {
   const { rows } = parseCSVText(csvText);
   let result: { succeeded: number; errors: RowError[] };
 
+  // Every row this run creates is stamped with ctx.jobId; every row it
+  // overwrites is snapshotted into ctx.changeLog. Both are what makes
+  // POST /imports/[id]/rollback a real undo rather than a status flip.
+  const ctx: JobCtx = { jobId, changeLog: [] };
+
   try {
     switch (job.type) {
-      case "DEPARTMENTS":              result = await processDepartments(rows,             schoolId); break;
-      case "CLASSES":                  result = await processClasses(rows,                 schoolId); break;
-      case "SUBJECTS":                 result = await processSubjects(rows,                schoolId); break;
-      case "STAFF":                    result = await processStaff(rows,                   schoolId); break;
-      case "STUDENTS":                 result = await processStudents(rows,                schoolId); break;
-      case "STUDENT_DORM":             result = await processStudentDorm(rows,             schoolId); break;
-      case "PARENTS":                  result = await processParents(rows,                 schoolId); break;
-      case "STUDENT_OPENING_BALANCE":  result = await processStudentOpeningBalance(rows,   schoolId); break;
-      case "DORM_SETUP":               result = await processDormSetup(rows,               schoolId); break;
-      case "DORMITORIES":              result = await processDormitories(rows,             schoolId); break;
-      case "BEDS":                     result = await processBeds(rows,                    schoolId); break;
-      case "ALLOCATIONS":              result = await processStudentDorm(rows,             schoolId); break; // legacy alias
+      case "DEPARTMENTS":              result = await processDepartments(rows,             schoolId, ctx); break;
+      case "CLASSES":                  result = await processClasses(rows,                 schoolId, ctx); break;
+      case "SUBJECTS":                 result = await processSubjects(rows,                schoolId, ctx); break;
+      case "STAFF":                    result = await processStaff(rows,                   schoolId, ctx); break;
+      case "STUDENTS":                 result = await processStudents(rows,                schoolId, ctx); break;
+      case "STUDENT_DORM":             result = await processStudentDorm(rows,             schoolId, ctx); break;
+      case "PARENTS":                  result = await processParents(rows,                 schoolId, ctx); break;
+      case "STUDENT_OPENING_BALANCE":  result = await processStudentOpeningBalance(rows,   schoolId, ctx); break;
+      case "DORM_SETUP":               result = await processDormSetup(rows,               schoolId, ctx); break;
+      case "DORMITORIES":              result = await processDormitories(rows,             schoolId, ctx); break;
+      case "BEDS":                     result = await processBeds(rows,                    schoolId, ctx); break;
+      case "ALLOCATIONS":              result = await processStudentDorm(rows,             schoolId, ctx); break; // legacy alias
       case "BOTH": {
-        const r1 = await processStudents(rows, schoolId);
-        const r2 = await processStaff(rows,    schoolId);
+        const r1 = await processStudents(rows, schoolId, ctx);
+        const r2 = await processStaff(rows,    schoolId, ctx);
         result = { succeeded: r1.succeeded + r2.succeeded, errors: [...r1.errors, ...r2.errors] };
         break;
       }
@@ -1272,6 +1406,7 @@ export async function POST(req: NextRequest) {
         failed:      result.errors.length,
         totalRows:   rows.length,
         errorReport: result.errors.length > 0 ? (result.errors as object[]) : Prisma.JsonNull,
+        changeLog:   ctx.changeLog.length > 0 ? (ctx.changeLog as object[]) : Prisma.JsonNull,
       },
     });
 
