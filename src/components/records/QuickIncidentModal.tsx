@@ -444,84 +444,35 @@ export default function QuickIncidentModal({
           </div>
         )}
 
-        {/* ── Evidence attachments ── */}
+        {/* ── Action taken & parent notification ── */}
         <div className="form-section">
-          <div className="form-section-title">Evidence</div>
-          <div
-            className={`rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors cursor-pointer ${
-              dragOver
-                ? "border-teal bg-teal-50/40"
-                : "border-border hover:border-teal/40 hover:bg-background/60"
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              addFiles(e.dataTransfer.files);
-            }}
-          >
-            <Paperclip className="h-5 w-5 text-slate/50 mx-auto mb-2" aria-hidden="true" />
-            <p className="text-sm text-slate">
-              Drag files here, paste a screenshot, or{" "}
-              <label className="text-teal font-medium hover:text-teal-dark cursor-pointer underline underline-offset-2">
-                browse
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx"
-                  capture="environment"
-                  className="sr-only"
-                  onChange={(e) => e.target.files && addFiles(e.target.files)}
-                />
-              </label>
-            </p>
-            <p className="text-xs text-slate/60 mt-1">Images, PDF, Word · up to 8 MB each</p>
+          <div className="form-section-title">Response</div>
+          <div>
+            <label className={labelClass}>Action taken</label>
+            <input
+              className={inputClass}
+              value={actionTaken}
+              onChange={(e) => setActionTaken(e.target.value)}
+              placeholder={suggestion?.suggestedAction || "Describe the action taken"}
+            />
           </div>
-
-          {files.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {files.map((pf) => (
-                <li
-                  key={pf.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
-                >
-                  <span aria-hidden className="shrink-0 text-base">
-                    {pf.file.type.startsWith("image/") ? "🖼" : "📄"}
-                  </span>
-                  <span className="text-foreground truncate flex-1">{pf.file.name}</span>
-                  <span className="text-xs text-slate shrink-0">{fmtSize(pf.file.size)}</span>
-                  {pf.status === "uploading" && (
-                    <Loader2
-                      className="h-3.5 w-3.5 animate-spin text-teal shrink-0"
-                      aria-label="Uploading"
-                    />
-                  )}
-                  {pf.status === "done" && (
-                    <span className="text-success text-xs font-medium shrink-0">Saved</span>
-                  )}
-                  {pf.status === "error" && (
-                    <span className="text-danger text-xs shrink-0">{pf.error}</span>
-                  )}
-                  {pf.status !== "uploading" && (
-                    <button
-                      type="button"
-                      aria-label={`Remove ${pf.file.name}`}
-                      className="text-slate/50 hover:text-danger shrink-0 transition-colors"
-                      onClick={() =>
-                        setFiles((prev) => prev.filter((f) => f.id !== pf.id))
-                      }
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          <label className="mt-4 flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-border text-teal focus:ring-teal/30"
+              checked={isVisibleToParent}
+              onChange={(e) => setIsVisibleToParent(e.target.checked)}
+            />
+            <span>
+              <span className="block text-sm font-medium text-foreground">
+                Notify the parent
+              </span>
+              <span className="block text-xs text-slate mt-0.5">
+                The parent sees this case in their portal and is notified immediately.
+                Leave unchecked to keep it staff-only.
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* ── Additional details (collapsible) ── */}
@@ -544,7 +495,7 @@ export default function QuickIncidentModal({
                 clipRule="evenodd"
               />
             </svg>
-            {showMore ? "Hide additional details" : "Add date, time, location, witnesses…"}
+            {showMore ? "Hide additional details" : "Add date, time, location, witnesses, evidence…"}
           </button>
 
           {showMore && (
@@ -587,33 +538,87 @@ export default function QuickIncidentModal({
                     placeholder="Names of any witnesses"
                   />
                 </div>
-                <div>
-                  <label className={labelClass}>Action taken</label>
-                  <input
-                    className={inputClass}
-                    value={actionTaken}
-                    onChange={(e) => setActionTaken(e.target.value)}
-                    placeholder={suggestion?.suggestedAction || "Describe the action taken"}
-                  />
-                </div>
               </div>
-              <label className="mt-4 flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-border text-teal focus:ring-teal/30"
-                  checked={isVisibleToParent}
-                  onChange={(e) => setIsVisibleToParent(e.target.checked)}
-                />
-                <span>
-                  <span className="block text-sm font-medium text-foreground">
-                    Notify the parent
-                  </span>
-                  <span className="block text-xs text-slate mt-0.5">
-                    The parent sees this case in their portal and is notified immediately.
-                    Leave unchecked to keep it staff-only.
-                  </span>
-                </span>
-              </label>
+
+              {/* ── Evidence attachments ── */}
+              <div className="mt-4">
+                <label className={labelClass}>Evidence</label>
+                <div
+                  className={`rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors cursor-pointer ${
+                    dragOver
+                      ? "border-teal bg-teal-50/40"
+                      : "border-border hover:border-teal/40 hover:bg-background/60"
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addFiles(e.dataTransfer.files);
+                  }}
+                >
+                  <Paperclip className="h-5 w-5 text-slate/50 mx-auto mb-2" aria-hidden="true" />
+                  <p className="text-sm text-slate">
+                    Drag files here, paste a screenshot, or{" "}
+                    <label className="text-teal font-medium hover:text-teal-dark cursor-pointer underline underline-offset-2">
+                      browse
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx"
+                        capture="environment"
+                        className="sr-only"
+                        onChange={(e) => e.target.files && addFiles(e.target.files)}
+                      />
+                    </label>
+                  </p>
+                  <p className="text-xs text-slate/60 mt-1">Images, PDF, Word · up to 8 MB each</p>
+                </div>
+
+                {files.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {files.map((pf) => (
+                      <li
+                        key={pf.id}
+                        className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
+                      >
+                        <span aria-hidden className="shrink-0 text-base">
+                          {pf.file.type.startsWith("image/") ? "🖼" : "📄"}
+                        </span>
+                        <span className="text-foreground truncate flex-1">{pf.file.name}</span>
+                        <span className="text-xs text-slate shrink-0">{fmtSize(pf.file.size)}</span>
+                        {pf.status === "uploading" && (
+                          <Loader2
+                            className="h-3.5 w-3.5 animate-spin text-teal shrink-0"
+                            aria-label="Uploading"
+                          />
+                        )}
+                        {pf.status === "done" && (
+                          <span className="text-success text-xs font-medium shrink-0">Saved</span>
+                        )}
+                        {pf.status === "error" && (
+                          <span className="text-danger text-xs shrink-0">{pf.error}</span>
+                        )}
+                        {pf.status !== "uploading" && (
+                          <button
+                            type="button"
+                            aria-label={`Remove ${pf.file.name}`}
+                            className="text-slate/50 hover:text-danger shrink-0 transition-colors"
+                            onClick={() =>
+                              setFiles((prev) => prev.filter((f) => f.id !== pf.id))
+                            }
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
         </div>
