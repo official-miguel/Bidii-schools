@@ -392,7 +392,15 @@ export async function POST(req: NextRequest) {
           stack: e instanceof Error ? e.stack : undefined,
         });
         
-        controller.enqueue(sseEvent({ type: "error", error: msg, configIssue: isConfig }));
+        // Admins get the raw technical detail inline (HTTP status, Google's
+        // error message) so a Principal/Full Admin can self-diagnose a bad
+        // model/key without needing server log access. Non-admins never see
+        // this — it can reference internal config.
+        const adminDetail = scope.isAdmin && e instanceof AiServiceError
+          ? e.internalDetail
+          : undefined;
+
+        controller.enqueue(sseEvent({ type: "error", error: msg, configIssue: isConfig, adminDetail }));
       } finally {
         logSomaAIInteraction({
           userId: user.id,

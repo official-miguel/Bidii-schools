@@ -711,7 +711,7 @@ export async function streamGeminiWithTools(opts: {
 
   // Always pick the fastest/cheapest model for tool-calling rounds.
   // The school config model is used for the final streaming answer.
-  const toolModel = config.model; // use school's configured model (already resolved via autoPickModel)
+  let toolModel = config.model; // use school's configured model (already resolved via autoPickModel)
   const answerModel = opts.options.model ?? config.model;
   const temperature = opts.options.temperature ?? config.temperature;
   const maxOutputTokens = opts.options.maxOutputTokens ?? config.maxOutputTokens;
@@ -779,6 +779,26 @@ export async function streamGeminiWithTools(opts: {
             true,
             undefined,
             `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
+          );
+        }
+        if (res.status === 404) {
+          // Tool-round model isn't available for this key — auto-detect a
+          // working model and retry this same round with it, exactly like
+          // the non-streaming callGemini path does. Without this, a stale
+          // or invalid configured model (e.g. a deprecated/renamed Gemini
+          // model id) makes every Soma request fail immediately, since tool
+          // calls run before the final streamed answer.
+          const picked = await autoPickModel(opts.schoolId, apiKey);
+          if (picked !== toolModel) {
+            toolModel = picked;
+            round--; // don't burn a round on the model-resolution retry
+            continue;
+          }
+          throw new AiServiceError(
+            "Soma AI is having a temporary issue. Please try again shortly.",
+            false,
+            undefined,
+            `Model "${toolModel}" unavailable (404) — auto-pick also failed`
           );
         }
         if (res.status === 429) {

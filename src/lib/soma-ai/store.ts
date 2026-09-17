@@ -32,6 +32,10 @@ export interface SomaMessage {
   error?: boolean;
   /** True when the error is a config issue (no key / disabled) — drives ConfigNotice */
   configIssue?: boolean;
+  /** Raw technical detail (HTTP status, Google's error message) — only ever
+   *  populated for admin roles, so a Principal/Full Admin can self-diagnose
+   *  a bad model/key without needing server log access. */
+  adminDetail?: string;
   /** Suggested follow-up questions attached to this assistant message */
   suggestions?: string[];
   /** Whether the user has copied this message */
@@ -273,7 +277,7 @@ export const useSomaAIStore = create<SomaAIState>((set, get) => ({
           return { isStreaming: false, abortController: null, messages: updated };
         });
       },
-      onError: (error, configIssue) => {
+      onError: (error, configIssue, adminDetail) => {
         set((s) => {
           const updated = s.messages.map((m) =>
             m.id === assistantMsgId
@@ -283,6 +287,7 @@ export const useSomaAIStore = create<SomaAIState>((set, get) => ({
                   activeTools: [],
                   error: true,
                   configIssue: configIssue ?? false,
+                  adminDetail,
                   content: error,
                   suggestions: configIssue
                     ? ["How do I set up Soma AI?", "Where are the Integration Settings?"]
@@ -363,7 +368,7 @@ async function streamChat(opts: {
   onToolCall: (toolName: string) => void;
   onSuggestions: (suggestions: string[]) => void;
   onDone: () => void;
-  onError: (error: string, configIssue?: boolean) => void;
+  onError: (error: string, configIssue?: boolean, adminDetail?: string) => void;
 }) {
   try {
     const res = await fetch("/api/soma-ai/chat", {
@@ -420,6 +425,7 @@ async function streamChat(opts: {
             suggestions?: string[];
             error?: string;
             configIssue?: boolean;
+            adminDetail?: string;
           };
 
           switch (event.type) {
@@ -436,7 +442,7 @@ async function streamChat(opts: {
               opts.onDone();
               return;
             case "error":
-              opts.onError(event.error ?? "An error occurred.", event.configIssue);
+              opts.onError(event.error ?? "An error occurred.", event.configIssue, event.adminDetail);
               return;
           }
         } catch {

@@ -261,6 +261,14 @@ function MessageBubble({
             <span>Failed to respond</span>
           </div>
         )}
+
+        {/* Admin-only technical detail — helps a Principal/Full Admin
+            self-diagnose a bad model/key without server log access */}
+        {message.error && message.adminDetail && (
+          <p className="mt-1 text-[11px] font-mono text-danger/60 break-words">
+            {message.adminDetail}
+          </p>
+        )}
       </div>
 
       {/* Timestamp */}
