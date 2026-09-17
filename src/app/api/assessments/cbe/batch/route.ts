@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
   const learningAreaId = subStrand.strand.learningAreaId;
   const actor = await resolveAssessmentActor(user, user.schoolId!);
 
+  // adminCanManage/teacherFullAccess cover Full Admin Access holders (ADMIN_STAFF
+  // or TEACHER with ASSESSMENTS canManage) — see cbe/item/route.ts for the same check.
   const isPrincipalOrBroadRole = actor.isPrincipal ||
+    actor.adminCanManage ||
+    actor.teacherFullAccess ||
     actor.roles.some((r) =>
       r.role === "DIRECTOR" || r.role === "EXAM_OFFICER" ||
       (r.role === "CLASS_TEACHER" && actor.classTeacherOfId !== null)

@@ -50,7 +50,12 @@ export async function PUT(req: NextRequest) {
   // canEnterMarks returns true for PRINCIPAL/DIRECTOR/EXAM_OFFICER/CLASS_TEACHER
   // unconditionally, which covers the common cases. SUBJECT_TEACHER roles for
   // CBE are scoped to learningAreaId in AssessmentRole, so we check them manually.
+  // adminCanManage/teacherFullAccess cover Full Admin Access holders (ADMIN_STAFF
+  // or TEACHER with ASSESSMENTS canManage) — without them, a full admin who can
+  // save every other mark type would 403 specifically on CBE performance levels.
   const isPrincipalOrBroadRole = actor.isPrincipal ||
+    actor.adminCanManage ||
+    actor.teacherFullAccess ||
     actor.roles.some((r) =>
       r.role === "DIRECTOR" || r.role === "EXAM_OFFICER" ||
       (r.role === "CLASS_TEACHER" && actor.classTeacherOfId !== null)

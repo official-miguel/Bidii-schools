@@ -8,8 +8,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { getTeacherEffectivePermissions } from "@/lib/permissions";
-import type { User, Module } from "@prisma/client";
+import { getEffectivePermissions, getTeacherEffectivePermissions } from "@/lib/permissions";
+import type { User } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Inline types that mirror the Prisma-generated ones.
@@ -82,20 +82,18 @@ export async function resolveAssessmentActor(
   user: User,
   schoolId: string
 ): Promise<AssessmentActor> {
-  // For ADMIN_STAFF, check module permissions.
+  // For ADMIN_STAFF, check module permissions via the same multi-role-aware
+  // resolver used everywhere else (getEffectivePermissions unions every role
+  // assigned through UserStaffRole, falling back to the legacy staffRoleId
+  // column only when no multi-role rows exist). Reading user.staffRoleId
+  // directly here would miss Full Admin Access granted purely through a
+  // second/third assigned role, silently 403'ing an otherwise-authorized admin.
   let adminCanView = false;
   let adminCanManage = false;
-  if (user.role === "ADMIN_STAFF" && user.staffRoleId) {
-    const perm = await prisma.rolePermission.findUnique({
-      where: {
-        staffRoleId_module: {
-          staffRoleId: user.staffRoleId,
-          module: "ASSESSMENTS" as Module,
-        },
-      },
-    });
-    adminCanView = perm?.canView ?? false;
-    adminCanManage = perm?.canManage ?? false;
+  if (user.role === "ADMIN_STAFF") {
+    const adminPerms = await getEffectivePermissions(user);
+    adminCanView = !!adminPerms.ASSESSMENTS?.canView;
+    adminCanManage = !!adminPerms.ASSESSMENTS?.canManage;
   }
 
   // Fetch the teacher row (minimal select — only what we need).

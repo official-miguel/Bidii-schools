@@ -130,6 +130,7 @@ export default async function TeacherMarksheetPage({
     (c) => c.id !== classTeacherOfId && assignedClassIds.has(c.id)
   );
   const isWideAccess  = actor.isPrincipal ||
+    actor.teacherFullAccess ||
     actor.roles.some((r) => ["DIRECTOR", "EXAM_OFFICER"].includes(r.role));
   const otherAll      = isWideAccess
     ? allClasses.filter((c) => c.id !== classTeacherOfId && !assignedClassIds.has(c.id))
@@ -179,6 +180,7 @@ export default async function TeacherMarksheetPage({
     if (hasLearningAreas) {
       const canEdit =
         actor.isPrincipal ||
+        actor.teacherFullAccess ||
         (classTeacherOfId === defaultClassId &&
           actor.roles.some((r) => r.role === "CLASS_TEACHER")) ||
         actor.roles.some((r) =>
