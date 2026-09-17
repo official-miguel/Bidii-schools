@@ -37,6 +37,7 @@ interface OtpConfig {
 interface AdminRow {
   id:              string;
   email:           string;
+  phone:           string | null;
   isActive:        boolean;
   isPlatformOwner: boolean;
   createdAt:       string;
@@ -430,6 +431,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
   const [error,   setError]   = useState<string | null>(null);
 
   const [email,    setEmail]    = useState("");
+  const [phone,    setPhone]    = useState("");
   const [password, setPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [busyId,   setBusyId]   = useState<string | null>(null);
@@ -460,11 +462,11 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
       const res = await fetch("/api/super-admin/admins", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email: email.trim(), password }),
+        body:    JSON.stringify({ email: email.trim(), password, phone: phone.trim() }),
       });
       const j = await res.json() as { admin?: AdminRow; error?: string };
       if (!res.ok) throw new Error(j.error ?? "Could not create the account");
-      setEmail(""); setPassword("");
+      setEmail(""); setPassword(""); setPhone("");
       onChanged(`Super admin ${j.admin?.email} created`);
       await load();
     } catch (e) {
@@ -559,6 +561,20 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
               className={inputClass}
             />
           </div>
+          <div>
+            <label htmlFor="new-admin-phone" className={labelClass}>
+              Phone number <span className="font-normal text-slate">(optional)</span>
+            </label>
+            <input
+              id="new-admin-phone"
+              type="tel"
+              autoComplete="off"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 0712345678"
+              className={inputClass}
+            />
+          </div>
         </div>
 
         <button
@@ -581,6 +597,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
             <thead className="bg-background border-b border-border text-xs text-slate uppercase tracking-wide">
               <tr>
                 <th className="px-5 py-3 text-left">Email</th>
+                <th className="px-5 py-3 text-left">Phone</th>
                 <th className="px-5 py-3 text-left">Role</th>
                 <th className="px-5 py-3 text-left">Status</th>
                 <th className="px-5 py-3 text-left">Created</th>
@@ -593,6 +610,9 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
                   <td className="px-5 py-3 text-foreground">
                     {a.email}
                     {a.id === meId && <span className="ml-2 text-xs text-slate">(you)</span>}
+                  </td>
+                  <td className="px-5 py-3 text-slate">
+                    {a.phone ?? <span className="text-slate/50">—</span>}
                   </td>
                   <td className="px-5 py-3">
                     {a.isPlatformOwner ? (
