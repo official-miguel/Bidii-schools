@@ -7,6 +7,7 @@ import SuppressRechartsWarnings from "@/components/SuppressRechartsWarnings";
 export const metadata: Metadata = {
   title: "Bidii School Management System",
   description: "School management system for Kenyan schools.",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/logo.png", type: "image/png" },
