@@ -415,15 +415,17 @@ export async function resolveDbAnswer(
     }
 
     case "teacher_list": {
+      // Only fullName is selected — email/phone are contact details and must
+      // never be surfaced through Soma to non-admin roles.
       const teachers = await prisma.teacher.findMany({
         where: { schoolId },
-        select: { fullName: true, email: true },
+        select: { fullName: true },
         orderBy: { fullName: "asc" },
         take: 30,
       });
       const total = await prisma.teacher.count({ where: { schoolId } });
       if (total === 0) return { answer: "No teachers found." };
-      const lines = teachers.map((t) => `  • ${t.fullName ?? t.email ?? "Unknown"}`).join("\n");
+      const lines = teachers.map((t) => `  • ${t.fullName ?? "Unknown"}`).join("\n");
       return {
         answer: `**Teachers (${total}):**\n\n${lines}${total > 30 ? `\n  … and ${total - 30} more` : ""}`,
         data: { total },

@@ -1,5 +1,5 @@
 import { getSchoolIntegrationKey } from "@/lib/integrations";
-import { DEFAULT_AI_CONFIG, resolveModelId, MODEL_PRIORITY, DEFAULT_MODEL_ID, type AiConfig } from "@/lib/soma-ai/config";
+import { DEFAULT_AI_CONFIG, resolveModelId, MODEL_PRIORITY, MODEL_FALLBACK_CHAIN, DEFAULT_MODEL_ID, type AiConfig } from "@/lib/soma-ai/config";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
@@ -153,50 +153,175 @@ async function acquireSchoolSlot(schoolId: string): Promise<() => void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Wraps fetch() with automatic retry on HTTP 429 (rate limit).
- * Respects the Retry-After header when present; falls back to exponential
- * back-off capped at maxWaitMs. Throws AiServiceError only after all retries
- * are exhausted (or immediately for 4xx auth failures).
+ * Statuses worth retrying. 429 = rate limit, 5xx = Gemini-side overload
+ * ("The model is overloaded") — both are transient and clear on their own,
+ * unlike 4xx auth/validation errors which never will.
  */
-async function fetchWith429Retry(
-  url: string,
-  init: RequestInit,
-  opts: {
-    retries?: number;
-    /** Hard cap on any single wait period, in ms */
-    maxWaitMs?: number;
-    label?: string;
-  } = {}
-): Promise<Response> {
-  const retries = opts.retries ?? 3;
-  const maxWaitMs = opts.maxWaitMs ?? 15_000;
-  const label = opts.label ?? "gemini";
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const res = await fetch(url, init);
+/** Attempts against a single model before moving down the fallback chain. */
+const ATTEMPTS_PER_MODEL = 3;
 
-    if (res.status !== 429) return res; // success or non-retryable error
+/**
+ * Backoff with jitter. Jitter matters a lot here: without it, every user whose
+ * request bounced off the same overload retries at the same instant and the
+ * model gets hammered again in lockstep. Randomizing spreads the herd out.
+ */
+function backoffMs(attempt: number, retryAfterSec: number, maxWaitMs: number): number {
+  if (retryAfterSec > 0) return Math.min(retryAfterSec * 1000, maxWaitMs);
+  const base = 600 * 2 ** attempt; // 600ms → 1.2s → 2.4s
+  const jittered = base * (0.5 + Math.random()); // ±50%
+  return Math.min(Math.round(jittered), maxWaitMs);
+}
 
-    const retryAfterSec = parseInt(res.headers.get("Retry-After") ?? "0", 10);
-    const waitMs = retryAfterSec > 0
-      ? Math.min(retryAfterSec * 1000, maxWaitMs)
-      : Math.min(2000 * 2 ** attempt, maxWaitMs); // 2s → 4s → 8s → …
+/**
+ * Builds the ordered list of models to try: the school's configured model
+ * first, then progressively lighter fallbacks that are less likely to be
+ * contended.
+ */
+function buildModelChain(configured: string): string[] {
+  return [configured, ...MODEL_FALLBACK_CHAIN.filter((m) => m !== configured)];
+}
 
-    console.warn(
-      `[ai/${label}] 429 rate-limited on attempt ${attempt + 1}/${retries + 1}. Waiting ${waitMs}ms before retry.`
-    );
+/**
+ * Performs a Gemini request with two layers of resilience:
+ *
+ *   1. Transient failures (429 rate-limit, 5xx overload) are retried against
+ *      the same model with jittered exponential backoff.
+ *   2. If a model stays unavailable — persistently overloaded, or a 404
+ *      meaning this key can't use it — we fall back to the next model in the
+ *      chain instead of failing the user's question.
+ *
+ * Auth/validation failures (400/401/403) throw immediately: retrying or
+ * switching models can never fix a bad key.
+ *
+ * Returns the successful Response along with the model that produced it.
+ */
+async function geminiFetch(opts: {
+  schoolId: string;
+  apiKey: string;
+  /** Model to try first; lighter fallbacks are appended automatically. */
+  model: string;
+  endpoint: "generateContent" | "streamGenerateContent";
+  /** Appended to the URL, e.g. "&alt=sse" for streaming */
+  query?: string;
+  body: unknown;
+  signal?: AbortSignal;
+  maxWaitMs?: number;
+  label: string;
+}): Promise<{ res: Response; model: string }> {
+  const maxWaitMs = opts.maxWaitMs ?? 8_000;
+  const chain = buildModelChain(opts.model);
+  let lastStatus = 0;
+  let lastDetail = "";
+  let sawNotFound = false;
 
-    if (attempt < retries) {
+  for (const model of chain) {
+    for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:${opts.endpoint}` +
+          `?key=${encodeURIComponent(opts.apiKey)}${opts.query ?? ""}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: opts.signal,
+          body: JSON.stringify(opts.body),
+        }
+      );
+
+      if (res.ok) {
+        // Remember a fallback that worked so the next request starts here
+        // instead of paying the same overload penalty again.
+        if (model !== opts.model) void saveWorkingModel(opts.schoolId, model);
+        return { res, model };
+      }
+
+      lastStatus = res.status;
+
+      // Unfixable by retry or fallback — surface immediately.
+      if (res.status === 400 || res.status === 401 || res.status === 403) {
+        const body = await res.text().catch(() => "");
+        let detail = "";
+        try {
+          const parsed = JSON.parse(body);
+          detail = parsed?.error?.message ?? parsed?.error?.status ?? "";
+        } catch { /* not JSON */ }
+        throw new AiServiceError(
+          "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
+          true,
+          body,
+          `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
+        );
+      }
+
+      // Model not available to this key — no point retrying it, move on.
+      if (res.status === 404) {
+        sawNotFound = true;
+        lastDetail = `model "${model}" unavailable (404)`;
+        break;
+      }
+
+      if (!RETRYABLE_STATUS.has(res.status)) {
+        lastDetail = `unexpected HTTP ${res.status} on "${model}"`;
+        break; // try the next model rather than giving up outright
+      }
+
+      lastDetail = `HTTP ${res.status} on "${model}"`;
+      const retryAfterSec = parseInt(res.headers.get("Retry-After") ?? "0", 10);
+
+      // Last attempt for this model — drop to the next one immediately
+      // rather than burning more time on a model that keeps failing.
+      if (attempt === ATTEMPTS_PER_MODEL - 1) break;
+
+      const waitMs = backoffMs(attempt, retryAfterSec, maxWaitMs);
+      console.warn(
+        `[ai/${opts.label}] ${res.status} on "${model}" ` +
+          `(attempt ${attempt + 1}/${ATTEMPTS_PER_MODEL}) — retrying in ${waitMs}ms`
+      );
       await sleep(waitMs);
-      continue;
     }
-
-    // All retries exhausted — return the 429 response so the caller can throw
-    return res;
   }
 
-  // TypeScript: unreachable, but needed for the return type
-  throw new AiServiceError("Unexpected retry loop exit.", false);
+  // Last resort: if models were rejected as non-existent, our hardcoded chain
+  // itself is stale (Google renamed/retired them). Ask the API what this key
+  // can actually use and try that once, so a model rename can never take Soma
+  // down until someone ships a code change.
+  if (sawNotFound) {
+    const probed = await autoPickModel(opts.schoolId, opts.apiKey);
+    if (!chain.includes(probed)) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${probed}:${opts.endpoint}` +
+          `?key=${encodeURIComponent(opts.apiKey)}${opts.query ?? ""}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: opts.signal,
+          body: JSON.stringify(opts.body),
+        }
+      );
+      if (res.ok) {
+        void saveWorkingModel(opts.schoolId, probed);
+        return { res, model: probed };
+      }
+      lastDetail = `probed model "${probed}" also failed (HTTP ${res.status})`;
+    }
+  }
+
+  // Every model in the chain failed.
+  if (lastStatus === 429) {
+    throw new AiServiceError(
+      "Soma AI has hit its usage limit for the moment. Please try again in a minute.",
+      false,
+      undefined,
+      `All models rate-limited — ${lastDetail}`
+    );
+  }
+  throw new AiServiceError(
+    "Soma AI is busy right now. Please try again in a moment.",
+    false,
+    undefined,
+    `All models failed — ${lastDetail}`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -312,7 +437,7 @@ export async function callGemini(
   }
 
   // Determine model: per-call override → school config → default
-  let model = options.model ?? config.model;
+  const model = options.model ?? config.model;
   const temperature = options.temperature ?? config.temperature;
   const maxOutputTokens = options.maxOutputTokens ?? config.maxOutputTokens;
 
@@ -329,95 +454,45 @@ export async function callGemini(
 
   const releaseSchoolSlot = await acquireSchoolSlot(schoolId);
   try {
+  // Retry/backoff and model fallback are handled inside geminiFetch; this
+  // loop only covers network-level failures (timeouts, dropped connections)
+  // and empty completions, which need a fresh request rather than a retry
+  // of the same in-flight one.
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { text: prompt },
-                  ...(options.inlineFile
-                    ? [{ inlineData: { mimeType: options.inlineFile.mimeType, data: options.inlineFile.base64 } }]
-                    : []),
-                ],
-              },
-            ],
-            ...(options.systemInstruction
-              ? { systemInstruction: { parts: [{ text: options.systemInstruction }] } }
-              : {}),
-            generationConfig: {
-              temperature,
-              maxOutputTokens,
-              responseMimeType: options.responseSchema ? "application/json" : "text/plain",
-              ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
+      const { res } = await geminiFetch({
+        schoolId,
+        apiKey,
+        model,
+        endpoint: "generateContent",
+        signal: controller.signal,
+        label: "callGemini",
+        body: {
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: prompt },
+                ...(options.inlineFile
+                  ? [{ inlineData: { mimeType: options.inlineFile.mimeType, data: options.inlineFile.base64 } }]
+                  : []),
+              ],
             },
-          }),
-        }
-      );
-
-      if (res.status === 400 || res.status === 401 || res.status === 403) {
-        const body = await res.text().catch(() => "");
-        // Parse Google's error detail if available
-        let detail = "";
-        try {
-          const parsed = JSON.parse(body);
-          detail = parsed?.error?.message ?? parsed?.error?.status ?? "";
-        } catch { /* not JSON */ }
-        throw new AiServiceError(
-          "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
-          true,
-          body,
-          `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
-        );
-      }
-      if (res.status === 404) {
-        // Model not available for this key — auto-detect a working model
-        // and retry immediately with it (don't count as a failed attempt)
-        const picked = await autoPickModel(schoolId, apiKey);
-        if (picked !== model) {
-          model = picked;
-          continue; // retry with the new model
-        }
-        throw new AiServiceError(
-          "Soma AI is having a temporary issue. Please try again shortly.",
-          false,   // not a config issue — auto-healing in progress
-          undefined,
-          `Model "${model}" unavailable (404) — auto-pick also failed`
-        );
-      }
-      if (res.status === 429) {
-        // Rate-limited — respect Retry-After if present, otherwise use
-        // exponential backoff capped at half the remaining timeout budget.
-        const retryAfterSec = parseInt(res.headers.get("Retry-After") ?? "0", 10);
-        const maxWaitMs = Math.floor(timeoutMs / 2);
-        const waitMs = retryAfterSec > 0
-          ? Math.min(retryAfterSec * 1000, maxWaitMs)
-          : Math.min(5000 * 2 ** attempt, maxWaitMs); // 5s → 10s → 20s, capped
-        console.warn(
-          `[ai/gemini] 429 rate-limited on attempt ${attempt + 1}/${retries + 1}. Waiting ${waitMs}ms before retry.`
-        );
-        if (attempt < retries) {
-          await sleep(waitMs);
-          continue;
-        }
-        throw new AiServiceError(
-          "The AI service is currently rate-limited. Please wait a moment and try again.",
-          false
-        );
-      }
-      if (!res.ok) {
-        throw new Error(`Unexpected HTTP ${res.status}`);
-      }
+          ],
+          ...(options.systemInstruction
+            ? { systemInstruction: { parts: [{ text: options.systemInstruction }] } }
+            : {}),
+          generationConfig: {
+            temperature,
+            maxOutputTokens,
+            responseMimeType: options.responseSchema ? "application/json" : "text/plain",
+            ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
+          },
+        },
+      });
 
       const data: { candidates?: { content?: { parts?: { text?: string }[] } }[] } = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
@@ -430,14 +505,9 @@ export async function callGemini(
       lastError = e;
       const err = e as { name?: string; message?: string };
       const timedOut = err?.name === "AbortError";
-      // For AiServiceError we log internalDetail (the Google-specific info);
-      // for raw errors we log the message directly.
-      const logDetail = e instanceof AiServiceError
-        ? ((e as AiServiceError).internalDetail ?? e.message)
-        : err?.message || e;
       console.error(
         `[ai/gemini] attempt ${attempt + 1}/${retries + 1} failed${timedOut ? " (timeout)" : ""}:`,
-        logDetail
+        err?.message || e
       );
       if (attempt < retries) {
         await sleep(400 * 2 ** attempt); // 400ms → 800ms → …
@@ -525,54 +595,23 @@ export async function streamGemini(opts: {
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetchWith429Retry(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}&alt=sse`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: opts.contents,
-          ...(opts.options?.systemInstruction
-            ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
-            : {}),
-          generationConfig: { temperature, maxOutputTokens },
-        }),
+    const { res } = await geminiFetch({
+      schoolId: opts.schoolId,
+      apiKey,
+      model,
+      endpoint: "streamGenerateContent",
+      query: "&alt=sse",
+      signal: controller.signal,
+      label: "streamGemini",
+      body: {
+        contents: opts.contents,
+        ...(opts.options?.systemInstruction
+          ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
+          : {}),
+        generationConfig: { temperature, maxOutputTokens },
       },
-      { retries: 1, maxWaitMs: 12_000, label: "streamGemini" }
-    );
+    });
 
-    if (res.status === 400 || res.status === 401 || res.status === 403) {
-      const body = await res.text().catch(() => "");
-      let detail = "";
-      try { const p = JSON.parse(body); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
-      throw new AiServiceError(
-        "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
-        true,
-        body,
-        `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
-      );
-    }
-    if (res.status === 404) {
-      // Kick off auto-pick asynchronously — next request will use the correct model
-      void autoPickModel(opts.schoolId, apiKey);
-      throw new AiServiceError(
-        "Soma AI is having a temporary issue. Please try again shortly.",
-        false,   // not a config issue — auto-healing in progress
-        undefined,
-        `Model "${model}" unavailable (404) — auto-picking new model for next request`
-      );
-    }
-    if (res.status === 429) {
-      // All retries exhausted
-      throw new AiServiceError(
-        "The AI service is busy right now. Please wait a moment and try again.",
-        false
-      );
-    }
-    if (!res.ok) {
-      throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
-    }
     if (!res.body) throw new AiServiceError("No response body from AI.", false);
 
     const reader = res.body.getReader();
@@ -751,64 +790,25 @@ export async function streamGeminiWithTools(opts: {
       };
 
       try {
-        const res = await fetchWith429Retry(
-          `https://generativelanguage.googleapis.com/v1beta/models/${toolModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: controller.signal,
-            body: JSON.stringify({
-              contents: conversation,
-              ...(opts.options.systemInstruction
-                ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
-                : {}),
-              tools: [{ functionDeclarations: tools }],
-              toolConfig: { functionCallingConfig: { mode: "AUTO" } },
-              generationConfig: { temperature: 0, maxOutputTokens: 512 },
-            }),
+        const { res, model: usedModel } = await geminiFetch({
+          schoolId: opts.schoolId,
+          apiKey,
+          model: toolModel,
+          endpoint: "generateContent",
+          signal: controller.signal,
+          label: "tool-round",
+          body: {
+            contents: conversation,
+            ...(opts.options.systemInstruction
+              ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
+              : {}),
+            tools: [{ functionDeclarations: tools }],
+            toolConfig: { functionCallingConfig: { mode: "AUTO" } },
+            generationConfig: { temperature: 0, maxOutputTokens: 512 },
           },
-          { retries: 1, maxWaitMs: 12_000, label: "streamGeminiWithTools/tool-round" }
-        );
-
-        if (res.status === 400 || res.status === 401 || res.status === 403) {
-          const errBody = await res.text().catch(() => "");
-          let detail = "";
-          try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
-          throw new AiServiceError(
-            "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
-            true,
-            undefined,
-            `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
-          );
-        }
-        if (res.status === 404) {
-          // Tool-round model isn't available for this key — auto-detect a
-          // working model and retry this same round with it, exactly like
-          // the non-streaming callGemini path does. Without this, a stale
-          // or invalid configured model (e.g. a deprecated/renamed Gemini
-          // model id) makes every Soma request fail immediately, since tool
-          // calls run before the final streamed answer.
-          const picked = await autoPickModel(opts.schoolId, apiKey);
-          if (picked !== toolModel) {
-            toolModel = picked;
-            round--; // don't burn a round on the model-resolution retry
-            continue;
-          }
-          throw new AiServiceError(
-            "Soma AI is having a temporary issue. Please try again shortly.",
-            false,
-            undefined,
-            `Model "${toolModel}" unavailable (404) — auto-pick also failed`
-          );
-        }
-        if (res.status === 429) {
-          // All retries exhausted
-          throw new AiServiceError(
-            "The AI service is busy right now. Please wait a moment and try again.",
-            false
-          );
-        }
-        if (!res.ok) throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
+        });
+        // Stick with whatever model actually worked for the remaining rounds.
+        toolModel = usedModel;
         roundData = await res.json();
       } finally {
         clearTimeout(timeout);
@@ -855,54 +855,25 @@ export async function streamGeminiWithTools(opts: {
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetchWith429Retry(
-      `https://generativelanguage.googleapis.com/v1beta/models/${answerModel}:streamGenerateContent?key=${encodeURIComponent(apiKey)}&alt=sse`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: conversation,
-          ...(opts.options.systemInstruction
-            ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
-            : {}),
-          generationConfig: { temperature, maxOutputTokens },
-          // Do NOT include tools here — this is the final answer turn; we
-          // don't want Gemini to call more functions, just respond in text.
-        }),
+    const { res } = await geminiFetch({
+      schoolId: opts.schoolId,
+      apiKey,
+      model: answerModel,
+      endpoint: "streamGenerateContent",
+      query: "&alt=sse",
+      signal: controller.signal,
+      label: "answer",
+      body: {
+        contents: conversation,
+        ...(opts.options.systemInstruction
+          ? { systemInstruction: { parts: [{ text: opts.options.systemInstruction }] } }
+          : {}),
+        generationConfig: { temperature, maxOutputTokens },
+        // Do NOT include tools here — this is the final answer turn; we
+        // don't want Gemini to call more functions, just respond in text.
       },
-      { retries: 1, maxWaitMs: 12_000, label: "streamGeminiWithTools/answer" }
-    );
+    });
 
-    if (res.status === 400 || res.status === 401 || res.status === 403) {
-      const errBody = await res.text().catch(() => "");
-      let detail = "";
-      try { const p = JSON.parse(errBody); detail = p?.error?.message ?? p?.error?.status ?? ""; } catch { /* */ }
-      throw new AiServiceError(
-        "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
-        true,
-        undefined,
-        `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
-      );
-    }
-    if (res.status === 404) {
-      // Kick off auto-pick asynchronously — next request will use the correct model
-      void autoPickModel(opts.schoolId, apiKey);
-      throw new AiServiceError(
-        "Soma AI is having a temporary issue. Please try again shortly.",
-        false,   // not a config issue — auto-healing in progress
-        undefined,
-        `Model "${answerModel}" unavailable (404) — auto-picking new model for next request`
-      );
-    }
-    if (res.status === 429) {
-      // All retries exhausted
-      throw new AiServiceError(
-        "The AI service is busy right now. Please wait a moment and try again.",
-        false
-      );
-    }
-    if (!res.ok) throw new AiServiceError("Soma AI is having a temporary issue. Please try again shortly.", false, undefined, `Unexpected HTTP ${res.status}`);
     if (!res.body) throw new AiServiceError("No response body from AI.", false);
 
     const reader = res.body.getReader();

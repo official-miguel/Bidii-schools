@@ -9,7 +9,12 @@ import { resolveUserScope } from "@/lib/soma-ai/permissions";
 import { logSomaAIInteraction } from "@/lib/soma-ai/audit";
 import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/config";
 import { SOMA_TOOL_DECLARATIONS, dispatchTool, pruneToolCache } from "@/lib/soma-ai/tools";
-import { classifyQuery } from "@/lib/soma-ai/router";
+import {
+  classifyQuery,
+  resolveIntelligenceAnswer,
+  resolveDbAnswer,
+  type ExtendedCategory,
+} from "@/lib/soma-ai/router";
 import {
   resolveHelpAnswer,
   formatHelpAnswer,
@@ -251,6 +256,38 @@ export async function POST(req: NextRequest) {
     // no_match: fall through to Gemini but inject near-miss context
     if (helpResult.nearMisses.length > 0) {
       nearMissHelpContext = formatNearMissContext(helpResult.nearMisses);
+    }
+  }
+
+  // -- Database short-circuit (zero Gemini cost) -------------------------------
+  // The router already recognises the common factual questions ("how many
+  // students", "who is absent today", "list all classes"). Those are answered
+  // straight from the database: no Gemini call, no rate-limit pressure, and a
+  // reply in milliseconds rather than seconds. Anything the resolvers can't
+  // answer falls through to the Gemini path untouched.
+  if (classification.intent === "db" && classification.dbCategory) {
+    try {
+      const category = classification.dbCategory as ExtendedCategory;
+      const answer =
+        (await resolveIntelligenceAnswer(category, scope, parsed.message)) ??
+        (await resolveDbAnswer(user.schoolId!, classification.dbCategory, parsed.message)).answer;
+
+      if (answer) {
+        logSomaAIInteraction({
+          userId: user.id,
+          schoolId: user.schoolId!,
+          userRole: user.role,
+          message: parsed.message,
+          intent: "db",
+          module: classification.dbCategory,
+          executionMs: Date.now() - t0,
+          outcome: "success",
+        });
+        return NextResponse.json({ answer, type: "db" });
+      }
+    } catch (e) {
+      // A resolver failure must never break the chat — fall through to Gemini.
+      console.error("[soma-ai/chat] DB short-circuit failed, falling back to Gemini:", e);
     }
   }
 

@@ -395,6 +395,20 @@ async function streamChat(opts: {
       return;
     }
 
+    // Instant answers (help-content and database lookups) come back as plain
+    // JSON rather than an SSE stream — they're resolved server-side with no
+    // Gemini call, so there's nothing to stream. Render them in one shot.
+    if (res.headers.get("content-type")?.includes("application/json")) {
+      const data = (await res.json().catch(() => ({}))) as { answer?: string };
+      if (data.answer) {
+        opts.onChunk(data.answer);
+        opts.onDone();
+      } else {
+        opts.onError("Soma AI returned an empty answer. Please try again.");
+      }
+      return;
+    }
+
     if (!res.body) {
       opts.onError("No response stream received.");
       return;

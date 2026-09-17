@@ -85,6 +85,18 @@ export function resolveModelId(stored: string | null | undefined): string {
  * from an API key. The first model in this list that the key can access wins.
  * Ordered from most capable / most commonly available to least.
  */
+/**
+ * Fallback order used when the configured model is overloaded (503) or not
+ * available to the key (404). The "lite" tiers are far less contended than
+ * the flagship Flash tier and carry higher free-tier ceilings, so Soma
+ * degrades to a lighter/faster model rather than failing the question.
+ */
+export const MODEL_FALLBACK_CHAIN: string[] = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+];
+
 export const MODEL_PRIORITY: string[] = [
   "gemini-3.8-flash",
   "gemini-3.7-flash",
