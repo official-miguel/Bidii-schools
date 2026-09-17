@@ -19,7 +19,7 @@ import {
   Activity,
   HardDrive,
   Upload,
-  MessageSquare,
+  Settings,
   HelpCircle,
   LogOut,
 } from "lucide-react";
@@ -32,12 +32,22 @@ const NAV_ITEMS = [
   { href: "/super-admin/health",         label: "Health",       Icon: Activity        },
   { href: "/super-admin/storage",        label: "Storage",      Icon: HardDrive       },
   { href: "/super-admin/imports",        label: "Imports",      Icon: Upload          },
-  { href: "/super-admin/settings/sms",   label: "Platform SMS", Icon: MessageSquare   },
 ] as const;
 
-export default function SuperAdminSidebar() {
+/**
+ * Settings is the platform owner's alone — the OTP SMS provider, super-admin
+ * accounts, and the action history. Ordinary super admins never see the link
+ * (and the route redirects them anyway).
+ */
+const OWNER_NAV_ITEM = {
+  href: "/super-admin/settings", label: "Settings", Icon: Settings,
+} as const;
+
+export default function SuperAdminSidebar({ isOwner = false }: { isOwner?: boolean }) {
   const pathname = usePathname();
   const router   = useRouter();
+
+  const navItems = isOwner ? [...NAV_ITEMS, OWNER_NAV_ITEM] : NAV_ITEMS;
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -75,7 +85,7 @@ export default function SuperAdminSidebar() {
 
       {/* Nav links */}
       <nav className="flex-1 flex flex-col gap-1 py-4 px-3 overflow-y-auto">
-        {NAV_ITEMS.map(({ href, label, Icon }) => {
+        {navItems.map(({ href, label, Icon }) => {
           const active = isActive(href);
           return (
             <Link

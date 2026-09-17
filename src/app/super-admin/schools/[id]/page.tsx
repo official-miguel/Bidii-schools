@@ -118,22 +118,26 @@ export default function SchoolDetailPage() {
   const [impersonating, setImpersonating] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // ── SMS activity state ────────────────────────────────────────────────────
-  // SMS runs on the one shared Mobivas account (see /super-admin/settings/sms)
-  // — there's no per-school balance to manage here, only visibility into what
-  // this school has actually sent through it.
-  const [smsPlatform, setSmsPlatform] = useState<{
-    configured: boolean; provider: string | null; isActive: boolean; updatedAt: string | null;
-  } | null>(null);
-  const [smsStats, setSmsStats] = useState<{ sent30d: number; failed30d: number; totalAllTime: number } | null>(null);
-  const [smsLogs, setSmsLogs]       = useState<{
-    id: string; recipientLabel: string; phone: string; status: string;
-    errorDetail: string | null; createdAt: string;
-  }[]>([]);
-  const [smsTotal,   setSmsTotal]   = useState(0);
-  const [smsPage,    setSmsPage]    = useState(1);
+  // ── School SMS credentials state ──────────────────────────────────────────
+  // Each school bills its own Mobivas account, so its API key lives here —
+  // nothing to do with the platform OTP provider under Settings.
+  interface SchoolSmsConfig {
+    configured: boolean;
+    keyPreview: string | null;
+    isActive:   boolean;
+    clientId:   string | null;
+    senderId:   string | null;
+    updatedAt:  string | null;
+  }
+  const [smsConfig,  setSmsConfig]  = useState<SchoolSmsConfig | null>(null);
   const [smsLoading, setSmsLoading] = useState(false);
   const [smsError,   setSmsError]   = useState<string | null>(null);
+  const [smsSaving,  setSmsSaving]  = useState(false);
+  const [smsRemoving, setSmsRemoving] = useState(false);
+  const [smsKey,      setSmsKey]      = useState("");
+  const [smsClientId, setSmsClientId] = useState("");
+  const [smsSenderId, setSmsSenderId] = useState("");
+  const [showSmsKey,  setShowSmsKey]  = useState(false);
 
   // ── Soma AI / Gemini key state ────────────────────────────────────────────
   interface GeminiKeyStatus {
@@ -185,17 +189,16 @@ export default function SchoolDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const loadSmsActivity = useCallback(async (page = 1) => {
+  const loadSmsConfig = useCallback(async () => {
     setSmsLoading(true); setSmsError(null);
     try {
-      const res = await fetch(`/api/super-admin/schools/${id}/sms-activity?page=${page}`);
-      if (!res.ok) throw new Error("Failed to load SMS activity");
-      const j = await res.json();
-      setSmsPlatform(j.platform);
-      setSmsStats(j.stats);
-      setSmsLogs(j.logs);
-      setSmsTotal(j.total);
-      setSmsPage(j.page);
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-config`);
+      if (!res.ok) throw new Error("Failed to load SMS settings");
+      const j = await res.json() as { config: SchoolSmsConfig };
+      setSmsConfig(j.config);
+      // Pre-fill the non-secret fields so an edit doesn't have to retype them.
+      setSmsClientId(j.config.clientId ?? "");
+      setSmsSenderId(j.config.senderId ?? "");
     } catch (e: unknown) {
       setSmsError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -203,7 +206,7 @@ export default function SchoolDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => { if (tab === "sms") loadSmsActivity(1); }, [tab, loadSmsActivity]);
+  useEffect(() => { if (tab === "sms") loadSmsConfig(); }, [tab, loadSmsConfig]);
   useEffect(() => { if (tab === "somaai") loadAiStatus(); }, [tab, loadAiStatus]);
 
   async function handleAiKeySave(e: React.FormEvent) {
@@ -263,6 +266,51 @@ export default function SchoolDetailPage() {
       setAiTestResult({ ok: false, error: e instanceof Error ? e.message : "Test failed" });
     } finally {
       setAiTesting(false);
+    }
+  }
+
+  async function handleSmsSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!smsKey.trim() || !smsClientId.trim() || !smsSenderId.trim()) return;
+    setSmsSaving(true); setSmsError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-config`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          apiKey:   smsKey.trim(),
+          clientId: smsClientId.trim(),
+          senderId: smsSenderId.trim(),
+        }),
+      });
+      const j = await res.json() as { config?: SchoolSmsConfig; error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Failed to save SMS credentials");
+      setSmsConfig(j.config ?? null);
+      setSmsKey(""); setShowSmsKey(false);
+      setSuccessMsg("School SMS credentials saved");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (e: unknown) {
+      setSmsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSmsSaving(false);
+    }
+  }
+
+  async function handleSmsRemove() {
+    if (!confirm(`Remove the SMS credentials for "${data?.name}"?\n\nThis school will not be able to send any SMS until new credentials are saved.`)) return;
+    setSmsRemoving(true); setSmsError(null);
+    try {
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-config`, { method: "DELETE" });
+      const j = await res.json() as { config?: SchoolSmsConfig; error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Failed to remove SMS credentials");
+      setSmsConfig(j.config ?? null);
+      setSmsClientId(""); setSmsSenderId("");
+      setSuccessMsg("School SMS credentials removed");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (e: unknown) {
+      setSmsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSmsRemoving(false);
     }
   }
 
@@ -631,134 +679,140 @@ export default function SchoolDetailPage() {
 
       {/* ── SMS WALLET tab ── */}
       {tab === "sms" && (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-2xl">
           {smsError && <ErrorBanner message={smsError} onDismiss={() => setSmsError(null)} />}
 
-          {smsLoading && !smsStats ? (
+          {smsLoading && !smsConfig ? (
             <div className="flex justify-center py-10"><Spinner size="lg" /></div>
           ) : (
             <>
-              {/* Shared-account status — SMS is not per-school; every school
-                  sends through the one Mobivas account configured below. */}
+              {/* Current credential status */}
               <div className={`flex items-start gap-4 rounded-xl border p-5 ${
-                smsPlatform?.configured && smsPlatform.isActive
+                smsConfig?.configured && smsConfig.isActive
                   ? "bg-success-bg border-success/20"
                   : "bg-warn-bg border-warn/20"
               }`}>
                 <MessageSquare className={`h-6 w-6 shrink-0 mt-0.5 ${
-                  smsPlatform?.configured && smsPlatform.isActive ? "text-success" : "text-warn"
+                  smsConfig?.configured && smsConfig.isActive ? "text-success" : "text-warn"
                 }`} aria-hidden />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-semibold ${
-                    smsPlatform?.configured && smsPlatform.isActive ? "text-success" : "text-warn"
+                    smsConfig?.configured && smsConfig.isActive ? "text-success" : "text-warn"
                   }`}>
-                    {smsPlatform?.configured
-                      ? `Platform SMS ${smsPlatform.isActive ? "active" : "inactive"} — ${smsPlatform.provider ?? "Mobivas"}`
-                      : "Platform SMS is not configured"}
+                    {smsConfig?.configured
+                      ? `SMS API key active · ···${smsConfig.keyPreview}`
+                      : "No SMS API key assigned"}
                   </p>
                   <p className="text-xs text-foreground/70 mt-0.5">
-                    Every school sends through this one shared account — its balance is tracked
-                    in the provider&apos;s own dashboard, not here.
-                    {smsPlatform?.updatedAt && ` Last updated ${new Date(smsPlatform.updatedAt).toLocaleDateString()}.`}
+                    {smsConfig?.configured
+                      ? `Sender ID: ${smsConfig.senderId ?? "—"} · Client ID: ${smsConfig.clientId ?? "—"}`
+                      : "This school cannot send SMS until its own credentials are saved below."}
+                  </p>
+                  {smsConfig?.updatedAt && (
+                    <p className="text-xs text-foreground/60 mt-1">
+                      Last updated {new Date(smsConfig.updatedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                {smsConfig?.configured && (
+                  <button
+                    type="button"
+                    onClick={handleSmsRemove}
+                    disabled={smsRemoving}
+                    className={`${dangerButtonClass} text-xs shrink-0`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    {smsRemoving ? "Removing…" : "Remove"}
+                  </button>
+                )}
+              </div>
+
+              {/* Credentials form */}
+              <form onSubmit={handleSmsSave} className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {smsConfig?.configured ? "Replace credentials" : "Set credentials"}
+                  </h3>
+                  <p className="text-xs text-slate mt-1">
+                    This school&apos;s own SMSMobivas account. Everything the Communication
+                    Centre sends for {data.name} is billed to it — top-ups and balance live in
+                    that Mobivas dashboard, not here.
                   </p>
                 </div>
-                <Link
-                  href="/super-admin/settings/sms"
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card text-xs font-medium px-3 py-2 text-foreground hover:bg-background transition-colors"
-                >
-                  Manage <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                </Link>
-              </div>
 
-              {/* Activity stats for this school */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { label: "Sent (30 days)",   value: (smsStats?.sent30d ?? 0).toLocaleString(),      note: "Delivered successfully" },
-                  { label: "Failed (30 days)", value: (smsStats?.failed30d ?? 0).toLocaleString(),    note: "Provider rejected or timed out" },
-                  { label: "Total ever sent",  value: (smsStats?.totalAllTime ?? 0).toLocaleString(), note: "All-time SMS log rows" },
-                ].map(({ label, value, note }) => (
-                  <div key={label} className="rounded-xl border border-border bg-card p-4 shadow-xs">
-                    <p className="text-2xl font-bold text-foreground">{value}</p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">{label}</p>
-                    <p className="text-xs text-slate mt-0.5">{note}</p>
+                <div>
+                  <label htmlFor="school-sms-key" className="block text-xs font-medium text-slate mb-1">
+                    API Key <span className="text-danger" aria-hidden>*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="school-sms-key"
+                      type={showSmsKey ? "text" : "password"}
+                      autoComplete="off"
+                      required
+                      value={smsKey}
+                      onChange={(e) => setSmsKey(e.target.value)}
+                      placeholder={smsConfig?.configured ? "Enter a new key to replace the current one" : "Paste this school’s SMSMobivas API key"}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground
+                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSmsKey((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-foreground p-1"
+                      aria-label={showSmsKey ? "Hide API key" : "Show API key"}
+                    >
+                      {showSmsKey ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+                    </button>
                   </div>
-                ))}
-              </div>
-
-              {/* Recent SMS log */}
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-5 py-4 border-b border-border">
-                  <h3 className="text-sm font-semibold text-foreground">Recent SMS</h3>
-                  <p className="text-xs text-slate mt-0.5">{smsTotal.toLocaleString()} total rows for this school</p>
+                  <p className="mt-1.5 text-xs text-slate">
+                    Encrypted with AES-256-GCM before saving — never stored or shown in plaintext.
+                  </p>
                 </div>
-                {smsLogs.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-slate">No SMS sent yet.</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-background border-b border-border text-xs text-slate uppercase tracking-wide">
-                        <tr>
-                          <th className="px-5 py-3 text-left">Date</th>
-                          <th className="px-5 py-3 text-left">Recipient</th>
-                          <th className="px-5 py-3 text-left">Phone</th>
-                          <th className="px-5 py-3 text-left">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {smsLogs.map((log) => (
-                          <tr key={log.id}>
-                            <td className="px-5 py-3 text-xs text-slate whitespace-nowrap">
-                              {new Date(log.createdAt).toLocaleString()}
-                            </td>
-                            <td className="px-5 py-3 text-foreground max-w-[200px] truncate">
-                              {log.recipientLabel}
-                            </td>
-                            <td className="px-5 py-3 text-slate font-mono">{log.phone}</td>
-                            <td className="px-5 py-3">
-                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                log.status === "SENT" ? "bg-success-bg text-success border-success/20"
-                                : log.status === "FAILED" ? "bg-danger-bg text-danger border-danger/20"
-                                : "bg-warn-bg text-warn border-warn/20"
-                              }`}>
-                                {log.status}
-                              </span>
-                              {log.errorDetail && (
-                                <p className="text-danger text-xs mt-0.5 max-w-[240px] truncate" title={log.errorDetail}>
-                                  {log.errorDetail}
-                                </p>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="school-sms-client" className="block text-xs font-medium text-slate mb-1">
+                      Client ID <span className="text-danger" aria-hidden>*</span>
+                    </label>
+                    <input
+                      id="school-sms-client"
+                      type="text"
+                      autoComplete="off"
+                      required
+                      value={smsClientId}
+                      onChange={(e) => setSmsClientId(e.target.value)}
+                      placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground
+                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
+                    />
                   </div>
-                )}
-                {/* Pagination */}
-                {smsTotal > 30 && (
-                  <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-background text-xs text-slate">
-                    <span>Page {smsPage} of {Math.ceil(smsTotal / 30)}</span>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        disabled={smsPage <= 1}
-                        onClick={() => loadSmsActivity(smsPage - 1)}
-                        className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        type="button"
-                        disabled={smsPage >= Math.ceil(smsTotal / 30)}
-                        onClick={() => loadSmsActivity(smsPage + 1)}
-                        className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
-                      >
-                        Next
-                      </button>
-                    </div>
+                  <div>
+                    <label htmlFor="school-sms-sender" className="block text-xs font-medium text-slate mb-1">
+                      Sender ID <span className="text-danger" aria-hidden>*</span>
+                    </label>
+                    <input
+                      id="school-sms-sender"
+                      type="text"
+                      autoComplete="off"
+                      required
+                      value={smsSenderId}
+                      onChange={(e) => setSmsSenderId(e.target.value)}
+                      placeholder="e.g. SCHOOLNAME"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground
+                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={smsSaving || !smsKey.trim() || !smsClientId.trim() || !smsSenderId.trim()}
+                  className={`${primaryButtonClass} text-sm`}
+                >
+                  {smsSaving ? <><Spinner size="sm" /> Saving…</> : <><Key className="h-4 w-4" aria-hidden /> Save credentials</>}
+                </button>
+              </form>
             </>
           )}
         </div>

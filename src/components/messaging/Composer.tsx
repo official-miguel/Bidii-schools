@@ -87,7 +87,7 @@ function ChannelCard({
     <button
       type="button"
       onClick={configured ? onSelect : undefined}
-      title={!configured ? `${title} is not configured — go to Settings → Integrations` : undefined}
+      title={!configured ? `${title} is not set up for this school — ask your Bidii administrator` : undefined}
       className={`relative flex flex-1 flex-col items-center gap-2 rounded-xl border-2 py-4 px-5 text-sm font-semibold transition-all duration-150 ${
         active
           ? "border-teal bg-teal text-white shadow-md"
@@ -215,10 +215,10 @@ export default function Composer({
     }, 600);
   }, [descriptors, body]);
 
-  // SMS is sent on the platform-wide key and needs no per-school integration —
-  // only WhatsApp still requires the school to have configured its own.
+  // Both channels send on this school's own provider credentials, which a
+  // super admin sets up per school.
   const configured  = (ch: "SMS" | "WHATSAPP") =>
-    ch === "SMS" || integrations.some((i) => i.provider === ch && i.isActive);
+    integrations.some((i) => i.provider === ch && i.isActive);
   const channelOk   = configured(channel) || integrations.length === 0;
   const canProceed  = descriptors.length > 0;
   const canSend     = canProceed && body.trim().length > 0 && channelOk;
@@ -339,7 +339,7 @@ export default function Composer({
                 {!configured("SMS") && !configured("WHATSAPP") && integrations.length > 0 && (
                   <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-warn-bg border border-warn/20 text-warn text-xs px-3 py-2">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    No channels configured — go to Settings → Integrations to add SMS or WhatsApp.
+                    No messaging channels are set up for this school yet — ask your Bidii administrator to add the SMS or WhatsApp credentials.
                   </div>
                 )}
               </div>

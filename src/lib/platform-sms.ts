@@ -1,9 +1,12 @@
 /**
  * src/lib/platform-sms.ts
  *
- * Manages the single-row PlatformSmsConfig — Miguel's company-wide SMS
- * provider credentials used for ALL outbound SMS (Communication Centre bulk
- * sends and forgot-password OTP).
+ * Manages the single-row PlatformSmsConfig — the company-wide SMS provider
+ * used ONLY for forgot-password OTP, which has to work before anyone is
+ * signed in to a school. Schools' Communication Centre messages go out on
+ * each school's own SchoolIntegration(SMS) key instead, so this account is
+ * never billed for their traffic. Configured by the platform owner under
+ * /super-admin/settings.
  *
  * Mirrors the shape of src/lib/integrations.ts but for the platform-level
  * single row rather than per-school keys.

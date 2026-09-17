@@ -38,15 +38,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── WhatsApp: still requires a configured per-school key ─────────────────
-  if (channel === "WHATSAPP") {
-    const integration = await getSchoolIntegrationKey(user.schoolId!, "WHATSAPP");
-    if (!integration) {
-      return NextResponse.json(
-        { error: "WhatsApp integration is not configured for this school. Go to Settings → Integrations to add a key." },
-        { status: 422 }
-      );
-    }
+  // ── Both channels dispatch on this school's own provider credentials, so
+  // ── bail with a clear message rather than logging a failure per recipient.
+  const integration = await getSchoolIntegrationKey(user.schoolId!, channel);
+  if (!integration) {
+    return NextResponse.json(
+      {
+        error: channel === "SMS"
+          ? "This school has no SMS provider configured yet. Ask your Bidii administrator to add the school's SMS API key."
+          : "WhatsApp is not configured for this school. Ask your Bidii administrator to add the school's WhatsApp key.",
+      },
+      { status: 422 }
+    );
   }
 
   const isScheduledForFuture = !!scheduledDate && scheduledDate > new Date();

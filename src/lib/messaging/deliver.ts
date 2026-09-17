@@ -9,12 +9,12 @@
  * with "SMS integration is not configured for this school" and skipped the
  * placeholder substitution.
  *
- * There is no local SMS wallet/credit gate here — every school sends through
- * the one shared Mobivas account (PlatformSmsConfig), and Mobivas tracks that
- * account's real balance on its own dashboard. If it runs dry, dispatch fails
- * per-recipient with a real provider error, which is logged below exactly
- * like any other failure — that's the actual gate, not a local counter that
- * can drift out of sync with what Mobivas thinks the balance is.
+ * Both channels dispatch on the school's OWN provider credentials
+ * (SchoolIntegration), set by a super admin on the school's SMS tab. The
+ * platform-level key is reserved for forgot-password OTP and is never used
+ * here. There is no local credit gate either: each school's balance lives in
+ * its own Mobivas account, so a dry account surfaces as a real per-recipient
+ * provider error, logged below like any other failure.
  *
  * SERVER-SIDE ONLY.
  */
@@ -22,7 +22,7 @@
 import { prisma } from "@/lib/prisma";
 import { resolveRecipients, buildRecipientSummary } from "@/lib/messaging/resolve";
 import type { ResolvedRecipient } from "@/lib/messaging/resolve";
-import { dispatchMessage, dispatchPlatformSms } from "@/lib/messaging/dispatch";
+import { dispatchMessage } from "@/lib/messaging/dispatch";
 import { applyPlaceholders } from "@/lib/messaging/placeholders";
 import type { MessageChannel } from "@prisma/client";
 
@@ -43,11 +43,9 @@ export function personalise(body: string, r: Pick<ResolvedRecipient, "label" | "
   return applyPlaceholders(out, r.context ?? { name: r.label });
 }
 
-/** Send one already-personalised body to one number on the right provider path. */
+/** Send one already-personalised body on this school's own provider key. */
 async function dispatchOne(schoolId: string, channel: MessageChannel, phone: string, body: string) {
-  return channel === "SMS"
-    ? dispatchPlatformSms(phone, body)
-    : dispatchMessage(schoolId, channel, phone, body);
+  return dispatchMessage(schoolId, channel, phone, body);
 }
 
 export type DeliveryOutcome = { sent: number; failed: number; skipped: number };

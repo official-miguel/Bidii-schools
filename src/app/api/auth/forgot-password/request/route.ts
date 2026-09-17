@@ -7,7 +7,8 @@
  * • Looks up the user's phone number (Teacher.phone or Parent.phone).
  * • Rate-limits: max 3 requests per 15 min per identifier (fail-closed).
  * • Generates a 6-digit OTP, bcrypt-hashes it, stores in PasswordResetOtp.
- * • Sends via dispatchPlatformSms — NOT deducted from the school wallet.
+ * • Sends via dispatchPlatformSms — the platform OTP account, never the
+ *   school's own SMS credentials.
  * • Always returns the same generic success response to prevent enumeration.
  */
 

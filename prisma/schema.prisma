@@ -185,6 +185,11 @@ model User {
   updatedAt                 DateTime                   @updatedAt
   /// Nullable for SUPER_ADMIN accounts which are not scoped to any school.
   schoolId                  String?
+  /// Only meaningful when role = SUPER_ADMIN. The platform owner is the one
+  /// super admin who can reach /super-admin/settings — the OTP SMS provider,
+  /// the creation of other super admins, and the admin action history. Every
+  /// other super admin sees the rest of the console but never that section.
+  isPlatformOwner           Boolean                    @default(false)
   /// Only meaningful when role = ADMIN_STAFF. Governs which modules this
   /// login can see and manage (Staff Roles & Permissions). PRINCIPAL always
   /// has full access regardless of this field; TEACHER keeps its existing

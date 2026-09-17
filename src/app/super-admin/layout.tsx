@@ -17,7 +17,7 @@ export default async function SuperAdminLayout({
   }
 
   return (
-    <SuperAdminShell userEmail={user.email}>
+    <SuperAdminShell userEmail={user.email} isOwner={user.isPlatformOwner}>
       {children}
     </SuperAdminShell>
   );

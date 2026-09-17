@@ -20,8 +20,8 @@ export const PROVIDER_INFO: Record<
     placeholder: "AIza...",
   },
   SMS: {
-    label: "SMS provider (legacy)",
-    description: "Sends SMS messages from the Communication Centre. (Note: new deployments use the centralised Platform SMS provider instead.)",
+    label: "SMS provider",
+    description: "Sends SMS from the Communication Centre on this school's own provider account. Managed by a super admin on the school's SMS tab.",
     keyLabel: "API key",
     placeholder: "",
   },

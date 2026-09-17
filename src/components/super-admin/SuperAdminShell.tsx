@@ -15,12 +15,14 @@ import ServerNotificationSync from "@/components/ServerNotificationSync";
 interface Props {
   children:  React.ReactNode;
   userEmail: string;
+  /** Platform owner — the only super admin who sees the Settings section. */
+  isOwner?:  boolean;
 }
 
-export default function SuperAdminShell({ children, userEmail }: Props) {
+export default function SuperAdminShell({ children, userEmail, isOwner = false }: Props) {
   return (
     <div className="min-h-screen bg-background">
-      <SuperAdminSidebar />
+      <SuperAdminSidebar isOwner={isOwner} />
       <ServerNotificationSync userScope={userEmail} />
       <SuperAdminTopBar userEmail={userEmail} />
       {/* md:pl-44 offsets the fixed 176px sidebar; pt-16 offsets the fixed 64px topbar */}

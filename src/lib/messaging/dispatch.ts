@@ -5,16 +5,16 @@
  *
  * Two public entry points:
  *   dispatchMessage(schoolId, channel, phone, body)
- *     — per-school path: reads the school's own WhatsApp/SMS key from
- *       SchoolIntegration.  SMS via this path is now legacy; the platform
- *       path below is what the Communication Centre uses.
+ *     — per-school path: reads the school's own WhatsApp/SMS credentials from
+ *       SchoolIntegration, set by a super admin on that school's SMS tab.
+ *       Everything the Communication Centre sends goes through here, so each
+ *       school bills its own Mobivas account.
  *
  *   dispatchPlatformSms(phone, body)
- *     — platform path: reads the single PlatformSmsConfig row instead of
- *       a per-school key. Used for every school's Communication Centre
- *       bulk-SMS sends and for forgot-password OTP — all schools share this
- *       one Mobivas account, which tracks its own balance on its own
- *       dashboard; there is no local per-school credit system here.
+ *     — platform path: reads the single PlatformSmsConfig row instead of a
+ *       per-school key. Reserved for forgot-password OTP, which has to work
+ *       before anyone is logged into a school and is paid for centrally.
+ *       Configured under /super-admin/settings (owner only).
  *
  * The actual HTTP call to SMSMobivas lives in one private helper —
  * sendViaSMSMobivas — shared by both paths so there is exactly one
