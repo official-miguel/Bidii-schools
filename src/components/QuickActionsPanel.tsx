@@ -146,7 +146,8 @@ export default function QuickActionsPanel({ isOpen, onClose, role }: Props) {
       ref={panelRef}
       role="region"
       aria-label="Quick actions"
-      className="absolute right-0 top-full mt-2 w-80
+      className="fixed inset-x-2 top-[calc(4rem+env(safe-area-inset-top,0px))]
+                 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80
                  max-w-[calc(100vw-1rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto
                  rounded-xl bg-card border border-border shadow-xl z-50
                  animate-scale-in origin-top-right"

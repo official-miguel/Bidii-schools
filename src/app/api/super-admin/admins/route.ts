@@ -19,6 +19,7 @@ import { toE164Kenya }                from "@/lib/phone";
 
 const listSelect = {
   id:              true,
+  name:            true,
   email:           true,
   phone:           true,
   isActive:        true,
@@ -41,6 +42,7 @@ export async function GET() {
 }
 
 const createSchema = z.object({
+  name:     z.string().trim().min(1, "Enter a name."),
   email:    z.string().trim().toLowerCase().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
   phone:    z.string().trim().optional().or(z.literal("")),
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const { email, password } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   // Kenyan numbers are stored in the canonical E.164 shape; anything that
   // doesn't look Kenyan is kept as typed rather than rejected outright.
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
 
   const admin = await prisma.user.create({
     data: {
+      name,
       email,
       phone,
       passwordHash:       await hashPassword(password),
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
     select: listSelect,
   });
 
-  await logAudit(owner.id, "SUPER_ADMIN_CREATED", "user", admin.id, { email, phone });
+  await logAudit(owner.id, "SUPER_ADMIN_CREATED", "user", admin.id, { name, email, phone });
 
   return NextResponse.json({ admin }, { status: 201 });
 }

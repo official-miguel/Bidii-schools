@@ -37,7 +37,7 @@ export default function StatCard({ label, value, href, icon: Icon, color = "teal
           <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-slate truncate">
             {label}
           </p>
-          <p className="text-2xl sm:text-3xl font-semibold text-foreground mt-1 leading-none break-all">
+          <p className="text-xl sm:text-3xl font-semibold text-foreground mt-1 leading-tight break-words tabular-nums">
             {value}
           </p>
           {sub && <p className="text-[10px] sm:text-xs text-slate mt-1 leading-snug">{sub}</p>}

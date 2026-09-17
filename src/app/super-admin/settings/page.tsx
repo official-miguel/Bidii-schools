@@ -36,6 +36,7 @@ interface OtpConfig {
 
 interface AdminRow {
   id:              string;
+  name:            string | null;
   email:           string;
   phone:           string | null;
   isActive:        boolean;
@@ -47,10 +48,12 @@ interface AdminRow {
 interface AuditRow {
   id:         string;
   adminId:    string;
+  adminName:  string | null;
   adminEmail: string;
   action:     string;
   targetType: string | null;
   targetId:   string | null;
+  schoolName: string | null;
   metadata:   Record<string, unknown> | null;
   createdAt:  string;
 }
@@ -430,6 +433,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
 
+  const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
   const [phone,    setPhone]    = useState("");
   const [password, setPassword] = useState("");
@@ -456,18 +460,18 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
-    if (!email.trim() || password.length < 8) return;
+    if (!name.trim() || !email.trim() || password.length < 8) return;
     setCreating(true); setError(null);
     try {
       const res = await fetch("/api/super-admin/admins", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email: email.trim(), password, phone: phone.trim() }),
+        body:    JSON.stringify({ name: name.trim(), email: email.trim(), password, phone: phone.trim() }),
       });
       const j = await res.json() as { admin?: AdminRow; error?: string };
       if (!res.ok) throw new Error(j.error ?? "Could not create the account");
-      setEmail(""); setPassword(""); setPhone("");
-      onChanged(`Super admin ${j.admin?.email} created`);
+      setName(""); setEmail(""); setPassword(""); setPhone("");
+      onChanged(`Super admin ${j.admin?.name ?? j.admin?.email} created`);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -531,6 +535,21 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
+            <label htmlFor="new-admin-name" className={labelClass}>
+              Name <span className="text-danger" aria-hidden>*</span>
+            </label>
+            <input
+              id="new-admin-name"
+              type="text"
+              autoComplete="off"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+              className={inputClass}
+            />
+          </div>
+          <div>
             <label htmlFor="new-admin-email" className={labelClass}>
               Email <span className="text-danger" aria-hidden>*</span>
             </label>
@@ -579,7 +598,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
 
         <button
           type="submit"
-          disabled={creating || !email.trim() || password.length < 8}
+          disabled={creating || !name.trim() || !email.trim() || password.length < 8}
           className={primaryButtonClass}
         >
           {creating ? <><Spinner size="sm" /> Creating…</> : <><UserPlus className="h-4 w-4" aria-hidden /> Create super admin</>}
@@ -596,6 +615,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
           <table className="min-w-full text-sm">
             <thead className="bg-background border-b border-border text-xs text-slate uppercase tracking-wide">
               <tr>
+                <th className="px-5 py-3 text-left">Name</th>
                 <th className="px-5 py-3 text-left">Email</th>
                 <th className="px-5 py-3 text-left">Phone</th>
                 <th className="px-5 py-3 text-left">Role</th>
@@ -608,9 +628,10 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
               {admins.map((a) => (
                 <tr key={a.id}>
                   <td className="px-5 py-3 text-foreground">
-                    {a.email}
+                    {a.name ?? <span className="text-slate/50">—</span>}
                     {a.id === meId && <span className="ml-2 text-xs text-slate">(you)</span>}
                   </td>
+                  <td className="px-5 py-3 text-slate">{a.email}</td>
                   <td className="px-5 py-3 text-slate">
                     {a.phone ?? <span className="text-slate/50">—</span>}
                   </td>
@@ -731,7 +752,9 @@ function HistoryTab() {
                 {logs.map((log) => {
                   const meta = log.metadata ?? {};
                   const targetName =
+                    log.schoolName ??
                     (meta.schoolName as string | undefined) ??
+                    (meta.name as string | undefined) ??
                     (meta.email as string | undefined) ??
                     log.targetId ??
                     "—";
@@ -740,7 +763,7 @@ function HistoryTab() {
                       <td className="px-5 py-3 text-xs text-slate whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-5 py-3 text-foreground">{log.adminEmail}</td>
+                      <td className="px-5 py-3 text-foreground">{log.adminName ?? log.adminEmail}</td>
                       <td className="px-5 py-3 text-foreground">{humaniseAction(log.action)}</td>
                       <td className="px-5 py-3 text-slate max-w-[260px] truncate" title={targetName}>
                         {log.targetType ? `${log.targetType}: ` : ""}{targetName}

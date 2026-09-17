@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import SuperAdminShell   from "@/components/super-admin/SuperAdminShell";
+import MustChangePasswordGate from "@/components/MustChangePasswordGate";
 
 export const metadata = { title: "Super Admin — Bidii" };
 
@@ -17,8 +18,10 @@ export default async function SuperAdminLayout({
   }
 
   return (
-    <SuperAdminShell userEmail={user.email} isOwner={user.isPlatformOwner}>
-      {children}
-    </SuperAdminShell>
+    <MustChangePasswordGate mustChangePassword={user.mustChangePassword}>
+      <SuperAdminShell userEmail={user.email} isOwner={user.isPlatformOwner}>
+        {children}
+      </SuperAdminShell>
+    </MustChangePasswordGate>
   );
 }

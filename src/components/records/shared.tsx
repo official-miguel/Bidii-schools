@@ -167,17 +167,17 @@ export function StatCard({
   loading?: boolean;
 }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-[0_1px_2px_rgba(30,58,138,0.06)] flex items-center gap-3 min-w-0">
-      <span className="w-10 h-10 rounded-lg bg-royal-50 flex items-center justify-center text-lg shrink-0" aria-hidden>
+    <div className="bg-card border border-border rounded-xl p-2.5 sm:p-4 shadow-[0_1px_2px_rgba(30,58,138,0.06)] flex items-center gap-2 sm:gap-3 min-w-0">
+      <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-royal-50 flex items-center justify-center text-base sm:text-lg shrink-0" aria-hidden>
         {icon}
       </span>
       <div className="min-w-0">
         {loading ? (
-          <Skeleton className="h-7 w-12 mb-1" />
+          <Skeleton className="h-6 sm:h-7 w-10 sm:w-12 mb-1" />
         ) : (
-          <p className="font-display text-2xl font-semibold text-foreground leading-tight">{value}</p>
+          <p className="font-display text-lg sm:text-2xl font-semibold text-foreground leading-tight tabular-nums">{value}</p>
         )}
-        <p className="text-xs text-slate truncate">{label}</p>
+        <p className="text-[10px] sm:text-xs text-slate truncate">{label}</p>
       </div>
     </div>
   );

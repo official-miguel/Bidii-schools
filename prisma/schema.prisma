@@ -171,6 +171,11 @@ model School {
 model User {
   id                        String                     @id @default(cuid())
   email                     String
+  /// Display name. Only populated for SUPER_ADMIN accounts today (every
+  /// other role's name lives on its Teacher/Staff/Parent row) — shown in
+  /// the super-admin audit history so "who did this" reads as a name
+  /// instead of a raw email.
+  name                      String?
   /// Own contact number — only meaningful for SUPER_ADMIN. Every other role
   /// already has a phone on its Teacher or Parent row; this is the platform
   /// owner's own number, editable on their Settings → My Profile tab.

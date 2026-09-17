@@ -48,7 +48,7 @@ export async function PATCH(
     where:  { id: params.id },
     data:   { isActive },
     select: {
-      id: true, email: true, phone: true, isActive: true,
+      id: true, name: true, email: true, phone: true, isActive: true,
       isPlatformOwner: true, createdAt: true, updatedAt: true,
     },
   });

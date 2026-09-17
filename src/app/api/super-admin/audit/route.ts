@@ -10,9 +10,11 @@
  * that, non-owners are allowed through for exactly the actions listed below
  * and rejected for anything else.
  *
- * SuperAdminAuditLog stores only adminId, so the admin's email is resolved
- * here in one extra query and attached to each row — the history is useless
- * if it can't say who did the thing.
+ * SuperAdminAuditLog stores only adminId, so the admin's name/email is
+ * resolved here in one extra query and attached to each row — the history
+ * is useless if it can't say who did the thing. Likewise, "school" targets
+ * only store the school's id, so its name is resolved here too rather than
+ * showing a raw cuid in the Target column.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -57,17 +59,37 @@ export async function GET(req: NextRequest) {
   const admins = adminIds.length
     ? await prisma.user.findMany({
         where:  { id: { in: adminIds } },
-        select: { id: true, email: true },
+        select: { id: true, name: true, email: true },
       })
     : [];
-  const emailById = new Map(admins.map((a) => [a.id, a.email]));
+  const adminById = new Map(admins.map((a) => [a.id, a]));
+
+  const schoolIds = [
+    ...new Set(
+      logs
+        .filter((l) => l.targetType === "school" && l.targetId)
+        .map((l) => l.targetId!)
+    ),
+  ];
+  const schools = schoolIds.length
+    ? await prisma.school.findMany({
+        where:  { id: { in: schoolIds } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const schoolNameById = new Map(schools.map((s) => [s.id, s.name]));
 
   return NextResponse.json({
-    logs: logs.map((l) => ({
-      ...l,
-      // A deleted admin still has history worth reading — don't drop the row.
-      adminEmail: emailById.get(l.adminId) ?? "(deleted account)",
-    })),
+    logs: logs.map((l) => {
+      const admin = adminById.get(l.adminId);
+      return {
+        ...l,
+        // A deleted admin still has history worth reading — don't drop the row.
+        adminEmail: admin?.email ?? "(deleted account)",
+        adminName:  admin?.name ?? null,
+        schoolName: l.targetType === "school" ? schoolNameById.get(l.targetId ?? "") ?? null : null,
+      };
+    }),
     total,
     page,
     pageSize: PAGE_SIZE,

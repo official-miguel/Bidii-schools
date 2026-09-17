@@ -21,8 +21,10 @@
  *   1. Page header — Overview + date
  *   2. Setup alerts
  *   3. School overview section
- *   4. Quick actions grid
- *   5. Upcoming calendar widget
+ *   4. Finance overview section  (above Library)
+ *   5. Library section
+ *   6. Quick actions grid
+ *   7. Upcoming calendar widget
  */
 
 import type { User } from "@prisma/client";
@@ -37,6 +39,7 @@ import DeadlineCountdownBanner from "@/components/dashboard/DeadlineCountdownBan
 import QuickLinkGrid, { type QuickLink } from "@/components/dashboard/QuickLinkGrid";
 import AlertBanner, { type AlertItem } from "@/components/dashboard/AlertBanner";
 import SchoolOverviewSection from "@/components/dashboard/sections/SchoolOverviewSection";
+import FinanceOverviewSection from "@/components/dashboard/sections/FinanceOverviewSection";
 import SubjectTeacherSection from "@/components/dashboard/sections/SubjectTeacherSection";
 import ClassTeacherSection   from "@/components/dashboard/sections/ClassTeacherSection";
 import HODSection            from "@/components/dashboard/sections/HODSection";
@@ -95,6 +98,8 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
   const enabledModules   = await getEnabledOptionalModules(schoolId);
   const boardingEnabled  = enabledModules.has("ACCOMMODATION");
   const libraryEnabled   = enabledModules.has("LIBRARY");
+  const financeEnabled   = enabledModules.has("FEES");
+  const showFinance      = financeEnabled && showSchoolOverview;
 
   const hasBoarding   = boardingEnabled && school?.boardingType !== "DAY_ONLY";
   const showDorm      = hasBoarding && (derived.dormMaster != null || isAssignedMatron || isPrincipal || isDeputy);
@@ -147,12 +152,15 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
     // [4] Library data
     showLibrary ? fetchLibraryData(schoolId, today) : Promise.resolve(null),
 
-    // [5] Dorm data
+    // [5] Finance overview (principal / deputy)
+    showFinance ? fetchFinanceOverview(schoolId) : Promise.resolve(null),
+
+    // [6] Dorm data
     showDorm
       ? fetchDormData(schoolId, dormIsSchoolWide ? undefined : derived.dormMaster?.dorms.map((d) => d.id))
       : Promise.resolve(null),
 
-    // [6] Assessment periods
+    // [7] Assessment periods
     (!showSchoolOverview || isTeacher)
       ? prisma.assessmentPeriod.findMany({
           where: { schoolId, isCurrent: true },
@@ -161,15 +169,15 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
         }).catch(() => [])
       : Promise.resolve([]),
 
-    // [7] Calendar
+    // [8] Calendar
     getUpcomingCalendarItems(schoolId, { days: 14, limit: 8 }).catch(() => []),
 
-    // [8] Principal deadlines (teachers / staff only)
+    // [9] Principal deadlines (teachers / staff only)
     !isPrincipal
       ? getPrincipalDeadlines(schoolId).catch(() => [])
       : Promise.resolve([]),
 
-    // [9] Recent activity — teacher/staff notifications (last 5)
+    // [10] Recent activity — teacher/staff notifications (last 5)
     showRecentActivity
       ? fetchRecentActivity(user.id, schoolId).catch(() => [] as RecentActivityItem[])
       : Promise.resolve([] as RecentActivityItem[]),
@@ -183,14 +191,15 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
   const classTeacherData   = unwrap(results[2]);
   const subjectTeacherData = unwrap(results[3]);
   const libraryData        = unwrap(results[4]);
-  const dormData           = unwrap(results[5]);
-  const assessmentPeriods  = (unwrap(results[6]) ?? []) as { id: string; name: string; closingDate?: Date | null }[];
-  const calendarItems      = (unwrap(results[7]) ?? []) as Parameters<typeof UpcomingCalendarWidget>[0]["items"];
-  const recentActivityItems = (unwrap(results[9]) ?? []) as RecentActivityItem[];
+  const financeOverview    = unwrap(results[5]) as Awaited<ReturnType<typeof fetchFinanceOverview>> | null;
+  const dormData           = unwrap(results[6]);
+  const assessmentPeriods  = (unwrap(results[7]) ?? []) as { id: string; name: string; closingDate?: Date | null }[];
+  const calendarItems      = (unwrap(results[8]) ?? []) as Parameters<typeof UpcomingCalendarWidget>[0]["items"];
+  const recentActivityItems = (unwrap(results[10]) ?? []) as RecentActivityItem[];
 
   // Serialise Date → ISO string for client component
   const principalDeadlines: DeadlineItem[] = !isPrincipal
-    ? ((unwrap(results[8]) ?? []) as Awaited<ReturnType<typeof getPrincipalDeadlines>>).map((d) => ({
+    ? ((unwrap(results[9]) ?? []) as Awaited<ReturnType<typeof getPrincipalDeadlines>>).map((d) => ({
         id:          d.id,
         title:       d.title,
         description: d.description,
@@ -334,6 +343,17 @@ export default async function UnifiedDashboard({ user, rolePrefix }: Props) {
           marksEntered={hodData.marksEntered}
           totalMarksExpected={hodData.totalMarksExpected}
           activePeriods={assessmentPeriods}
+        />
+      )}
+
+      {/* ── 7b. Finance overview (principal / deputy, above Library) ───── */}
+      {showFinance && financeOverview && (
+        <FinanceOverviewSection
+          rolePrefix={rolePrefix}
+          totalBalance={financeOverview.totalBalance}
+          expectedThisTerm={financeOverview.expectedThisTerm}
+          paidThisTerm={financeOverview.paidThisTerm}
+          termName={financeOverview.termName}
         />
       )}
 
@@ -575,6 +595,52 @@ async function fetchLibraryData(schoolId: string, today: Date) {
     totalBooks, booksOut, overdueCount,
     finesOutstanding:  Number(finesAgg._sum.fineBalance ?? 0),
     studentsWithFines,
+  };
+}
+
+/**
+ * Total school balance is all-time outstanding (invoiced − collected, never
+ * voided) across every term — it's what the principal is ultimately owed.
+ * Expected/paid this term are scoped to the currently active Term so they
+ * read as "this term's money", matching how staff finance reports term-filter.
+ */
+async function fetchFinanceOverview(schoolId: string) {
+  const activeTerm = await prisma.term.findFirst({
+    where:   { schoolId, isActive: true },
+    orderBy: { createdAt: "desc" },
+    select:  { id: true, name: true },
+  }).catch(() => null);
+
+  const [allInvoiced, allCollected, termInvoiced, termCollected] = await Promise.all([
+    prisma.ledgerEntry.aggregate({
+      where: { schoolId, entryType: "INVOICE", isVoided: false },
+      _sum:  { amount: true },
+    }),
+    prisma.ledgerEntry.aggregate({
+      where: { schoolId, entryType: "PAYMENT", isVoided: false },
+      _sum:  { amount: true },
+    }),
+    activeTerm
+      ? prisma.ledgerEntry.aggregate({
+          where: { schoolId, termId: activeTerm.id, entryType: "INVOICE", isVoided: false },
+          _sum:  { amount: true },
+        })
+      : Promise.resolve({ _sum: { amount: null } }),
+    activeTerm
+      ? prisma.ledgerEntry.aggregate({
+          where: { schoolId, termId: activeTerm.id, entryType: "PAYMENT", isVoided: false },
+          _sum:  { amount: true },
+        })
+      : Promise.resolve({ _sum: { amount: null } }),
+  ]);
+
+  const totalBalance = Number(allInvoiced._sum.amount ?? 0) - Number(allCollected._sum.amount ?? 0);
+
+  return {
+    totalBalance,
+    expectedThisTerm: Number(termInvoiced._sum.amount ?? 0),
+    paidThisTerm:     Number(termCollected._sum.amount ?? 0),
+    termName:         activeTerm?.name ?? null,
   };
 }
 

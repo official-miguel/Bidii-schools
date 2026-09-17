@@ -288,7 +288,9 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
           ref={panelRef}
           role="region"
           aria-label="Notification center"
-          className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)]
+          className="fixed inset-x-2 top-[calc(4rem+env(safe-area-inset-top,0px))]
+                     sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96
+                     max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)]
                      rounded-xl bg-card border border-border shadow-xl z-50
                      animate-scale-in origin-top-right"
         >
