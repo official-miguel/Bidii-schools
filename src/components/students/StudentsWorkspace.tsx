@@ -50,7 +50,7 @@ type SchoolClass = {
   stream?: string | null; stageName?: string | null;
   frameworkType?: "EIGHT_FOUR_FOUR" | "CBE";
 };
-type Subject     = { id: string; name: string; code: string; type: "CORE" | "ELECTIVE"; applicableForms: number[] };
+type Subject     = { id: string; name: string; code: string; type: "CORE" | "ELECTIVE"; applicableForms: number[]; isGroup?: boolean };
 type SchoolPolicy = {
   genderPolicy: string;
   boardingType: string;
@@ -463,7 +463,11 @@ export default function StudentsWorkspace({
 
   const availableElectives = useMemo(
     () => subjects.filter(
-      (s) => s.type === "ELECTIVE" && selectedClass && s.applicableForms.includes(selectedClass.form)
+      (s) =>
+        s.type === "ELECTIVE" &&
+        !s.isGroup &&
+        selectedClass &&
+        s.applicableForms.includes(selectedClass.form)
     ),
     [subjects, selectedClass]
   );
