@@ -823,6 +823,13 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   const [classId,   setClassId]   = useState<string>(defaultClassId ?? classes[0]?.id ?? "");
   const [subjectId, setSubjectId] = useState<string>(defaultSubjectId ?? "");
 
+  // `classes` may span both frameworks (e.g. Principal/Full Admin viewing the
+  // whole school) — the grade shown must track whichever class is actually
+  // selected, not the framework the page happened to render with first.
+  const selectedClassFramework = classes.find((c) => c.id === classId)?.frameworkType;
+  const effectiveGradingFramework: "EIGHT_FOUR_FOUR" | "CBE" =
+    selectedClassFramework === "CBE" ? "CBE" : selectedClassFramework ? "EIGHT_FOUR_FOUR" : gradingFramework;
+
   // We keep a local copy of periods for the breadcrumb label only.
   const [periods, setPeriods] = useState<Period[]>([]);
 
@@ -845,12 +852,12 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
   // for every row's grade badge.
   const [cbeBands, setCbeBands] = useState<CbeBand[]>([]);
   useEffect(() => {
-    if (gradingFramework !== "CBE") return;
+    if (effectiveGradingFramework !== "CBE") return;
     fetch("/api/assessments/cbe/grading-scale")
       .then((r) => r.json())
       .then((json) => { if (json.bands) setCbeBands(json.bands); })
       .catch(() => {});
-  }, [gradingFramework]);
+  }, [effectiveGradingFramework]);
 
   const [data, setData] = useState<MarksheetData | null>(null);
   const [edits, setEdits] = useState<Map<string, number | null>>(new Map());
@@ -1341,7 +1348,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <GradeBadge pct={pct} cbeBands={gradingFramework === "CBE" ? cbeBands : undefined} />
+                          <GradeBadge pct={pct} cbeBands={effectiveGradingFramework === "CBE" ? cbeBands : undefined} />
                         </td>
                       </tr>
                     );

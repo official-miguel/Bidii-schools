@@ -91,7 +91,7 @@ export default async function MarksheetPage({
         description="Enter and review student scores per subject and period."
       />
       <MarksheetWithSaveBar
-        classes={classes.filter((c) => c.frameworkType === framework)}
+        classes={classes}
         subjects={subjects}
         defaultClassId={defaultClassId}
         defaultSubjectId={defaultSubjectId}
