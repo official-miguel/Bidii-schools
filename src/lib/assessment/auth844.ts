@@ -146,6 +146,38 @@ export async function resolveAssessmentActor(
       }) as AssessmentRoleRow[]
     : [];
 
+  // There is no UI/API anywhere in the app that creates AssessmentRole rows —
+  // the Principal appoints a HOD purely through Department.headTeacherId
+  // (PATCH /api/departments/[id]). Without this, that appointment would be
+  // invisible everywhere the assessment module checks for an actual "HOD"
+  // AssessmentRole row (dept dashboard, ranking, papers, report cards, etc.),
+  // so we synthesize one HOD role row per subject in their department here —
+  // the single place every other check in this file and its callers reads from.
+  if (teacherRow) {
+    const headedDept = await prisma.department.findFirst({
+      where: { schoolId, headTeacherId: teacherRow.id },
+      select: { id: true },
+    });
+    if (headedDept) {
+      const deptSubjects = await prisma.subject.findMany({
+        where: { schoolId, departmentId: headedDept.id },
+        select: { id: true },
+      });
+      for (const s of deptSubjects) {
+        roles.push({
+          id: `synthetic-hod-${headedDept.id}-${s.id}`,
+          role: "HOD",
+          subjectId: s.id,
+          learningAreaId: null,
+          competencyUnitId: null,
+          frameworkId: "",
+          teacherId: teacherRow.id,
+          schoolId,
+        });
+      }
+    }
+  }
+
   return {
     user,
     teacher: teacherRow ? { id: teacherRow.id } : null,
