@@ -17,6 +17,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid descriptors JSON." }, { status: 400 });
   }
 
-  const result = await resolveRecipients(descriptors, user.schoolId!);
-  return NextResponse.json(result);
+  const { resolved, skipped } = await resolveRecipients(descriptors, user.schoolId!);
+
+  // Phone numbers are deliberately withheld — the Composer only needs the
+  // count and enough per-recipient data to render the preview, and the message
+  // detail panel masks numbers for the same reason.
+  return NextResponse.json({
+    resolved: resolved.map(({ label, groupTokens, context }) => ({ label, groupTokens, context })),
+    skipped,
+  });
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { buildResultsMessage } from "@/lib/messaging/examResults";
-import { dispatchMessage } from "@/lib/messaging/dispatch";
+import { deliverMessage, smsBalance } from "@/lib/messaging/deliver";
 import {
   initBatch, incrementSent, incrementFailed, addSkipped, markDone,
 } from "@/lib/messaging/batchProgress";
@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
   const ids   = studentIds.map((s) => s.studentId);
 
   const withContact = await prisma.student.count({
-    where: { id: { in: ids }, parentContact: { not: null } },
+    // An empty string is as unreachable as a null, so both count as "no contact".
+    where: { id: { in: ids }, parentContact: { not: null, notIn: [""] } },
   });
 
   return NextResponse.json({
@@ -89,6 +90,21 @@ export async function POST(req: NextRequest) {
   (async () => {
     for (let i = 0; i < studentIds.length; i += batchSize) {
       const slice = studentIds.slice(i, i + batchSize);
+
+      // A results message is long — several SMS segments each — so the wallet
+      // is re-checked between batches and the run stops cleanly when it runs
+      // dry, instead of failing every remaining student one by one.
+      if (channel === "SMS") {
+        const balance = await smsBalance(user.schoolId!);
+        if (balance <= 0) {
+          for (const studentId of slice) {
+            const { recipientLabel } = await buildResultsMessage(studentId, periodId, user.schoolId!, closing);
+            addSkipped(batchId, recipientLabel, "SMS wallet is empty");
+          }
+          continue;
+        }
+      }
+
       await Promise.all(slice.map(async (studentId) => {
         const payload = await buildResultsMessage(studentId, periodId, user.schoolId!, closing);
 
@@ -110,27 +126,10 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        const result = await dispatchMessage(user.schoolId!, channel as MessageChannel, payload.phone, payload.body);
+        // Shared delivery path: platform SMS key, wallet deduction and logging.
+        const outcome = await deliverMessage(message.id, undefined, { keepSummary: true });
 
-        await prisma.messageLog.create({
-          data: {
-            messageId:      message.id,
-            schoolId: user.schoolId!,
-            channel:        channel as MessageChannel,
-            phone:          payload.phone,
-            recipientLabel: payload.recipientLabel,
-            status:         result.status,
-            providerMsgId:  result.providerMsgId ?? null,
-            errorDetail:    result.errorDetail   ?? null,
-          },
-        });
-
-        await prisma.message.update({
-          where: { id: message.id },
-          data:  { status: result.status },
-        });
-
-        if (result.status === "SENT") incrementSent(batchId);
+        if (outcome.sent > 0) incrementSent(batchId);
         else incrementFailed(batchId);
       }));
     }

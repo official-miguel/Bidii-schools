@@ -33,6 +33,25 @@ export type DispatchResult = {
   errorDetail?:  string;
 };
 
+/**
+ * Hard cap on how long we wait for a provider's HTTP response.
+ *
+ * Neither adapter used to pass a `signal`, so a slow or hanging gateway
+ * blocked the request indefinitely — for OTP that meant the forgot-password
+ * endpoint could sit there until the platform itself killed the function
+ * (a bare 504, with no way to tell whether the code actually went out).
+ * 8s leaves headroom under the 15s maxDuration set for that route while
+ * still being generous for a normal SMS/WhatsApp API call.
+ */
+const PROVIDER_TIMEOUT_MS = 8_000;
+
+function timeoutErrorDetail(err: unknown): string {
+  if (err instanceof Error && err.name === "AbortError") {
+    return `Provider did not respond within ${PROVIDER_TIMEOUT_MS / 1000}s.`;
+  }
+  return err instanceof Error ? err.message : "Unknown dispatch error.";
+}
+
 // ---------------------------------------------------------------------------
 // Shared SMSMobivas HTTP helper (one implementation, two callers)
 // ---------------------------------------------------------------------------
@@ -68,10 +87,16 @@ async function sendViaSMSMobivas(
 
   const url = `https://user.smsmobivas.co.ke/api/v2/SendSMS?${params.toString()}`;
 
-  const res = await fetch(url, {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method:  "GET",
+      headers: { Accept: "application/json" },
+      signal:  AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+    });
+  } catch (err) {
+    return { phone, providerMsgId: null, status: "FAILED" as const, errorDetail: timeoutErrorDetail(err) };
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
@@ -110,19 +135,25 @@ async function dispatchWhatsApp(
   const to      = phone.replace(/^\+/, "").replace(/\D/g, "");
   const baseUrl = (metadata?.baseUrl as string) ?? "https://waba.360dialog.io/v1/messages";
 
-  const res = await fetch(baseUrl, {
-    method:  "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "D360-API-KEY": apiKey,
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { body },
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(baseUrl, {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "D360-API-KEY": apiKey,
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: { body },
+      }),
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+    });
+  } catch (err) {
+    return { phone, providerMsgId: null, status: "FAILED", errorDetail: timeoutErrorDetail(err) };
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);

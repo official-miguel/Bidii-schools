@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { searchRecipientsLocal, seedRecipientsCache } from "@/lib/messaging/offlineSync";
 import type { RecipientDescriptor } from "@/lib/messaging/resolve";
 import { buildLevelLabelMap, levelLabelFor } from "@/lib/curriculum/classLabels";
 
@@ -29,8 +28,6 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
   const [searching, setSearching] = useState(false);
   const inputRef  = useRef<HTMLInputElement>(null);
   const debounceT = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => { seedRecipientsCache(schoolId).catch(() => {}); }, [schoolId]);
 
   // ── Key helpers ──────────────────────────────────────────────────────────
   function descriptorKey(d: RecipientDescriptor): string {
@@ -75,15 +72,6 @@ export default function RecipientPicker({ schoolId, value, onChange, groups = []
     debounceT.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const local = await searchRecipientsLocal(query, schoolId, 15);
-        if (local.length > 0) {
-          setResults(local.map((r) => ({
-            id: r.id.split(":")[1], displayName: r.displayName, type: r.type,
-            subtitle: r.type === "student" ? "Student" : "Teacher / Staff",
-          })));
-          setSearching(false);
-          return;
-        }
         const res = await fetch(`/api/messaging/recipients/search?q=${encodeURIComponent(query)}&limit=15`);
         if (!res.ok) return;
         const data = await res.json() as {

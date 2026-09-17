@@ -1,17 +1,20 @@
-﻿/**
+/**
  * GET /api/messaging/scheduled-flush
  *
  * Cron-triggered route that dispatches all scheduled messages whose
  * scheduledAt <= now().
  *
  * Protected by Authorization: Bearer ${CRON_SECRET} — same pattern as
- * /api/finance/jobs/debtor-refresh. The Vercel cron entry in vercel.json
- * must include the header (see vercel.json).
+ * /api/finance/jobs/debtor-refresh.
+ *
+ * NOTE ON FREQUENCY: a message scheduled for 3pm only goes out on the next
+ * run of this job, so it must be called often — every 5 minutes, alongside
+ * /api/notifications/tick, from the same external scheduler. vercel.json's
+ * cron entry is a daily backstop only (Vercel Hobby allows nothing finer).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveRecipients, buildRecipientSummary } from "@/lib/messaging/resolve";
-import { dispatchMessage } from "@/lib/messaging/dispatch";
+import { deliverMessage } from "@/lib/messaging/deliver";
 
 // Never statically pre-rendered — always runs at request time
 export const dynamic = "force-dynamic";
@@ -25,80 +28,31 @@ export async function GET(req: NextRequest) {
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  // take: 100 — cap messages processed per cron tick to bound memory and execution time.
+
+  // take: 100 — cap messages processed per tick to bound memory and execution
+  // time; the remainder is picked up by the next run.
   const due = await prisma.message.findMany({
     where: {
       status:      "PENDING",
-      scheduledAt: { lte: new Date() },
+      scheduledAt: { not: null, lte: new Date() },
     },
-    take: 100,  // process at most 100 messages per cron invocation; remainder picked up next minute
+    select: { id: true },
+    orderBy: { scheduledAt: "asc" },
+    take: 100,
   });
 
   let dispatched = 0;
+  let failed = 0;
 
-  for (const message of due) {
+  for (const { id } of due) {
     try {
-      const { resolved, skipped } = await resolveRecipients(
-        message.recipientDescriptor as never,
-        message.schoolId
-      );
-
-      const summary = await buildRecipientSummary(message.recipientDescriptor as never, resolved.length, message.schoolId);
-      await prisma.message.update({
-        where: { id: message.id },
-        data:  { recipientSummary: summary },
-      });
-
-      const settings = await prisma.messagingSettings.findUnique({
-        where: { schoolId: message.schoolId },
-      });
-      const batchSize = settings?.batchSize ?? 50;
-
-      for (let i = 0; i < resolved.length; i += batchSize) {
-        const batch = resolved.slice(i, i + batchSize);
-        await Promise.all(batch.map(async ({ label, phone }) => {
-          const result = await dispatchMessage(message.schoolId, message.channel, phone, message.body);
-          await prisma.messageLog.create({
-            data: {
-              messageId:      message.id,
-              schoolId:       message.schoolId,
-              channel:        message.channel,
-              phone,
-              recipientLabel: label,
-              status:         result.status,
-              providerMsgId:  result.providerMsgId ?? null,
-              errorDetail:    result.errorDetail   ?? null,
-            },
-          });
-        }));
-      }
-
-      for (const { label, reason } of skipped) {
-        await prisma.messageLog.create({
-          data: {
-            messageId:      message.id,
-            schoolId:       message.schoolId,
-            channel:        message.channel,
-            phone:          "N/A",
-            recipientLabel: label,
-            status:         "FAILED",
-            errorDetail:    reason,
-          },
-        });
-      }
-
-      const failedCount = await prisma.messageLog.count({ where: { messageId: message.id, status: "FAILED" } });
-      const totalCount  = await prisma.messageLog.count({ where: { messageId: message.id } });
-      await prisma.message.update({
-        where: { id: message.id },
-        data:  { status: failedCount === totalCount ? "FAILED" : "SENT" },
-      });
-
+      await deliverMessage(id);
       dispatched++;
     } catch {
-      await prisma.message.update({ where: { id: message.id }, data: { status: "FAILED" } }).catch(() => {});
+      failed++;
+      await prisma.message.update({ where: { id }, data: { status: "FAILED" } }).catch(() => {});
     }
   }
 
-  return NextResponse.json({ dispatched });
+  return NextResponse.json({ dispatched, failed });
 }

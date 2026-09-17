@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
-import { dispatchMessage } from "@/lib/messaging/dispatch";
+import { retryFailedLogs, NO_PHONE, smsSegments, smsBalance } from "@/lib/messaging/deliver";
 
 export async function POST(
   _req: NextRequest,
@@ -11,38 +11,33 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const message = await prisma.message.findUnique({
-    where: { id: params.id },
-    include: { logs: { where: { status: "FAILED" } } },
+    where:   { id: params.id },
+    include: { logs: { where: { status: "FAILED", phone: { not: NO_PHONE } } } },
   });
 
   if (!message || message.schoolId !== user.schoolId!) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Rows failed for "no contact number on file" carry no dialable number, so
+  // they are excluded above — retrying them would fail forever.
   if (message.logs.length === 0) {
-    return NextResponse.json({ error: "No failed recipients to retry." }, { status: 400 });
+    return NextResponse.json({ error: "No failed recipients with a contact number to retry." }, { status: 400 });
+  }
+
+  if (message.channel === "SMS") {
+    const estimate = message.logs.length * smsSegments(message.body);
+    const balance  = await smsBalance(message.schoolId);
+    if (estimate > balance) {
+      return NextResponse.json(
+        { error: `Not enough SMS units to retry. Balance: ${balance}, needed: ${estimate}.` },
+        { status: 422 }
+      );
+    }
   }
 
   // Fire-and-forget retry
-  (async () => {
-    for (const log of message.logs) {
-      const result = await dispatchMessage(user.schoolId!, log.channel, log.phone, message.body);
-      await prisma.messageLog.update({
-        where: { id: log.id },
-        data: {
-          status:        result.status,
-          providerMsgId: result.providerMsgId ?? undefined,
-          errorDetail:   result.errorDetail   ?? null,
-        },
-      });
-    }
-    // Refresh aggregate status
-    const remaining = await prisma.messageLog.count({
-      where: { messageId: message.id, status: "FAILED" },
-    });
-    if (remaining === 0) {
-      await prisma.message.update({ where: { id: message.id }, data: { status: "SENT" } });
-    }
-  })().catch(() => {});
+  void retryFailedLogs(message.id).catch(() => {});
 
   return NextResponse.json({ queued: message.logs.length }, { status: 202 });
 }

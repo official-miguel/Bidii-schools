@@ -19,6 +19,8 @@ interface Props {
   onSent:    () => void;
   groups?:   Group[];
   classes?:  SchoolClass[];
+  /** Body to start from — set when the user picked a template on the Templates tab. */
+  initialBody?: string;
 }
 
 const SMS_LIMIT = 160;
@@ -124,6 +126,7 @@ export default function Composer({
   onSent,
   groups = [],
   classes = [],
+  initialBody,
 }: Props) {
   // ── Draft persistence ────────────────────────────────────────────────────
   const [draft, setDraft, clearDraft] = useFormDraft("bidii_draft_composer", {
@@ -140,7 +143,7 @@ export default function Composer({
   const [step, setStep]           = useState<1 | 2>(1);
   const [descriptors, setDescriptors] = useState<RecipientDescriptor[]>(draft.descriptors);
   const [channel, setChannel]     = useState<"SMS" | "WHATSAPP">(draft.channel);
-  const [body, setBody]           = useState(draft.body);
+  const [body, setBody]           = useState(initialBody ?? draft.body);
   const [scheduledAt, setScheduledAt] = useState(draft.scheduledAt);
   const [useSchedule, setUseSchedule] = useState(draft.useSchedule);
   const [showExtras, setShowExtras]   = useState(false);
@@ -205,17 +208,32 @@ export default function Composer({
           `/api/messaging/recipients/resolve?descriptors=${encodeURIComponent(JSON.stringify(descriptors))}`
         );
         if (!r.ok) return;
-        const d = await r.json() as { resolved: { label: string; phone: string }[]; skipped: unknown[] };
+        const d = await r.json() as {
+          resolved: { label: string; groupTokens?: Record<string, string>; context?: Record<string, string> }[];
+          skipped: unknown[];
+        };
         setResolvedCount(d.resolved.length);
         setSkippedCount(d.skipped.length);
-        setPreview(d.resolved.length > 0 && body
-          ? applyPlaceholders(body, { name: d.resolved[0].label })
-          : "");
+        // Preview the first recipient exactly the way the server will render
+        // it — group tokens first, then the static placeholders.
+        const first = d.resolved[0];
+        if (first && body) {
+          let text = body;
+          for (const [token, name] of Object.entries(first.groupTokens ?? {})) {
+            text = text.split(token).join(name || "[unknown]");
+          }
+          setPreview(applyPlaceholders(text, first.context ?? { name: first.label }));
+        } else {
+          setPreview("");
+        }
       } catch { /* non-fatal */ }
     }, 600);
   }, [descriptors, body]);
 
-  const configured  = (ch: "SMS" | "WHATSAPP") => integrations.some((i) => i.provider === ch && i.isActive);
+  // SMS is sent on the platform-wide key and needs no per-school integration —
+  // only WhatsApp still requires the school to have configured its own.
+  const configured  = (ch: "SMS" | "WHATSAPP") =>
+    ch === "SMS" || integrations.some((i) => i.provider === ch && i.isActive);
   const channelOk   = configured(channel) || integrations.length === 0;
   const canProceed  = descriptors.length > 0;
   const canSend     = canProceed && body.trim().length > 0 && channelOk;
@@ -233,11 +251,31 @@ export default function Composer({
     if (!canSend) return;
     setSending(true);
     setError("");
+
+    // <input type="datetime-local"> yields "2026-09-17T15:30" with no zone.
+    // Send a full ISO instant so the server schedules the moment the user
+    // actually picked in their own timezone.
+    let scheduledIso = "";
+    if (useSchedule && scheduledAt) {
+      const when = new Date(scheduledAt);
+      if (Number.isNaN(when.getTime())) {
+        setError("That schedule date is not valid.");
+        setSending(false);
+        return;
+      }
+      if (when <= new Date()) {
+        setError("Pick a schedule time in the future.");
+        setSending(false);
+        return;
+      }
+      scheduledIso = when.toISOString();
+    }
+
     const payload = {
       descriptors,
       channel,
       body,
-      ...(useSchedule && scheduledAt ? { scheduledAt } : {}),
+      ...(scheduledIso ? { scheduledAt: scheduledIso } : {}),
       ...(attachmentUrl ? { attachmentUrl, attachmentName: attachmentName || attachmentUrl.split("/").pop() } : {}),
     };
     try {
@@ -537,7 +575,11 @@ export default function Composer({
                           type="datetime-local"
                           value={scheduledAt}
                           onChange={(e) => setScheduledAt(e.target.value)}
-                          min={new Date().toISOString().slice(0, 16)}
+                          // Local wall-clock minimum — toISOString() would be
+                          // UTC and let a Kenyan user pick 3 hours in the past.
+                          min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+                            .toISOString()
+                            .slice(0, 16)}
                           className={`mt-3 ${inputClass}`}
                         />
                       )}

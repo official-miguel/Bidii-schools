@@ -49,9 +49,14 @@ function CommunicationPage() {
       .catch(() => {});
   }, []);
 
-  // Open composer pre-filled when navigated from templates page
+  // Open composer pre-filled when navigated from the Templates tab. The body
+  // travels in the query string, so it has to be handed to the Composer —
+  // opening it without passing the body silently dropped the template.
+  const [templateBody, setTemplateBody] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    if (searchParams.get("template")) setComposerOpen(true);
+    const t = searchParams.get("template");
+    if (t) { setTemplateBody(t); setComposerOpen(true); }
   }, [searchParams]);
 
   const handleSent = useCallback(() => setRefreshKey((k) => k + 1), []);
@@ -92,7 +97,8 @@ function CommunicationPage() {
       {composerOpen && (
         <Composer
           schoolId={schoolId}
-          onClose={() => setComposerOpen(false)}
+          initialBody={templateBody}
+          onClose={() => { setComposerOpen(false); setTemplateBody(undefined); }}
           onSent={handleSent}
           groups={groups}
           classes={classes}

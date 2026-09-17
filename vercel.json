@@ -6,6 +6,9 @@
     },
     "src/app/api/notifications/tick/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/auth/forgot-password/request/route.ts": {
+      "maxDuration": 15
     }
   },
   "crons": [
@@ -15,7 +18,7 @@
     },
     {
       "path": "/api/messaging/scheduled-flush",
-      "schedule": "0 2 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }

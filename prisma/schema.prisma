@@ -392,6 +392,12 @@ model Teacher {
   @@index([schoolId])
   /// History module queries
   @@index([schoolId, archivedAt])
+  /// Phone lookups in identity.ts — resolveUserByIdentifier's slug-scoped path
+  /// (login + OTP request) filters on exactly this pair.
+  @@index([schoolId, phone])
+  /// Same lookup with no schoolSlug (identifier alone could match >1 school) —
+  /// without this, every phone-based login/OTP request was a full table scan.
+  @@index([phone])
 }
 
 /// Tracks staff IDs that have been freed by departing staff and can be
@@ -4273,6 +4279,10 @@ model Parent {
 
   @@unique([schoolId, phone])
   @@index([schoolId])
+  /// identity.ts resolves phone → Parent with no schoolSlug (the identifier
+  /// alone is what login/OTP submit) — the (schoolId, phone) unique index
+  /// above leads with schoolId, so a phone-only WHERE doesn't hit it.
+  @@index([phone])
 }
 
 /// Many-to-many join between parents and students.

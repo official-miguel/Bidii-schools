@@ -27,6 +27,24 @@ export async function POST(
   }
 
   const data = parsed.data as Record<string, string>;
+
+  // A teacher or student id from another school must not be added — the group
+  // resolver would otherwise expand it into a recipient at send time.
+  if (data.teacherId) {
+    const t = await prisma.teacher.findFirst({
+      where:  { id: data.teacherId, schoolId: user.schoolId! },
+      select: { id: true },
+    });
+    if (!t) return NextResponse.json({ error: "Staff member not found." }, { status: 404 });
+  }
+  if (data.studentId) {
+    const s = await prisma.student.findFirst({
+      where:  { id: data.studentId, schoolId: user.schoolId! },
+      select: { id: true },
+    });
+    if (!s) return NextResponse.json({ error: "Student not found." }, { status: 404 });
+  }
+
   const member = await prisma.groupMember.create({
     data: {
       groupId:   params.id,

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
-import { resolveRecipients, buildRecipientSummary } from "@/lib/messaging/resolve";
-import { dispatchMessage, dispatchPlatformSms } from "@/lib/messaging/dispatch";
+import { resolveRecipients } from "@/lib/messaging/resolve";
+import { deliverMessage, personalise, smsSegments, smsBalance } from "@/lib/messaging/deliver";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 import type { MessageChannel, Prisma } from "@prisma/client";
 
@@ -11,15 +11,13 @@ const sendSchema = z.object({
   descriptors:    z.array(z.record(z.unknown())).min(1, "At least one recipient required."),
   channel:        z.enum(["SMS", "WHATSAPP"]),
   body:           z.string().trim().min(1, "Message body cannot be empty."),
-  scheduledAt:    z.string().datetime().optional(),
+  // The Composer sends the value of a <input type="datetime-local">, which has
+  // no timezone suffix, so this accepts any string Date can parse and the
+  // range check below rejects the ones that are not real dates.
+  scheduledAt:    z.string().min(1).optional(),
   attachmentUrl:  z.string().url().optional(),
   attachmentName: z.string().optional(),
 });
-
-/** Number of SMS segments a message body occupies. */
-function smsSegments(bodyLength: number): number {
-  return Math.ceil(bodyLength / 160) || 1;
-}
 
 export async function POST(req: NextRequest) {
   const user = await requireSchoolPermission("COMMUNICATION", "manage");
@@ -31,6 +29,14 @@ export async function POST(req: NextRequest) {
   }
 
   const { descriptors, channel, body, scheduledAt, attachmentUrl, attachmentName } = parsed.data;
+
+  let scheduledDate: Date | null = null;
+  if (scheduledAt) {
+    scheduledDate = new Date(scheduledAt);
+    if (Number.isNaN(scheduledDate.getTime())) {
+      return NextResponse.json({ error: "Invalid schedule date." }, { status: 400 });
+    }
+  }
 
   // ── WhatsApp: still requires a configured per-school key ─────────────────
   if (channel === "WHATSAPP") {
@@ -49,15 +55,14 @@ export async function POST(req: NextRequest) {
 
   if (channel === "SMS") {
     resolvedEarly = await resolveRecipients(descriptors as never, user.schoolId!);
-    const recipientCount = resolvedEarly.resolved.length;
-    const estimatedUnits = recipientCount * smsSegments(body.length);
 
-    // Load wallet (no wallet row = 0 balance; do NOT auto-create)
-    const wallet = await prisma.schoolSmsWallet.findUnique({
-      where:  { schoolId: user.schoolId! },
-      select: { unitsRemaining: true },
-    });
-    const balance = wallet?.unitsRemaining ?? 0;
+    // Estimate off the personalised body — a message that expands /name is
+    // longer than what was typed and can cross a segment boundary.
+    const estimatedUnits = resolvedEarly.resolved.reduce(
+      (sum, r) => sum + smsSegments(personalise(body, r)),
+      0
+    );
+    const balance = await smsBalance(user.schoolId!);
 
     if (balance < estimatedUnits) {
       return NextResponse.json(
@@ -71,8 +76,6 @@ export async function POST(req: NextRequest) {
       );
     }
   }
-
-  const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
   // Create the Message row
   const message = await prisma.message.create({
@@ -90,126 +93,34 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // If scheduled, return immediately — cron job dispatches later
+  // Record which custom groups this message targets. The group DELETE route
+  // refuses to remove a group that a pending scheduled message still points
+  // at — without these rows that guard never fired, and deleting the group
+  // left the scheduled message resolving to nobody.
+  const groupIds = [
+    ...new Set(
+      (descriptors as { type?: string; groupId?: string }[])
+        .filter((d) => d.type === "group" && typeof d.groupId === "string")
+        .map((d) => d.groupId as string)
+    ),
+  ];
+  if (groupIds.length > 0) {
+    await prisma.messageRecipientGroup.createMany({
+      data: groupIds.map((groupId) => ({ messageId: message.id, groupId })),
+      skipDuplicates: true,
+    });
+  }
+
+  // If scheduled, return immediately — the flush job dispatches it when due
   if (scheduledDate && scheduledDate > new Date()) {
-    return NextResponse.json({ messageId: message.id }, { status: 202 });
+    return NextResponse.json({ messageId: message.id, scheduled: true }, { status: 202 });
   }
 
   // ── Immediate send — fire-and-forget ─────────────────────────────────────
-  (async () => {
-    // For SMS we already resolved above; for WhatsApp resolve here as before
-    const { resolved, skipped } = resolvedEarly ??
-      await resolveRecipients(descriptors as never, user.schoolId!);
-
-    // Update recipient summary
-    const summary = await buildRecipientSummary(descriptors as never, resolved.length, user.schoolId!);
-    await prisma.message.update({
-      where: { id: message.id },
-      data:  { recipientSummary: summary },
-    });
-
-    const settings = await prisma.messagingSettings.findUnique({
-      where: { schoolId: user.schoolId! },
-    });
-    const batchSize = settings?.batchSize ?? 50;
-
-    let allFailed = true;
-
-    // Track per-recipient segment counts for accurate wallet deduction
-    const sentSegments: number[] = [];
-
-    // Dispatch in batches
-    for (let i = 0; i < resolved.length; i += batchSize) {
-      const batch = resolved.slice(i, i + batchSize);
-      await Promise.all(
-        batch.map(async ({ label, phone, groupTokens }) => {
-          // Personalise body with group tokens
-          let personalBody = body;
-          if (groupTokens) {
-            for (const [token, name] of Object.entries(groupTokens)) {
-              personalBody = personalBody.split(token).join((name as string | null | undefined) || "[unknown]");
-            }
-          }
-
-          // ── SMS: use platform dispatch; WhatsApp: use per-school dispatch ──
-          const result = channel === "SMS"
-            ? await dispatchPlatformSms(phone, personalBody)
-            : await dispatchMessage(user.schoolId!, channel as MessageChannel, phone, personalBody);
-
-          await prisma.messageLog.create({
-            data: {
-              messageId:      message.id,
-              schoolId:       user.schoolId!,
-              channel:        channel as MessageChannel,
-              phone,
-              recipientLabel: label,
-              status:         result.status,
-              providerMsgId:  result.providerMsgId ?? null,
-              errorDetail:    result.errorDetail   ?? null,
-            },
-          });
-
-          if (result.status === "SENT") {
-            allFailed = false;
-            if (channel === "SMS") {
-              sentSegments.push(smsSegments(personalBody.length));
-            }
-          }
-        })
-      );
-    }
-
-    // Log skipped recipients
-    for (const { label, reason } of skipped) {
-      await prisma.messageLog.create({
-        data: {
-          messageId:      message.id,
-          schoolId:       user.schoolId!,
-          channel:        channel as MessageChannel,
-          phone:          "N/A",
-          recipientLabel: label,
-          status:         "FAILED",
-          errorDetail:    reason,
-        },
-      });
-    }
-
-    // ── SMS wallet deduction (only for actually-sent messages) ─────────────
-    if (channel === "SMS" && sentSegments.length > 0) {
-      const actualUnitsConsumed = sentSegments.reduce((a, b) => a + b, 0);
-
-      await prisma.$transaction(async (tx) => {
-        // Atomic decrement
-        const updated = await tx.schoolSmsWallet.update({
-          where: { schoolId: user.schoolId! },
-          data:  { unitsRemaining: { decrement: actualUnitsConsumed } },
-          select: { unitsRemaining: true },
-        });
-
-        // Append-only ledger row
-        await tx.smsWalletTransaction.create({
-          data: {
-            schoolId:  user.schoolId!,
-            type:      "DEDUCTION",
-            units:     -actualUnitsConsumed,
-            reason:    "bulk_send",
-            reference: message.id,
-            balanceAfter: updated.unitsRemaining,
-          },
-        });
-      });
-    }
-
-    // Update aggregate message status
-    await prisma.message.update({
-      where: { id: message.id },
-      data:  { status: allFailed ? "FAILED" : "SENT" },
-    });
-  })().catch(async () => {
-    await prisma.message.update({
-      where: { id: message.id },
-      data:  { status: "FAILED" },
-    }).catch(() => {});
+  void deliverMessage(message.id, resolvedEarly ?? undefined).catch(async () => {
+    await prisma.message
+      .update({ where: { id: message.id }, data: { status: "FAILED" } })
+      .catch(() => {});
   });
 
   return NextResponse.json({ messageId: message.id }, { status: 202 });

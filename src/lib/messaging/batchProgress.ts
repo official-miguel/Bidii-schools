@@ -15,10 +15,24 @@ export type BatchProgress = {
   skipped: { name: string; reason: string }[];
 };
 
-const _store = new Map<string, BatchProgress>();
+type Entry = BatchProgress & { startedAt: number };
+
+const _store = new Map<string, Entry>();
+
+/** How long a finished batch stays readable by the progress poller. */
+const TTL_MS = 30 * 60 * 1000;
+
+/** Drop batches older than the TTL so a long-lived server does not grow forever. */
+function evictStale(): void {
+  const cutoff = Date.now() - TTL_MS;
+  for (const [id, entry] of _store) {
+    if (entry.startedAt < cutoff) _store.delete(id);
+  }
+}
 
 export function initBatch(batchId: string, total: number): void {
-  _store.set(batchId, { total, sent: 0, failed: 0, done: false, skipped: [] });
+  evictStale();
+  _store.set(batchId, { total, sent: 0, failed: 0, done: false, skipped: [], startedAt: Date.now() });
 }
 
 export function incrementSent(batchId: string): void {
@@ -42,5 +56,8 @@ export function markDone(batchId: string): void {
 }
 
 export function getProgress(batchId: string): BatchProgress | null {
-  return _store.get(batchId) ?? null;
+  const entry = _store.get(batchId);
+  if (!entry) return null;
+  const { startedAt: _startedAt, ...progress } = entry;
+  return progress;
 }

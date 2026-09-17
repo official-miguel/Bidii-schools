@@ -67,16 +67,28 @@ export async function POST(req: NextRequest) {
   const otpHash   = await bcrypt.hash(otp, 12);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await prisma.passwordResetOtp.create({
-    data: { userId: user.id, phone, otpHash, expiresAt },
-  });
+  // Storing the OTP and sending the SMS don't depend on each other's result,
+  // so they run concurrently instead of back-to-back — the DB write used to
+  // sit entirely in front of the (much slower) provider call for no reason.
+  const [, dispatchResult] = await Promise.all([
+    prisma.passwordResetOtp.create({
+      data: { userId: user.id, phone, otpHash, expiresAt },
+    }),
+    // dispatchPlatformSms has its own bounded timeout (see dispatch.ts) —
+    // it never throws, so a slow/unreachable gateway can't hang this route.
+    dispatchPlatformSms(
+      phone,
+      `Your Bidii password reset code is ${otp}. It expires in 10 minutes. ` +
+      `If you didn't request this, ignore this message.`
+    ),
+  ]);
 
-  // ── Send via platform SMS (never wallet-deducted) ─────────────────────────
-  await dispatchPlatformSms(
-    phone,
-    `Your Bidii password reset code is ${otp}. It expires in 10 minutes. ` +
-    `If you didn't request this, ignore this message.`
-  );
+  // The response is always generic (anti-enumeration), but a failed send is
+  // still worth a server-side trace — otherwise "my OTP never arrived" is
+  // undiagnosable. This never reaches the client.
+  if (dispatchResult.status === "FAILED") {
+    console.error(`[forgot-password] OTP SMS to ${phone.slice(-4).padStart(phone.length, "*")} failed: ${dispatchResult.errorDetail}`);
+  }
 
   return GENERIC_OK;
 }
