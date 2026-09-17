@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canEnterMarks } from "@/lib/assessment/auth844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import { runExamCompletionCheck } from "@/lib/notifications/examCompletion";
 import type { FrameworkType } from "@prisma/client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,6 +260,14 @@ export async function POST(req: NextRequest) {
     });
 
     console.log("✅ Marks saved successfully:", { count: items.length, upserted: toUpsert.length, deleted: toDelete.length });
+
+    // This save may have been the last outstanding mark for the period. The
+    // check exits in two cheap queries when it wasn't, and never throws — a
+    // notification must not turn a successful save into an error response.
+    for (const periodId of uniquePeriodIds) {
+      void runExamCompletionCheck(schoolId, periodId);
+    }
+
     return NextResponse.json({ ok: true, count: items.length });
   } catch (dbError) {
     console.error("❌ Database error while saving marks:", {

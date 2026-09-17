@@ -23,6 +23,8 @@ const TYPE_TO_CATEGORY: Record<string, NotificationCategory> = {
   ATTENDANCE_REMINDER: "attendance",
   ATTENDANCE_ABSENT:   "attendance",
   RESULTS_RELEASED:    "examination",
+  EXAM_ANALYSIS_ADMIN:   "examination",
+  EXAM_ANALYSIS_TEACHER: "examination",
   FEES_PAYMENT:        "administrative",
   FINANCE_TRANSACTION: "administrative",
   DIARY_POSTED:        "communication",

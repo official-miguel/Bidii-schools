@@ -3,6 +3,9 @@
   "functions": {
     "src/app/api/timetable/v2/generate/route.ts": {
       "maxDuration": 90
+    },
+    "src/app/api/notifications/tick/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [

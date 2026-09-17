@@ -79,6 +79,7 @@ const SERVICE_META: Record<string, { label: string; desc: string }> = {
   "Auth":          { label: "Authentication",    desc: "Login, sessions, OTP" },
   "Storage":       { label: "File Storage",      desc: "Supabase Storage buckets" },
   "Notifications": { label: "Notifications",     desc: "Email, SMS, WhatsApp" },
+  "Notification Scheduler": { label: "Notification Scheduler", desc: "Cron tick — lesson, attendance & parent reminders" },
   "Core API":      { label: "Core API",          desc: "REST endpoints" },
   "Database":      { label: "Database",          desc: "Supabase Postgres via Prisma" },
 };
@@ -87,7 +88,12 @@ const SERVICE_META: Record<string, { label: string; desc: string }> = {
 const DEFAULT_SERVICES: ServiceHealth[] = Object.keys(SERVICE_META).map((name, i) => ({
   id: String(i), serviceName: name, status: "OPERATIONAL",
   uptimePct24h: 100, uptimePct7d: 100, uptimePct30d: 100,
-  lastIncidentAt: null, lastCheckedAt: new Date().toISOString(),
+  lastIncidentAt: null,
+  // A scheduler with no row has never ticked, which is an outage, not a
+  // healthy default — an epoch timestamp makes effectiveStatus say so.
+  lastCheckedAt: name === "Notification Scheduler"
+    ? new Date(0).toISOString()
+    : new Date().toISOString(),
 }));
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -119,9 +125,38 @@ function UptimePill({ pct }: { pct: number }) {
 
 // ── Service card ──────────────────────────────────────────────────────────────
 
+/**
+ * The scheduler's stored status is only ever written BY the scheduler, so a
+ * dead one would sit here reading "Operational" indefinitely — the stale row
+ * is itself the outage signal. For this service the status is therefore
+ * derived from how old lastCheckedAt is at render time, not read from the row.
+ */
+const SCHEDULER_SERVICE_NAME = "Notification Scheduler";
+
+function effectiveStatus(svc: ServiceHealth): string {
+  if (svc.serviceName !== SCHEDULER_SERVICE_NAME) return svc.status;
+
+  const ageMinutes = (Date.now() - new Date(svc.lastCheckedAt).getTime()) / 60_000;
+  if (ageMinutes >= 60) return "OUTAGE";
+  if (ageMinutes >= 15) return "DEGRADED";
+  return svc.status;
+}
+
+function formatAge(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 1)  return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 function ServiceCard({ svc }: { svc: ServiceHealth }) {
-  const cfg  = getStatusCfg(svc.status);
+  const status = effectiveStatus(svc);
+  const cfg  = getStatusCfg(status);
   const meta = SERVICE_META[svc.serviceName] ?? { label: svc.serviceName, desc: "" };
+  const isScheduler = svc.serviceName === SCHEDULER_SERVICE_NAME;
 
   return (
     <div className={`rounded-xl border p-5 shadow-xs ${cfg.bg} ${cfg.border}`}>
@@ -137,7 +172,17 @@ function ServiceCard({ svc }: { svc: ServiceHealth }) {
         </span>
       </div>
 
+      {/* For the scheduler, "when did it last run" is the whole story — the
+          uptime percentages below are not computed for it. */}
+      {isScheduler && (
+        <p className={`text-xs font-medium flex items-center gap-1.5 ${cfg.text}`}>
+          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Last tick {formatAge(svc.lastCheckedAt)}
+        </p>
+      )}
+
       {/* Uptime grid */}
+      {!isScheduler && (
       <div className="grid grid-cols-3 gap-3">
         {[
           { period: "24h", pct: svc.uptimePct24h },
@@ -150,6 +195,7 @@ function ServiceCard({ svc }: { svc: ServiceHealth }) {
           </div>
         ))}
       </div>
+      )}
 
       {svc.lastIncidentAt && (
         <p className="text-[10px] text-slate mt-3 flex items-center gap-1">
@@ -488,8 +534,10 @@ export default function HealthPage() {
   const metrics   = data?.metrics   ?? [];
 
   // Overall system status from services
-  const hasOutage   = services.some(s => s.status === "OUTAGE");
-  const hasDegraded = services.some(s => s.status === "DEGRADED");
+  // effectiveStatus, not the stored status — otherwise a stale scheduler row
+  // would never contribute to the overall banner.
+  const hasOutage   = services.some(s => effectiveStatus(s) === "OUTAGE");
+  const hasDegraded = services.some(s => effectiveStatus(s) === "DEGRADED");
   const overallStatus = hasOutage ? "OUTAGE" : hasDegraded ? "DEGRADED" : "OPERATIONAL";
   const overallCfg    = getStatusCfg(overallStatus);
 

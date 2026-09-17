@@ -6,6 +6,12 @@ import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { getKenyaPublicHolidaysForMonth } from "@/lib/kenyaHolidays";
 import { emitSSE } from "@/lib/sse";
+import { notifyAllParents } from "@/lib/parentNotifications";
+import {
+  parentFacingAudience,
+  announcementTitle,
+  formatKenyaDate,
+} from "@/lib/notifications/parentCalendar";
 
 /// GET is readable by PRINCIPAL and TEACHER unconditionally (neither is
 /// governed by the RBAC module table â€” see src/lib/permissions.ts), and by
@@ -116,35 +122,24 @@ export async function POST(req: NextRequest) {
       date: event.date.toISOString(),
     });
 
-    // Notify all parents when a PARENTS_ONLY event is created (Requirement 11.5)
-    if (event.audience === "PARENTS_ONLY") {
-      const schoolParents = await prisma.parent.findMany({
-        where:  { schoolId: event.schoolId },
-        select: { id: true },
+    // Tell parents as soon as a parent-facing event is added — the "when added"
+    // leg of the reminder set. The day-before and 7am-on-the-day legs are
+    // handled by runParentEventReminderTick on the notifications cron.
+    //
+    // EVERYONE is included alongside PARENTS_ONLY: an announcement addressed to
+    // the whole school concerns parents too, and previously only STAFF saw it.
+    if (parentFacingAudience(event.audience)) {
+      await notifyAllParents({
+        schoolId: event.schoolId,
+        module:   "CALENDAR",
+        priority: event.type === "EXAM" || event.type === "MEETING" ? "HIGH" : "NORMAL",
+        title:    announcementTitle(event.type, event.title),
+        body:
+          (event.description?.trim() || "A new event has been added to the school calendar.") +
+          ` Date: ${formatKenyaDate(event.date)}.`,
+        dedupKey: `cal-added:${event.id}`,
+        metadata: { eventId: event.id, date: event.date.toISOString(), type: event.type },
       });
-      // Write one ParentNotification per parent, school-wide (not student-scoped)
-      await Promise.all(
-        schoolParents.map((p) =>
-          prisma.parentNotification.upsert({
-            where: {
-              schoolId_dedupKey: {
-                schoolId: event.schoolId,
-                dedupKey: `cal-${event.id}`,
-              },
-            },
-            create: {
-              schoolId: event.schoolId,
-              parentId: p.id,
-              module:   "CALENDAR",
-              priority: "NORMAL",
-              title:    event.title,
-              body:     event.description ?? "A new event has been added to the school calendar.",
-              dedupKey: `cal-${event.id}`,
-            },
-            update: {},
-          })
-        )
-      ).catch((err) => console.error("[calendar notify parents]", err));
     }
 
     return NextResponse.json(event, { status: 201 });

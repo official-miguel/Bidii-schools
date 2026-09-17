@@ -14,6 +14,11 @@ export type NotificationType =
   | "ATTENDANCE_REMINDER"
   | "ATTENDANCE_ABSENT"
   | "RESULTS_RELEASED"
+  /// Exam period fully marked — the class/subject failure hotspots, for the
+  /// principal and anyone with full ASSESSMENTS management rights.
+  | "EXAM_ANALYSIS_ADMIN"
+  /// Exam period fully marked — a subject teacher's own below-average learners.
+  | "EXAM_ANALYSIS_TEACHER"
   | "FEES_PAYMENT"
   | "FINANCE_TRANSACTION"
   | "DIARY_POSTED"
@@ -37,11 +42,24 @@ export interface NotifyInput {
 }
 
 /**
+ * What became of a notifyUser call.
+ *   "sent"      — a new notification row was created for this user.
+ *   "duplicate" — this exact event had already notified this user (dedupKey).
+ *   "failed"    — the write did not happen. The notification is LOST.
+ *
+ * Returned rather than thrown so callers stay non-throwing by default, but can
+ * count failures. Rules that must not silently lose deliveries (the lesson
+ * reminder) tally these so a broken inbox is visible in the cron response
+ * instead of only in a log line nobody reads.
+ */
+export type NotifyOutcome = "sent" | "duplicate" | "failed";
+
+/**
  * Creates the in-app notification row and best-effort fires a Web Push to
  * every device the user has subscribed on. Never throws — a notification
  * failure should not roll back the business action that triggered it.
  */
-export async function notifyUser(input: NotifyInput): Promise<void> {
+export async function notifyUser(input: NotifyInput): Promise<NotifyOutcome> {
   try {
     await prisma.notification.create({
       data: {
@@ -59,9 +77,9 @@ export async function notifyUser(input: NotifyInput): Promise<void> {
     const code = (err as { code?: string }).code;
     // P2002 = unique constraint hit on [userId, dedupKey] — this exact event
     // already notified this user once. Nothing more to do.
-    if (code === "P2002") return;
+    if (code === "P2002") return "duplicate";
     console.error("[notifications] notifyUser failed", input.type, err);
-    return;
+    return "failed";
   }
 
   await sendPushToUser(input.userId, {
@@ -70,6 +88,8 @@ export async function notifyUser(input: NotifyInput): Promise<void> {
     href:  input.href,
     tag:   input.dedupKey,
   });
+
+  return "sent";
 }
 
 /** Fan-out helper for notifying several users with the same content. */

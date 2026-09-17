@@ -77,6 +77,67 @@ export async function notifyParents(params: NotifyParentsParams): Promise<void> 
   }
 }
 
+export interface NotifyAllParentsParams extends Omit<NotifyParentsParams, "studentId" | "dedupKey"> {
+  /**
+   * Base key for the event. A per-parent suffix is appended automatically —
+   * ParentNotification's unique index is [schoolId, dedupKey], so a school-wide
+   * fan-out that reused one key for every parent would write a single row and
+   * silently update it for each subsequent parent instead of notifying them.
+   */
+  dedupKey?: string;
+}
+
+/**
+ * Writes a ParentNotification for EVERY parent in the school — for things that
+ * are not about one child, such as a calendar announcement addressed to parents.
+ *
+ * Like notifyParents, this never throws: a notification failure must not roll
+ * back the caller's primary operation.
+ */
+export async function notifyAllParents(params: NotifyAllParentsParams): Promise<number> {
+  const { schoolId, module, priority, title, body, dedupKey, metadata } = params;
+
+  try {
+    const parents = await prisma.parent.findMany({
+      where: { schoolId },
+      select: { id: true },
+    });
+    if (parents.length === 0) return 0;
+
+    const jsonMetadata =
+      metadata !== undefined ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
+
+    await Promise.all(
+      parents.map((p) => {
+        const data = {
+          schoolId,
+          parentId: p.id,
+          module,
+          priority,
+          title,
+          body,
+          metadata: jsonMetadata,
+          dedupKey: dedupKey ? `${dedupKey}:${p.id}` : null,
+        };
+
+        if (dedupKey) {
+          return prisma.parentNotification.upsert({
+            where: { schoolId_dedupKey: { schoolId, dedupKey: `${dedupKey}:${p.id}` } },
+            create: data,
+            update: {},
+          });
+        }
+        return prisma.parentNotification.create({ data });
+      })
+    );
+
+    return parents.length;
+  } catch (err) {
+    console.error("[notifyAllParents] Failed to write ParentNotification:", err);
+    return 0;
+  }
+}
+
 /**
  * Checks whether the student's attendance in the last 30 days crosses the 20%
  * absence threshold. If it does, writes a HIGH-priority ATTENDANCE notification

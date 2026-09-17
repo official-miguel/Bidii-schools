@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAssessmentActor, canEnterMarks } from "@/lib/assessment/auth844";
 import { resolveActiveFramework } from "@/lib/assessment/resolveFramework";
+import { runExamCompletionCheck } from "@/lib/notifications/examCompletion";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -106,6 +107,10 @@ export async function PUT(req: NextRequest) {
     },
     update: { numericScore: score, enteredById },
   });
+
+  // This may have been the last outstanding mark for the period — see
+  // runExamCompletionCheck, which is a cheap no-op when it wasn't.
+  void runExamCompletionCheck(user.schoolId!, periodId);
 
   return NextResponse.json({ ok: true });
 }
