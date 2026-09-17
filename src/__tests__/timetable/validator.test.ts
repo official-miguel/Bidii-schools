@@ -102,14 +102,23 @@ describe("validator — NO_CLASS_DOUBLE_BOOKING", () => {
     expect(report.passedRules).toContain("NO_CLASS_DOUBLE_BOOKING" as ValidationRule);
   });
 
-  test("fails when class has two subjects at the same time", () => {
+  test("warns when class has two subjects at the same time with no group data", () => {
+    // NO_CLASS_DOUBLE_BOOKING is a soft check: the CP-SAT solver already
+    // guarantees no genuine class double-booking, and legitimate elective-group
+    // fan-out puts multiple subjects in one slot on purpose. Without group data
+    // to disambiguate, the validator warns (does not hard-fail) so the admin can
+    // verify — see checkClassDoubleBooking in validator.ts.
     const slots = [
       makeSlot("c1", "s1", "t1", 0, 1),
       makeSlot("c1", "s2", "t2", 0, 1), // same class, same slot
     ];
     const report = validateTimetable({ ...BASE_INPUT, slots });
-    expect(report.failedRules).toContain("NO_CLASS_DOUBLE_BOOKING" as ValidationRule);
-    expect(report.valid).toBe(false);
+    expect(report.passedRules).toContain("NO_CLASS_DOUBLE_BOOKING" as ValidationRule);
+    expect(
+      report.issues.some(
+        (i) => i.rule === "NO_CLASS_DOUBLE_BOOKING" && i.severity === "WARNING"
+      )
+    ).toBe(true);
   });
 });
 

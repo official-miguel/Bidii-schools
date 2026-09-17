@@ -244,14 +244,17 @@ describe("generateWithValidation — validation error promotion", () => {
   });
 
   it("promotes ERROR-severity validation issues to finalResult.warnings with 'Validation: ' prefix", async () => {
-    // Return a partial schedule that will trigger COMPLETE_LESSON_COUNT validation errors
-    // (5 required, only 2 placed)
+    // Return a partial schedule that will trigger a TEACHER_ASSIGNMENT_INTEGRITY
+    // validation error (slot's teacher does not match the assigned teacher).
+    // Note: COMPLETE_LESSON_COUNT errors are deliberately excluded from promotion
+    // (see regenerationController.ts) since they duplicate the engine's own
+    // shortfall warnings, so this test must trigger a different ERROR rule.
     mockIsSolverHealthy.mockResolvedValue(true);
     mockGenerateTimetable.mockResolvedValue(
       makeEngineResult({
         success: true,
         slots: [
-          { classId: "c1", dayOfWeek: 1, period: 1, subjectId: "s1", teacherId: "t1", room: null },
+          { classId: "c1", dayOfWeek: 1, period: 1, subjectId: "s1", teacherId: "wrong-teacher", room: null },
           { classId: "c1", dayOfWeek: 2, period: 1, subjectId: "s1", teacherId: "t1", room: null },
         ],
         stats: {

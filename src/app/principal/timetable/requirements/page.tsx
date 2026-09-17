@@ -508,7 +508,7 @@ export default function RequirementsPage() {
   // The level as the school saved it — "Form 3", "Grade 11", "PP1".
   function formGroupLabel(form: number): string {
     const formClasses = classesByForm.get(form) ?? [];
-    if (formClasses.length === 0) return `Form ${form}`;
+    if (formClasses.length === 0) return `Level ${form}`;
     return classLevelLabel(formClasses[0]);
   }
 
