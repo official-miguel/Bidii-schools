@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Trash2, X, FileText, Delete, Plus, Lock } from "lucide-react";
+import { Trash2, X, FileText, Delete, Plus, Lock, Search } from "lucide-react";
 import {
   scoreToGrade,
   gradeColour,
@@ -859,6 +859,11 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
       .catch(() => {});
   }, [effectiveGradingFramework]);
 
+  // Filters the visible rows by admission number or name — doesn't touch
+  // `data`/`edits`, so it's purely a display concern.
+  const [studentSearch, setStudentSearch] = useState("");
+  useEffect(() => { setStudentSearch(""); }, [classId, subjectId]);
+
   const [data, setData] = useState<MarksheetData | null>(null);
   const [edits, setEdits] = useState<Map<string, number | null>>(new Map());
   // Cells currently showing an invalid (out-of-range/NaN) pending keystroke.
@@ -1174,6 +1179,16 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
     });
   }, [data, resolveScore, customFormula]);
 
+  const visibleRows = useMemo(() => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return resolvedRows;
+    return resolvedRows.filter(
+      ({ row }) =>
+        row.student.fullName.toLowerCase().includes(q) ||
+        row.student.admissionNumber.toLowerCase().includes(q)
+    );
+  }, [resolvedRows, studentSearch]);
+
   return (
     <div>
       {/* ---- Filter bar ---- */}
@@ -1230,6 +1245,20 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
             </p>
           )}
 
+          <div className="mb-3 relative max-w-xs">
+            <Search className="w-4 h-4 text-slate/50 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+            <input
+              type="text"
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              placeholder="Search student by name or adm. no."
+              className={`${inputClass} pl-9`}
+            />
+          </div>
+
+          {visibleRows.length === 0 ? (
+            <EmptyState message={`No student matches "${studentSearch}".`} />
+          ) : (
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -1310,7 +1339,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
                   </tr>
                 </thead>
                 <tbody>
-                  {resolvedRows.map(({ row, scores: resolvedScores, pct }, i) => {
+                  {visibleRows.map(({ row, scores: resolvedScores, pct }, i) => {
                     return (
                       <tr
                         key={row.student.id}
@@ -1357,6 +1386,7 @@ const MarksheetGrid = forwardRef<MarksheetGridHandle, Props>(function MarksheetG
               </table>
             </div>
           </div>
+          )}
 
         </>
       )}
