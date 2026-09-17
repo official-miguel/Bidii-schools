@@ -57,7 +57,7 @@ const SEG_MAP: Record<string, PageMeta> = {
   assessments:             { label: "Assessments",      icon: "ClipboardList"  },
   communication:           { label: "Communication",    icon: "MessageSquare"  },
   reports:                 { label: "Reports",          icon: "FileText"       },
-  records:                 { label: "Records",          icon: "Archive"        },
+  records:                 { label: "Conduct & Recognition", icon: "Archive"   },
   results:                 { label: "Results",          icon: "BarChart2"      },
   "exam-periods":          { label: "Exam Periods",     icon: "BookOpenCheck"  },
   departments:             { label: "Departments",      icon: "Layers"         },

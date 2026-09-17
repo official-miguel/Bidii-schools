@@ -253,7 +253,7 @@ export default function RecordsDashboard({
   return (
     <div>
       <PageHeader
-        title="Records"
+        title="Conduct & Recognition"
         description="Every student's story — discipline and achievements in one place"
         action={
           <div className="flex flex-wrap gap-2">

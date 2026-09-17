@@ -142,7 +142,7 @@ const NAV_REGISTRY: NavEntry[] = [
   { id: "nav_communication", label: "Communication",      detail: "Messaging",      href: "/{role}/communication",  icon: "MessageSquare", roles: ["principal","staff"],          keywords: ["messages","announcements","inbox","sms"] },
   // ── Reports ──────────────────────────────────────────────────────────────
   { id: "nav_reports",       label: "Reports",            detail: "Reports",        href: "/{role}/reports",        icon: "FileText",      roles: ["principal"],                  keywords: ["analytics","summary","statistics"] },
-  { id: "nav_records",       label: "Records",            detail: "Reports",        href: "/{role}/records",        icon: "Archive",       roles: ["principal","staff"],          keywords: ["documents","files","history"] },
+  { id: "nav_records",       label: "Conduct & Recognition", detail: "Reports",      href: "/{role}/records",        icon: "Archive",       roles: ["principal","staff"],          keywords: ["records","documents","files","history","discipline","achievements"] },
   { id: "nav_results",       label: "Results",            detail: "Assessments",    href: "/{role}/results",        icon: "BarChart2",     roles: ["principal","teacher"],        keywords: ["report cards","grades","performance"] },
   { id: "nav_exam_periods",  label: "Exam Periods",       detail: "Assessments",    href: "/{role}/exam-periods",   icon: "BookOpenCheck", roles: ["principal"],                  keywords: ["term exams","examinations","schedule"] },
   // ── Administration ────────────────────────────────────────────────────────
@@ -180,6 +180,7 @@ const ACTIONS_REGISTRY: QuickActionEntry[] = [
   { id: "qa_add_class",      label: "Add Class",            detail: "Quick Action", href: "/{role}/classes?action=add",           icon: "School",        roles: ["principal"],                  keywords: ["new class","new form","stream"] },
   { id: "qa_record_result",  label: "Enter Results",        detail: "Quick Action", href: "/{role}/results",                      icon: "ClipboardEdit", roles: ["principal","teacher"],        keywords: ["marks","grades","scores"] },
   { id: "qa_allocate_dorm",  label: "Allocate Boarding",    detail: "Quick Action", href: "/{role}/accommodation/allocations",    icon: "BedDouble",     roles: ["principal"],                  keywords: ["dorm","boarding","allocate","hostel"], module: "ACCOMMODATION" as const },
+  { id: "qa_view_records",  label: "Conduct & Recognition", detail: "Quick Action", href: "/{role}/records/discipline",           icon: "ShieldAlert",   roles: ["principal","teacher","staff"],keywords: ["records","discipline","achievements","conduct","recognition"] },
   // ── Fees / Finance ────────────────────────────────────────────────────────
   { id: "qa_post_payment",   label: "Post Payment",         detail: "Quick Action", href: "/staff/finance/payments",              icon: "Banknote",      roles: ["principal","staff"],          keywords: ["payment","collect fee","cash","bank transfer"], module: "FEES" as const },
   { id: "qa_view_debtors",   label: "View Debtors",         detail: "Quick Action", href: "/staff/finance/",                      icon: "TrendingDown",  roles: ["principal","staff"],          keywords: ["outstanding","arrears","unpaid","owing"], module: "FEES" as const },

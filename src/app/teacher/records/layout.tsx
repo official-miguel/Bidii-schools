@@ -4,7 +4,7 @@ import ContextNavigation from "@/components/ContextNavigation";
 export default function TeacherRecordsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-foreground mb-1">Student Records</h1>
+      <h1 className="text-2xl font-semibold text-foreground mb-1">Conduct & Recognition</h1>
       <p className="text-slate text-sm mb-5">
         Discipline records and student achievements.
       </p>

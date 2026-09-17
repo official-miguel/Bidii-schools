@@ -40,12 +40,13 @@ const ROLE_PRIORITY: Record<string, string[]> = {
     "qa_add_student",
     "qa_post_payment",
     "qa_take_attendance",
+    "qa_view_records",
     "qa_view_debtors",
     "qa_issue_book",
     "qa_library_fines",
     "qa_fee_reports",
-    "qa_add_staff",
     // extras (beyond PANEL_MAX_ACTIONS=8, still searchable)
+    "qa_add_staff",
     "qa_create_exam",
     "qa_view_reports",
     "qa_send_message",
@@ -60,6 +61,7 @@ const ROLE_PRIORITY: Record<string, string[]> = {
   teacher: [
     "qa_take_attendance",
     "qa_record_result",
+    "qa_view_records",
     "qa_add_student",
   ],
   staff: [
@@ -68,6 +70,7 @@ const ROLE_PRIORITY: Record<string, string[]> = {
     "qa_reconcile",
     "qa_fee_reports",
     "qa_invoice_term",
+    "qa_view_records",
   ],
 };
 
