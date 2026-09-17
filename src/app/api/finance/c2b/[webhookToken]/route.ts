@@ -74,11 +74,18 @@ export async function POST(req: NextRequest, { params }: { params: { webhookToke
   // 2. Read raw body
   const rawBody = await req.text();
 
-  // HMAC verification — only when a secret is configured AND the header is present.
-  // Daraja sandbox never sends x-mpesa-signature.
+  // HMAC verification — enforced whenever a secret is configured.
+  //
+  // A missing signature must be REJECTED, not skipped: treating an absent
+  // header as "nothing to verify" lets anyone who knows the webhook token
+  // forge a payment simply by omitting x-mpesa-signature.
+  //
+  // Sandbox (which never sends the header) is supported by leaving the
+  // paybill's webhook secret unset — not by accepting unsigned production
+  // callbacks.
   if (rawSecret) {
     const sig = req.headers.get("x-mpesa-signature") ?? "";
-    if (sig && !verifyHmac(decryptSecret(rawSecret), rawBody, sig)) {
+    if (!sig || !verifyHmac(decryptSecret(rawSecret), rawBody, sig)) {
       return NextResponse.json({ ResultCode: 1, ResultDesc: "Invalid signature" }, { status: 401 });
     }
   }
