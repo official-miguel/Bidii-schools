@@ -5,21 +5,22 @@
  * every API route this page calls).
  *
  * Tabs:
+ *   My Profile   — the owner's own email + phone number.
  *   OTP API      — the one SMS account that sends forgot-password codes for
  *                  every school. Schools' own messages never use it.
- *   Super Admins — create and deactivate other super-admin logins. They get
- *                  the whole console except this section.
+ *   Super Admins — create, deactivate, and delete other super-admin logins.
+ *                  They get the whole console except this section.
  *   History      — every super-admin action, with the admin who did it.
  */
 
 import { useCallback, useEffect, useState, FormEvent } from "react";
 import {
   KeyRound, Users, History as HistoryIcon, Save, CheckCircle2,
-  AlertTriangle, ShieldCheck, Eye, EyeOff, UserPlus, Crown,
+  AlertTriangle, ShieldCheck, Eye, EyeOff, UserPlus, Crown, Trash2, UserCircle,
 } from "lucide-react";
 import {
   Spinner, ErrorBanner, inputClass, labelClass,
-  primaryButtonClass, secondaryButtonClass,
+  primaryButtonClass, secondaryButtonClass, dangerButtonClass,
 } from "@/components/ui";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -53,7 +54,14 @@ interface AuditRow {
   createdAt:  string;
 }
 
+interface OwnerProfile {
+  id:    string;
+  email: string;
+  phone: string | null;
+}
+
 const TABS = [
+  { id: "profile", label: "My Profile",   Icon: UserCircle  },
   { id: "otp",     label: "OTP API",      Icon: KeyRound    },
   { id: "admins",  label: "Super Admins", Icon: Users       },
   { id: "history", label: "History",      Icon: HistoryIcon },
@@ -69,7 +77,7 @@ function humaniseAction(action: string): string {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SuperAdminSettingsPage() {
-  const [tab, setTab]               = useState<TabId>("otp");
+  const [tab, setTab]               = useState<TabId>("profile");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   function flash(msg: string) {
@@ -113,9 +121,119 @@ export default function SuperAdminSettingsPage() {
         ))}
       </div>
 
+      {tab === "profile" && <MyProfileTab onSaved={flash} />}
       {tab === "otp"     && <OtpApiTab onSaved={flash} />}
       {tab === "admins"  && <SuperAdminsTab onChanged={flash} />}
       {tab === "history" && <HistoryTab />}
+    </div>
+  );
+}
+
+// ── My Profile tab ───────────────────────────────────────────────────────────
+
+function MyProfileTab({ onSaved }: { onSaved: (msg: string) => void }) {
+  const [profile, setProfile] = useState<OwnerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState<string | null>(null);
+  const [saving,  setSaving]  = useState(false);
+
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch("/api/super-admin/profile");
+      if (!res.ok) throw new Error("Failed to load your profile");
+      const j = await res.json() as { profile: OwnerProfile };
+      setProfile(j.profile);
+      setEmail(j.profile.email);
+      setPhone(j.profile.phone ?? "");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSaving(true); setError(null);
+    try {
+      const res = await fetch("/api/super-admin/profile", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email: email.trim(), phone: phone.trim() }),
+      });
+      const j = await res.json() as { profile?: OwnerProfile; error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Save failed");
+      setProfile(j.profile ?? null);
+      if (j.profile) { setEmail(j.profile.email); setPhone(j.profile.phone ?? ""); }
+      onSaved("Profile updated");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="flex justify-center py-16"><Spinner size="lg" /></div>;
+
+  const dirty = !!profile && (email.trim() !== profile.email || phone.trim() !== (profile.phone ?? ""));
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+      <form onSubmit={handleSave} className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Your contact details</h2>
+          <p className="text-xs text-slate mt-1">
+            Only visible to you — nothing here is shown to schools or other super admins.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="owner-email" className={labelClass}>
+            Email <span className="text-danger" aria-hidden>*</span>
+          </label>
+          <input
+            id="owner-email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="owner-phone" className={labelClass}>
+            Phone number
+          </label>
+          <input
+            id="owner-phone"
+            type="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="e.g. 0712345678"
+            className={inputClass}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving || !dirty || !email.trim()}
+          className={primaryButtonClass}
+        >
+          {saving ? <><Spinner size="sm" /> Saving…</> : <><Save className="h-4 w-4" aria-hidden /> Save changes</>}
+        </button>
+      </form>
     </div>
   );
 }
@@ -315,6 +433,7 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
   const [password, setPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [busyId,   setBusyId]   = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -373,6 +492,22 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function handleDelete(admin: AdminRow) {
+    if (!confirm(`Permanently delete ${admin.email}?\n\nThis cannot be undone — they will lose access immediately and the account itself is gone (their past actions stay in History).`)) return;
+    setDeletingId(admin.id); setError(null);
+    try {
+      const res = await fetch(`/api/super-admin/admins/${admin.id}`, { method: "DELETE" });
+      const j = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Could not delete the account");
+      onChanged(`${admin.email} deleted`);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -484,14 +619,25 @@ function SuperAdminsTab({ onChanged }: { onChanged: (msg: string) => void }) {
                     {a.isPlatformOwner ? (
                       <span className="text-xs text-slate/60">—</span>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(a)}
-                        disabled={busyId === a.id}
-                        className={`${secondaryButtonClass} text-xs`}
-                      >
-                        {busyId === a.id ? "Saving…" : a.isActive ? "Deactivate" : "Reactivate"}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(a)}
+                          disabled={busyId === a.id || deletingId === a.id}
+                          className={`${secondaryButtonClass} text-xs`}
+                        >
+                          {busyId === a.id ? "Saving…" : a.isActive ? "Deactivate" : "Reactivate"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(a)}
+                          disabled={busyId === a.id || deletingId === a.id}
+                          className={`${dangerButtonClass} text-xs`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                          {deletingId === a.id ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

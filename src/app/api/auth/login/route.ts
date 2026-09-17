@@ -49,6 +49,7 @@ import {
   recordFailedLogin,
   clearFailedLogins,
 } from "@/lib/rateLimit";
+import { phoneLookupVariants } from "@/lib/phone";
 
 // ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
           });
         } else {
           const teacher = await prisma.teacher.findFirst({
-            where:  { schoolId: school.id, phone: identifier, archivedAt: null },
+            where:  { schoolId: school.id, phone: { in: phoneLookupVariants(identifier) }, archivedAt: null },
             select: { userId: true },
           });
           if (teacher?.userId) {
@@ -212,7 +213,7 @@ export async function POST(req: NextRequest) {
           `;
         } else {
           const teachers = await prisma.teacher.findMany({
-            where:  { phone: identifier, archivedAt: null },
+            where:  { phone: { in: phoneLookupVariants(identifier) }, archivedAt: null },
             select: { userId: true },
           });
           const userIds = teachers.map((t) => t.userId).filter(Boolean) as string[];
@@ -278,7 +279,7 @@ export async function POST(req: NextRequest) {
     // Parents always log in by phone number (never by email address)
     if (!isEmail) {
       const parent = await prisma.parent.findFirst({
-        where: { phone: identifier, user: { isActive: true } },
+        where: { phone: { in: phoneLookupVariants(identifier) }, user: { isActive: true } },
         include: {
           user: {
             select: {

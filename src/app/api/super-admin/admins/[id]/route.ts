@@ -1,10 +1,11 @@
 /**
- * PATCH /api/super-admin/admins/[id] — activate / deactivate a super admin.
+ * PATCH  /api/super-admin/admins/[id] — activate / deactivate a super admin.
+ * DELETE /api/super-admin/admins/[id] — permanently remove one.
  *
  * Platform owner only. Deactivating revokes the account's sessions so the
  * change takes effect immediately rather than whenever their cookie expires.
- * The owner account itself can never be deactivated here — that would leave
- * the platform with no way into Settings.
+ * The owner account itself can never be deactivated or deleted here — that
+ * would leave the platform with no way into Settings.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -66,4 +67,55 @@ export async function PATCH(
   );
 
   return NextResponse.json({ admin });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const owner = await requireSuperAdminOwner();
+  if (!owner) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (params.id === owner.id) {
+    return NextResponse.json({ error: "You cannot delete your own account." }, { status: 409 });
+  }
+
+  const target = await prisma.user.findUnique({
+    where:  { id: params.id },
+    select: { id: true, email: true, role: true, isPlatformOwner: true },
+  });
+
+  if (!target || target.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Super admin not found." }, { status: 404 });
+  }
+  if (target.isPlatformOwner) {
+    return NextResponse.json(
+      { error: "The platform owner account cannot be deleted." },
+      { status: 409 }
+    );
+  }
+
+  try {
+    // Sessions cascade automatically, but deleting them first means a live
+    // tab is logged out even if anything below the delete throws.
+    await prisma.session.deleteMany({ where: { userId: params.id } });
+    await prisma.user.delete({ where: { id: params.id } });
+  } catch (e) {
+    const err = e as { code?: string };
+    if (err.code === "P2003") {
+      // Some other row still references this id (e.g. a record it archived).
+      // Audit history is fine — SuperAdminAuditLog.adminId isn't a foreign key.
+      return NextResponse.json(
+        { error: "This account is still referenced elsewhere and can't be deleted. Deactivate it instead." },
+        { status: 409 }
+      );
+    }
+    throw e;
+  }
+
+  // Recorded under the owner's id — the deleted account's own audit trail
+  // (adminId is a plain string, not a foreign key) survives intact.
+  await logAudit(owner.id, "SUPER_ADMIN_DELETED", "user", params.id, { email: target.email });
+
+  return NextResponse.json({ ok: true });
 }

@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { groupToken, extractStream } from "@/lib/messaging/placeholders";
 import type { PlaceholderContext } from "@/lib/messaging/placeholders";
 import { levelLabelForForm } from "@/lib/curriculum/levelLabelServer";
+import { normalizePhoneForDispatch } from "@/lib/phone";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,7 +99,11 @@ export async function resolveRecipients(
       skipped.push({ label, reason: "no contact number on file" });
       return;
     }
-    const normalised = phone.replace(/\s+/g, "");
+    // Teacher and Parent numbers have never been saved in one consistent
+    // shape (see src/lib/phone.ts) — normalize to E.164 so the provider
+    // actually receives a dialable number regardless of how it was typed
+    // when the record was created.
+    const normalised = normalizePhoneForDispatch(phone) ?? phone.replace(/\s+/g, "");
     if (seen.has(normalised)) return;
     seen.add(normalised);
     resolved.push({

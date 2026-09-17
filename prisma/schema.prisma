@@ -171,6 +171,10 @@ model School {
 model User {
   id                        String                     @id @default(cuid())
   email                     String
+  /// Own contact number — only meaningful for SUPER_ADMIN. Every other role
+  /// already has a phone on its Teacher or Parent row; this is the platform
+  /// owner's own number, editable on their Settings → My Profile tab.
+  phone                     String?
   /// Bcrypt password hash.
   /// On first login the hash is of the school slug (e.g. "kianyaga").
   /// mustChangePassword is set true so the teacher is forced to set a

@@ -14,6 +14,7 @@
  */
 
 import { prisma } from "./prisma";
+import { phoneLookupVariants, toE164Kenya } from "./phone";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -92,9 +93,14 @@ export async function resolveUserByIdentifier(
           select: userSelect,
         });
       } else {
+        // Phone lookups match any stored variant of the same number — Teacher
+        // and Parent numbers have never been saved in one consistent shape
+        // (see src/lib/phone.ts), so an exact match silently misses.
+        const variants = phoneLookupVariants(identifier);
+
         // Phone → Teacher (covers PRINCIPAL/TEACHER/ADMIN_STAFF/BURSAR)
         const teacher = await prisma.teacher.findFirst({
-          where:  { schoolId: school.id, phone: identifier, archivedAt: null },
+          where:  { schoolId: school.id, phone: { in: variants }, archivedAt: null },
           select: { userId: true },
         });
         if (teacher?.userId) {
@@ -106,7 +112,7 @@ export async function resolveUserByIdentifier(
         // Phone → Parent fallback
         if (!user) {
           const parent = await prisma.parent.findFirst({
-            where:   { phone: identifier, user: { isActive: true, schoolId: school.id } },
+            where:   { phone: { in: variants }, user: { isActive: true, schoolId: school.id } },
             include: { user: { select: userSelect } },
           });
           if (parent?.user) user = parent.user as ResolvedUser;
@@ -134,16 +140,18 @@ export async function resolveUserByIdentifier(
           AND "isActive" = true
       `;
     } else {
+      const variants = phoneLookupVariants(identifier);
+
       // Phone → Teacher rows first
       const teachers = await prisma.teacher.findMany({
-        where:  { phone: identifier, archivedAt: null },
+        where:  { phone: { in: variants }, archivedAt: null },
         select: { userId: true },
       });
       const teacherUserIds = teachers.map((t) => t.userId).filter(Boolean) as string[];
 
       // Phone → Parent rows
       const parents = await prisma.parent.findMany({
-        where:   { phone: identifier, user: { isActive: true } },
+        where:   { phone: { in: variants }, user: { isActive: true } },
         include: { user: { select: userSelect } },
       });
       const parentUsers = parents.map((p) => p.user).filter(Boolean) as ResolvedUser[];
@@ -174,7 +182,9 @@ export async function resolveUserByIdentifier(
 
 /**
  * Given a resolved User, returns the phone number associated with their
- * account: Teacher.phone for staff roles, Parent.phone for PARENT role.
+ * account: Teacher.phone for staff roles, Parent.phone for PARENT role —
+ * normalized to E.164 so the OTP actually reaches the SMS provider
+ * regardless of which format the number was originally saved in.
  * Returns null if no phone is on file.
  */
 export async function resolveUserPhone(userId: string, role: string): Promise<string | null> {
@@ -183,7 +193,7 @@ export async function resolveUserPhone(userId: string, role: string): Promise<st
       where:  { userId },
       select: { phone: true },
     });
-    return parent?.phone ?? null;
+    return toE164Kenya(parent?.phone) ?? parent?.phone ?? null;
   }
 
   // PRINCIPAL / TEACHER / ADMIN_STAFF / BURSAR — all Teacher rows
@@ -191,5 +201,5 @@ export async function resolveUserPhone(userId: string, role: string): Promise<st
     where:  { userId },
     select: { phone: true },
   });
-  return teacher?.phone ?? null;
+  return toE164Kenya(teacher?.phone) ?? teacher?.phone ?? null;
 }
