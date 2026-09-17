@@ -170,7 +170,13 @@ model School {
 /// accounts at multiple schools using the same email address.
 model User {
   id                        String                     @id @default(cuid())
-  email                     String
+  /// Nullable because parent accounts have no email address. Parents sign in
+  /// with their phone number (matched on Parent.phone), so a synthetic
+  /// "parent_<phone>@bidii.internal" address used to be minted purely to
+  /// satisfy this column — and then leaked into the portal UI as the parent's
+  /// name. The unique index is on (schoolId, email); Postgres treats NULLs as
+  /// distinct, so any number of parents can share a null.
+  email                     String?
   /// Display name. Only populated for SUPER_ADMIN accounts today (every
   /// other role's name lives on its Teacher/Staff/Parent row) — shown in
   /// the super-admin audit history so "who did this" reads as a name
@@ -3992,6 +3998,11 @@ model LedgerEntry {
   /// True only when a correcting entry has been posted. Set via admin action;
   /// never deleted. Voided entries are excluded from balance computation.
   isVoided           Boolean         @default(false)
+  /// When the entry was voided. Null while the entry is live.
+  voidedAt           DateTime?
+  /// Why the entry was voided — required by the void endpoint so a reversal is
+  /// never anonymous. The acting user is recorded in AuditLog (FINANCE_LEDGER_VOIDED).
+  voidReason         String?
 
   school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -4060,6 +4071,10 @@ model Payment {
   paidAt               DateTime             @default(now())
   postedById           String
   reconciliationStatus ReconciliationStatus @default(PENDING)
+  /// Mirrors LedgerEntry.isVoided for the receipt row. Set together with the
+  /// ledger entry inside one transaction so reports that read Payment directly
+  /// (e.g. the payment-volume report) never count a reversed payment.
+  isVoided             Boolean              @default(false)
 
   school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -4070,6 +4085,8 @@ model Payment {
   @@unique([schoolId, receiptNumber])
   @@index([schoolId, studentId, paidAt])
   @@index([schoolId, reconciliationStatus])
+  // PERF: payment-volume report scans a date range and skips voided rows.
+  @@index([schoolId, isVoided, paidAt])
 }
 
 /// Links an individual student to an expense item so it appears as a

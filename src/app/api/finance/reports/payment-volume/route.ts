@@ -30,7 +30,8 @@ export async function GET(req: NextRequest) {
 
   // take: 10000 — additional safety cap; daily aggregation for a 366-day window
   const payments = await prisma.payment.findMany({
-    where:   { schoolId, paidAt: { gte: from, lte: to } },
+    // isVoided: false — a reversed payment must not inflate collection volume.
+    where:   { schoolId, paidAt: { gte: from, lte: to }, isVoided: false },
     select:  { amount: true, paidAt: true },
     orderBy: { paidAt: "asc" },
     take:    10000,  // bounded by 366-day range guard above

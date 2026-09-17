@@ -48,8 +48,14 @@ export function balanceDelta(entryType: LedgerEntryType, amount: Decimal): Decim
     case "DEBIT_ADJUSTMENT":
     case "OPENING_BALANCE":
       return amount.negated();   // negative — increases what student owes
-    default:
+    default: {
+      // Compile-time exhaustiveness guard. Adding a LedgerEntryType without
+      // handling it above becomes a build error here, instead of silently
+      // posting a zero delta that would quietly corrupt student balances.
+      const _exhaustive: never = entryType;
+      void _exhaustive;
       return new Decimal(0);
+    }
   }
 }
 
