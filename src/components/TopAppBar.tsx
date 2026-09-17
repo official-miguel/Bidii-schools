@@ -29,10 +29,6 @@ const ActiveChildBar = dynamic(
   { ssr: false }
 );
 
-const ParentNotificationBadge = dynamic(
-  () => import("@/components/parent/ParentNotificationBadge"),
-  { ssr: false }
-);
 import { useMobileDrawer } from "@/components/MobileDrawerContext";
 import GlobalSearchModal from "@/components/GlobalSearchModal";
 import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
@@ -235,24 +231,23 @@ export default function TopAppBar({
         </div>
 
         {/* ── Notifications ────────────────────────────────────────────── */}
-        {role === "parent" ? (
-          <ParentNotificationBadge
-            role={role}
+        {/*
+          One bell, one panel, every role. Parents previously got a badge whose
+          onClick set notifOpen but rendered no panel at all, so the bell was
+          simply dead — and their ParentNotification rows lived in a separate
+          page the bell knew nothing about. ServerNotificationSync now feeds
+          both inboxes into the same store, so the same panel serves everyone.
+        */}
+        <div ref={notifRef} className="relative shrink-0">
+          <NotificationBell
             onClick={openNotif}
             isOpen={notifOpen}
           />
-        ) : (
-          <div ref={notifRef} className="relative shrink-0">
-            <NotificationBell
-              onClick={openNotif}
-              isOpen={notifOpen}
-            />
-            <NotificationCenter
-              isOpen={notifOpen}
-              onClose={() => setNotifOpen(false)}
-            />
-          </div>
-        )}
+          <NotificationCenter
+            isOpen={notifOpen}
+            onClose={() => setNotifOpen(false)}
+          />
+        </div>
 
         {/* ── User profile ─────────────────────────────────────────────── */}
         <div ref={profileRef} className="relative shrink-0">

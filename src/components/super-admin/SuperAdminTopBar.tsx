@@ -7,7 +7,9 @@
  * and the logged-in email with a shield badge.
  */
 
-import { ShieldCheck, Bell } from "lucide-react";
+import { useState, useRef } from "react";
+import { ShieldCheck } from "lucide-react";
+import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
 
 interface Props {
   userEmail: string;
@@ -15,6 +17,8 @@ interface Props {
 
 export default function SuperAdminTopBar({ userEmail }: Props) {
   const initials = userEmail.slice(0, 2).toUpperCase();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   return (
     <header
@@ -35,16 +39,20 @@ export default function SuperAdminTopBar({ userEmail }: Props) {
         </span>
       </div>
 
-      {/* Right — notifications placeholder + user badge */}
+      {/* Right — notifications + user badge */}
       <div className="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="flex items-center justify-center h-9 w-9 rounded-lg text-slate
-                     hover:bg-slate-100 transition-colors"
-        >
-          <Bell className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
-        </button>
+        {/* This was a placeholder button with no handler and no panel — a bell
+            a super admin could click forever with nothing happening. */}
+        <div ref={notifRef} className="relative shrink-0">
+          <NotificationBell
+            onClick={() => setNotifOpen((v) => !v)}
+            isOpen={notifOpen}
+          />
+          <NotificationCenter
+            isOpen={notifOpen}
+            onClose={() => setNotifOpen(false)}
+          />
+        </div>
 
         <div className="flex items-center gap-2 pl-2 border-l border-border">
           <div

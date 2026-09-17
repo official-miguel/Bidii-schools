@@ -42,7 +42,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { useParentStore } from "@/lib/stores/parentStore";
-import ParentNotificationBadge from "@/components/parent/ParentNotificationBadge";
+import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
 import { usePushNotifications } from "@/lib/push/usePushNotifications";
 import ServerNotificationSync from "@/components/ServerNotificationSync";
 
@@ -123,9 +123,11 @@ export default function ParentPortalShell({
 
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [profileOpen,  setProfileOpen]  = useState(false);
+  const [notifOpen,    setNotifOpen]    = useState(false);
   const [imgError,     setImgError]     = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
+  const notifRef   = useRef<HTMLDivElement>(null);
 
   const showPhoto = !!avatarUrl && !imgError;
 
@@ -207,7 +209,7 @@ export default function ParentPortalShell({
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      <ServerNotificationSync />
+      <ServerNotificationSync userScope={userEmail} includeParent />
 
       {/* ── Fixed top bar ──────────────────────────────────────────────── */}
       <header
@@ -262,8 +264,18 @@ export default function ParentPortalShell({
 
         <div className="flex-1 md:flex-none" />
 
-        {/* Notification bell */}
-        <ParentNotificationBadge role="parent" />
+        {/* Notification bell — the badge here previously had no onClick at
+            all, so a parent could see a count and never open anything. */}
+        <div ref={notifRef} className="relative shrink-0">
+          <NotificationBell
+            onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
+            isOpen={notifOpen}
+          />
+          <NotificationCenter
+            isOpen={notifOpen}
+            onClose={() => setNotifOpen(false)}
+          />
+        </div>
 
         {/* Active child chip — desktop */}
         {activeChild && (

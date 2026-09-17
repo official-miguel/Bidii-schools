@@ -10,6 +10,7 @@
 
 import SuperAdminSidebar from "./SuperAdminSidebar";
 import SuperAdminTopBar  from "./SuperAdminTopBar";
+import ServerNotificationSync from "@/components/ServerNotificationSync";
 
 interface Props {
   children:  React.ReactNode;
@@ -20,6 +21,7 @@ export default function SuperAdminShell({ children, userEmail }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <SuperAdminSidebar />
+      <ServerNotificationSync userScope={userEmail} />
       <SuperAdminTopBar userEmail={userEmail} />
       {/* md:pl-44 offsets the fixed 176px sidebar; pt-16 offsets the fixed 64px topbar */}
       <main className="md:pl-44 pt-16 min-h-screen">

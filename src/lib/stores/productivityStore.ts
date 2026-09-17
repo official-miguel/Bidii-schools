@@ -67,10 +67,28 @@ const STORAGE_KEYS = {
   recents:       "bidii_recents",
 } as const;
 
+/**
+ * Notifications are per-user, but localStorage is per-BROWSER. On a shared
+ * staffroom machine the next person to sign in would inherit the previous
+ * user's notification list — their pupils' names, discipline cases and fee
+ * alerts. So the notification key is namespaced by user once the shell knows
+ * who is signed in; see setUserScope below.
+ *
+ * Favorites and recents stay unscoped: they are UI preferences, not personal
+ * data, and sharing them on a shared machine is harmless.
+ */
+let userScope = "";
+
+function scopedKey(key: string): string {
+  return key === STORAGE_KEYS.notifications && userScope
+    ? `${key}_${userScope}`
+    : key;
+}
+
 function load<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(scopedKey(key));
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
@@ -80,7 +98,7 @@ function load<T>(key: string, fallback: T): T {
 function save(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(scopedKey(key), JSON.stringify(value));
   } catch { /* quota exceeded — fail silently */ }
 }
 
@@ -94,9 +112,25 @@ interface ProductivityState {
   /** Active category filter; null = show all */
   notifFilter:        NotificationCategory | null;
 
+  /**
+   * Namespaces the persisted notification list to one user, and reloads it.
+   * Called by the app shell as soon as the signed-in user is known.
+   */
+  setUserScope:       (scope: string) => void;
+
   addNotification:    (n: Omit<AppNotification, "id" | "read" | "timestamp">) => void;
-  /** Merges server-fetched notifications in by id — skips ones already present. */
-  hydrateNotifications: (items: AppNotification[]) => void;
+  /**
+   * Replaces every notification carrying `sourcePrefix` with the server's
+   * current set, leaving notifications from other sources untouched.
+   *
+   * This is a reconcile, not a merge. The previous merge-by-id version only
+   * ever ADDED ids it had not seen, which meant the server could never correct
+   * the client: a notification read on another device stayed bold here
+   * forever, one deleted server-side was never removed, and a failed
+   * mark-read left the two permanently out of step. Treating the server as
+   * authoritative for its own rows is what makes the bell agree with reality.
+   */
+  hydrateNotifications: (items: AppNotification[], sourcePrefix: string) => void;
   markRead:           (id: string) => void;
   markAllRead:        () => void;
   dismissNotification:(id: string) => void;
@@ -143,14 +177,29 @@ export const useProductivityStore = create<ProductivityState>((set, get) => {
       });
     },
 
-    hydrateNotifications(items) {
+    setUserScope(scope) {
+      if (userScope === scope) return;
+      userScope = scope;
+      const reloaded = load<AppNotification[]>(STORAGE_KEYS.notifications, []);
+      set({ notifications: reloaded });
+    },
+
+    hydrateNotifications(items, sourcePrefix) {
       set((s) => {
-        const existingIds = new Set(s.notifications.map((n) => n.id));
-        const fresh = items.filter((n) => !existingIds.has(n.id));
-        if (fresh.length === 0) return s;
-        const updated = [...fresh, ...s.notifications]
+        const others = s.notifications.filter((n) => !n.id.startsWith(sourcePrefix));
+        const updated = [...items, ...others]
           .sort((a, b) => b.timestamp - a.timestamp)
           .slice(0, 100);
+
+        // Avoid a pointless write + re-render when nothing actually moved —
+        // this runs on a 30s poll for the lifetime of the session.
+        const unchanged =
+          updated.length === s.notifications.length &&
+          updated.every((n, i) =>
+            n.id === s.notifications[i].id && n.read === s.notifications[i].read
+          );
+        if (unchanged) return s;
+
         save(STORAGE_KEYS.notifications, updated);
         return { notifications: updated };
       });

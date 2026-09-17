@@ -14,8 +14,11 @@
  *      "recent pages" history. Uses a static page-label registry that maps
  *      pathname patterns → human-readable labels and icons.
  *
- *   3. Seeds a few sample notifications on first-ever load so the bell
- *      doesn't appear empty for new users.
+ *   Note: this used to seed three fake notifications on first load so the bell
+ *   wouldn't look empty — including a fabricated "attendance has not been taken
+ *   for 3 classes today" that a principal could act on. Real notifications now
+ *   arrive from the server via ServerNotificationSync, so an empty bell simply
+ *   means there is nothing to report, which is the honest thing to show.
  *
  * Mount this inside the root layout (or per-role layout) wrapping {children}.
  */
@@ -69,43 +72,6 @@ const SEG_MAP: Record<string, PageMeta> = {
 };
 
 // ---------------------------------------------------------------------------
-// Sample notifications seeded once on first load
-// ---------------------------------------------------------------------------
-
-const SEED_KEY = "bidii_notifs_seeded_v1";
-
-function seedNotifications() {
-  if (typeof window === "undefined") return;
-  if (localStorage.getItem(SEED_KEY)) return;
-
-  const { addNotification } = useProductivityStore.getState();
-
-  addNotification({
-    category: "administrative",
-    title:    "Stage 8 features enabled",
-    body:     "Global search (⌘K), Quick Actions (⚡), and Favorites are now available.",
-    href:     undefined,
-  });
-
-  addNotification({
-    category: "academic",
-    title:    "Term calendar updated",
-    body:     "End-of-term exam schedule has been published. Check the calendar.",
-    href:     undefined,
-    action:   { label: "View calendar", href: "/principal/calendar" },
-  });
-
-  addNotification({
-    category: "attendance",
-    title:    "Attendance reminder",
-    body:     "Daily attendance has not been taken for 3 classes today.",
-    href:     undefined,
-    action:   { label: "Take attendance", href: "/principal/attendance" },
-  });
-
-  localStorage.setItem(SEED_KEY, "1");
-}
-
 // ---------------------------------------------------------------------------
 // Provider component
 // ---------------------------------------------------------------------------
@@ -120,10 +86,6 @@ export default function ProductivityProvider({ children, role }: Props) {
   const pathname = usePathname();
   const prevPath = useRef<string | null>(null);
 
-  /* ── Seed sample notifications once ──────────────────────────────────── */
-  useEffect(() => {
-    seedNotifications();
-  }, []);
 
   /* ── Track route changes ──────────────────────────────────────────────── */
   useEffect(() => {

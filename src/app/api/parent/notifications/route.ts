@@ -39,3 +39,20 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ notifications, total, unreadCount });
 }
+
+/**
+ * DELETE /api/parent/notifications — clear this parent's whole inbox.
+ *
+ * Backs the bell's "Clear all" button for parents, which otherwise cleared
+ * only the client store and was undone by the next poll.
+ */
+export async function DELETE() {
+  const parent = await requireParent();
+  if (!parent) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { count } = await prisma.parentNotification.deleteMany({
+    where: { parentId: parent.id },
+  });
+
+  return NextResponse.json({ ok: true, deleted: count });
+}

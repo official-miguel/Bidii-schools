@@ -37,6 +37,7 @@ import {
   type NotificationCategory,
   type AppNotification,
 } from "@/lib/stores/productivityStore";
+import { SRV_PREFIX, PARENT_PREFIX } from "@/components/ServerNotificationSync";
 
 // ---------------------------------------------------------------------------
 // Category metadata
@@ -240,14 +241,41 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
     onClose();
   }
 
-  /** Server-backed notifications carry a "srv:<id>" local id — sync state back. */
+  /**
+   * Server-backed notifications carry a source-prefixed local id, so state
+   * changes are routed back to whichever inbox they came from. Without this
+   * the next 30s poll would simply reinstate whatever the user just did.
+   */
   function syncServerRead(id: string) {
-    if (!id.startsWith("srv:")) return;
-    fetch(`/api/notifications/${id.slice(4)}`, { method: "PATCH" }).catch(() => {});
+    if (id.startsWith(SRV_PREFIX)) {
+      fetch(`/api/notifications/${id.slice(SRV_PREFIX.length)}`, { method: "PATCH" })
+        .catch(() => {});
+    } else if (id.startsWith(PARENT_PREFIX)) {
+      fetch(`/api/parent/notifications/${id.slice(PARENT_PREFIX.length)}/read`, { method: "PATCH" })
+        .catch(() => {});
+    }
   }
+
   function syncServerDismiss(id: string) {
-    if (!id.startsWith("srv:")) return;
-    fetch(`/api/notifications/${id.slice(4)}`, { method: "DELETE" }).catch(() => {});
+    if (id.startsWith(SRV_PREFIX)) {
+      fetch(`/api/notifications/${id.slice(SRV_PREFIX.length)}`, { method: "DELETE" })
+        .catch(() => {});
+    } else if (id.startsWith(PARENT_PREFIX)) {
+      fetch(`/api/parent/notifications/${id.slice(PARENT_PREFIX.length)}`, { method: "DELETE" })
+        .catch(() => {});
+    }
+  }
+
+  /** Open a notification: mark it read, then follow its deep link if it has one. */
+  function openNotification(notif: AppNotification) {
+    useProductivityStore.getState().markRead(notif.id);
+    syncServerRead(notif.id);
+
+    // Every server rule sets an href (/teacher/timetable, /principal/assessments,
+    // ...). It was being stored and then ignored — the card was clickable but
+    // went nowhere, so the deep links had never actually worked.
+    const target = notif.action?.href ?? notif.href;
+    if (target) handleAction(target);
   }
 
   return (
@@ -290,6 +318,8 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ action: "read-all" }),
                     }).catch(() => {});
+                    fetch("/api/parent/notifications/read-all", { method: "POST" })
+                      .catch(() => {});
                   }}
                   title="Mark all as read"
                   className="flex items-center justify-center w-7 h-7 rounded-md
@@ -301,7 +331,17 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
               {notifications.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => useProductivityStore.getState().clearAllNotifications()}
+                  onClick={() => {
+                    useProductivityStore.getState().clearAllNotifications();
+                    // Local-only clearing looked like it worked and then undid
+                    // itself: the next poll re-hydrated every server row.
+                    fetch("/api/notifications", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "clear-all" }),
+                    }).catch(() => {});
+                    fetch("/api/parent/notifications", { method: "DELETE" }).catch(() => {});
+                  }}
                   title="Clear all notifications"
                   className="flex items-center justify-center w-7 h-7 rounded-md
                              text-slate hover:bg-danger/10 hover:text-danger transition-colors dark:hover:text-danger"
@@ -376,7 +416,7 @@ export default function NotificationCenter({ isOpen, onClose }: Props) {
                 <NotifCard
                   key={notif.id}
                   notif={notif}
-                  onRead={() => { useProductivityStore.getState().markRead(notif.id); syncServerRead(notif.id); }}
+                  onRead={() => openNotification(notif)}
                   onDismiss={() => { useProductivityStore.getState().dismissNotification(notif.id); syncServerDismiss(notif.id); }}
                   onAction={handleAction}
                 />

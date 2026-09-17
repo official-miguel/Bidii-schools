@@ -69,7 +69,7 @@ export default function DashboardShell({
       <SomaAIProvider role={role} schoolName={schoolName}>
         <div className="min-h-screen bg-background">
           <PushRegistrar />
-          <ServerNotificationSync />
+          <ServerNotificationSync userScope={userEmail} />
           {/*
            * ConditionalHubSidebar is a client component that reads the current
            * pathname and hides itself on routes that use their own sidebar
