@@ -18,6 +18,7 @@
 
 import ConditionalHubSidebar from "@/components/ConditionalHubSidebar";
 import PushRegistrar from "@/components/PushRegistrar";
+import OfflineSyncRegistrar from "@/components/OfflineSyncRegistrar";
 import ServerNotificationSync from "@/components/ServerNotificationSync";
 import TopAppBar  from "@/components/TopAppBar";
 import { MobileDrawerProvider } from "@/components/MobileDrawerContext";
@@ -69,6 +70,7 @@ export default function DashboardShell({
       <SomaAIProvider role={role} schoolName={schoolName}>
         <div className="min-h-screen bg-background">
           <PushRegistrar />
+          <OfflineSyncRegistrar />
           <ServerNotificationSync userScope={userEmail} />
           {/*
            * ConditionalHubSidebar is a client component that reads the current

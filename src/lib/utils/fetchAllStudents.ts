@@ -7,25 +7,39 @@
  *
  * The API defaults to returning 200 rows per page (max 500).
  * Without this helper every call site was silently truncated at 200.
+ *
+ * Offline support: every successful fetch is mirrored into a local
+ * IndexedDB cache (best-effort, never blocks or throws). If the network
+ * request itself fails — e.g. no internet — we fall back to whatever was
+ * last cached, so a previously-synced roster stays searchable offline.
  */
+
+import { cacheStudents, getCachedStudents } from "@/lib/offline/studentsCache";
 
 export async function fetchAllStudents(): Promise<unknown[]> {
   const all: unknown[] = [];
   let cursor: string | null = null;
 
-  do {
-    const url: string = cursor
-      ? `/api/students?limit=500&cursor=${encodeURIComponent(cursor)}`
-      : `/api/students?limit=500`;
+  try {
+    do {
+      const url: string = cursor
+        ? `/api/students?limit=500&cursor=${encodeURIComponent(cursor)}`
+        : `/api/students?limit=500`;
 
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) break;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) break;
 
-    const page: unknown[] = await res.json();
-    all.push(...page);
+      const page: unknown[] = await res.json();
+      all.push(...page);
 
-    cursor = res.headers.get("X-Next-Cursor");
-  } while (cursor);
+      cursor = res.headers.get("X-Next-Cursor");
+    } while (cursor);
+  } catch {
+    // Network unreachable (offline) — serve the last cached roster instead.
+    const cached = await getCachedStudents();
+    return cached;
+  }
 
+  void cacheStudents(all);
   return all;
 }

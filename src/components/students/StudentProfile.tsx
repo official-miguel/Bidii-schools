@@ -13,6 +13,7 @@ import {
 import AccommodationProfileCard from "@/components/students/AccommodationProfileCard";
 import { Camera, X } from "lucide-react";
 import { classLevelLabel } from "@/lib/curriculum/classLabels";
+import { cacheStudentProfile, getCachedStudentProfile } from "@/lib/offline/studentsCache";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -248,8 +249,19 @@ export default function StudentProfile({
         if (!r.ok) { setError(json.error ?? "Couldn't load profile."); return; }
         setData(json);
         setPhotoUrl(json.student?.photoUrl ?? null);
+        void cacheStudentProfile(studentId, json);
       })
-      .catch(() => setError("Couldn't load profile."))
+      .catch(async () => {
+        // Offline or unreachable — fall back to the last synced copy, if any.
+        const cached = await getCachedStudentProfile(studentId);
+        if (cached) {
+          const json = cached as ProfileData;
+          setData(json);
+          setPhotoUrl(json.student?.photoUrl ?? null);
+        } else {
+          setError("Couldn't load profile. This student hasn't been synced for offline use yet.");
+        }
+      })
       .finally(() => setLoading(false));
   }, [studentId]);
 

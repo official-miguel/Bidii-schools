@@ -605,11 +605,23 @@ async function fetchLibraryData(schoolId: string, today: Date) {
  * read as "this term's money", matching how staff finance reports term-filter.
  */
 async function fetchFinanceOverview(schoolId: string) {
+  // Prefer the term flagged active, but a school with none flagged (e.g. the
+  // flag was left off after a term rollover) should still see the most
+  // recent term's figures rather than a hardcoded "0 paid this term".
   const activeTerm = await prisma.term.findFirst({
     where:   { schoolId, isActive: true },
     orderBy: { createdAt: "desc" },
     select:  { id: true, name: true },
-  }).catch(() => null);
+  })
+    .catch(() => null)
+    .then((term) =>
+      term ??
+      prisma.term.findFirst({
+        where:   { schoolId },
+        orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+        select:  { id: true, name: true },
+      }).catch(() => null)
+    );
 
   const [allInvoiced, allCollected, termInvoiced, termCollected] = await Promise.all([
     prisma.ledgerEntry.aggregate({

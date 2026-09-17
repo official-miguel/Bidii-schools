@@ -80,8 +80,6 @@ export default async function BoardingMasterDashboard({ user }: Props) {
   const capacityTotal = allDorms.reduce((s, d) => s + (d.totalCapacity ?? 0), 0);
 
   const alerts: AlertItem[] = [];
-  if (openDiscipline > 0)
-    alerts.push({ id: "disc", type: "warn", href: "/staff/records", message: `${openDiscipline} open discipline case${openDiscipline > 1 ? "s" : ""} in boarding.` });
   if (occupancyPct > 95)
     alerts.push({ id: "occ", type: "warn", message: `Dormitory at ${occupancyPct}% capacity. Consider reviewing bed allocations.` });
 

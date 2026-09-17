@@ -22,7 +22,9 @@ export default function MarksheetSaveBar({ state, onSave, onDiscard, summaryHref
   const { hasEdits, editCount, cellErrorCount, saving, saveError } = state;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] px-6 py-3 pr-20 sm:pr-24 flex items-center justify-between gap-3">
+    <div
+      className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px))] md:bottom-0 inset-x-0 z-50 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] px-6 py-3 pr-20 sm:pr-24 flex items-center justify-between gap-3"
+    >
       <div className="min-w-0">
         {saveError ? (
           <p className="text-sm text-danger font-medium truncate">{saveError}</p>

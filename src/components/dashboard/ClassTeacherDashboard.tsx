@@ -87,9 +87,6 @@ export default async function ClassTeacherDashboard({ user, rolePrefix }: Props)
   const alerts: AlertItem[] = [];
   if (!assignedClass)
     alerts.push({ id: "nc", type: "info", message: "You haven't been assigned as a class teacher yet." });
-  if (openDiscipline > 0)
-    alerts.push({ id: "disc", type: "warn", href: `/${rolePrefix}/records`,
-      message: `${openDiscipline} open discipline case${openDiscipline > 1 ? "s" : ""} in your class.` });
   if (recentAbsences.length > 0)
     alerts.push({ id: "abs", type: "warn",
       message: `${recentAbsences.length} student${recentAbsences.length > 1 ? "s" : ""} with 3+ absences in the last 14 days.` });

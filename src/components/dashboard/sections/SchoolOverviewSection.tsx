@@ -25,9 +25,6 @@ export default function SchoolOverviewSection({
   const base = `/${rolePrefix}`;
 
   const alerts: AlertItem[] = [];
-  if (unresolvedDiscipline > 0)
-    alerts.push({ id: "disc", type: "warn", href: `${base}/records`,
-      message: `${unresolvedDiscipline} unresolved discipline case${unresolvedDiscipline !== 1 ? "s" : ""} need attention.` });
   if (classesNoTeacher > 0)
     alerts.push({ id: "ct",  type: "danger", href: `${base}/classes`,
       message: `${classesNoTeacher} class${classesNoTeacher !== 1 ? "es" : ""} without a class teacher.` });

@@ -44,6 +44,7 @@
         "@upstash/redis": "1.34.9",
         "@vercel/blob": "2.6.1",
         "bcryptjs": "3.0.3",
+        "dexie": "^4.4.6",
         "lucide-react": "^1.24.0",
         "next": "^14.2.5",
         "nodemailer": "^9.0.3",

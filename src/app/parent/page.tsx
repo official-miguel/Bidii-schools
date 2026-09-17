@@ -5,6 +5,7 @@ import { getUpcomingCalendarItems } from "@/lib/calendarUpcoming";
 import Link from "next/link";
 import { Award, ShieldAlert, ChevronRight } from "lucide-react";
 
+import MpesaPayButton from "@/components/parent/MpesaPayButton";
 import DashboardGreeting     from "@/components/parent/dashboard/DashboardGreeting";
 import QuickOverviewGrid, { type QuickOverviewData } from "@/components/parent/dashboard/QuickOverviewGrid";
 import AttendanceCalendarGrid, { type AttendanceDay } from "@/components/parent/dashboard/AttendanceCalendarGrid";
@@ -110,6 +111,8 @@ export default async function ParentDashboard() {
     recentDiscipline,
     recentAchievements,
     upcomingCalendar,
+    activePaybill,
+    darajaIntegration,
   ] = student
     ? await Promise.all([
         // Attendance last 30 days
@@ -195,6 +198,19 @@ export default async function ParentDashboard() {
 
         // Upcoming calendar events (next 30 days, up to 3)
         getUpcomingCalendarItems(schoolId, { days: 30, limit: 3 }),
+
+        // Active paybill — used to show the paybill number in the pay modal
+        prisma.schoolMpesaPaybill.findFirst({
+          where:   { schoolId, isActive: true },
+          orderBy: { createdAt: "asc" },
+          select:  { paybillNumber: true },
+        }).catch(() => null),
+
+        // Check MPESA_DARAJA integration is configured for this school
+        prisma.schoolIntegration.findUnique({
+          where: { schoolId_provider: { schoolId, provider: "MPESA_DARAJA" } },
+          select: { isActive: true },
+        }).catch(() => null),
       ])
     : [
         [] as { date: Date; status: string }[],
@@ -205,6 +221,8 @@ export default async function ParentDashboard() {
         [] as { id: string; offence: string; dateOfOffence: Date; status: string; actionTaken: string | null }[],
         [] as { id: string; title: string; category: string; achievementDate: Date }[],
         [] as Awaited<ReturnType<typeof getUpcomingCalendarItems>>,
+        null as { paybillNumber: string } | null,
+        null as { isActive: boolean } | null,
       ];
 
   // ── Derived stats ─────────────────────────────────────────────────────────
@@ -226,6 +244,12 @@ export default async function ParentDashboard() {
     ? `${rawBalance.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cr`
     : "0.00";
   const feesLabel = owesSchool ? "Outstanding balance" : rawBalance > 0 ? "In credit" : "Fully paid";
+
+  // M-Pesa pay prompt is shown only when the school has a configured,
+  // active Daraja integration AND at least one active paybill.
+  const mpesaEnabled = !!(darajaIntegration?.isActive && activePaybill);
+  const paybillNumber = activePaybill?.paybillNumber ?? null;
+  const suggestedAmount = owesSchool ? Math.abs(rawBalance) : null;
 
   // ── Quick overview data object ─────────────────────────────────────────────
 
@@ -409,6 +433,26 @@ export default async function ParentDashboard() {
         studentName={studentName.split(" ")[0]}
         alerts={visibleAlerts}
       />
+
+      {/* Pay fees prompt — school paybill + admission number are fixed, parent just sets the amount */}
+      {mpesaEnabled && (
+        <section className="rounded-xl border border-border bg-card px-5 py-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Pay school fees</p>
+            <p className="text-xs text-slate mt-0.5">
+              {paybillNumber ? `Paybill ${paybillNumber} · ` : ""}
+              Account {student.admissionNumber} · just enter an amount to get a PIN prompt on your phone.
+            </p>
+          </div>
+          <MpesaPayButton
+            studentId={student.id}
+            studentName={student.fullName}
+            admissionNumber={student.admissionNumber}
+            paybillNumber={paybillNumber}
+            suggestedAmount={suggestedAmount}
+          />
+        </section>
+      )}
 
       {/* Quick overview — 4 tiles */}
       <section aria-labelledby="overview-heading">

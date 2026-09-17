@@ -34,7 +34,7 @@ export default function MarksheetWithSaveBar({ summaryHref, ...gridProps }: Prop
             onDiscard={() => gridRef.current?.discard()}
             summaryHref={summaryHref}
           />
-          <div className="h-20" />
+          <div className="h-[calc(80px+60px+env(safe-area-inset-bottom,0px))] md:h-20" />
         </>
       )}
     </>

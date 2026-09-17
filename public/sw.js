@@ -51,3 +51,36 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+
+// ---------------------------------------------------------------------------
+// Offline-first page cache.
+//
+// Network-first, cache-fallback for GET page/document requests only. This
+// lets a page the user has already opened while online (e.g. a student
+// profile) re-open with no connection. It never touches non-GET requests,
+// so every write (saving marks, attendance, etc.) still requires a live
+// network round trip exactly as before — nothing about mutations changes.
+// ---------------------------------------------------------------------------
+const PAGE_CACHE = "bidii-pages-v1";
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  // Leave API/data calls to the app's own fetch + IndexedDB fallback layer.
+  if (url.pathname.startsWith("/api/")) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => cached || Response.error()))
+  );
+});
