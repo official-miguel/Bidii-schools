@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { buildResultsMessage } from "@/lib/messaging/examResults";
-import { deliverMessage, smsBalance } from "@/lib/messaging/deliver";
+import { deliverMessage } from "@/lib/messaging/deliver";
 import {
   initBatch, incrementSent, incrementFailed, addSkipped, markDone,
 } from "@/lib/messaging/batchProgress";
@@ -91,20 +91,6 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < studentIds.length; i += batchSize) {
       const slice = studentIds.slice(i, i + batchSize);
 
-      // A results message is long — several SMS segments each — so the wallet
-      // is re-checked between batches and the run stops cleanly when it runs
-      // dry, instead of failing every remaining student one by one.
-      if (channel === "SMS") {
-        const balance = await smsBalance(user.schoolId!);
-        if (balance <= 0) {
-          for (const studentId of slice) {
-            const { recipientLabel } = await buildResultsMessage(studentId, periodId, user.schoolId!, closing);
-            addSkipped(batchId, recipientLabel, "SMS wallet is empty");
-          }
-          continue;
-        }
-      }
-
       await Promise.all(slice.map(async (studentId) => {
         const payload = await buildResultsMessage(studentId, periodId, user.schoolId!, closing);
 
@@ -126,7 +112,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Shared delivery path: platform SMS key, wallet deduction and logging.
+        // Shared delivery path: platform SMS key + logging.
         const outcome = await deliverMessage(message.id, undefined, { keepSummary: true });
 
         if (outcome.sent > 0) incrementSent(batchId);

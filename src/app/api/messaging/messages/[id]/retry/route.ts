@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
-import { retryFailedLogs, NO_PHONE, smsSegments, smsBalance } from "@/lib/messaging/deliver";
+import { retryFailedLogs, NO_PHONE } from "@/lib/messaging/deliver";
 
 export async function POST(
   _req: NextRequest,
@@ -23,17 +23,6 @@ export async function POST(
   // they are excluded above — retrying them would fail forever.
   if (message.logs.length === 0) {
     return NextResponse.json({ error: "No failed recipients with a contact number to retry." }, { status: 400 });
-  }
-
-  if (message.channel === "SMS") {
-    const estimate = message.logs.length * smsSegments(message.body);
-    const balance  = await smsBalance(message.schoolId);
-    if (estimate > balance) {
-      return NextResponse.json(
-        { error: `Not enough SMS units to retry. Balance: ${balance}, needed: ${estimate}.` },
-        { status: 422 }
-      );
-    }
   }
 
   // Fire-and-forget retry

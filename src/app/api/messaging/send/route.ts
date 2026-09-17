@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { resolveRecipients } from "@/lib/messaging/resolve";
-import { deliverMessage, personalise, smsSegments, smsBalance } from "@/lib/messaging/deliver";
+import { deliverMessage } from "@/lib/messaging/deliver";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
 import type { MessageChannel, Prisma } from "@prisma/client";
 
@@ -49,33 +49,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── SMS: resolve recipients BEFORE creating the Message row so we can ────
-  // ── check the wallet balance and bail early if insufficient. ─────────────
-  let resolvedEarly: Awaited<ReturnType<typeof resolveRecipients>> | null = null;
+  const isScheduledForFuture = !!scheduledDate && scheduledDate > new Date();
 
-  if (channel === "SMS") {
-    resolvedEarly = await resolveRecipients(descriptors as never, user.schoolId!);
-
-    // Estimate off the personalised body — a message that expands /name is
-    // longer than what was typed and can cross a segment boundary.
-    const estimatedUnits = resolvedEarly.resolved.reduce(
-      (sum, r) => sum + smsSegments(personalise(body, r)),
-      0
-    );
-    const balance = await smsBalance(user.schoolId!);
-
-    if (balance < estimatedUnits) {
-      return NextResponse.json(
-        {
-          error:
-            `Not enough SMS units. Current balance: ${balance}. ` +
-            `This message needs approximately ${estimatedUnits}. ` +
-            `Ask your Super Admin to top up.`,
-        },
-        { status: 422 }
-      );
-    }
-  }
+  // Resolving now lets deliverMessage() below reuse this instead of hitting
+  // the database again — only worth doing for an immediate send; a scheduled
+  // message gets resolved fresh by the flush job when it's actually due.
+  const resolvedEarly = isScheduledForFuture
+    ? null
+    : await resolveRecipients(descriptors as never, user.schoolId!);
 
   // Create the Message row
   const message = await prisma.message.create({
@@ -112,7 +93,7 @@ export async function POST(req: NextRequest) {
   }
 
   // If scheduled, return immediately — the flush job dispatches it when due
-  if (scheduledDate && scheduledDate > new Date()) {
+  if (isScheduledForFuture) {
     return NextResponse.json({ messageId: message.id, scheduled: true }, { status: 202 });
   }
 

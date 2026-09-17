@@ -71,7 +71,7 @@ const TABS = [
   { id:"storage",   label:"Storage",   Icon: HardDrive      },
   { id:"modules",   label:"Modules",   Icon: Puzzle         },
   { id:"imports",   label:"Imports",   Icon: Upload         },
-  { id:"sms",       label:"SMS Wallet", Icon: MessageSquare },
+  { id:"sms",       label:"SMS",        Icon: MessageSquare },
   { id:"somaai",    label:"Soma AI",   Icon: Sparkles       },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -118,22 +118,22 @@ export default function SchoolDetailPage() {
   const [impersonating, setImpersonating] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // ── SMS wallet state ─────────────────────────────────────────────────────
-  const [smsWallet, setSmsWallet]   = useState<{
-    unitsRemaining: number; unitsLifetimeAllocated: number; lowBalanceThreshold: number;
+  // ── SMS activity state ────────────────────────────────────────────────────
+  // SMS runs on the one shared Mobivas account (see /super-admin/settings/sms)
+  // — there's no per-school balance to manage here, only visibility into what
+  // this school has actually sent through it.
+  const [smsPlatform, setSmsPlatform] = useState<{
+    configured: boolean; provider: string | null; isActive: boolean; updatedAt: string | null;
   } | null>(null);
-  const [smsTxns, setSmsTxns]       = useState<{
-    id: string; type: string; units: number; reason: string; reference: string | null;
-    balanceAfter: number; performedByUserId: string | null; createdAt: string;
+  const [smsStats, setSmsStats] = useState<{ sent30d: number; failed30d: number; totalAllTime: number } | null>(null);
+  const [smsLogs, setSmsLogs]       = useState<{
+    id: string; recipientLabel: string; phone: string; status: string;
+    errorDetail: string | null; createdAt: string;
   }[]>([]);
-  const [smsTxTotal, setSmsTxTotal] = useState(0);
+  const [smsTotal,   setSmsTotal]   = useState(0);
   const [smsPage,    setSmsPage]    = useState(1);
   const [smsLoading, setSmsLoading] = useState(false);
   const [smsError,   setSmsError]   = useState<string | null>(null);
-  // Topup form
-  const [topupUnits, setTopupUnits] = useState("");
-  const [topupNote,  setTopupNote]  = useState("");
-  const [topping,    setTopping]    = useState(false);
 
   // ── Soma AI / Gemini key state ────────────────────────────────────────────
   interface GeminiKeyStatus {
@@ -185,15 +185,16 @@ export default function SchoolDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const loadSmsWallet = useCallback(async (page = 1) => {
+  const loadSmsActivity = useCallback(async (page = 1) => {
     setSmsLoading(true); setSmsError(null);
     try {
-      const res = await fetch(`/api/super-admin/schools/${id}/sms-wallet?page=${page}`);
-      if (!res.ok) throw new Error("Failed to load SMS wallet");
+      const res = await fetch(`/api/super-admin/schools/${id}/sms-activity?page=${page}`);
+      if (!res.ok) throw new Error("Failed to load SMS activity");
       const j = await res.json();
-      setSmsWallet(j.wallet);
-      setSmsTxns(j.transactions);
-      setSmsTxTotal(j.total);
+      setSmsPlatform(j.platform);
+      setSmsStats(j.stats);
+      setSmsLogs(j.logs);
+      setSmsTotal(j.total);
       setSmsPage(j.page);
     } catch (e: unknown) {
       setSmsError(e instanceof Error ? e.message : String(e));
@@ -202,7 +203,7 @@ export default function SchoolDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => { if (tab === "sms") loadSmsWallet(1); }, [tab, loadSmsWallet]);
+  useEffect(() => { if (tab === "sms") loadSmsActivity(1); }, [tab, loadSmsActivity]);
   useEffect(() => { if (tab === "somaai") loadAiStatus(); }, [tab, loadAiStatus]);
 
   async function handleAiKeySave(e: React.FormEvent) {
@@ -262,30 +263,6 @@ export default function SchoolDetailPage() {
       setAiTestResult({ ok: false, error: e instanceof Error ? e.message : "Test failed" });
     } finally {
       setAiTesting(false);
-    }
-  }
-
-  async function handleTopup(e: React.FormEvent) {
-    e.preventDefault();
-    const units = parseInt(topupUnits, 10);
-    if (!units || units <= 0) return;
-    setTopping(true); setSmsError(null);
-    try {
-      const res = await fetch(`/api/super-admin/schools/${id}/sms-wallet`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ units, note: topupNote.trim() || undefined }),
-      });
-      const j = await res.json() as { wallet?: typeof smsWallet; error?: string };
-      if (!res.ok) throw new Error(j.error ?? "Topup failed");
-      setTopupUnits(""); setTopupNote("");
-      setSuccessMsg(`Allocated ${units} SMS units`);
-      setTimeout(() => setSuccessMsg(null), 3000);
-      await loadSmsWallet(1);
-    } catch (e: unknown) {
-      setSmsError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTopping(false);
     }
   }
 
@@ -657,128 +634,99 @@ export default function SchoolDetailPage() {
         <div className="space-y-6">
           {smsError && <ErrorBanner message={smsError} onDismiss={() => setSmsError(null)} />}
 
-          {smsLoading && !smsWallet ? (
+          {smsLoading && !smsStats ? (
             <div className="flex justify-center py-10"><Spinner size="lg" /></div>
           ) : (
             <>
-              {/* Balance card */}
+              {/* Shared-account status — SMS is not per-school; every school
+                  sends through the one Mobivas account configured below. */}
+              <div className={`flex items-start gap-4 rounded-xl border p-5 ${
+                smsPlatform?.configured && smsPlatform.isActive
+                  ? "bg-success-bg border-success/20"
+                  : "bg-warn-bg border-warn/20"
+              }`}>
+                <MessageSquare className={`h-6 w-6 shrink-0 mt-0.5 ${
+                  smsPlatform?.configured && smsPlatform.isActive ? "text-success" : "text-warn"
+                }`} aria-hidden />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold ${
+                    smsPlatform?.configured && smsPlatform.isActive ? "text-success" : "text-warn"
+                  }`}>
+                    {smsPlatform?.configured
+                      ? `Platform SMS ${smsPlatform.isActive ? "active" : "inactive"} — ${smsPlatform.provider ?? "Mobivas"}`
+                      : "Platform SMS is not configured"}
+                  </p>
+                  <p className="text-xs text-foreground/70 mt-0.5">
+                    Every school sends through this one shared account — its balance is tracked
+                    in the provider&apos;s own dashboard, not here.
+                    {smsPlatform?.updatedAt && ` Last updated ${new Date(smsPlatform.updatedAt).toLocaleDateString()}.`}
+                  </p>
+                </div>
+                <Link
+                  href="/super-admin/settings/sms"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card text-xs font-medium px-3 py-2 text-foreground hover:bg-background transition-colors"
+                >
+                  Manage <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              </div>
+
+              {/* Activity stats for this school */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  {
-                    label: "Balance",
-                    value: (smsWallet?.unitsRemaining ?? 0).toLocaleString(),
-                    note:  "SMS units remaining",
-                    highlight: (smsWallet?.unitsRemaining ?? 0) <= (smsWallet?.lowBalanceThreshold ?? 50),
-                  },
-                  {
-                    label: "Lifetime allocated",
-                    value: (smsWallet?.unitsLifetimeAllocated ?? 0).toLocaleString(),
-                    note:  "Total units ever topped up",
-                    highlight: false,
-                  },
-                  {
-                    label: "Low balance alert",
-                    value: (smsWallet?.lowBalanceThreshold ?? 50).toLocaleString(),
-                    note:  "Units threshold for warning",
-                    highlight: false,
-                  },
-                ].map(({ label, value, note, highlight }) => (
-                  <div key={label} className={`rounded-xl border p-4 shadow-xs ${highlight ? "border-warn/40 bg-warn-bg" : "border-border bg-card"}`}>
-                    <p className={`text-2xl font-bold ${highlight ? "text-warn" : "text-foreground"}`}>{value}</p>
+                  { label: "Sent (30 days)",   value: (smsStats?.sent30d ?? 0).toLocaleString(),      note: "Delivered successfully" },
+                  { label: "Failed (30 days)", value: (smsStats?.failed30d ?? 0).toLocaleString(),    note: "Provider rejected or timed out" },
+                  { label: "Total ever sent",  value: (smsStats?.totalAllTime ?? 0).toLocaleString(), note: "All-time SMS log rows" },
+                ].map(({ label, value, note }) => (
+                  <div key={label} className="rounded-xl border border-border bg-card p-4 shadow-xs">
+                    <p className="text-2xl font-bold text-foreground">{value}</p>
                     <p className="text-sm font-medium text-foreground mt-0.5">{label}</p>
                     <p className="text-xs text-slate mt-0.5">{note}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Allocate units form */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">Allocate units</h3>
-                <form onSubmit={handleTopup} className="flex flex-wrap items-end gap-3">
-                  <div>
-                    <label htmlFor="topup-units" className="block text-xs font-medium text-slate mb-1">
-                      Units to add
-                    </label>
-                    <input
-                      id="topup-units"
-                      type="number"
-                      min={1}
-                      step={1}
-                      required
-                      value={topupUnits}
-                      onChange={(e) => setTopupUnits(e.target.value)}
-                      placeholder="e.g. 500"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-32
-                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[180px]">
-                    <label htmlFor="topup-note" className="block text-xs font-medium text-slate mb-1">
-                      Note / payment ref <span className="font-normal">(optional)</span>
-                    </label>
-                    <input
-                      id="topup-note"
-                      type="text"
-                      value={topupNote}
-                      onChange={(e) => setTopupNote(e.target.value)}
-                      placeholder="Paid via Paybill, ref XYZ"
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground
-                                 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/15"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={topping || !topupUnits || parseInt(topupUnits, 10) <= 0}
-                    className={`${primaryButtonClass} text-sm h-[38px]`}
-                  >
-                    {topping ? <><Spinner size="sm" /> Allocating…</> : "Allocate units"}
-                  </button>
-                </form>
-              </div>
-
-              {/* Transaction history */}
+              {/* Recent SMS log */}
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="px-5 py-4 border-b border-border">
-                  <h3 className="text-sm font-semibold text-foreground">Transaction history</h3>
-                  <p className="text-xs text-slate mt-0.5">{smsTxTotal.toLocaleString()} total rows — append-only ledger</p>
+                  <h3 className="text-sm font-semibold text-foreground">Recent SMS</h3>
+                  <p className="text-xs text-slate mt-0.5">{smsTotal.toLocaleString()} total rows for this school</p>
                 </div>
-                {smsTxns.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-slate">No transactions yet.</div>
+                {smsLogs.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-slate">No SMS sent yet.</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-background border-b border-border text-xs text-slate uppercase tracking-wide">
                         <tr>
                           <th className="px-5 py-3 text-left">Date</th>
-                          <th className="px-5 py-3 text-left">Type</th>
-                          <th className="px-5 py-3 text-right">Units</th>
-                          <th className="px-5 py-3 text-right">Balance after</th>
-                          <th className="px-5 py-3 text-left">Reason / Ref</th>
+                          <th className="px-5 py-3 text-left">Recipient</th>
+                          <th className="px-5 py-3 text-left">Phone</th>
+                          <th className="px-5 py-3 text-left">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {smsTxns.map((tx) => (
-                          <tr key={tx.id}>
+                        {smsLogs.map((log) => (
+                          <tr key={log.id}>
                             <td className="px-5 py-3 text-xs text-slate whitespace-nowrap">
-                              {new Date(tx.createdAt).toLocaleString()}
+                              {new Date(log.createdAt).toLocaleString()}
                             </td>
+                            <td className="px-5 py-3 text-foreground max-w-[200px] truncate">
+                              {log.recipientLabel}
+                            </td>
+                            <td className="px-5 py-3 text-slate font-mono">{log.phone}</td>
                             <td className="px-5 py-3">
                               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                tx.type === "TOPUP"      ? "bg-success-bg text-success border-success/20"
-                                : tx.type === "DEDUCTION" ? "bg-danger-bg text-danger border-danger/20"
-                                :                           "bg-warn-bg text-warn border-warn/20"
+                                log.status === "SENT" ? "bg-success-bg text-success border-success/20"
+                                : log.status === "FAILED" ? "bg-danger-bg text-danger border-danger/20"
+                                : "bg-warn-bg text-warn border-warn/20"
                               }`}>
-                                {tx.type}
+                                {log.status}
                               </span>
-                            </td>
-                            <td className={`px-5 py-3 text-right font-mono font-semibold ${tx.units >= 0 ? "text-success" : "text-danger"}`}>
-                              {tx.units >= 0 ? "+" : ""}{tx.units.toLocaleString()}
-                            </td>
-                            <td className="px-5 py-3 text-right font-mono text-foreground">
-                              {tx.balanceAfter.toLocaleString()}
-                            </td>
-                            <td className="px-5 py-3 text-xs text-slate max-w-[200px] truncate">
-                              {tx.reason}{tx.reference ? ` — ${tx.reference}` : ""}
+                              {log.errorDetail && (
+                                <p className="text-danger text-xs mt-0.5 max-w-[240px] truncate" title={log.errorDetail}>
+                                  {log.errorDetail}
+                                </p>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -787,22 +735,22 @@ export default function SchoolDetailPage() {
                   </div>
                 )}
                 {/* Pagination */}
-                {smsTxTotal > 30 && (
+                {smsTotal > 30 && (
                   <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-background text-xs text-slate">
-                    <span>Page {smsPage} of {Math.ceil(smsTxTotal / 30)}</span>
+                    <span>Page {smsPage} of {Math.ceil(smsTotal / 30)}</span>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         disabled={smsPage <= 1}
-                        onClick={() => loadSmsWallet(smsPage - 1)}
+                        onClick={() => loadSmsActivity(smsPage - 1)}
                         className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
                       >
                         Previous
                       </button>
                       <button
                         type="button"
-                        disabled={smsPage >= Math.ceil(smsTxTotal / 30)}
-                        onClick={() => loadSmsWallet(smsPage + 1)}
+                        disabled={smsPage >= Math.ceil(smsTotal / 30)}
+                        onClick={() => loadSmsActivity(smsPage + 1)}
                         className="px-3 py-1 rounded border border-border hover:bg-line disabled:opacity-40 transition-colors"
                       >
                         Next

@@ -11,12 +11,13 @@
  *
  *   dispatchPlatformSms(phone, body)
  *     — platform path: reads the single PlatformSmsConfig row instead of
- *       a per-school key.  Used for:
- *         • All Communication Centre bulk-SMS sends (wallet-deducted).
- *         • Forgot-password OTP (never wallet-deducted).
+ *       a per-school key. Used for every school's Communication Centre
+ *       bulk-SMS sends and for forgot-password OTP — all schools share this
+ *       one Mobivas account, which tracks its own balance on its own
+ *       dashboard; there is no local per-school credit system here.
  *
- * The actual HTTP call to Africa's Talking lives in one private helper —
- * sendViaAfricasTalking — shared by both paths so there is exactly one
+ * The actual HTTP call to SMSMobivas lives in one private helper —
+ * sendViaSMSMobivas — shared by both paths so there is exactly one
  * implementation.
  *
  * SERVER-SIDE ONLY.

@@ -6,8 +6,15 @@
  * never drift apart again — before this existed, the cron and the retry route
  * dispatched SMS through the per-school integration key while the Composer
  * used the platform key, which meant every scheduled or retried SMS failed
- * with "SMS integration is not configured for this school", skipped the
- * placeholder substitution and never touched the SMS wallet.
+ * with "SMS integration is not configured for this school" and skipped the
+ * placeholder substitution.
+ *
+ * There is no local SMS wallet/credit gate here — every school sends through
+ * the one shared Mobivas account (PlatformSmsConfig), and Mobivas tracks that
+ * account's real balance on its own dashboard. If it runs dry, dispatch fails
+ * per-recipient with a real provider error, which is logged below exactly
+ * like any other failure — that's the actual gate, not a local counter that
+ * can drift out of sync with what Mobivas thinks the balance is.
  *
  * SERVER-SIDE ONLY.
  */
@@ -18,11 +25,6 @@ import type { ResolvedRecipient } from "@/lib/messaging/resolve";
 import { dispatchMessage, dispatchPlatformSms } from "@/lib/messaging/dispatch";
 import { applyPlaceholders } from "@/lib/messaging/placeholders";
 import type { MessageChannel } from "@prisma/client";
-
-/** Number of SMS segments a body occupies (GSM-7, 160 chars for a single part). */
-export function smsSegments(body: string): number {
-  return Math.ceil(body.length / 160) || 1;
-}
 
 /** Marker phone used for log rows that were never dialled (skipped recipients). */
 export const NO_PHONE = "N/A";
@@ -48,48 +50,14 @@ async function dispatchOne(schoolId: string, channel: MessageChannel, phone: str
     : dispatchMessage(schoolId, channel, phone, body);
 }
 
-/**
- * Deduct the units actually consumed from the school's SMS wallet and append
- * the ledger row. No-op for zero units.
- */
-async function deductWallet(schoolId: string, units: number, messageId: string): Promise<void> {
-  if (units <= 0) return;
-  await prisma.$transaction(async (tx) => {
-    const updated = await tx.schoolSmsWallet.update({
-      where:  { schoolId },
-      data:   { unitsRemaining: { decrement: units } },
-      select: { unitsRemaining: true },
-    });
-    await tx.smsWalletTransaction.create({
-      data: {
-        schoolId,
-        type:         "DEDUCTION",
-        units:        -units,
-        reason:       "bulk_send",
-        reference:    messageId,
-        balanceAfter: updated.unitsRemaining,
-      },
-    });
-  });
-}
-
-/** Current SMS wallet balance; a school with no wallet row has zero units. */
-export async function smsBalance(schoolId: string): Promise<number> {
-  const wallet = await prisma.schoolSmsWallet.findUnique({
-    where:  { schoolId },
-    select: { unitsRemaining: true },
-  });
-  return wallet?.unitsRemaining ?? 0;
-}
-
 export type DeliveryOutcome = { sent: number; failed: number; skipped: number };
 
 /**
  * Resolve, personalise, dispatch and log every recipient of a message, then
- * settle the wallet and the aggregate status.
+ * settle the aggregate status.
  *
- * `preResolved` lets the immediate-send path reuse the resolution it already
- * did for the wallet pre-check instead of hitting the database twice.
+ * `preResolved` lets the immediate-send path reuse a resolution it already
+ * did instead of hitting the database twice.
  */
 export async function deliverMessage(
   messageId: string,
@@ -119,35 +87,11 @@ export async function deliverMessage(
     });
   }
 
-  // ── SMS wallet gate — a scheduled message may have been affordable when it
-  // ── was composed and no longer be by the time it is due.
-  if (channel === "SMS") {
-    const estimate = resolved.reduce((sum, r) => sum + smsSegments(personalise(body, r)), 0);
-    const balance  = await smsBalance(schoolId);
-    if (estimate > balance) {
-      await prisma.messageLog.create({
-        data: {
-          messageId,
-          schoolId,
-          channel,
-          phone:          NO_PHONE,
-          recipientLabel: "SMS wallet",
-          status:         "FAILED",
-          errorDetail:
-            `Not enough SMS units. Balance: ${balance}, needed: ${estimate}. Ask your Super Admin to top up.`,
-        },
-      });
-      await prisma.message.update({ where: { id: messageId }, data: { status: "FAILED" } });
-      return { sent: 0, failed: resolved.length, skipped: skipped.length };
-    }
-  }
-
   const settings  = await prisma.messagingSettings.findUnique({ where: { schoolId } });
   const batchSize = settings?.batchSize ?? 50;
 
   let sent = 0;
   let failed = 0;
-  let unitsConsumed = 0;
 
   for (let i = 0; i < resolved.length; i += batchSize) {
     const batch = resolved.slice(i, i + batchSize);
@@ -169,12 +113,8 @@ export async function deliverMessage(
           },
         });
 
-        if (result.status === "SENT") {
-          sent++;
-          if (channel === "SMS") unitsConsumed += smsSegments(personalBody);
-        } else {
-          failed++;
-        }
+        if (result.status === "SENT") sent++;
+        else failed++;
       })
     );
   }
@@ -194,8 +134,6 @@ export async function deliverMessage(
     });
   }
 
-  if (channel === "SMS") await deductWallet(schoolId, unitsConsumed, messageId);
-
   await prisma.message.update({
     where: { id: messageId },
     data:  { status: sent > 0 ? "SENT" : "FAILED" },
@@ -206,8 +144,8 @@ export async function deliverMessage(
 
 /**
  * Re-dispatch only the recipients whose log row is FAILED and that actually
- * have a number. Rows marked FAILED because there was no number on file, or
- * because the wallet was empty, are not dialable and are left alone.
+ * have a number. Rows marked FAILED because there was no number on file are
+ * not dialable and are left alone.
  */
 export async function retryFailedLogs(messageId: string): Promise<DeliveryOutcome> {
   const message = await prisma.message.findUnique({
@@ -218,15 +156,8 @@ export async function retryFailedLogs(messageId: string): Promise<DeliveryOutcom
 
   const { schoolId, channel, body } = message;
 
-  if (channel === "SMS") {
-    const estimate = message.logs.length * smsSegments(body);
-    const balance  = await smsBalance(schoolId);
-    if (estimate > balance) return { sent: 0, failed: message.logs.length, skipped: 0 };
-  }
-
   let sent = 0;
   let failed = 0;
-  let unitsConsumed = 0;
 
   for (const log of message.logs) {
     // The per-recipient personalisation is not recoverable from the log row,
@@ -243,15 +174,9 @@ export async function retryFailedLogs(messageId: string): Promise<DeliveryOutcom
       },
     });
 
-    if (result.status === "SENT") {
-      sent++;
-      if (channel === "SMS") unitsConsumed += smsSegments(personalBody);
-    } else {
-      failed++;
-    }
+    if (result.status === "SENT") sent++;
+    else failed++;
   }
-
-  if (channel === "SMS") await deductWallet(schoolId, unitsConsumed, messageId);
 
   if (sent > 0) {
     await prisma.message.update({ where: { id: messageId }, data: { status: "SENT" } });

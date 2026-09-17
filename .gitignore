@@ -47,3 +47,7 @@ tsc-output.txt
 __pycache__/
 *.pyc
 *.pyo
+
+.vercel
+.env.local
+.env*.local

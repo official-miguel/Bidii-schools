@@ -160,9 +160,6 @@ model School {
   cbeGradingScales           CbeGradingScale[]
   /// Promotion module
   streams                    Stream[]
-  /// SMS wallet + password reset
-  smsWallet                  SchoolSmsWallet?
-  smsWalletTransactions      SmsWalletTransaction[]
 }
 
 /// One row per login. Role determines which dashboard the user lands on.
@@ -4398,50 +4395,8 @@ model PlatformSmsConfig {
   createdAt      DateTime @default(now())
 }
 
-enum SmsTransactionType {
-  TOPUP
-  DEDUCTION
-  ADJUSTMENT // manual correction by super admin, can be positive or negative
-}
-
-/// 1:1 companion to School (same pattern as SchoolMeta). Tracks the school's
-/// messaging-units balance. Schools no longer hold their own SMS API key —
-/// SchoolIntegration(provider: SMS) becomes legacy/unused going forward.
-model SchoolSmsWallet {
-  schoolId               String                 @id
-  unitsRemaining         Int                    @default(0)
-  unitsLifetimeAllocated Int                    @default(0)
-  lowBalanceThreshold    Int                    @default(50)
-  updatedAt              DateTime               @updatedAt
-  createdAt              DateTime               @default(now())
-  school                 School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  transactions           SmsWalletTransaction[]
-
-  @@index([unitsRemaining])
-}
-
-/// Append-only ledger. Every allocation and every deduction writes exactly one
-/// row here — never update units in place without a matching row. balanceAfter
-/// makes every row self-auditing, same principle as LedgerEntry for finance.
-model SmsWalletTransaction {
-  id                String             @id @default(cuid())
-  schoolId          String
-  type              SmsTransactionType
-  units             Int // positive for TOPUP, negative for DEDUCTION
-  reason            String // e.g. "bulk_send", "admin_topup", "manual_adjustment"
-  reference         String? // messageId for deductions, note/payment ref for topups
-  balanceAfter      Int
-  performedByUserId String? // super admin user id for topups; null for automated deductions
-  createdAt         DateTime           @default(now())
-  school            School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  wallet            SchoolSmsWallet    @relation(fields: [schoolId], references: [schoolId], map: "SmsWalletTransaction_walletSchoolId_fkey", onDelete: Cascade)
-
-  @@index([schoolId, createdAt(sort: Desc)])
-  @@index([schoolId, type])
-}
-
-/// Forgot-password OTP. Platform-level — NOT tied to SchoolSmsWallet at all.
-/// This must keep working even if a school's messaging wallet is at zero.
+/// Forgot-password OTP. Platform-level, sent via PlatformSmsConfig — no
+/// per-school wallet ever gated this.
 model PasswordResetOtp {
   id         String    @id @default(cuid())
   userId     String
