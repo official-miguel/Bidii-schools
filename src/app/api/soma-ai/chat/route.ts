@@ -11,6 +11,7 @@ import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/
 import { SOMA_TOOL_DECLARATIONS, dispatchTool, pruneToolCache } from "@/lib/soma-ai/tools";
 import {
   classifyQuery,
+  isNavigationQuestion,
   resolveIntelligenceAnswer,
   resolveDbAnswer,
   type ExtendedCategory,
@@ -22,6 +23,7 @@ import {
   formatNearMissContext,
   type HelpResolveOutcome,
 } from "@/lib/soma-ai/help";
+import { formatSystemMapContext } from "@/lib/soma-ai/system-map";
 
 // ---------------------------------------------------------------------------
 // Request schema
@@ -58,6 +60,8 @@ function buildSystemPrompt(opts: {
   classIds: string[];
   isAdmin: boolean;
   nearMissHelpContext?: string;   // injected when a help query had no confident match
+  /** Full role-scoped page map — injected only for navigation/how-to questions. */
+  includeSystemMap?: boolean;
 }): string {
   const roleDescriptions: Record<string, string> = {
     principal: "a school principal with full access to all school data and operations",
@@ -79,6 +83,12 @@ function buildSystemPrompt(opts: {
 
   const nearMissSection = opts.nearMissHelpContext
     ? `\n\n${opts.nearMissHelpContext}`
+    : "";
+
+  // The page map is sizeable, so it's only attached for questions that are
+  // actually about finding your way around — data questions don't need it.
+  const systemMapSection = opts.includeSystemMap
+    ? `\n\n${formatSystemMapContext(opts.role)}`
     : "";
 
   return `You are Soma AI, the intelligent assistant embedded in the Bidii School Management System.
@@ -109,11 +119,21 @@ Examples of when to call tools:
 Only answer from your general knowledge when the question is about concepts (CBE/8-4-4 frameworks, grading systems, best practices) or when drafting/writing text.
 
 ## Answering "how do I use the system" questions \u2014 CRITICAL
-For any question about how to navigate, find, or use a feature in Bidii:
-- **Only describe UI elements, buttons, pages, and menu paths that are explicitly confirmed in the "Possibly related guides" section below (if present) or that were stated directly in this conversation.**
-- If you are not certain a specific button, page name, or navigation path exists in Bidii, do NOT describe it. Say instead: "I don't have a confirmed guide for that step. I'd suggest asking your school administrator or checking the Help section of the app."
-- Never invent plausible-sounding steps you have not confirmed. A wrong how-to answer is worse than saying you're not sure.
-- If related guides are provided below, paraphrase from them faithfully rather than generating your own steps from scratch.${nearMissSection}
+You have two grounded sources below: a **page map** listing every page this user
+can open, and (sometimes) **step-by-step guides** for specific tasks.
+
+- Answer navigation questions ("where is X", "how do I get to Y", "what can I do
+  in this section") directly from the page map. Name the section and page, and
+  quote the path exactly as it appears there.
+- When a step-by-step guide is provided for the task, follow its steps rather
+  than writing your own.
+- When no guide covers the exact task, still help: point the user to the right
+  page from the map and describe what they'll do there in general terms, but do
+  NOT invent specific button labels or menu item names you haven't been given.
+  Say "open <page> and look for the option to \u2026" rather than naming a button
+  that may not exist.
+- Never name a page or path that isn't in the map. If a feature genuinely isn't
+  there, say so plainly instead of guessing.${systemMapSection}${nearMissSection}
 
 ## Communication style
 - Concise, direct, and professional \u2014 like a trusted expert colleague
@@ -343,6 +363,9 @@ export async function POST(req: NextRequest) {
     classIds: scope.classIds,
     isAdmin: scope.isAdmin,
     nearMissHelpContext,
+    // Attach the page map for help/navigation questions — including ones the
+    // curated KB couldn't answer, which is exactly when Soma needs the breadth.
+    includeSystemMap: classification.intent === "help" || isNavigationQuestion(parsed.message),
   });
 
   // â”€â”€ Build conversation contents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

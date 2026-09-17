@@ -8,6 +8,15 @@
  * error that retrying cannot fix.
  */
 
+// jsdom omits these; the SSE reader in gemini.ts needs them.
+import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from "util";
+if (typeof global.TextDecoder === "undefined") {
+  global.TextDecoder = NodeTextDecoder as unknown as typeof global.TextDecoder;
+}
+if (typeof global.TextEncoder === "undefined") {
+  global.TextEncoder = NodeTextEncoder as unknown as typeof global.TextEncoder;
+}
+
 const mockGetSchoolIntegrationKey = jest.fn();
 
 jest.mock("@/lib/integrations", () => ({
@@ -23,7 +32,7 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { callGemini, AiServiceError } from "@/lib/ai/gemini";
+import { callGemini, streamGeminiWithTools, AiServiceError } from "@/lib/ai/gemini";
 
 const SCHOOL_ID = "school_1";
 const CONFIGURED_MODEL = "gemini-3.8-flash";
@@ -161,5 +170,109 @@ describe("Gemini transient-failure handling", () => {
     expect(error).toBeInstanceOf(AiServiceError);
     expect((error as AiServiceError).configIssue).toBe(false);
     expect((error as AiServiceError).message).toMatch(/usage limit/i);
+  });
+
+  it("reports a malformed request as a bug, not a misconfigured key", async () => {
+    global.fetch = jest.fn(async () =>
+      errorResponse(400, JSON.stringify({ error: { message: "Function call is missing a thought_signature" } }))
+    ) as unknown as typeof fetch;
+
+    const { error } = await settle(callGemini(SCHOOL_ID, "hi"));
+
+    // A 400 must not tell the school their AI "isn't set up" — the key is fine.
+    expect((error as AiServiceError).configIssue).toBe(false);
+    expect((error as AiServiceError).internalDetail).toMatch(/Malformed request/);
+  });
+});
+
+describe("tool-calling conversation round-trip", () => {
+  /**
+   * Thinking models attach a thoughtSignature to each functionCall part and
+   * reject the next request if it comes back without one. Rebuilding the part
+   * as a fresh { functionCall } object silently drops it, which took Soma down
+   * with "Function call is missing a thought_signature in functionCall parts".
+   */
+  it("echoes the model's function-call turn back with its thoughtSignature intact", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+
+    const modelTurnParts = [
+      {
+        functionCall: { name: "getClassList", args: {} },
+        thoughtSignature: "SIGNATURE_FROM_MODEL",
+      },
+    ];
+
+    global.fetch = jest.fn(async (url: string, init: { body: string }) => {
+      bodies.push(JSON.parse(init.body));
+      const isStreaming = String(url).includes("streamGenerateContent");
+
+      if (isStreaming) {
+        return {
+          ok: true,
+          status: 200,
+          headers: { get: () => null },
+          body: {
+            getReader: () => {
+              let sent = false;
+              return {
+                read: async () => {
+                  if (sent) return { done: true, value: undefined };
+                  sent = true;
+                  const payload =
+                    'data: {"candidates":[{"content":{"parts":[{"text":"Done"}]}}]}\n\n';
+                  return { done: false, value: new TextEncoder().encode(payload) };
+                },
+              };
+            },
+          },
+        };
+      }
+
+      // First tool round returns a function call; afterwards, none.
+      const round = bodies.filter((b) => "tools" in b).length;
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({
+          candidates: [
+            { content: { parts: round === 1 ? modelTurnParts : [{ text: "All set" }] } },
+          ],
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    const { error } = await settle(
+      streamGeminiWithTools({
+        schoolId: SCHOOL_ID,
+        contents: [{ role: "user", parts: [{ text: "who teaches 12E?" }] }],
+        options: {
+          tools: [
+            {
+              name: "getClassList",
+              description: "List classes",
+              parameters: { type: "OBJECT", properties: {} },
+            },
+          ],
+          onToolCall: async () => "Grade 12E — Mr Otieno",
+          onChunk: () => {},
+        },
+      })
+    );
+
+    expect(error).toBeUndefined();
+
+    // The follow-up request must carry the model turn back verbatim.
+    const followUp = bodies.find((b) =>
+      JSON.stringify(b).includes("SIGNATURE_FROM_MODEL")
+    );
+    expect(followUp).toBeDefined();
+
+    const modelTurn = (followUp!.contents as Array<{ role: string; parts: unknown[] }>)
+      .find((c) => c.role === "model");
+    expect(modelTurn?.parts[0]).toMatchObject({
+      functionCall: { name: "getClassList" },
+      thoughtSignature: "SIGNATURE_FROM_MODEL",
+    });
   });
 });

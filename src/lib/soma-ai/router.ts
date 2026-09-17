@@ -205,6 +205,35 @@ const GEMINI_OVERRIDE_PATTERNS: RegExp[] = [
   /why (is|are|does|do|did)\s+.{5,}/i,
 ];
 
+/**
+ * Broader than HELP_TRIGGER_PATTERNS: catches questions that are *about the
+ * application* rather than about school data — "what can I do here", "can I
+ * export this", "is there a fees section". These don't warrant the curated
+ * help KB, but they do need the page map, so Soma can answer from the real
+ * route tree instead of deflecting.
+ */
+const SYSTEM_QUESTION_PATTERNS: RegExp[] = [
+  /\b(where|which page|which section|which menu|which tab)\b/i,
+  /\bcan i\b.{0,60}\b(here|in bidii|in the system|on this page)\b/i,
+  /\b(is there|do you have|does bidii have)\b.{0,40}\b(page|section|module|feature|tab|report|tool)\b/i,
+  /\bwhat (can|could) i do\b/i,
+  /\bnavigate\b/i,
+  /\bmenu\b/i,
+  /\bwhat (is|does) (the )?\w+ (section|page|module|tab)\b/i,
+  /\b(find|locate|access|open|get to)\b.{0,40}\b(page|section|module|feature|report|settings?)\b/i,
+];
+
+/**
+ * True when the message is asking about the app itself (navigation, features,
+ * capabilities) rather than about school data.
+ */
+export function isNavigationQuestion(message: string): boolean {
+  return (
+    HELP_TRIGGER_PATTERNS.some((p) => p.test(message)) ||
+    SYSTEM_QUESTION_PATTERNS.some((p) => p.test(message))
+  );
+}
+
 export function classifyQuery(message: string): ClassifiedQuery {
   // ── Help branch: runs FIRST, before any DB or Gemini override ─────────
   // Detects procedural/navigational "how do I…" phrasing.  The actual

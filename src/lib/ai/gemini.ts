@@ -246,11 +246,18 @@ async function geminiFetch(opts: {
           const parsed = JSON.parse(body);
           detail = parsed?.error?.message ?? parsed?.error?.status ?? "";
         } catch { /* not JSON */ }
+
+        // 401/403 mean the key itself was refused — something an admin fixes.
+        // A 400 is a malformed request, i.e. our bug; telling the school their
+        // AI "isn't set up" would send them chasing a key that works fine.
+        const isAuthFailure = res.status === 401 || res.status === 403;
         throw new AiServiceError(
-          "Soma AI isn't fully set up for this school yet. Contact your system administrator.",
-          true,
+          isAuthFailure
+            ? "Soma AI isn't fully set up for this school yet. Contact your system administrator."
+            : "Soma AI hit an unexpected problem with that request. Please try again.",
+          isAuthFailure,
           body,
-          `Gemini key rejected (HTTP ${res.status}${detail ? ": " + detail : ""})`
+          `${isAuthFailure ? "Gemini key rejected" : "Malformed request"} (HTTP ${res.status}${detail ? ": " + detail : ""})`
         );
       }
 
@@ -541,14 +548,22 @@ export interface StreamOptions {
   model?: string;
 }
 
-// Shared content type used by both streamGemini and streamGeminiWithTools
+// Shared content type used by both streamGemini and streamGeminiWithTools.
+//
+// Parts carry an index signature because thinking models attach fields we must
+// echo back untouched (notably `thoughtSignature` on functionCall parts). The
+// API rejects a follow-up turn whose function calls have been stripped of
+// theirs, so model turns are forwarded verbatim rather than reconstructed.
+type GeminiPart = {
+  text?: string;
+  functionCall?: { name: string; args: Record<string, unknown> };
+  functionResponse?: { name: string; response: { content: string } };
+  [key: string]: unknown;
+};
+
 type GeminiContent = {
   role: string;
-  parts: Array<
-    | { text: string }
-    | { functionCall: { name: string; args: Record<string, unknown> } }
-    | { functionResponse: { name: string; response: { content: string } } }
-  >;
+  parts: GeminiPart[];
 };
 
 /// Streams a Gemini response, calling onChunk for each piece of text.
@@ -779,12 +794,7 @@ export async function streamGeminiWithTools(opts: {
 
       let roundData: {
         candidates?: {
-          content?: {
-            parts?: Array<
-              | { text?: string }
-              | { functionCall?: { name: string; args: Record<string, unknown> } }
-            >;
-          };
+          content?: { parts?: GeminiPart[] };
           finishReason?: string;
         }[];
       };
@@ -819,17 +829,20 @@ export async function streamGeminiWithTools(opts: {
 
       // Collect all function calls in this turn
       const functionCallParts = parts.filter(
-        (p): p is { functionCall: { name: string; args: Record<string, unknown> } } =>
+        (p): p is GeminiPart & { functionCall: { name: string; args: Record<string, unknown> } } =>
           "functionCall" in p && !!p.functionCall
       );
 
       // If no function calls, Gemini is done deciding — move to streaming answer
       if (functionCallParts.length === 0) break;
 
-      // Push the model's function-call turn into the conversation
+      // Echo the model's turn back EXACTLY as received. Thinking models attach
+      // a thoughtSignature to each functionCall part and reject the follow-up
+      // request if it comes back without one, so this must not be rebuilt into
+      // a fresh { functionCall } object — that silently drops the signature.
       conversation.push({
         role: "model",
-        parts: functionCallParts.map((p) => ({ functionCall: p.functionCall })),
+        parts: parts as GeminiPart[],
       });
 
       // Resolve each call and push all results back as a user turn
