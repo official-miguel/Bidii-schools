@@ -222,6 +222,8 @@ function LoginForm() {
                 </div>
                 <p className="mt-1.5 text-xs text-slate">
                   Staff: first login password is your school username.
+                  <br />
+                  Parents: first login password is your child&apos;s admission number.
                 </p>
               </div>
 

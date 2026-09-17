@@ -5,6 +5,7 @@ import { requireSchoolRole } from "@/lib/auth";
 import { requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
+import { syncParentForStudent } from "@/lib/parentProvisioning";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const user =
@@ -127,6 +128,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         },
       });
     });
+
+    // ── Guardian portal account ───────────────────────────────────────────
+    // Re-synced on every edit that touches the guardian fields, so correcting
+    // a phone number moves the portal access to the right parent.
+    if (rest.parentName !== undefined || rest.parentContact !== undefined) {
+      await syncParentForStudent({
+        studentId:     student.id,
+        schoolId,
+        parentName:    student.parentName,
+        parentContact: student.parentContact,
+      }).catch((err) => {
+        console.error(`[Parents] Provisioning failed for student ${student.id}:`, err);
+      });
+    }
 
     // ── Auto-allocate dorm when boarding status is changed to BOARDING ─────
     // Only fires when:

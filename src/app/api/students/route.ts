@@ -5,6 +5,7 @@ import { requireSchoolRole } from "@/lib/auth";
 import { requireRecordsPermission, requireSchoolPermission } from "@/lib/permissions";
 import { emitSSE } from "@/lib/sse";
 import { autoAssignDorm } from "@/lib/accommodation/autoAssign";
+import { syncParentForStudent } from "@/lib/parentProvisioning";
 
 // ---------------------------------------------------------------------------
 // GET /api/students
@@ -283,6 +284,18 @@ export async function POST(req: NextRequest) {
         });
 
         return created;
+      });
+
+      // Guardian portal account — provisioned outside the transaction so a
+      // failure here never rolls back the registration. The student is on file
+      // either way, and the next edit of the guardian details retries it.
+      await syncParentForStudent({
+        studentId:     student.id,
+        schoolId,
+        parentName:    data.parentName,
+        parentContact: data.parentContact,
+      }).catch((err) => {
+        console.error(`[Parents] Provisioning failed for student ${student.id}:`, err);
       });
 
       // Auto-provision a library card for every new student so they can
