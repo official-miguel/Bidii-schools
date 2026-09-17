@@ -8,14 +8,15 @@
  */
 
 import { useState, useRef } from "react";
-import { ShieldCheck } from "lucide-react";
+import { Menu, ShieldCheck } from "lucide-react";
 import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
 
 interface Props {
   userEmail: string;
+  onMenuClick?: () => void;
 }
 
-export default function SuperAdminTopBar({ userEmail }: Props) {
+export default function SuperAdminTopBar({ userEmail, onMenuClick }: Props) {
   const initials = userEmail.slice(0, 2).toUpperCase();
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -29,6 +30,15 @@ export default function SuperAdminTopBar({ userEmail }: Props) {
     >
       {/* Brand label */}
       <div className="flex items-center gap-2.5 min-w-0">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Open navigation menu"
+          className="md:hidden flex items-center justify-center w-9 h-9 -ml-1.5 rounded-lg
+                     text-foreground hover:bg-teal-50 hover:text-teal transition-colors shrink-0"
+        >
+          <Menu className="h-5 w-5" aria-hidden />
+        </button>
         <ShieldCheck className="h-5 w-5 text-teal shrink-0" strokeWidth={2} aria-hidden />
         <span className="text-sm font-semibold text-foreground truncate">
           Super Admin Console
