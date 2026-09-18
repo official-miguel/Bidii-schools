@@ -1,8 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.bidiischools.app",
-    "sha256_cert_fingerprints": ["72:31:5A:F6:63:AD:A4:36:04:C2:B4:7A:AD:20:AC:FC:35:0B:0C:0E:14:37:5A:CD:4A:AF:F0:EA:D3:99:C7:6D"]
-  }
-}]

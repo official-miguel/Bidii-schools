@@ -10,6 +10,17 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
   },
+  async rewrites() {
+    return [
+      {
+        // Android TWA / Digital Asset Links verification file.
+        // App Router can't build a literal ".well-known" folder, so this
+        // path is served by /api/assetlinks instead.
+        source: "/.well-known/assetlinks.json",
+        destination: "/api/assetlinks",
+      },
+    ];
+  },
 };
 
 module.exports = withSentryConfig(nextConfig, {
