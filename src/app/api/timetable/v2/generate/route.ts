@@ -24,6 +24,10 @@ import { analyseStaffShortages, analyseActualShortages, type StaffShortageConfig
 import type { TemplateColumn, EngineSubject, EngineClass } from "@/lib/timetable/deterministicEngine";
 import { TimetableSession } from "@prisma/client";
 
+// The CP-SAT solve can take up to (timeLimitSeconds + 30s) per attempt —
+// see cpSatEngine.ts's request timeout. Default timeLimitSeconds is 60s.
+export const maxDuration = 90;
+
 const schema = z.object({
   name: z.string().trim().min(1).max(80).default("Generated draft"),
   description: z.string().trim().max(300).optional(),
