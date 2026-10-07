@@ -794,9 +794,10 @@ export async function getDashboardVariant(user: User): Promise<DashboardVariant>
 //   "/staff/library"  — user has LIBRARY canManage (and no broad oversight role)
 //   null              — render the default dashboard for this user
 //
-// "Broad oversight" roles (deputy, HOD, secretary, etc.) always stay on the
-// unified dashboard even if they also carry module-manage permissions, because
-// they need the full school-wide view.
+// "Broad oversight" staff — anyone managing modules beyond FEES/LIBRARY,
+// whatever the school calls their role — always stay on the unified dashboard
+// even if they also carry module-manage permissions, because they need the
+// full school-wide view.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function resolveModulePortal(
@@ -810,21 +811,20 @@ export async function resolveModulePortal(
     return null;
   }
 
-  // ADMIN_STAFF path — check broad-oversight guard first
-  if (user.role === "ADMIN_STAFF") {
-    const [perms, roleNames] = await Promise.all([
-      getEffectivePermissions(user),
-      getAssignedRoleNames(user),
-    ]);
+  // ADMIN_STAFF path (and the legacy BURSAR enum). Staff roles are created and
+  // named by each school — one school's "Bursar" is another's "Accounts
+  // Clerk" — so this decides from permissions, never from role names. A user
+  // whose management rights are confined to the portal's module(s) lands in
+  // that portal; anyone who also manages other modules has broad oversight
+  // and keeps the unified dashboard.
+  if (user.role === "ADMIN_STAFF" || user.role === "BURSAR") {
+    const perms = await getEffectivePermissions(user);
+    const PORTAL_MODULES = new Set<string>(["FEES", "LIBRARY"]);
+    const managesOtherModules = Object.entries(perms).some(
+      ([m, access]) => !PORTAL_MODULES.has(m) && (access?.canManage || access?.canConfigure)
+    );
 
-    const lower = roleNames.map((n) => n.toLowerCase());
-    const hasBroadRole =
-      lower.some((n) => n.includes("deputy") || n.includes("principal")) ||
-      lower.some((n) => n.includes("head of department") || n.includes("hod")) ||
-      lower.some((n) => n.includes("secretary") || n.includes("registrar")) ||
-      lower.some((n) => n.includes("examination") || n.includes("games master"));
-
-    if (hasBroadRole) return null;
+    if (managesOtherModules) return null;
 
     if (perms.FEES?.canManage)    return "/staff/finance";
     if (perms.LIBRARY?.canManage) return "/staff/library";

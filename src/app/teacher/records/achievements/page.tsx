@@ -8,7 +8,7 @@ export const metadata = { title: "Achievements — Student Life" };
 
 export default async function TeacherAchievementsPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const perms = await getTeacherEffectivePermissions(user);
   const ach = perms.RECORDS_ACHIEVEMENTS;

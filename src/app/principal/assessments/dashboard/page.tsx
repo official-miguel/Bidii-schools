@@ -14,7 +14,7 @@ export default async function DashboardPage({
   searchParams: { tab?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const allClasses = await db.schoolClass.findMany({
     where: { schoolId: user.schoolId! },

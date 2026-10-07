@@ -7,7 +7,7 @@ import { getTeacherAcademicsNav } from "@/lib/teacherAcademicsNav";
 
 export default async function TeacherAssessmentsPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },

@@ -2,13 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
-
-async function manageGuard() {
-  return (
-    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
-    (await requireSchoolPermission("ACCOMMODATION", "manage"))
-  );
-}
+// Layout changes are open to accommodation managers for every dorm and to a
+// dorm master for their own dorm only.
+import { requireDormEditor } from "@/lib/accommodation/dormAccess";
 
 const createSchema = z.object({
   label: z.string().trim().min(1, "Bed label is required.").max(50),
@@ -121,7 +117,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { dormId: string } }
 ) {
-  const user = await manageGuard();
+  const user = await requireDormEditor(params.dormId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -131,6 +127,19 @@ export async function POST(
   if (!dorm) return NextResponse.json({ error: "Dormitory not found." }, { status: 404 });
 
   const body = await req.json().catch(() => null);
+
+  // The cubicle must belong to this dorm. Without this check, anyone allowed
+  // to edit one dorm (a dorm master) could hang beds off another dorm's
+  // cubicle by naming it here.
+  if (body?.cubicleId) {
+    const cubicle = await prisma.cubicle.findFirst({
+      where: { id: String(body.cubicleId), dormId: params.dormId, schoolId },
+      select: { id: true },
+    });
+    if (!cubicle) {
+      return NextResponse.json({ error: "Cubicle not found in this dormitory." }, { status: 404 });
+    }
+  }
 
   if (body?.mode === "bulk" || body?.mode === "auto") {
     const parsed = bulkCreateSchema.safeParse(body);

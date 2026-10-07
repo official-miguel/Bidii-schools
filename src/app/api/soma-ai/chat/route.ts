@@ -149,9 +149,9 @@ School: ${opts.schoolName}`;
 
 function getCurrentTerm(): string {
   const m = new Date().getMonth() + 1;
-  if (m <= 3) return "Term 1 (Januaryâ€“March)";
-  if (m <= 7) return "Term 2 (Aprilâ€“July)";
-  return "Term 3 (Augustâ€“November)";
+  if (m <= 3) return "Term 1 (January–March)";
+  if (m <= 7) return "Term 2 (April–July)";
+  return "Term 3 (August–November)";
 }
 
 // ---------------------------------------------------------------------------
@@ -203,13 +203,13 @@ export async function POST(req: NextRequest) {
   const t0 = Date.now();
   maybePruneCache();
 
-  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const user = await requireRole("PRINCIPAL", "TEACHER", "ADMIN_STAFF", "PARENT", "STUDENT");
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  // â”€â”€ Parse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Parse ─────────────────────────────────────────────────────────────────
   let parsed: z.infer<typeof RequestSchema>;
   try {
     parsed = RequestSchema.parse(await req.json());
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  // â”€â”€ Resolve permission scope â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Resolve permission scope ──────────────────────────────────────────────
   const scope = await resolveUserScope(user);
 
   // Display role for system prompt and audit
@@ -311,7 +311,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // â”€â”€ Check Gemini credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Check Gemini credentials ────────────────────────────────────────────
   const credentials = await getSchoolIntegrationKey(user.schoolId!, "GEMINI");
   if (!credentials) {
     logSomaAIInteraction({
@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // â”€â”€ Build system prompt (no static data snapshot â€” tools handle that) â”€â”€â”€
+  // ── Build system prompt (no static data snapshot — tools handle that) ───
   const systemInstruction = buildSystemPrompt({
     role: displayRole,
     schoolName: parsed.context?.schoolName ?? "your school",
@@ -368,7 +368,7 @@ export async function POST(req: NextRequest) {
     includeSystemMap: classification.intent === "help" || isNavigationQuestion(parsed.message),
   });
 
-  // â”€â”€ Build conversation contents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Build conversation contents ─────────────────────────────────────────
   const contents: { role: string; parts: { text: string }[] }[] = [
     ...(parsed.context?.pagePath
       ? [
@@ -389,7 +389,7 @@ export async function POST(req: NextRequest) {
     { role: "user", parts: [{ text: parsed.message }] },
   ];
 
-  // â”€â”€ Streaming response with tool calling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Streaming response with tool calling ──────────────────────────────
   const encoder = new TextEncoder();
   void encoder; // used implicitly by sseEvent
 
@@ -415,7 +415,7 @@ export async function POST(req: NextRequest) {
             model: aiConfig.model,
             tools: SOMA_TOOL_DECLARATIONS,
 
-            // Tool call handler â€” queries live DB and streams a status hint to the client
+            // Tool call handler — queries live DB and streams a status hint to the client
             onToolCall: async (call) => {
               toolsUsed.push(call.name);
               // Send a "thinking" event so the UI can show a loading indicator

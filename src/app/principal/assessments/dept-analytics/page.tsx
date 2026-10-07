@@ -7,7 +7,7 @@ import { CLASS_LABEL_SELECT, type ClassOption } from "@/lib/curriculum/classLabe
 
 export default async function DeptAnalyticsRoute() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) redirect("/principal/assessments");

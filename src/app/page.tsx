@@ -20,7 +20,9 @@ import { resolveModulePortal } from "@/lib/permissions";
  *  - ADMIN_STAFF with LIBRARY manage       → /staff/library
  *  - ADMIN_STAFF with broad oversight role → /staff
  *  - ADMIN_STAFF (no module portal)        → /staff
+ *  - BURSAR (legacy enum)                  → same as ADMIN_STAFF
  *  - PARENT / STUDENT                      → /parent
+ *  - SUPER_ADMIN                           → /super-admin
  *  - (no session)                          → /login
  */
 export default async function HomePage() {
@@ -39,7 +41,11 @@ export default async function HomePage() {
       redirect(portal ?? "/teacher");
     }
 
-    case "ADMIN_STAFF": {
+    // Staff roles (bursar, librarian, ...) are school-defined and named freely;
+    // the legacy BURSAR enum is routed like any other staff account, by the
+    // permissions it holds.
+    case "ADMIN_STAFF":
+    case "BURSAR": {
       const portal = await resolveModulePortal(user);
       redirect(portal ?? "/staff");
     }
@@ -47,6 +53,9 @@ export default async function HomePage() {
     case "PARENT":
     case "STUDENT":
       redirect("/parent");
+
+    case "SUPER_ADMIN":
+      redirect("/super-admin");
 
     default:
       // Fallback for any other roles (WATCHMAN, MARKER, etc.)

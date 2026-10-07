@@ -32,7 +32,7 @@ export default async function FormStreamsPage({ params }: PageProps) {
   if (isNaN(formNum) || formNum < 1) notFound();
 
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   // Fetch current period for stats
   const currentPeriod = await prisma.assessmentPeriod.findFirst({

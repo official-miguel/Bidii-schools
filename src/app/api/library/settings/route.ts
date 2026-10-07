@@ -1,6 +1,6 @@
 ﻿/**
- * GET /api/library/settings   â€” read library settings
- * PUT /api/library/settings   â€” upsert library settings
+ * GET /api/library/settings   — read library settings
+ * PUT /api/library/settings   — upsert library settings
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

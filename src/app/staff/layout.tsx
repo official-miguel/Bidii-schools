@@ -62,7 +62,7 @@ export default async function StaffPortalLayout({
       STAFF_PORTAL_MODULES.some(
         (m) => perms[m]?.canManage || perms[m]?.canConfigure
       );
-    if (!admitted) redirect(user.role === "TEACHER" ? "/teacher" : "/login");
+    if (!admitted) redirect(user.role === "TEACHER" ? "/teacher" : "/");
   }
 
   // The top bar shows the person's name, not their role/title — a teacher

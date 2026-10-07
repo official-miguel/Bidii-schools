@@ -15,7 +15,7 @@ import { assertModuleEnabled } from "@/lib/moduleAccess";
  */
 export default async function ParentFeesLayout({ children }: { children: React.ReactNode }) {
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   await assertModuleEnabled(parent.schoolId, "FEES");
 

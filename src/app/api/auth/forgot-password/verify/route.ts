@@ -85,19 +85,20 @@ export async function POST(req: NextRequest) {
   if (!otpRow)                          return INVALID();
   if (otpRow.verifiedAt !== null)       return INVALID(); // already used
   if (otpRow.expiresAt  < new Date())   return INVALID(); // expired
-  if (otpRow.attempts   >= 5)           return INVALID(); // brute-force lockout
+
+  // ── Claim an attempt (brute-force lockout) ────────────────────────────────
+  // Counted atomically *before* comparing. Reading `attempts` and incrementing
+  // after a failed compare let parallel guesses all pass the "< 5" check.
+  const claimed = await prisma.passwordResetOtp.updateMany({
+    where: { id: otpRow.id, attempts: { lt: 5 }, verifiedAt: null },
+    data:  { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) return INVALID();
 
   // ── Compare OTP ───────────────────────────────────────────────────────────
   const match = await bcrypt.compare(otp, otpRow.otpHash).catch(() => false);
 
-  if (!match) {
-    // Increment attempts before returning so lockout works
-    await prisma.passwordResetOtp.update({
-      where: { id: otpRow.id },
-      data:  { attempts: { increment: 1 } },
-    });
-    return INVALID();
-  }
+  if (!match) return INVALID();
 
   // ── Success path ──────────────────────────────────────────────────────────
 

@@ -24,7 +24,7 @@ function roleUserCount(role: {
 
 export default async function StaffRolesPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const schoolId = user.schoolId!;
 

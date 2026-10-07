@@ -7,7 +7,7 @@ import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 
 export default async function TeacherPeoplePage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },
@@ -34,7 +34,7 @@ export default async function TeacherPeoplePage() {
     },
   });
 
-  if (!teacher) redirect("/login");
+  if (!teacher) redirect("/teacher");
 
   // Build tile data
   type Tile = {

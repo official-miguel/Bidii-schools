@@ -13,6 +13,7 @@ import {
   BarChart2,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui";
+import { useAccommodationViewBase } from "@/hooks/usePortalBase";
 
 interface DormSummary {
   id: string;
@@ -42,12 +43,13 @@ interface Summary {
 }
 
 export default function TeacherAccommodationView({
-  canManageAll: _canManageAll,
-  ownDormIds: _ownDormIds,
+  canManageAll,
+  ownDormIds,
 }: {
   canManageAll: boolean;
   ownDormIds: string[];
 }) {
+  const viewBase = useAccommodationViewBase();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -189,13 +191,25 @@ export default function TeacherAccommodationView({
         title="Accommodation"
         description="Boarding dormitories and occupancy overview."
         action={
-          <button
-            onClick={() => load(true)}
-            className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border bg-card text-slate hover:text-foreground hover:bg-background transition-all"
-            aria-label="Refresh accommodation data"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Accommodation managers (the matron, whatever the school calls
+                the role) run the full module from the staff portal. */}
+            {canManageAll && (
+              <Link
+                href="/staff/accommodation/overview"
+                className="inline-flex items-center h-10 px-4 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal-dark transition-colors"
+              >
+                Manage accommodation
+              </Link>
+            )}
+            <button
+              onClick={() => load(true)}
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border bg-card text-slate hover:text-foreground hover:bg-background transition-all"
+              aria-label="Refresh accommodation data"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
         }
       />
 
@@ -278,7 +292,7 @@ export default function TeacherAccommodationView({
               <h2 className="text-base font-semibold text-foreground">Dormitories</h2>
               <div className="flex items-center gap-2">
                 <Link
-                  href="/teacher/accommodation-details/analytics"
+                  href={`${viewBase}/analytics`}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-slate hover:text-teal transition-colors border border-border rounded-lg px-3 py-2 bg-card hover:border-teal/40 hover:bg-teal/5 dark:hover:border-teal/30 dark:hover:text-teal"
                 >
                   <BarChart2 className="h-3.5 w-3.5" /> Analytics
@@ -313,7 +327,7 @@ export default function TeacherAccommodationView({
                 return (
                   <Link
                     key={dorm.id}
-                    href={`/teacher/accommodation-details/dormitories/${dorm.id}`}
+                    href={`${viewBase}/dormitories/${dorm.id}`}
                     className="group rounded-xl border border-border bg-card p-5 hover:border-teal/40 hover:shadow-sm transition-all dark:hover:border-teal/30"
                   >
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -321,6 +335,12 @@ export default function TeacherAccommodationView({
                         <h3 className="text-sm font-semibold text-foreground group-hover:text-teal transition-colors truncate dark:group-hover:text-teal">
                           {dorm.name}
                         </h3>
+                        {/* The dorm master's own dorm opens in edit mode. */}
+                        {ownDormIds.includes(dorm.id) && (
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal/10 text-teal">
+                            Your dorm · editable
+                          </span>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-slate">
                             {GENDER_LABEL[dorm.genderPolicy]}

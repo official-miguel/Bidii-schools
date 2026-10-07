@@ -21,12 +21,10 @@ import { prisma } from "@/lib/prisma";
 import {
   hashPassword,
   createSession,
-  destroySession,
   SESSION_COOKIE,
   SESSION_TTL_MS,
   getCurrentUser,
 } from "@/lib/auth";
-import { cookies } from "next/headers";
 
 const schema = z.object({
   newPassword: z
@@ -118,11 +116,10 @@ export async function POST(req: NextRequest) {
     data:  { passwordHash: newHash, mustChangePassword: false },
   });
 
-  // Rotate session — destroy old cookie, issue a fresh one
-  const oldToken = cookies().get(SESSION_COOKIE)?.value;
-  if (oldToken) {
-    await destroySession(oldToken).catch(() => {});
-  }
+  // Rotate sessions — end every session on the old password (this device and
+  // any other: someone who signed in with the starter password must not stay
+  // signed in), then issue a fresh one for this device.
+  await prisma.session.deleteMany({ where: { userId: user.id } }).catch(() => {});
   const newToken = await createSession(user.id);
 
   const res = NextResponse.json({ ok: true });

@@ -15,7 +15,7 @@ export default async function MarksheetPage({
   searchParams: { periodId?: string; classId?: string; subjectId?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   // Load all classes first so we can determine the selected class's framework.
   const classes = await (prisma as any).schoolClass.findMany({

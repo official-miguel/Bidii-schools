@@ -25,7 +25,7 @@ export default async function PrincipalAssessmentsLayout({
     const permitted =
       (await requirePermission("ASSESSMENTS", "view")) ??
       (await requirePermission("ASSESSMENT_FRAMEWORK", "view"));
-    if (!permitted) redirect("/login");
+    if (!permitted) redirect("/");
   }
 
   // Exam Setup visible only to principals and those with ASSESSMENT_FRAMEWORK manage.

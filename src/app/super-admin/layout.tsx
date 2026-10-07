@@ -12,10 +12,10 @@ export default async function SuperAdminLayout({
 }) {
   const user = await getCurrentUser();
 
-  // Strict role gate — any other role gets bounced to login
-  if (!user || user.role !== "SUPER_ADMIN") {
-    redirect("/login");
-  }
+  // Strict role gate — no session goes to login; any other role goes back
+  // to its own dashboard via the root dispatcher.
+  if (!user) redirect("/login");
+  if (user.role !== "SUPER_ADMIN") redirect("/");
 
   return (
     <MustChangePasswordGate mustChangePassword={user.mustChangePassword}>

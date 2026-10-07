@@ -24,7 +24,7 @@ interface Props {
 export default async function AttendancePage({ searchParams }: Props) {
   // Auth guard
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   // Resolve active child
   const requestedId = searchParams?.child;

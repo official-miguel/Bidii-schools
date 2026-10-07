@@ -16,7 +16,7 @@ export default async function TeacherMarksheetPage({
   searchParams: { classId?: string; subjectId?: string; periodId?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const schoolId = user.schoolId!;
   const actor = await resolveAssessmentActor(user, schoolId);

@@ -8,7 +8,7 @@ export const metadata = { title: "Discipline — Student Life" };
 
 export default async function TeacherDisciplinePage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const perms = await getTeacherEffectivePermissions(user);
   const disc = perms.RECORDS_DISCIPLINE;

@@ -5,7 +5,7 @@ import ExamSetupTabs from "./ExamSetupTabs";
 
 export default async function ExamSetupPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   return (
     <div>

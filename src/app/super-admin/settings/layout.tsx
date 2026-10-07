@@ -16,7 +16,7 @@ export default async function SuperAdminSettingsLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== "SUPER_ADMIN") redirect("/login");
+  if (!user || user.role !== "SUPER_ADMIN") redirect("/");
   if (!user.isPlatformOwner) redirect("/super-admin");
 
   return <>{children}</>;

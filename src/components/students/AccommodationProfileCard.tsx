@@ -96,6 +96,15 @@ export default function AccommodationProfileCard({
   const current = records.find((r) => r.status === "CURRENT");
   const history = records.filter((r) => r.status !== "CURRENT");
 
+  // Dorm pages live in the principal and teacher portals only. The principal
+  // layout admits only the Principal, so linking anyone else there bounced
+  // them to /login; staff get the name as plain text instead.
+  const dormHref = (dormId: string) =>
+    role === "principal" ? `/principal/accommodation/dormitories/${dormId}`
+    : role === "teacher" ? `/teacher/accommodation-details/dormitories/${dormId}`
+    : null;
+  const currentDormHref = current ? dormHref(current.dorm.id) : null;
+
   return (
     <div className="bg-card border border-border rounded-xl p-5">
 
@@ -124,12 +133,16 @@ export default function AccommodationProfileCard({
           {/* Status + dorm name */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0">
-              <Link
-                href={`/principal/accommodation/dormitories/${current.dorm.id}`}
-                className="text-base font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal"
-              >
-                {current.dorm.name}
-              </Link>
+              {currentDormHref ? (
+                <Link
+                  href={currentDormHref}
+                  className="text-base font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal"
+                >
+                  {current.dorm.name}
+                </Link>
+              ) : (
+                <span className="text-base font-semibold text-foreground">{current.dorm.name}</span>
+              )}
               {(current.cubicle || current.bed) && (
                 <p className="text-xs text-slate mt-0.5">
                   {current.cubicle && (

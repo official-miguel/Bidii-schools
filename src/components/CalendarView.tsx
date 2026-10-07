@@ -36,6 +36,7 @@ import { useProductivityStore }          from "@/lib/stores/productivityStore";
 import { useFormDraft }                  from "@/lib/hooks/useFormDraft";
 import DeadlineInlineCountdown           from "@/components/calendar/DeadlineInlineCountdown";
 import { Clock }                         from "lucide-react";
+import { usePortalBase }                 from "@/hooks/usePortalBase";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -120,6 +121,7 @@ function toItem(e: LocalCalendarEvent): CalendarEventItem {
 // ---------------------------------------------------------------------------
 
 export default function CalendarView({ canManage }: { canManage: boolean }) {
+  const calendarHref = `${usePortalBase()}/calendar`;
   const todayDate  = new Date();
   const [year,  setYear]  = useState(todayDate.getUTCFullYear());
   const [month, setMonth] = useState(todayDate.getUTCMonth() + 1); // 1-12
@@ -275,7 +277,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
       body:     todayEvents.length === 1
         ? `"${titles}" is scheduled for today.`
         : `${todayEvents.length} events today: ${titles}.`,
-      href:     "/principal/calendar",
+      href:     calendarHref,
     });
   // Intentionally runs once on mount — eslint disabled for that reason.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -386,7 +388,7 @@ export default function CalendarView({ canManage }: { canManage: boolean }) {
       body:     editing
         ? `"${data.title}" on ${eventDateLabel} was updated. Visible to: ${audienceLabel}.${deadlineNote}`
         : `"${data.title}" added on ${eventDateLabel}. Visible to: ${audienceLabel}.${deadlineNote}`,
-      href: "/principal/calendar",
+      href: calendarHref,
     });
 
     setFormOpen(false);

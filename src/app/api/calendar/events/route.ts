@@ -14,7 +14,7 @@ import {
 } from "@/lib/notifications/parentCalendar";
 
 /// GET is readable by PRINCIPAL and TEACHER unconditionally (neither is
-/// governed by the RBAC module table â€” see src/lib/permissions.ts), and by
+/// governed by the RBAC module table — see src/lib/permissions.ts), and by
 /// ADMIN_STAFF only if their role grants CALENDAR view.
 async function requireCalendarViewer() {
   return (await requireSchoolRole("PRINCIPAL", "TEACHER")) ?? (await requireSchoolPermission("CALENDAR", "view"));

@@ -291,9 +291,22 @@ async function notifyAdmins(
         },
       ],
     },
-    select: { id: true },
+    select: { id: true, role: true },
   });
   if (admins.length === 0) return 0;
+
+  // Each recipient's link must open in their own portal: the principal layout
+  // admits only the Principal, so a teacher or staff member sent to
+  // /principal/assessments was bounced to /login.
+  const hrefFor = (role: string) =>
+    role === "PRINCIPAL" ? "/principal/assessments"
+    : role === "TEACHER" ? "/teacher/assessments"
+    : "/staff/assessments";
+  const byHref = new Map<string, string[]>();
+  for (const a of admins) {
+    const href = hrefFor(a.role);
+    byHref.set(href, [...(byHref.get(href) ?? []), a.id]);
+  }
 
   const lines = hotspots.map(
     (h) =>
@@ -301,18 +314,22 @@ async function notifyAdmins(
       `(class mean ${h.classMean.toFixed(1)} vs school ${h.schoolMean.toFixed(1)}).`
   );
 
-  await notifyUsers(admins.map((a) => a.id), {
-    schoolId,
-    type:  "EXAM_ANALYSIS_ADMIN",
-    title: `${periodName}: all marks are in`,
-    body:
-      `Classes with the most learners below the school subject average:\n` +
-      lines.join("\n") +
-      `\nConsider speaking with the teachers of these subjects.`,
-    href:     "/principal/assessments",
-    dedupKey,
-    metadata: { periodName, hotspots },
-  });
+  await Promise.all(
+    [...byHref].map(([href, userIds]) =>
+      notifyUsers(userIds, {
+        schoolId,
+        type:  "EXAM_ANALYSIS_ADMIN",
+        title: `${periodName}: all marks are in`,
+        body:
+          `Classes with the most learners below the school subject average:\n` +
+          lines.join("\n") +
+          `\nConsider speaking with the teachers of these subjects.`,
+        href,
+        dedupKey,
+        metadata: { periodName, hotspots },
+      })
+    )
+  );
 
   return admins.length;
 }

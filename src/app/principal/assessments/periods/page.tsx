@@ -10,7 +10,7 @@ const db = prisma as any;
 
 export default async function PeriodsPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const framework = await db.assessmentFramework.findFirst({
     where: { schoolId: user.schoolId!, type: "EIGHT_FOUR_FOUR", isActive: true },

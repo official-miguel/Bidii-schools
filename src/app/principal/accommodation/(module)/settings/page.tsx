@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import {
   Settings, BedDouble, Users, BarChart3,
   ShieldCheck, ArrowRight, CheckCircle2, ExternalLink,
@@ -104,6 +105,7 @@ function SectionCard({
 }
 
 export default function AccommodationSettingsPage() {
+  const ph = usePortalHref();
   const [settings, setSettings] = useState<AccomSettings>(DEFAULT);
   const [schoolPolicy, setSchoolPolicy] = useState<SchoolPolicy>({ boardingType: "", genderPolicy: "" });
   const [loading, setLoading] = useState(true);
@@ -155,7 +157,7 @@ export default function AccommodationSettingsPage() {
   if (loading) {
     return (
       <div>
-        <ContextNavigation items={NAV_ITEMS} />
+        <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
         <div className="space-y-4 mt-6">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="h-40 rounded-xl bg-line/40/40 animate-pulse" />
@@ -167,7 +169,7 @@ export default function AccommodationSettingsPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Accommodation Settings"
         description="Module-wide preferences for boarding management. Individual dorm configurations are set on each dormitory."
@@ -196,7 +198,7 @@ export default function AccommodationSettingsPage() {
                 </p>
               </div>
             </div>
-            <Link href="/principal/settings?tab=school"
+            <Link href={ph("/principal/settings?tab=school")}
               className="inline-flex items-center gap-1.5 text-xs text-teal hover:underline font-medium">
               <ExternalLink className="h-3 w-3" />
               Change in School Configuration → Admission Policy

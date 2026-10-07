@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldAlert, Plus, Filter, X, Users, Lock, Search } from "lucide-react";
 import QuickIncidentModal from "./QuickIncidentModal";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { usePortalBase } from "@/hooks/usePortalBase";
 import {
   Avatar,
   DisciplineRecord,
@@ -78,6 +79,7 @@ const IncidentRow = memo(function IncidentRow({
   const icon = offenceIcon(record.offence + " " + (record.aiSummary || ""));
   const createdByName = formatCreator(record.recordedBy);
   const caseHref = caseHrefBase ? `${caseHrefBase}/${record.id}` : null;
+  const portalBase = usePortalBase();
 
   return (
     <li>
@@ -118,7 +120,7 @@ const IncidentRow = memo(function IncidentRow({
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {/* Student name — links to their profile, sits above the row link */}
             <Link
-              href={`/principal/students/${record.student.id}`}
+              href={`${portalBase}/students/${record.student.id}`}
               className="relative flex items-center gap-1.5 hover:opacity-80 transition-opacity z-10"
               title="View student profile"
               onClick={(e) => e.stopPropagation()}

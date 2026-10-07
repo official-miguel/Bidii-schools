@@ -36,6 +36,7 @@ import { requireParent, ownsStudent } from "@/lib/parentAuth";
 import { moduleDisabledResponse } from "@/lib/moduleAccess";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getSchoolIntegrationKey } from "@/lib/integrations";
+import { darajaPassword, darajaTimestamp } from "@/lib/finance/daraja";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -64,24 +65,6 @@ function toE164Kenya(phone: string): string {
   if (s.startsWith("254"))  return s;
   if (s.startsWith("0"))    return "254" + s.slice(1);
   return s;
-}
-
-/** Timestamp in YYYYMMDDHHmmss format — Daraja requirement */
-function darajaTimestamp(): string {
-  const n = new Date();
-  return (
-    n.getFullYear().toString() +
-    String(n.getMonth() + 1).padStart(2, "0") +
-    String(n.getDate()).padStart(2, "0") +
-    String(n.getHours()).padStart(2, "0") +
-    String(n.getMinutes()).padStart(2, "0") +
-    String(n.getSeconds()).padStart(2, "0")
-  );
-}
-
-/** Daraja password = base64(shortcode + passkey + timestamp) */
-function darajaPassword(shortcode: string, passkey: string, timestamp: string): string {
-  return Buffer.from(shortcode + passkey + timestamp).toString("base64");
 }
 
 // ---------------------------------------------------------------------------

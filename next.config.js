@@ -10,6 +10,21 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // No framing by other sites (clickjacking); same-origin framing,
+          // e.g. print previews, keeps working.
+          { key: "X-Frame-Options",         value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options",  value: "nosniff" },
+          { key: "Referrer-Policy",         value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

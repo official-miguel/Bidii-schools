@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import Link from "next/link";
 import {
   BarChart2, Users, BedDouble,
@@ -92,6 +93,7 @@ function Sparkline({ data, color = "bg-teal" }: { data: number[]; color?: string
 
 // ── DormAnalyticsCard ─────────────────────────────────────────────────────────
 function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number }) {
+  const ph = usePortalHref();
   const [expanded, setExpanded] = useState(false);
 
   const occupancyColor = dorm.occupancyPct >= 95 ? "bg-danger" : dorm.occupancyPct >= 80 ? "bg-warn" : "bg-teal";
@@ -115,7 +117,7 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
                   {rank}
                 </span>
               )}
-              <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
+              <Link href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
                 className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal truncate">
                 {dorm.name}
               </Link>
@@ -235,7 +237,7 @@ function DormAnalyticsCard({ dorm, rank }: { dorm: DormAnalytics; rank?: number 
               </div>
             </div>
           )}
-          <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
+          <Link href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
             className="inline-flex items-center gap-1.5 text-xs text-teal font-medium hover:underline">
             View dorm details <ChevronRight className="h-3 w-3" />
           </Link>
@@ -265,6 +267,7 @@ function AchievementBadge({ icon: Icon, title, dormName, value, color }: {
 
 // ── Main analytics page ───────────────────────────────────────────────────────
 export default function AccommodationAnalyticsPage() {
+  const ph = usePortalHref();
   const [data, setData]       = useState<DormAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -324,7 +327,7 @@ export default function AccommodationAnalyticsPage() {
   if (loading) {
     return (
       <div>
-        <ContextNavigation items={NAV_ITEMS} />
+        <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
         <div className="space-y-4 mt-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-line/40/40 animate-pulse" />)}
@@ -342,7 +345,7 @@ export default function AccommodationAnalyticsPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Dorm Analytics"
         description="Cross-module performance dashboard — academic, attendance, discipline, inspection, and occupancy."
@@ -453,10 +456,10 @@ export default function AccommodationAnalyticsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {[
-                { href: "/principal/accommodation/inspections", icon: ClipboardList, label: "Schedule inspection" },
-                { href: "/principal/accommodation/allocations", icon: Users,         label: "Manage allocations" },
-                { href: "/principal/accommodation/management",  icon: Wrench,        label: "Dorm operations" },
-                { href: "/principal/accommodation/reports",     icon: BarChart2,     label: "Generate report" },
+                { href: ph("/principal/accommodation/inspections"), icon: ClipboardList, label: "Schedule inspection" },
+                { href: ph("/principal/accommodation/allocations"), icon: Users,         label: "Manage allocations" },
+                { href: ph("/principal/accommodation/management"),  icon: Wrench,        label: "Dorm operations" },
+                { href: ph("/principal/accommodation/reports"),     icon: BarChart2,     label: "Generate report" },
               ].map(({ href, icon: Icon, label }) => (
                 <Link key={href} href={href}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-teal/40 hover:bg-teal/5 transition-all text-sm text-foreground dark:hover:border-teal/30">

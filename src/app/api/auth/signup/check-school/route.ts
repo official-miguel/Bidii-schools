@@ -1,41 +1,18 @@
 /**
- * GET /api/auth/signup/check-school?email=...
- * Public endpoint (no auth required) — checks whether a school email
- * already exists in the system and whether it has an active Principal.
- * Used by the signup form for live feedback before form submission.
+ * DEPRECATED — served the retired signup form.
  *
- * Returns:
- *   { exists: false }
- *   { exists: true, schoolName: string, activePrincipal: boolean }
+ * It answered, for any email, whether that school existed and whether it had
+ * an active Principal — which told anyone exactly which schools the old
+ * signup endpoint could be used to take over.
+ *
+ * Kept as a stub so any stale client receives a clear error rather than a 404.
  */
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
-  const url   = new URL(req.url);
-  const email = url.searchParams.get("email")?.trim().toLowerCase();
+import { NextResponse } from "next/server";
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ exists: false });
-  }
-
-  const school = await prisma.school.findFirst({
-    where:  { email },
-    select: { id: true, name: true },
-  }).catch(() => null);
-
-  if (!school) {
-    return NextResponse.json({ exists: false });
-  }
-
-  const activePrincipal = await prisma.user.findFirst({
-    where:  { schoolId: school.id, role: "PRINCIPAL", isActive: true },
-    select: { id: true },
-  }).catch(() => null);
-
-  return NextResponse.json({
-    exists:          true,
-    schoolName:      school.name,
-    activePrincipal: !!activePrincipal,
-  });
+export async function GET() {
+  return NextResponse.json(
+    { error: "Self-service signup is no longer available." },
+    { status: 410 }
+  );
 }

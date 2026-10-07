@@ -20,6 +20,8 @@ import type { NextRequest } from "next/server";
 // Note: createMiddlewareClient import removed since we don't use Supabase Auth
 
 const SESSION_COOKIE = "bidii_session";
+/** Keep in sync with PATH_HEADER in src/lib/auth.ts. */
+const PATH_HEADER = "x-bidii-pathname";
 
 const PROTECTED_PREFIXES = [
   "/principal",
@@ -32,9 +34,15 @@ const PROTECTED_PREFIXES = [
 ];
 
 export async function middleware(request: NextRequest) {
+  // Stamp the path for server code that needs it (getCurrentUser uses it to
+  // hold API access until a forced password change is done). Always set here,
+  // overwriting anything the client sent, so it cannot be spoofed.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(PATH_HEADER, request.nextUrl.pathname);
+
   // Build the base response first — the Supabase middleware client needs to
   // write refreshed cookies onto it.
-  const response = NextResponse.next({ request });
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   // NOTE: Supabase Auth is NOT used for authentication in this app.
   // We use custom password-based auth with Prisma + bcrypt.

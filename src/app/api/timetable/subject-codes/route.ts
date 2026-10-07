@@ -1,7 +1,7 @@
 ﻿/**
  * API Route: /api/timetable/subject-codes
  *
- * Manages internal subject codes â€” auto-incrementing integers assigned to
+ * Manages internal subject codes — auto-incrementing integers assigned to
  * subjects in the order they are registered. Never reused even if a subject
  * is removed. Invisible to end users; used by the engine as a stable join key.
  *
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
 /**
  * POST /api/timetable/subject-codes/assign-all
  * Assigns internal codes to all subjects in registration order.
- * Safe to call multiple times â€” only assigns to subjects missing a code.
+ * Safe to call multiple times — only assigns to subjects missing a code.
  */
 export async function PUT(_req: NextRequest) {
   const user = await requireSchoolRole("PRINCIPAL");

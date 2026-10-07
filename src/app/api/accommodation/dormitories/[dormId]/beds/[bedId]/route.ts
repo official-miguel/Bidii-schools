@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
-
-async function manageGuard() {
-  return (
-    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
-    (await requireSchoolPermission("ACCOMMODATION", "manage"))
-  );
-}
+// Layout changes are open to accommodation managers for every dorm and to a
+// dorm master for their own dorm only.
+import { requireDormEditor } from "@/lib/accommodation/dormAccess";
 
 /** Recalculates and updates Dormitory.totalCapacity based on SleepingPosition count. */
 async function recalcCapacity(
@@ -28,7 +23,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { dormId: string; bedId: string } }
 ) {
-  const user = await manageGuard();
+  const user = await requireDormEditor(params.dormId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

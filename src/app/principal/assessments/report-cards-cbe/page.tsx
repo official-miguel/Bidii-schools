@@ -14,7 +14,7 @@ export default async function CbeReportCardsPage({
   searchParams: { periodId?: string; classId?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   // Only CBE framework
   const framework = await db.assessmentFramework.findFirst({

@@ -15,7 +15,7 @@ export default async function TeacherDiaryPage({
   searchParams: { type?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const teacher = await prisma.teacher.findUnique({
     where:  { userId: user.id },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { usePortalBase } from "@/hooks/usePortalBase";
 import type { DeptAnalyticsPayload } from "@/app/api/assessments/department/analytics/route";
 import type { DeptComparePayload } from "@/app/api/assessments/department/compare/route";
 import ExamFilterBar, { type FilterSelection } from "@/components/assessment/ExamFilterBar";
@@ -46,6 +47,7 @@ export default function DeptAnalyticsPage({
   classes,
   subjects,
 }: DeptAnalyticsPageProps) {
+  const portalBase = usePortalBase();
   const [deptId,   setDeptId]   = useState(defaultDepartmentId ?? departments[0]?.id ?? "");
 
   // A department's subjects can be taught in both curricula. Analyse one at a
@@ -198,7 +200,7 @@ export default function DeptAnalyticsPage({
             <DeptSubjectBar
               data={data.subjectBreakdown}
               scale={data.scale}
-              drillDownBase="/principal/assessments/dashboard"
+              drillDownBase={`${portalBase}/assessments/dashboard`}
             />
           </ChartCard>
 

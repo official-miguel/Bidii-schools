@@ -62,7 +62,7 @@ type DiaryWithEntry = {
 
 export default async function ParentDashboard() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) redirect("/login");
+  if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) redirect("/");
 
   const schoolId = user.schoolId!;
 

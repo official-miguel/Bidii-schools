@@ -6,9 +6,9 @@
  * for 5 minutes on the client.
  *
  * Query params:
- *   ?days=30|90|180|365  â€” lookback window (default 90)
- *   ?classId=            â€” filter to one class
- *   ?subject=            â€” filter to one subject
+ *   ?days=30|90|180|365  — lookback window (default 90)
+ *   ?classId=            — filter to one class
+ *   ?subject=            — filter to one subject
  */
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const since   = new Date(Date.now() - days * 86_400_000);
   const sid     = user.schoolId!;
 
-  // â”€â”€ Run all queries concurrently â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Run all queries concurrently ────────────────────────────────────────
   const [
     kpiRaw,
     valueRaw,
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     categoryDistRaw,
   ] = await Promise.all([
 
-    // â”€â”€ KPI block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── KPI block ─────────────────────────────────────────────────────────
     prisma.$queryRaw<{
       totalTitles: bigint; totalCopies: bigint; available: bigint;
       borrowed: bigint; reserved: bigint; lost: bigint;
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
       WHERE lc."schoolId" = ${sid}
     `,
 
-    // â”€â”€ Total inventory value â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Total inventory value ─────────────────────────────────────────────
     prisma.$queryRaw<{ totalValue: number }[]>`
       SELECT COALESCE(SUM(lcp.cost), 0)::float AS "totalValue"
       FROM "LibraryCopy" lcp
@@ -87,12 +87,12 @@ export async function GET(req: NextRequest) {
       WHERE lc."schoolId" = ${sid} AND lcp."archivedAt" IS NULL
     `,
 
-    // â”€â”€ Overdue count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Overdue count ─────────────────────────────────────────────────────
     prisma.libraryBorrow.count({
       where: { schoolId: sid, returnedAt: null, dueAt: { lt: new Date() } },
     }),
 
-    // â”€â”€ Borrow trend by day â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Borrow trend by day ───────────────────────────────────────────────
     prisma.$queryRaw<{ day: string; count: bigint }[]>`
       SELECT TO_CHAR(lb."borrowedAt", 'YYYY-MM-DD') AS day,
              COUNT(*)::bigint                        AS count
@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       GROUP BY day ORDER BY day ASC
     `,
 
-    // â”€â”€ Peak borrow hours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Peak borrow hours ─────────────────────────────────────────────────
     prisma.$queryRaw<{ hour: number; count: bigint }[]>`
       SELECT EXTRACT(HOUR FROM lb."borrowedAt")::int AS hour,
              COUNT(*)::bigint                         AS count
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
       GROUP BY hour ORDER BY hour ASC
     `,
 
-    // â”€â”€ Peak borrow days of week â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Peak borrow days of week ──────────────────────────────────────────
     prisma.$queryRaw<{ dow: number; count: bigint }[]>`
       SELECT EXTRACT(DOW FROM lb."borrowedAt")::int AS dow,
              COUNT(*)::bigint                        AS count
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       GROUP BY dow ORDER BY dow ASC
     `,
 
-    // â”€â”€ Top borrowing students â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Top borrowing students ────────────────────────────────────────────
     prisma.$queryRaw<{ studentId: string; fullName: string; admissionNumber: string; className: string; count: bigint }[]>`
       SELECT s.id AS "studentId", s."fullName", s."admissionNumber",
              sc.name AS "className", COUNT(lb.id)::bigint AS count
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
       ORDER BY count DESC LIMIT 10
     `,
 
-    // â”€â”€ Top borrowing classes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Top borrowing classes ─────────────────────────────────────────────
     prisma.$queryRaw<{ classId: string; className: string; count: bigint }[]>`
       SELECT sc.id AS "classId", sc.name AS "className", COUNT(lb.id)::bigint AS count
       FROM "LibraryBorrow" lb
@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
       GROUP BY sc.id, sc.name ORDER BY count DESC LIMIT 10
     `,
 
-    // â”€â”€ Top borrowing teachers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Top borrowing teachers ────────────────────────────────────────────
     prisma.$queryRaw<{ teacherId: string; fullName: string; count: bigint }[]>`
       SELECT t.id AS "teacherId", t."fullName", COUNT(lcl.id)::bigint AS count
       FROM "LibraryClassroomLoan" lcl
@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
       GROUP BY t.id, t."fullName" ORDER BY count DESC LIMIT 10
     `,
 
-    // â”€â”€ Popular books â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Popular books ─────────────────────────────────────────────────────
     prisma.$queryRaw<{ id: string; title: string; subject: string | null; form: number | null; borrowCount: bigint }[]>`
       SELECT lc.id, lc.title, lc.subject, lc.form,
              COUNT(lb.id)::bigint AS "borrowCount"
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
       ORDER BY "borrowCount" DESC LIMIT 15
     `,
 
-    // â”€â”€ Least-used books â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Least-used books ──────────────────────────────────────────────────
     prisma.$queryRaw<{ id: string; title: string; subject: string | null; form: number | null; lastBorrow: string | null }[]>`
       SELECT lc.id, lc.title, lc.subject, lc.form,
              MAX(lb."borrowedAt")::text AS "lastBorrow"
@@ -181,7 +181,7 @@ export async function GET(req: NextRequest) {
       ORDER BY "lastBorrow" ASC NULLS FIRST LIMIT 15
     `,
 
-    // â”€â”€ Most overdue books â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Most overdue books ────────────────────────────────────────────────
     prisma.$queryRaw<{ id: string; title: string; overdueCount: bigint; maxDaysOverdue: number }[]>`
       SELECT lc.id, lc.title,
              COUNT(lb.id)::bigint AS "overdueCount",
@@ -194,7 +194,7 @@ export async function GET(req: NextRequest) {
       GROUP BY lc.id, lc.title ORDER BY "overdueCount" DESC LIMIT 10
     `,
 
-    // â”€â”€ Fine KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Fine KPIs ─────────────────────────────────────────────────────────
     prisma.$queryRaw<{ totalGenerated: number; outstanding: number; paid: number; waived: number }[]>`
       SELECT
         COALESCE(SUM(CASE WHEN fa."eventType" = 'CHARGE' THEN fa.amount ELSE 0 END), 0)::float AS "totalGenerated",
@@ -206,7 +206,7 @@ export async function GET(req: NextRequest) {
       WHERE lcard."schoolId" = ${sid}
     `,
 
-    // â”€â”€ Fine trend by month â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Fine trend by month ───────────────────────────────────────────────
     prisma.$queryRaw<{ month: string; charged: number; collected: number }[]>`
       SELECT TO_CHAR(fa."createdAt", 'YYYY-MM') AS month,
              COALESCE(SUM(CASE WHEN fa."eventType"='CHARGE' THEN fa.amount ELSE 0 END), 0)::float AS charged,
@@ -216,7 +216,7 @@ export async function GET(req: NextRequest) {
       GROUP BY month ORDER BY month ASC
     `,
 
-    // â”€â”€ Top fine students â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Top fine students ─────────────────────────────────────────────────
     prisma.$queryRaw<{ studentId: string; fullName: string; admissionNumber: string; className: string; fineBalance: number }[]>`
       SELECT s.id AS "studentId", s."fullName", s."admissionNumber",
              sc.name AS "className", lcard."fineBalance"::float
@@ -227,7 +227,7 @@ export async function GET(req: NextRequest) {
       ORDER BY lcard."fineBalance" DESC LIMIT 10
     `,
 
-    // â”€â”€ Copy condition distribution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Copy condition distribution ───────────────────────────────────────
     prisma.$queryRaw<{ condition: string; count: bigint }[]>`
       SELECT lcp.condition, COUNT(*)::bigint AS count
       FROM "LibraryCopy" lcp
@@ -236,13 +236,13 @@ export async function GET(req: NextRequest) {
       GROUP BY lcp.condition
     `,
 
-    // â”€â”€ Never-borrowed catalogue count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Never-borrowed catalogue count ────────────────────────────────────
     prisma.libraryCatalogue.count({
       where: { schoolId: sid, archivedAt: null,
         copies: { none: { borrows: { some: {} } } } },
     }),
 
-    // â”€â”€ Repeat overdue borrowers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Repeat overdue borrowers ──────────────────────────────────────────
     prisma.$queryRaw<{ studentId: string; fullName: string; admissionNumber: string; overdueCount: bigint }[]>`
       SELECT s.id AS "studentId", s."fullName", s."admissionNumber",
              COUNT(lb.id)::bigint AS "overdueCount"
@@ -256,12 +256,12 @@ export async function GET(req: NextRequest) {
       ORDER BY "overdueCount" DESC LIMIT 10
     `,
 
-    // â”€â”€ Active borrower count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Active borrower count ─────────────────────────────────────────────
     prisma.libraryCard.count({
       where: { schoolId: sid, currentBorrowCount: { gt: 0 } },
     }),
 
-    // â”€â”€ Average borrow duration (days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Average borrow duration (days) ────────────────────────────────────
     prisma.$queryRaw<{ avgDays: number }[]>`
       SELECT ROUND(AVG(
         EXTRACT(DAY FROM COALESCE(lb."returnedAt", NOW()) - lb."borrowedAt")
@@ -270,7 +270,7 @@ export async function GET(req: NextRequest) {
       WHERE lb."schoolId" = ${sid} AND lb."borrowedAt" >= ${since}
     `,
 
-    // â”€â”€ Return compliance rate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Return compliance rate ────────────────────────────────────────────
     prisma.$queryRaw<{ total: bigint; onTime: bigint }[]>`
       SELECT COUNT(*)::bigint AS total,
              SUM(CASE WHEN lb."returnedAt" <= lb."dueAt" THEN 1 ELSE 0 END)::bigint AS "onTime"
@@ -279,7 +279,7 @@ export async function GET(req: NextRequest) {
         AND lb."returnedAt" IS NOT NULL
     `,
 
-    // â”€â”€ Borrows by subject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Borrows by subject ────────────────────────────────────────────────
     prisma.$queryRaw<{ subject: string; count: bigint }[]>`
       SELECT COALESCE(lc.subject, 'Unknown') AS subject, COUNT(lb.id)::bigint AS count
       FROM "LibraryCatalogue" lc
@@ -289,7 +289,7 @@ export async function GET(req: NextRequest) {
       GROUP BY lc.subject ORDER BY count DESC LIMIT 12
     `,
 
-    // â”€â”€ Borrows by category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Borrows by category ───────────────────────────────────────────────
     prisma.$queryRaw<{ category: string; count: bigint }[]>`
       SELECT lc.category, COUNT(lb.id)::bigint AS count
       FROM "LibraryCatalogue" lc
@@ -300,7 +300,7 @@ export async function GET(req: NextRequest) {
     `,
   ]);
 
-  // â”€â”€ Serialise bigints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Serialise bigints ─────────────────────────────────────────────────────
   const n = (v: bigint | number | null | undefined) => v == null ? 0 : Number(v);
   const kpi        = kpiRaw[0] ?? {};
   const compliance = returnComplianceRaw[0];

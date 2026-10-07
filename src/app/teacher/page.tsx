@@ -5,7 +5,7 @@ import UnifiedDashboard from "@/components/dashboard/UnifiedDashboard";
 
 export default async function TeacherPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   // Guard for users who navigate directly to /teacher.
   // The root dispatcher already handles this at login, so this is purely a

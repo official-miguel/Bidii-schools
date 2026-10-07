@@ -12,7 +12,7 @@ export default async function StudentReportPage({
   searchParams: { periodId?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const { studentId } = params;
   const periodId = searchParams.periodId ?? "";

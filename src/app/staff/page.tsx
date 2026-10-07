@@ -14,7 +14,7 @@ export default async function StaffPage() {
   // only to /staff/finance or /staff/library, so this cannot loop.
   if (user.role === "TEACHER") redirect("/teacher");
 
-  if (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR") redirect("/login");
+  if (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR") redirect("/");
 
   // Guard for users who navigate directly to /staff.
   // The root dispatcher already handles this at login, so this is purely a

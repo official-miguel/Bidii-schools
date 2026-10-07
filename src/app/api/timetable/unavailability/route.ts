@@ -28,7 +28,7 @@ const schema = z.object({
   slots: z.array(z.object({ dayOfWeek: z.number().int().min(0).max(4), period: z.number().int().min(1) })),
 });
 
-// Replaces the full unavailability set for one teacher â€” simpler and less
+// Replaces the full unavailability set for one teacher — simpler and less
 // error-prone than diffing add/remove from the client, and the grid this
 // feeds is small enough that resending the whole set each save is cheap.
 export async function PUT(req: NextRequest) {

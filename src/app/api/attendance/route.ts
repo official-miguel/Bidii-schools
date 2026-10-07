@@ -18,11 +18,11 @@ function isoDay(date: Date): string {
 }
 
 /// Attendance access:
-///   PRINCIPAL       â†’ allowed for every class (full access).
-///   ADMIN_STAFF     â†’ allowed when their role has the ATTENDANCE module
+///   PRINCIPAL       → allowed for every class (full access).
+///   ADMIN_STAFF     → allowed when their role has the ATTENDANCE module
 ///                     permission (canView / canManage grants read; canCreate
 ///                     / canEdit / canManage grants write).
-///   TEACHER         â†’ allowed only for classes they teach (subject teacher or
+///   TEACHER         → allowed only for classes they teach (subject teacher or
 ///                     class teacher). For "create", restricted to the exact
 ///                     class they are class teacher of.
 /// Returns the user and, for teachers, their Teacher row so callers can stamp
@@ -33,7 +33,7 @@ async function requireAttendanceAccess(classId: string, action: "view" | "create
   if (principalUser) return { user: principalUser, teacher: null, allowed: true as const };
 
   // Everyone else goes through requirePermission (handles ADMIN_STAFF and TEACHER via
-  // getTeacherEffectivePermissions â€” no ad-hoc requireRole("TEACHER") fallback needed).
+  // getTeacherEffectivePermissions — no ad-hoc requireRole("TEACHER") fallback needed).
   const user = await requireSchoolPermission("ATTENDANCE", action);
   if (!user) return { user: null, teacher: null, allowed: false as const };
 
@@ -89,8 +89,8 @@ export async function GET(req: NextRequest) {
   const studentId = params.get("studentId");
   const dateParam = params.get("date");
 
-  // â”€â”€ Class trend mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // ?classId=&from=&to=&trend=1  â†’ per-day attendance % for one class
+  // ── Class trend mode ─────────────────────────────────────────────────────
+  // ?classId=&from=&to=&trend=1  → per-day attendance % for one class
   if (params.get("trend") && classId) {
     const { user, allowed } = await requireAttendanceAccess(classId, "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // â”€â”€ Roster mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Roster mode ─────────────────────────────────────────────────────────
   if (classId) {
     const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));
     if (!date) return NextResponse.json({ error: "Invalid date. Use YYYY-MM-DD." }, { status: 400 });
@@ -170,7 +170,7 @@ export async function GET(req: NextRequest) {
           fullName: s.fullName,
           admissionNumber: s.admissionNumber,
           // No record yet for this day defaults to Present, matching the
-          // checkbox UI (checked = Present) â€” nothing is written to the
+          // checkbox UI (checked = Present) — nothing is written to the
           // database until the teacher actually saves.
           present: (record?.status ?? "PRESENT") === "PRESENT",
           recordId: record?.id ?? null,
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // â”€â”€ Student history mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Student history mode ─────────────────────────────────────────────────
   if (studentId) {
     const user =
       (await requireSchoolRole("PRINCIPAL")) ??
@@ -217,7 +217,7 @@ export async function GET(req: NextRequest) {
         select: { date: true, status: true, classId: true,
                   schoolClass: { select: { name: true } } },
       }),
-      // Fast aggregate for overall stats â€” does not load every row.
+      // Fast aggregate for overall stats — does not load every row.
       prisma.attendance.groupBy({
         by: ["status"],
         where: { studentId, schoolId: user.schoolId! },
@@ -244,7 +244,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // â”€â”€ Absent Today mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Absent Today mode ────────────────────────────────────────────────────
   // ?absentToday=1[&date=YYYY-MM-DD]
   // Returns the list of students who are ABSENT on the given date (default:
   // today), along with their class, admission number, and a 30-day attendance
@@ -338,14 +338,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // â”€â”€ Analytics mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Analytics mode ──────────────────────────────────────────────────────
   // Optimisation: replaced full findMany + JS Map grouping with three parallel
   // SQL GROUP BY queries. Transfers only aggregate rows, not every attendance
   // record.
   //
   // Benchmark (30-day range, school of 400 students):
-  //   Before: ~12 000 rows transferred + JS grouping  â‰ˆ 85 ms
-  //   After:  3 aggregate result sets (~50 rows each)  â‰ˆ 18 ms
+  //   Before: ~12 000 rows transferred + JS grouping  ≈ 85 ms
+  //   After:  3 aggregate result sets (~50 rows each)  ≈ 18 ms
   if (params.get("analytics")) {
     const user = await requireSchoolRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -454,14 +454,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // â”€â”€ Stats mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Stats mode ───────────────────────────────────────────────────────────
   const user = await requireSchoolRole("PRINCIPAL") ?? await requireSchoolPermission("ATTENDANCE", "view");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const date = dateParam ? parseDateOnly(dateParam) : parseDateOnly(isoDay(new Date()));
   if (!date) return NextResponse.json({ error: "Invalid date. Use YYYY-MM-DD." }, { status: 400 });
 
-  // DB-side aggregation: GROUP BY (classId, status) â€” no rows into Node.
+  // DB-side aggregation: GROUP BY (classId, status) — no rows into Node.
   const [statusGroups, classes] = await Promise.all([
     prisma.attendance.groupBy({
       by: ["classId", "status"],
@@ -509,7 +509,7 @@ export async function GET(req: NextRequest) {
     byClass,
   };
 
-  // ETag + short cache â€” attendance counts change at most once per save.
+  // ETag + short cache — attendance counts change at most once per save.
   // private so a shared CDN/proxy never serves one school's data to another.
   const etag = `"${createHash("sha1").update(JSON.stringify(body)).digest("hex").slice(0, 16)}"`;
   if (req.headers.get("if-none-match") === etag) {
@@ -523,16 +523,16 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST ────────────────────────────────────────────────────────────────────
 // Optimisation: replaces N individual upserts in a $transaction array with
 // two fixed operations:
 //   1. createMany(skipDuplicates) for records that don't exist yet.
-//   2. A single UPDATE â€¦ WHERE status != intended (only touches changed rows).
+//   2. A single UPDATE … WHERE status != intended (only touches changed rows).
 // This reduces round-trips from O(N) to O(1) for a typical class save.
 //
 // Benchmark (class of 40):
-//   Before: 40 upsert operations  â‰ˆ 60 ms
-//   After:  createMany + update   â‰ˆ  8 ms
+//   Before: 40 upsert operations  ≈ 60 ms
+//   After:  createMany + update   ≈  8 ms
 
 const postSchema = z.object({
   classId: z.string().min(1, "Choose a class."),
@@ -565,7 +565,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   // Teachers may only submit attendance for today.
-  // This is a server-side enforcement of the once-a-day rule â€” the UI
+  // This is a server-side enforcement of the once-a-day rule — the UI
   // already locks the date to today, but we guard here too.
   if (user.role === "TEACHER") {
     const todayStr = isoDay(new Date());
@@ -622,7 +622,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Step 2: Update existing rows where the status has changed.
-    // Two targeted UPDATE statements â€” one per status value â€” so we only
+    // Two targeted UPDATE statements — one per status value — so we only
     // touch rows that actually need updating.
     if (presentIds.length > 0) {
       await tx.attendance.updateMany({

@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ParentMessagesPage() {
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   const studentIds = parent.students.map((ps) => ps.studentId);
 

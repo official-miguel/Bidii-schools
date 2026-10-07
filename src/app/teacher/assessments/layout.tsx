@@ -21,7 +21,7 @@ export default async function TeacherAssessmentsLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   // Resolve the teacher record so we can check if they have a primary dept /
   // are a class teacher (affects which context nav items are shown).

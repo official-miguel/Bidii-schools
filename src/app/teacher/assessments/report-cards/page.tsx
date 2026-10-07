@@ -22,7 +22,7 @@ export default async function TeacherReportCardsPage({
   searchParams: { periodId?: string; classId?: string };
 }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
 

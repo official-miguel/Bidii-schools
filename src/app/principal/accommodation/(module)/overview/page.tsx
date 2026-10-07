@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import Link from "next/link";
 import {
   Building2, Users, BedDouble, CheckCircle2,
@@ -91,6 +92,7 @@ const NAV_ITEMS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AccommodationOverviewPage() {
+  const ph = usePortalHref();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -121,7 +123,7 @@ export default function AccommodationOverviewPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
 
       <PageHeader
         title="Accommodation"
@@ -137,7 +139,7 @@ export default function AccommodationOverviewPage() {
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
             <Link
-              href="/principal/accommodation/dormitories"
+              href={ph("/principal/accommodation/dormitories")}
               className="inline-flex items-center gap-2 rounded-lg bg-teal text-white text-sm font-medium px-4 py-2.5 hover:bg-teal-dark active:scale-[0.98] transition-all shadow-xs"
             >
               <Plus className="h-4 w-4" />
@@ -158,7 +160,7 @@ export default function AccommodationOverviewPage() {
             Go to Accommodation Settings and change the boarding type to start using this module.
           </p>
           <Link
-            href="/principal/accommodation/settings"
+            href={ph("/principal/accommodation/settings")}
             className="inline-flex items-center gap-2 rounded-lg bg-teal text-white text-sm font-medium px-4 py-2.5 hover:bg-teal-dark transition-all"
           >
             <Plus className="h-4 w-4" /> Configure
@@ -269,7 +271,7 @@ export default function AccommodationOverviewPage() {
             />
             <WorkspaceToolbar.Actions>
               <Link
-                href="/principal/accommodation/dormitories"
+                href={ph("/principal/accommodation/dormitories")}
                 className="inline-flex items-center gap-1.5 text-sm text-teal font-medium hover:underline"
               >
                 Manage all <ArrowRight className="h-3.5 w-3.5" />
@@ -287,7 +289,7 @@ export default function AccommodationOverviewPage() {
                 Register your first dormitory to start managing boarding accommodation.
               </p>
               <Link
-                href="/principal/accommodation/dormitories"
+                href={ph("/principal/accommodation/dormitories")}
                 className="inline-flex items-center gap-2 rounded-lg bg-teal text-white text-sm font-medium px-4 py-2.5 hover:bg-teal-dark transition-all"
               >
                 <Plus className="h-4 w-4" /> Register Dormitory
@@ -308,7 +310,7 @@ export default function AccommodationOverviewPage() {
               return (
                 <Link
                   key={dorm.id}
-                  href={`/principal/accommodation/dormitories/${dorm.id}`}
+                  href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
                   className="group rounded-xl border border-border bg-card p-5 hover:border-teal/40 hover:shadow-md transition-all dark:hover:border-teal/30"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -366,13 +368,13 @@ export default function AccommodationOverviewPage() {
           {/* ── Quick actions ───────────────────────────────────────────── */}
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { href: "/principal/accommodation/dormitories",  icon: Building2,      label: "Manage Dormitories",  desc: "Add, edit, or configure dorm structures and policies" },
-              { href: "/principal/accommodation/allocations",  icon: UserCheck,      label: "Student Allocations", desc: "Allocate students, transfer, bulk operations" },
-              { href: "/principal/accommodation/management",   icon: Shuffle,        label: "Dorm Operations",     desc: "Transfers, maintenance, emergency relocations" },
-              { href: "/principal/accommodation/analytics",    icon: BarChart2,      label: "Analytics Dashboard", desc: "Cross-module performance and risk indicators" },
-              { href: "/principal/accommodation/inspections",  icon: ClipboardList,  label: "Inspections",         desc: "Schedule cleanliness and safety inspections" },
-              { href: "/principal/accommodation/reports",      icon: FileText,       label: "Reports",             desc: "Generate and export occupancy reports" },
-              { href: "/principal/accommodation/settings",     icon: Settings,       label: "Settings",            desc: "Module preferences and default policies" },
+              { href: ph("/principal/accommodation/dormitories"),  icon: Building2,      label: "Manage Dormitories",  desc: "Add, edit, or configure dorm structures and policies" },
+              { href: ph("/principal/accommodation/allocations"),  icon: UserCheck,      label: "Student Allocations", desc: "Allocate students, transfer, bulk operations" },
+              { href: ph("/principal/accommodation/management"),   icon: Shuffle,        label: "Dorm Operations",     desc: "Transfers, maintenance, emergency relocations" },
+              { href: ph("/principal/accommodation/analytics"),    icon: BarChart2,      label: "Analytics Dashboard", desc: "Cross-module performance and risk indicators" },
+              { href: ph("/principal/accommodation/inspections"),  icon: ClipboardList,  label: "Inspections",         desc: "Schedule cleanliness and safety inspections" },
+              { href: ph("/principal/accommodation/reports"),      icon: FileText,       label: "Reports",             desc: "Generate and export occupancy reports" },
+              { href: ph("/principal/accommodation/settings"),     icon: Settings,       label: "Settings",            desc: "Module preferences and default policies" },
             ].map(({ href, icon: Icon, label, desc }) => (
               <Link key={href} href={href}
                 className="group rounded-xl border border-border bg-card p-4 hover:border-teal/40 hover:shadow-md transition-all">

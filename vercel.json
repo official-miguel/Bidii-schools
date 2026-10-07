@@ -9,6 +9,9 @@
     },
     "src/app/api/auth/forgot-password/request/route.ts": {
       "maxDuration": 15
+    },
+    "src/app/api/finance/stk-callback/[token]/route.ts": {
+      "maxDuration": 30
     }
   },
   "crons": [

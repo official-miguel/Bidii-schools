@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { randomBytes, createHash, createHmac } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
@@ -7,6 +7,9 @@ import type { Role, User } from "@prisma/client";
 
 export const SESSION_COOKIE = "bidii_session";
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+/** Request path stamped by middleware. Keep in sync with src/middleware.ts. */
+const PATH_HEADER = "x-bidii-pathname";
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 12);
@@ -72,6 +75,17 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   if (!session || session.expiresAt < new Date() || !session.user.isActive) {
     return null;
   }
+
+  // A forced password change (first login on the school-username or
+  // admission-number password, or after an OTP reset) holds every API until
+  // it is done. Pages still render beneath ForcePasswordChangeModal exactly
+  // as before; this only stops the starter password from being usable against
+  // the API directly. /api/auth/* (change-password, logout) is excluded from
+  // the middleware, carries no path stamp, and so stays reachable.
+  if (session.user.mustChangePassword && headers().get(PATH_HEADER)?.startsWith("/api/")) {
+    return null;
+  }
+
   return session.user;
 });
 

@@ -11,26 +11,26 @@ import { syncParentForStudent } from "@/lib/parentProvisioning";
 // GET /api/students
 //
 // Query parameters
-//   classId  â€” filter to one class
-//   q        â€” search string (name or admission number)
-//   by       â€” "name" (default) | "admission"
-//   limit    â€” page size, 1â€“500, default 200
-//   cursor   â€” admissionNumber of the last row from the previous page
-//              (opaque to the client â€” just pass back what you received)
+//   classId  — filter to one class
+//   q        — search string (name or admission number)
+//   by       — "name" (default) | "admission"
+//   limit    — page size, 1–500, default 200
+//   cursor   — admissionNumber of the last row from the previous page
+//              (opaque to the client — just pass back what you received)
 //
 // Response headers
-//   X-Next-Cursor â€” present when there is another page; pass as ?cursor=
-//   X-Total-Count â€” total matching rows (only returned on the first page,
+//   X-Next-Cursor — present when there is another page; pass as ?cursor=
+//   X-Total-Count — total matching rows (only returned on the first page,
 //                   i.e. when no cursor is supplied), for rendering pagination
 //                   UI without an extra count query on subsequent pages.
 //
 // Performance notes
-//   â€¢ "name" search uses a DB-side ILIKE which benefits from the
+//   • "name" search uses a DB-side ILIKE which benefits from the
 //     Student_fullName_idx trigram/gin index added in migration
 //     20260723000000_add_name_search_indexes.
-//   â€¢ "admission" search hits the unique index on admissionNumber.
-//   â€¢ Results are ordered by fullName ASC then id ASC (stable for cursor).
-//   â€¢ Max page size of 500 prevents a single request from loading all 50k
+//   • "admission" search hits the unique index on admissionNumber.
+//   • Results are ordered by fullName ASC then id ASC (stable for cursor).
+//   • Max page size of 500 prevents a single request from loading all 50k
 //     students.  The offline sync layer uses /api/sync/pull instead.
 // ---------------------------------------------------------------------------
 
@@ -55,12 +55,12 @@ export async function GET(req: NextRequest) {
   const rawLimit = parseInt(sp.get("limit") ?? "200", 10);
   const limit    = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 200, 1), 500);
 
-  // Build the where clause incrementally â€” Prisma's generated types don't
+  // Build the where clause incrementally — Prisma's generated types don't
   // expose a standalone WhereInput via Parameters<> in all versions, so
   // we use an explicit Record shape and let findMany infer the rest.
   const where: Record<string, unknown> = {
     schoolId,
-    archivedAt: null,          // Active students only â€” archived ones live in /api/history/students
+    archivedAt: null,          // Active students only — archived ones live in /api/history/students
     ...(classId ? { classId } : {}),
     ...(q
       ? by === "admission"
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
 
   // Cursor-based pagination: fetch limit+1 rows; if we get limit+1 back
   // there is a next page and we return a cursor pointing to it.
-  // The cursor is the admissionNumber of the last row in the current page â€”
+  // The cursor is the admissionNumber of the last row in the current page —
   // simple and stable since admissionNumber is unique.
   if (cursor) {
     where.admissionNumber = { gt: cursor };
@@ -226,14 +226,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Retry loop: the (schoolId, admissionNumber) unique constraint is the
-  // concurrency guard â€” a clash simply recomputes the next number.
+  // concurrency guard — a clash simply recomputes the next number.
   for (let attempt = 0; attempt < 3; attempt++) {
     const current = await maxAdmissionNumber(schoolId);
     let next: number;
     if (current === null) {
       if (!data.startingAdmissionNumber) {
         return NextResponse.json(
-          { error: "First student â€” provide a starting admission number." },
+          { error: "First student — provide a starting admission number." },
           { status: 400 }
         );
       }
@@ -329,11 +329,11 @@ export async function POST(req: NextRequest) {
           expiresAt,
         },
       }).catch(() => {
-        // Non-fatal â€” card will be auto-provisioned on first library access
+        // Non-fatal — card will be auto-provisioned on first library access
         // if creation fails here (e.g. race condition on card number).
       });
 
-      // â”€â”€ Auto-allocate dorm if school policy + student is boarding â”€â”€â”€â”€â”€â”€
+      // ── Auto-allocate dorm if school policy + student is boarding ──────
       if (data.boardingStatus === "BOARDING") {
         const school = await prisma.school.findUnique({
           where: { id: schoolId },
@@ -370,10 +370,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(student, { status: 201 });
     } catch (e) {
       const err = e as { code?: string };
-      if (err.code === "P2002") continue; // concurrent insert took this number â€” retry
+      if (err.code === "P2002") continue; // concurrent insert took this number — retry
       return NextResponse.json({ error: "Couldn't register student." }, { status: 500 });
     }
   }
-  return NextResponse.json({ error: "Couldn't register student â€” please retry." }, { status: 409 });
+  return NextResponse.json({ error: "Couldn't register student — please retry." }, { status: 409 });
 }
 

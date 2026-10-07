@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
-
-async function manageGuard() {
-  return (
-    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
-    (await requireSchoolPermission("ACCOMMODATION", "manage"))
-  );
-}
+// Layout changes are open to accommodation managers for every dorm and to a
+// dorm master for their own dorm only.
+import { requireDormEditor } from "@/lib/accommodation/dormAccess";
 
 const patchSchema = z.object({
   name:     z.string().trim().min(1).max(50).optional(),
@@ -19,7 +14,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { dormId: string; cubicleId: string } }
 ) {
-  const user = await manageGuard();
+  const user = await requireDormEditor(params.dormId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -190,7 +185,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { dormId: string; cubicleId: string } }
 ) {
-  const user = await manageGuard();
+  const user = await requireDormEditor(params.dormId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

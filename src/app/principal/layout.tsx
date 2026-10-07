@@ -12,9 +12,10 @@ export default async function PrincipalLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== "PRINCIPAL") {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
+  // Signed in with another role: back to their own dashboard via the root
+  // dispatcher. Sending them to /login looked like being logged out.
+  if (user.role !== "PRINCIPAL") redirect("/");
 
   const school = await prisma.school.findUnique({
     where: { id: user.schoolId! },

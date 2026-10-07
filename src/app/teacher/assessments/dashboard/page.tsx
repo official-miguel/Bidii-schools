@@ -19,7 +19,7 @@ const db = prisma as any;
  */
 export default async function TeacherDashboardPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
 

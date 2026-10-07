@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
     // so the names have to be readable without a separate CLASSES grant.
     (await requireSchoolPermission("STUDENTS", "view")) ??
     (await requireRecordsPermission("RECORDS_DISCIPLINE", "view")) ??
-    (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view"));
+    (await requireRecordsPermission("RECORDS_ACHIEVEMENTS", "view")) ??
+    // Accommodation managers filter allocations and dorm rules by class/form.
+    (await requireSchoolPermission("ACCOMMODATION", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const classes = await prisma.schoolClass.findMany({

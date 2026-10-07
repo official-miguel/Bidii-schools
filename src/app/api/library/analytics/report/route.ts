@@ -1,7 +1,7 @@
 /**
  * GET /api/library/analytics/report
  *
- * Filtered report generation â€” supports monthly, termly, annual views
+ * Filtered report generation — supports monthly, termly, annual views
  * with class/stream/subject/department filters.
  *
  * Params:

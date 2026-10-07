@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
+import { usePortalBase, usePortalHref } from "@/hooks/usePortalBase";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -77,6 +78,7 @@ function BedCard({
   dormId: string;
   onDeleted: (bedId: string) => void;
 }) {
+  const ph = usePortalHref();
   const [deleting, setDeleting] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
@@ -147,7 +149,7 @@ function BedCard({
                 {positionLabel(pos)}
               </span>
               {alloc ? (
-                <Link href={`/principal/students/${alloc.student.id}`}
+                <Link href={ph(`/principal/students/${alloc.student.id}`)}
                   className="text-foreground hover:text-teal transition-colors truncate min-w-0 dark:hover:text-teal">
                   {alloc.student.fullName}
                   <span className="text-slate ml-1">· {alloc.student.schoolClass.name}</span>
@@ -715,6 +717,11 @@ function CubicleSection({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DormDetailPage() {
+  const ph = usePortalHref();
+  // A dorm master edits their dorm from the teacher portal, which has no
+  // accommodation module around this page: no module nav, no allocations.
+  const inModule = usePortalBase() !== "/teacher";
+  const navItems = inModule ? NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) })) : [];
   const { dormId } = useParams<{ dormId: string }>();
   const [dorm, setDorm] = useState<DormDetail | null>(null);
   const [beds, setBeds] = useState<BedDetail[]>([]);
@@ -742,7 +749,7 @@ export default function DormDetailPage() {
   if (loading) {
     return (
       <div>
-        <ContextNavigation items={NAV_ITEMS} />
+        {navItems.length > 0 && <ContextNavigation items={navItems} />}
         <div className="space-y-4 mt-6">
           <div className="h-8 w-48 rounded bg-line/40 animate-pulse" />
           <div className="h-32 rounded-xl bg-line/40 animate-pulse" />
@@ -755,10 +762,10 @@ export default function DormDetailPage() {
   if (!dorm) {
     return (
       <div>
-        <ContextNavigation items={NAV_ITEMS} />
+        {navItems.length > 0 && <ContextNavigation items={navItems} />}
         <div className="py-20 text-center">
           <p className="text-slate">Dormitory not found.</p>
-          <Link href="/principal/accommodation/dormitories" className="text-teal text-sm mt-2 inline-block hover:underline">
+          <Link href={ph("/principal/accommodation/dormitories")} className="text-teal text-sm mt-2 inline-block hover:underline">
             Back to dormitories
           </Link>
         </div>
@@ -780,7 +787,7 @@ export default function DormDetailPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      {navItems.length > 0 && <ContextNavigation items={navItems} />}
 
       {successMsg && <div className="mb-4"><SuccessBanner message={successMsg} onDismiss={() => setSuccessMsg(null)} /></div>}
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
@@ -806,7 +813,7 @@ export default function DormDetailPage() {
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate">
               {dorm.boardingMaster && (
                 <span>
-                  <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
+                  <Link href={ph(`/principal/staff/${dorm.boardingMaster.id}`)}
                     className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {dorm.boardingMaster.fullName}
                   </Link>
@@ -815,7 +822,7 @@ export default function DormDetailPage() {
               )}
               {dorm.dormCaptain && (
                 <span>
-                  <Link href={`/principal/students/${dorm.dormCaptain.id}`}
+                  <Link href={ph(`/principal/students/${dorm.dormCaptain.id}`)}
                     className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {dorm.dormCaptain.fullName}
                   </Link>
@@ -824,10 +831,12 @@ export default function DormDetailPage() {
               )}
             </div>
           </div>
-          <Link href="/principal/accommodation/allocations"
-            className="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-teal/5 text-teal text-sm font-medium px-4 py-2 hover:bg-teal/10 transition-all shrink-0">
-            <UserCheck className="h-4 w-4" /> Allocate students
-          </Link>
+          {inModule && (
+            <Link href={ph("/principal/accommodation/allocations")}
+              className="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-teal/5 text-teal text-sm font-medium px-4 py-2 hover:bg-teal/10 transition-all shrink-0">
+              <UserCheck className="h-4 w-4" /> Allocate students
+            </Link>
+          )}
         </div>
 
         {/* Occupancy summary row */}

@@ -12,6 +12,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { portalBaseFromPath } from "@/hooks/usePortalBase";
 import {
   Zap, CheckCircle2, AlertTriangle, AlertCircle, RefreshCw,
   Upload, Trash2, ChevronDown, ChevronUp, Info, Shield,
@@ -84,8 +85,15 @@ interface TimetableGenerateProps {
 
 // ── Issue → fix URL mapping ────────────────────────────────────────────────
 function fixUrl(issue: PreCheckIssue, basePath: string): string | null {
+  // Fix links stay in the portal this screen is rendered under: the
+  // principal layout admits only the Principal, so sending staff there
+  // bounced them to /login.
+  const portal = portalBaseFromPath(basePath);
   switch (issue.type) {
     case "MISSING_TEACHER_ASSIGNMENT": {
+      // Class profiles exist only in the principal portal; staff assign
+      // teachers from their Classes screen.
+      if (portal !== "/principal") return `${portal}/classes`;
       const classId = issue.affectedClasses?.[0];
       return classId
         ? `/principal/class-profiles/${encodeURIComponent(classId)}`
@@ -101,7 +109,7 @@ function fixUrl(issue: PreCheckIssue, basePath: string): string | null {
       return `${basePath}/requirements`;
     case "STREAM_IMBALANCE":
     case "NO_STUDENTS_IN_SUBJECT":
-      return "/principal/students";
+      return `${portal}/students`;
     case "CONFIGURATION_ERROR":
       return `${basePath}/template`;
     default:

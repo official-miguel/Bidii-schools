@@ -12,16 +12,16 @@ const db = prisma as any;
  * Returns students scoped to a specific people-tile (class teacher or subject
  * teacher), enriched with:
  *   - todayAttendance: "PRESENT" | "ABSENT" | "NOT_RECORDED"
- *   - examDelta: number | null  â€” change in mean points vs previous period
+ *   - examDelta: number | null  — change in mean points vs previous period
  *   - examTrend: "UP" | "DOWN" | "FLAT" | null
- *   - lastScore:  number | null â€” most recent mean points
- *   - prevScore:  number | null â€” previous mean points
+ *   - lastScore:  number | null — most recent mean points
+ *   - prevScore:  number | null — previous mean points
  *
  * Query params:
- *   classId    â€” required
- *   subjectId  â€” optional; when provided, scope to that subject's assigned
+ *   classId    — required
+ *   subjectId  — optional; when provided, scope to that subject's assigned
  *                students (elective) or all students in the class (core)
- *   isClassTeacher â€” "1" when the tile is a class-teacher tile
+ *   isClassTeacher — "1" when the tile is a class-teacher tile
  */
 export async function GET(req: NextRequest) {
   const user = await requireRole("TEACHER");
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "classId is required." }, { status: 400 });
   }
 
-  // â”€â”€ Auth: verify the teacher is allowed to see this tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Auth: verify the teacher is allowed to see this tile ──────────────────
   const teacher = await prisma.teacher.findUnique({
     where: { userId: user.id },
     select: {
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // â”€â”€ Students in scope â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Students in scope ────────────────────────────────────────────────────
   // For elective subjects: only students enrolled in that elective.
   // For core/class-teacher tiles: all students in the class.
   let studentWhere: Record<string, unknown> = {
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const todayEnd   = new Date(); todayEnd.setHours(23, 59, 59, 999);
 
-  // â”€â”€ Parallel: today's attendance + exam history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Parallel: today's attendance + exam history ───────────────────────────
   const [attendanceRows, framework] = await Promise.all([
     prisma.attendance.findMany({
       where: {
@@ -126,8 +126,8 @@ export async function GET(req: NextRequest) {
     ])
   );
 
-  // â”€â”€ Exam delta per student â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Map: studentId â†’ { lastScore, prevScore, delta, trend }
+  // ── Exam delta per student ───────────────────────────────────────────────
+  // Map: studentId → { lastScore, prevScore, delta, trend }
   type ExamInfo = {
     lastScore: number | null;
     prevScore: number | null;
@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // Build paper lookup: subjectId â†’ papers[]
+    // Build paper lookup: subjectId → papers[]
     const papersBySubject = new Map<string, Array<{ id: string; maxMarks: number }>>();
     for (const p of papers as Array<{ id: string; maxMarks: number; subjectId: string }>) {
       const arr = papersBySubject.get(p.subjectId) ?? [];
@@ -181,7 +181,7 @@ export async function GET(req: NextRequest) {
       papersBySubject.set(p.subjectId, arr);
     }
 
-    // Build score lookup: "studentId:periodId:paperId" â†’ numericScore
+    // Build score lookup: "studentId:periodId:paperId" → numericScore
     const scoreKey = (sId: string, pId: string, papId: string) => `${sId}:${pId}:${papId}`;
     const scoreMap = new Map<string, number | null>();
     for (const item of allItems as Array<{ studentId: string; periodId: string; paperId: string; numericScore: number | null }>) {
@@ -227,7 +227,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // â”€â”€ Assemble response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Assemble response ────────────────────────────────────────────────────
   const result = students.map((s) => {
     const att  = attMap.get(s.id);
     const exam = examMap.get(s.id);

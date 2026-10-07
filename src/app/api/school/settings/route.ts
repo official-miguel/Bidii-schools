@@ -8,9 +8,12 @@ export async function GET() {
   // Read-only. The student register reads the gender and boarding policy from
   // here to pre-set and constrain the registration form, so anyone who may
   // see the register may read it. Writing is still Principal-only below.
+  // Accommodation managers read it too: dorm gender rules follow the school's
+  // gender policy.
   const user =
     (await requireSchoolRole("PRINCIPAL")) ??
-    (await requireSchoolPermission("STUDENTS", "view"));
+    (await requireSchoolPermission("STUDENTS", "view")) ??
+    (await requireSchoolPermission("ACCOMMODATION", "manage"));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 
@@ -45,7 +48,7 @@ export async function GET() {
   });
 }
 
-// Accept full URLs (https://â€¦) OR relative paths (/uploads/â€¦) OR empty string to clear.
+// Accept full URLs (https://…) OR relative paths (/uploads/…) OR empty string to clear.
 const urlOrRelative = z.string().trim().max(500).refine(
   (v) => v === "" || v.startsWith("/") || /^https?:\/\//.test(v),
   { message: "Must be a URL or a relative path starting with /" }

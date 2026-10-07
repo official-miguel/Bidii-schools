@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import Link from "next/link";
 import {
   Wrench, AlertTriangle, Building2,
@@ -389,6 +390,7 @@ function EmergencyRelocationModal({ dorm, dorms, onClose, onDone }: {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DormManagementPage() {
+  const ph = usePortalHref();
   const [dorms, setDorms]           = useState<DormRow[]>([]);
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState("");
@@ -427,7 +429,7 @@ export default function DormManagementPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Dorm Management"
         description="Transfers, maintenance closures, emergency relocations, and bulk operations."
@@ -501,7 +503,7 @@ export default function DormManagementPage() {
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
+                    <Link href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
                       className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                       {dorm.name}
                     </Link>
@@ -511,7 +513,7 @@ export default function DormManagementPage() {
                   </div>
                   {dorm.boardingMaster && (
                     <p className="text-xs text-slate mb-2">
-                      <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
+                      <Link href={ph(`/principal/staff/${dorm.boardingMaster.id}`)}
                         className="hover:text-teal transition-colors">
                         {dorm.boardingMaster.fullName}
                       </Link>

@@ -3,13 +3,9 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSchoolPermission, requireSchoolRoleForModule } from "@/lib/permissions";
-
-async function manageGuard() {
-  return (
-    (await requireSchoolRoleForModule("ACCOMMODATION", "PRINCIPAL")) ??
-    (await requireSchoolPermission("ACCOMMODATION", "manage"))
-  );
-}
+// Layout changes are open to accommodation managers for every dorm and to a
+// dorm master for their own dorm only.
+import { requireDormEditor } from "@/lib/accommodation/dormAccess";
 
 const createSchema = z.object({
   name: z.string().trim().min(1, "Cubicle name is required.").max(50),
@@ -72,7 +68,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { dormId: string } }
 ) {
-  const user = await manageGuard();
+  const user = await requireDormEditor(params.dormId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { schoolId } = user;
 

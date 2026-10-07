@@ -22,7 +22,7 @@ interface Props {
 export default async function AchievementsPage({ searchParams }: Props) {
   // 1. Auth guard
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   // 2. Resolve active child — fall back to first linked child
   const requestedId = searchParams?.child;

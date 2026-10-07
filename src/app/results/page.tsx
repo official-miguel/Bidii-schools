@@ -16,6 +16,6 @@ export default async function ResultsRootPage() {
     case "TEACHER":
       redirect("/teacher/assessments/report-cards");
     default:
-      redirect("/login");
+      redirect("/");
   }
 }

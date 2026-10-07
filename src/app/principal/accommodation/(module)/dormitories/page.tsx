@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import Link from "next/link";
 import {
   Plus, Building2, ChevronRight, Pencil, Trash2,
@@ -500,6 +501,7 @@ function DormWizard({
 // ── Main page component ───────────────────────────────────────────────────────
 
 export default function DormitoriesPage() {
+  const ph = usePortalHref();
   const [dorms, setDorms] = useState<DormRow[]>([]);
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [studentList, setStudentList] = useState<StudentOption[]>([]);
@@ -562,7 +564,7 @@ export default function DormitoriesPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Dormitories"
         description="Register and manage all boarding dormitories, their structure, and allocation policies."
@@ -627,12 +629,12 @@ export default function DormitoriesPage() {
                   return (
                     <tr key={dorm.id} className="border-b border-border last:border-0 hover:bg-slate-50/50/20 transition-colors">
                       <td className="px-5 py-3.5">
-                        <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
+                        <Link href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
                           className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                           {dorm.name}
                         </Link>
                         {dorm.boardingMaster && (
-                          <Link href={`/principal/staff/${dorm.boardingMaster.id}`}
+                          <Link href={ph(`/principal/staff/${dorm.boardingMaster.id}`)}
                             className="text-xs text-slate hover:text-teal transition-colors dark:hover:text-teal block w-fit">
                             {dorm.boardingMaster.fullName}
                           </Link>
@@ -672,7 +674,7 @@ export default function DormitoriesPage() {
                             aria-label="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <Link href={`/principal/accommodation/dormitories/${dorm.id}`}
+                          <Link href={ph(`/principal/accommodation/dormitories/${dorm.id}`)}
                             className="p-1.5 rounded-md text-slate hover:text-teal hover:bg-teal/10 transition-all"
                             aria-label="View">
                             <ChevronRight className="h-3.5 w-3.5" />

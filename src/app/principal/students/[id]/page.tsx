@@ -5,7 +5,7 @@ import StudentProfile from "@/components/students/StudentProfile";
 
 export default async function StudentProfilePage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const student = await prisma.student.findFirst({
     where: { id: params.id, schoolId: user.schoolId! },

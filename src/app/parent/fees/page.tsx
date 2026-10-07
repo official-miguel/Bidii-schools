@@ -34,7 +34,7 @@ interface Props {
 export default async function FeesPage({ searchParams }: Props) {
   // 1. Auth guard
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   // 2. Get owned student IDs — query directly so we never rely solely on the
   //    eagerly-loaded relation which can return empty if Prisma's include/select

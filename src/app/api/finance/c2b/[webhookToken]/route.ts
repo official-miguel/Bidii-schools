@@ -29,6 +29,9 @@ import { nextReceiptNumber } from "@/lib/finance/receipts";
 
 const OK = { ResultCode: 0, ResultDesc: "Accepted" } as const;
 
+/** Shape of a randomUUID() webhook token. */
+const WEBHOOK_TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET — health check: open the webhook URL in a browser to confirm it resolves.
 export async function GET(req: NextRequest, { params }: { params: { webhookToken: string } }) {
   const paybill = await prisma.schoolMpesaPaybill.findFirst({
@@ -45,10 +48,19 @@ export async function GET(req: NextRequest, { params }: { params: { webhookToken
 export async function POST(req: NextRequest, { params }: { params: { webhookToken: string } }) {
   const token = params.webhookToken;
 
-  // 1. Look up school by webhook token (new paybill table or legacy settings row)
+  // Tokens are generated with randomUUID(). Anything else is not a webhook
+  // token — and must never reach the legacy lookup below as a substring.
+  if (!WEBHOOK_TOKEN_RE.test(token)) {
+    return NextResponse.json({ ResultCode: 1, ResultDesc: "Unauthorized" }, { status: 401 });
+  }
+
+  // 1. Look up school by webhook token (new paybill table or legacy settings row).
+  // The legacy row may hold the bare token or a full URL ending in it. This
+  // used to be a `contains` match, so a request to /c2b/<any short string>
+  // matched whichever school's URL happened to contain it.
   const [legacySettings, paybillRecord] = await Promise.all([
     prisma.financeSettings.findFirst({
-      where:  { mpesaWebhookUrl: { contains: token } },
+      where:  { OR: [{ mpesaWebhookUrl: token }, { mpesaWebhookUrl: { endsWith: `/${token}` } }] },
       select: { schoolId: true, mpesaWebhookSecret: true, receiptPrefix: true },
     }),
     prisma.schoolMpesaPaybill.findFirst({

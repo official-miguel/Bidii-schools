@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import {
   FileText, BedDouble, Users,
   UserMinus, ArrowRight, Building2, BarChart2, Wrench,
@@ -182,6 +183,7 @@ function ReportTypeCard({ meta, active, onClick }: {
 
 // ── Main reports page ─────────────────────────────────────────────────────────
 export default function AccommodationReportsPage() {
+  const ph = usePortalHref();
   const [activeType, setActiveType]   = useState<ReportType>("occupancy");
   const [dorms, setDorms]             = useState<{ id: string; name: string }[]>([]);
   const [dormFilter, setDormFilter]   = useState("");
@@ -230,7 +232,7 @@ export default function AccommodationReportsPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Accommodation Reports"
         description="Generate, filter, and export boarding reports across all dormitories."

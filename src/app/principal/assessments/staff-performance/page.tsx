@@ -10,7 +10,7 @@ const db = prisma as any;
 
 export default async function StaffPerformanceRoute() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "PRINCIPAL") redirect("/login");
+  if (!user || user.role !== "PRINCIPAL") redirect("/");
 
   const actor = await resolveAssessmentActor(user, user.schoolId!);
   if (!canAccessDashboard(actor)) redirect("/principal/assessments");

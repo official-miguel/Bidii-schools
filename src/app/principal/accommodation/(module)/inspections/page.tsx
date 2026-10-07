@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import {
   ClipboardList, Plus, CheckCircle2, Calendar,
   Star, ChevronDown, ChevronUp, Pencil, Trash2,
@@ -329,6 +330,7 @@ function InspectionCard({
 
 // ── Main inspections page ─────────────────────────────────────────────────────
 export default function InspectionsPage() {
+  const ph = usePortalHref();
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [dorms, setDorms]             = useState<DormOption[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -385,7 +387,7 @@ export default function InspectionsPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Dorm Inspections"
         description="Schedule and record cleanliness, safety, and order inspections for each dormitory."

@@ -21,7 +21,7 @@ export default async function HODAssessmentSettingsPage() {
     console.log('[HOD Settings] Starting page load...');
     const user = await getCurrentUser();
     console.log('[HOD Settings] User loaded:', { userId: user?.id, role: user?.role });
-    if (!user || user.role !== "TEACHER") redirect("/login");
+    if (!user || user.role !== "TEACHER") redirect("/");
 
     console.log('[HOD Settings] Resolving actor...');
     const actor = await resolveAssessmentActor(user, user.schoolId!);

@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse }            from "next/server";
 import { z }                                    from "zod";
 import bcrypt                                   from "bcryptjs";
+import { randomInt }                            from "crypto";
 import { prisma }                               from "@/lib/prisma";
 import { resolveUserByIdentifier, resolveUserPhone } from "@/lib/identity";
 import { checkOtpRequestRateLimit }             from "@/lib/rateLimit";
@@ -25,8 +26,10 @@ const schema = z.object({
   schoolSlug: z.string().trim().optional().or(z.literal("")),
 });
 
-// Generic response — returned regardless of outcome to prevent enumeration
-const GENERIC_OK = NextResponse.json(
+// Generic response — returned regardless of outcome to prevent enumeration.
+// Built fresh per call: a Response body can only be sent once, so a shared
+// module-level instance failed every request after the first.
+const GENERIC_OK = () => NextResponse.json(
   { message: "If an account matches, a code has been sent." },
   { status: 200 }
 );
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest) {
   catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
 
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return GENERIC_OK; // never reveal parse errors
+  if (!parsed.success) return GENERIC_OK(); // never reveal parse errors
 
   const { identifier, schoolSlug } = parsed.data;
 
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
   const rl = await checkOtpRequestRateLimit(identifier);
   if (!rl.allowed) {
     // Rate-limited — return generic to avoid timing oracle
-    return GENERIC_OK;
+    return GENERIC_OK();
   }
 
   // ── Resolve user ──────────────────────────────────────────────────────────
@@ -55,16 +58,16 @@ export async function POST(req: NextRequest) {
   );
 
   // Any non-found outcome: return generic (never reveal account existence)
-  if (result.kind !== "found") return GENERIC_OK;
+  if (result.kind !== "found") return GENERIC_OK();
 
   const { user } = result;
 
   // ── Resolve phone ─────────────────────────────────────────────────────────
   const phone = await resolveUserPhone(user.id, user.role);
-  if (!phone) return GENERIC_OK; // no phone on file — generic response
+  if (!phone) return GENERIC_OK(); // no phone on file — generic response
 
   // ── Generate + store OTP ──────────────────────────────────────────────────
-  const otp       = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+  const otp       = String(randomInt(100000, 1000000)); // 6 digits, CSPRNG
   const otpHash   = await bcrypt.hash(otp, 12);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -91,5 +94,5 @@ export async function POST(req: NextRequest) {
     console.error(`[forgot-password] OTP SMS to ${phone.slice(-4).padStart(phone.length, "*")} failed: ${dispatchResult.errorDetail}`);
   }
 
-  return GENERIC_OK;
+  return GENERIC_OK();
 }

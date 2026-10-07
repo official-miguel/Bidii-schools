@@ -28,9 +28,12 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
 import { notifyParents } from "@/lib/parentNotifications";
+import { queryStkPush } from "@/lib/finance/daraja";
 
 // Daraja always expects HTTP 200 with this body — anything else triggers retries
-const OK = NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
+// A fresh response per call: a Response body can only be sent once, so a
+// shared module-level instance failed every callback after the first.
+const OK = () => NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
 // ---------------------------------------------------------------------------
 // Types — Daraja STK Push callback shape
@@ -78,8 +81,8 @@ export async function POST(
 
   if (!school) {
     // Don't reveal 404 — return OK so Daraja doesn't hammer an invalid token
-    console.warn("[STK-CALLBACK] Unknown token:", token);
-    return OK;
+    console.warn("[STK-CALLBACK] Callback with an unknown token"); // never log the token itself
+    return OK();
   }
 
   const schoolId      = school.id;
@@ -90,11 +93,11 @@ export async function POST(
   try {
     payload = (await req.json()) as DarajaCallbackBody;
   } catch {
-    return OK;
+    return OK();
   }
 
   const stkCallback = payload?.Body?.stkCallback;
-  if (!stkCallback) return OK;
+  if (!stkCallback) return OK();
 
   const {
     MerchantRequestID:  merchantRequestId,
@@ -112,7 +115,7 @@ export async function POST(
         data:   { status: "FAILED", failureReason: resultDesc },
       })
       .catch(() => {});
-    return OK;
+    return OK();
   }
 
   // 4. Extract fields from CallbackMetadata items
@@ -127,7 +130,7 @@ export async function POST(
 
   if (!mpesaReceiptNumber || rawAmount <= 0) {
     console.error("[STK-CALLBACK] Missing receipt number or amount in callback metadata", items);
-    return OK;
+    return OK();
   }
 
   // 5. Idempotency — prevent duplicate processing
@@ -144,20 +147,19 @@ export async function POST(
 
   if (existingEntry || existingPayment) {
     // Already processed — idempotent OK
-    return OK;
+    return OK();
   }
 
   // 6. Resolve the StkPushRequest to get the studentId
   const stkRequest = await prisma.stkPushRequest.findFirst({
     where:  { checkoutRequestId, schoolId },
-    select: { studentId: true, id: true },
+    select: { studentId: true, id: true, amount: true, status: true },
   });
 
-  if (!stkRequest?.studentId) {
-    // No matching request row — attempt fallback reconciliation via phone
-    console.warn("[STK-CALLBACK] No StkPushRequest found for CheckoutRequestID:", checkoutRequestId);
-    // Queue for manual reconciliation, mirroring the C2B unmatched-payment path
-    await prisma.mpesaReconciliationQueue
+  // Queue for manual reconciliation, mirroring the C2B unmatched-payment path.
+  // Nothing is credited; the bursar confirms against the M-Pesa statement.
+  const queueForReconciliation = (suggestedStudentId: string | null) =>
+    prisma.mpesaReconciliationQueue
       .create({
         data: {
           schoolId,
@@ -166,15 +168,45 @@ export async function POST(
           amount:             new Decimal(rawAmount),
           paidAt:             new Date(),
           rawPayload:         payload as object,
-          suggestedStudentId: null,
+          suggestedStudentId,
           status:             "PENDING",
         },
       })
       .catch(() => {});
-    return OK;
+
+  if (!stkRequest?.studentId) {
+    // No matching request row — attempt fallback reconciliation via phone
+    console.warn("[STK-CALLBACK] No StkPushRequest found for CheckoutRequestID:", checkoutRequestId);
+    await queueForReconciliation(null);
+    return OK();
   }
 
   const studentId = stkRequest.studentId;
+
+  // 6b. Verify before crediting. This endpoint is public and authenticated
+  // only by the token in its URL, and it used to credit whatever amount the
+  // body claimed. Now the callback must match the push we actually sent, and
+  // Daraja itself must confirm the payment.
+  if (stkRequest.status === "COMPLETED") return OK(); // already credited
+
+  if (stkRequest.status !== "PENDING" || rawAmount !== stkRequest.amount) {
+    console.warn("[STK-CALLBACK] Callback does not match its STK request — queued for review:", checkoutRequestId);
+    await queueForReconciliation(studentId);
+    return OK();
+  }
+
+  const confirmed = await queryStkPush(schoolId, checkoutRequestId);
+  if (confirmed === "NOT_PAID") {
+    console.warn("[STK-CALLBACK] Daraja reports no payment for callback — ignored:", checkoutRequestId);
+    return OK();
+  }
+  if (confirmed === "UNKNOWN") {
+    // Couldn't confirm right now (network, credentials, still processing).
+    // Never lose a real payment: hand it to the bursar instead of crediting.
+    console.warn("[STK-CALLBACK] Could not confirm with Daraja — queued for review:", checkoutRequestId);
+    await queueForReconciliation(studentId);
+    return OK();
+  }
 
   // 7. Look up a real user for the postedById FK (system/auto-post)
   const systemUser = await prisma.user.findFirst({
@@ -185,7 +217,7 @@ export async function POST(
 
   if (!systemUser) {
     console.error("[STK-CALLBACK] No active user found for schoolId:", schoolId);
-    return OK;
+    return OK();
   }
 
   const amount = new Decimal(rawAmount);
@@ -255,7 +287,7 @@ export async function POST(
   } catch (err) {
     console.error("[STK-CALLBACK] Transaction failed:", err);
     // Don't return an error code — Daraja should not retry (it already fired)
-    return OK;
+    return OK();
   }
 
   // 9. Parent notification — fire-and-forget outside the transaction
@@ -271,5 +303,5 @@ export async function POST(
     }).catch(() => {});
   }
 
-  return OK;
+  return OK();
 }

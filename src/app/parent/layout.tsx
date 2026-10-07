@@ -18,9 +18,9 @@ export default async function ParentLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || (user.role !== "PARENT" && user.role !== "STUDENT")) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
+  // Signed in with another role: back to their own dashboard, not /login.
+  if (user.role !== "PARENT" && user.role !== "STUDENT") redirect("/");
 
   const parent = await prisma.parent.findUnique({
     where: { userId: user.id },

@@ -1,18 +1,10 @@
-﻿import { getCurrentUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import InspectionsScreen from "@/app/principal/accommodation/(module)/inspections/page";
+import { requireStaffAccommodationManager } from "../../access";
 
+export const metadata = { title: "Inspections — Accommodation" };
+
+/** Accommodation inspections for staff holding ACCOMMODATION manage (shared with the principal portal). */
 export default async function StaffAccommodationInspectionsPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-2">
-        Dormitory Inspections
-      </h1>
-      <p className="text-sm text-slate">
-        Inspection records management is coming soon.
-      </p>
-    </div>
-  );
+  await requireStaffAccommodationManager();
+  return <InspectionsScreen />;
 }

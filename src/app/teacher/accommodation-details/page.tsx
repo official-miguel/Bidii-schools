@@ -8,7 +8,7 @@ export const metadata = { title: "Accommodation — Teacher Portal" };
 
 export default async function TeacherAccommodationDetailsPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const perms = await getEffectivePermissions(user);
   const acc = perms.ACCOMMODATION;

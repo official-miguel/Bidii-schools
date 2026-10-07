@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent, useRef } from "react";
+import { usePortalHref } from "@/hooks/usePortalBase";
 import Link from "next/link";
 import {
   UserCheck, X, BedDouble, Building2,
@@ -700,6 +701,7 @@ function QuickAssignRow({ student, dorms, onAssigned }: {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AllocationsPage() {
+  const ph = usePortalHref();
   const [students, setStudents]       = useState<StudentRow[]>([]);
   const [dorms, setDorms]             = useState<DormOption[]>([]);
   const [classes, setClasses]         = useState<SchoolClass[]>([]);
@@ -796,7 +798,7 @@ export default function AllocationsPage() {
 
   return (
     <div>
-      <ContextNavigation items={NAV_ITEMS} />
+      <ContextNavigation items={NAV_ITEMS.map((i) => ({ ...i, href: ph(i.href) }))} />
       <PageHeader
         title="Student Allocations"
         description="Allocate, transfer, and manage student boarding accommodation assignments."
@@ -919,7 +921,7 @@ export default function AllocationsPage() {
                         className="h-4 w-4 rounded border-border text-teal" />
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/principal/students/${s.id}`}
+                      <Link href={ph(`/principal/students/${s.id}`)}
                         className="font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                         {s.fullName}
                       </Link>
@@ -931,7 +933,7 @@ export default function AllocationsPage() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <BedDouble className="h-3.5 w-3.5 text-teal shrink-0" />
-                            <Link href={`/principal/accommodation/dormitories/${s.currentAllocation.dormId}`}
+                            <Link href={ph(`/principal/accommodation/dormitories/${s.currentAllocation.dormId}`)}
                               className="text-sm font-medium text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                               {s.currentAllocation.dorm.name}
                             </Link>
@@ -997,7 +999,7 @@ export default function AllocationsPage() {
                 className="h-4 w-4 rounded border-border text-teal shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Link href={`/principal/students/${s.id}`}
+                  <Link href={ph(`/principal/students/${s.id}`)}
                     className="text-sm font-semibold text-foreground hover:text-teal transition-colors dark:hover:text-teal">
                     {s.fullName}
                   </Link>
@@ -1006,7 +1008,7 @@ export default function AllocationsPage() {
                 {s.currentAllocation ? (
                   <p className="text-xs text-teal mt-0.5">
                     <BedDouble className="inline h-3 w-3 mr-1" />
-                    <Link href={`/principal/accommodation/dormitories/${s.currentAllocation.dormId}`}
+                    <Link href={ph(`/principal/accommodation/dormitories/${s.currentAllocation.dormId}`)}
                       className="hover:underline">
                       {s.currentAllocation.dorm.name}
                     </Link>

@@ -8,7 +8,7 @@ import { DEFAULT_AI_CONFIG, resolveModelId, type AiConfig } from "@/lib/soma-ai/
 // ---------------------------------------------------------------------------
 // GET /api/soma-ai/config
 // Returns the AI configuration (model, params, usage stats) for this school.
-// Key preview only â€” never the raw key.
+// Key preview only — never the raw key.
 // ---------------------------------------------------------------------------
 export async function GET() {
   const user = await requireSchoolRole("PRINCIPAL");

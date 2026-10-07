@@ -11,7 +11,7 @@ import PermissionProvider from "@/components/PermissionProvider";
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") redirect("/login");
+  if (!user || user.role !== "TEACHER") redirect("/");
 
   const [school, teacher, perms] = await Promise.all([
     prisma.school.findUnique({ where: { id: user.schoolId! }, select: { name: true, motto: true, logoUrl: true } }),

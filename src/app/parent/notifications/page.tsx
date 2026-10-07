@@ -24,7 +24,7 @@ interface Props {
 
 export default async function ParentNotificationsPage({ searchParams }: Props) {
   const parent = await requireParent();
-  if (!parent) redirect("/login");
+  if (!parent) redirect("/parent");
 
   // Renamed from `module` to `activeModule` to avoid the no-assign-module-variable error.
   const activeModule = searchParams.module || undefined;

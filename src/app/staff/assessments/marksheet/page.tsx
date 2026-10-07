@@ -26,7 +26,9 @@ export default async function StaffMarksheetPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR") redirect("/login");
+  // A teacher admitted to the staff portal enters marks from their own sheet.
+  if (user.role === "TEACHER") redirect("/teacher/assessments/marksheet");
+  if (user.role !== "ADMIN_STAFF" && user.role !== "BURSAR") redirect("/");
 
   const schoolId = user.schoolId!;
   const actor = await resolveAssessmentActor(user, schoolId);
