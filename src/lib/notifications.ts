@@ -61,7 +61,12 @@ export type NotifyOutcome = "sent" | "duplicate" | "failed";
  */
 export async function notifyUser(input: NotifyInput): Promise<NotifyOutcome> {
   try {
-    await prisma.notification.create({
+    // ON CONFLICT DO NOTHING on [userId, dedupKey]: a repeat of an event this
+    // user was already notified about is an expected outcome, not an error.
+    // (create() + catching P2002 worked too, but Prisma logs every P2002 as
+    // "prisma:error", flooding the logs on each scheduler tick.)
+    const { count } = await prisma.notification.createMany({
+      skipDuplicates: true,
       data: {
         schoolId: input.schoolId,
         userId:   input.userId,
@@ -73,11 +78,8 @@ export async function notifyUser(input: NotifyInput): Promise<NotifyOutcome> {
         dedupKey: input.dedupKey,
       },
     });
+    if (count === 0) return "duplicate";
   } catch (err) {
-    const code = (err as { code?: string }).code;
-    // P2002 = unique constraint hit on [userId, dedupKey] — this exact event
-    // already notified this user once. Nothing more to do.
-    if (code === "P2002") return "duplicate";
     console.error("[notifications] notifyUser failed", input.type, err);
     return "failed";
   }

@@ -43,23 +43,25 @@ async function deliverToParents(
       if (alreadyNotified.has(parent.id)) return null;
       const key = dedupKey ? `${dedupKey}:${parent.id}` : null;
       try {
-        await prisma.parentNotification.create({
+        // ON CONFLICT DO NOTHING: a repeated event is expected, not an error
+        // (create() + catching P2002 would log "prisma:error" every time).
+        const { count } = await prisma.parentNotification.createMany({
+          skipDuplicates: true,
           data: { schoolId, parentId: parent.id, module, priority, title, body, metadata: jsonMetadata, dedupKey: key },
         });
-        return parent.userId;
-      } catch (err) {
-        // P2002 = this event already notified this parent — idempotent.
-        if ((err as { code?: string }).code === "P2002" && key) {
-          if (onDuplicate === "refresh") {
-            await prisma.parentNotification.update({
-              where: { schoolId_dedupKey: { schoolId, dedupKey: key } },
-              data: { title, body, priority, metadata: jsonMetadata },
-            }).catch(() => {});
-          }
-        } else {
-          // One parent's failure must not cost the others their notification.
-          console.error("[notifyParents] write failed for parent", parent.id, err);
+        if (count > 0) return parent.userId;
+
+        // This event already notified this parent — idempotent, no re-push.
+        if (key && onDuplicate === "refresh") {
+          await prisma.parentNotification.update({
+            where: { schoolId_dedupKey: { schoolId, dedupKey: key } },
+            data: { title, body, priority, metadata: jsonMetadata },
+          });
         }
+        return null;
+      } catch (err) {
+        // One parent's failure must not cost the others their notification.
+        console.error("[notifyParents] write failed for parent", parent.id, err);
         return null;
       }
     })

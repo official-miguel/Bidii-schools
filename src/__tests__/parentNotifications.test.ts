@@ -8,7 +8,7 @@
 const mockPrisma = {
   parentStudent: { findMany: jest.fn() },
   parent: { findMany: jest.fn() },
-  parentNotification: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
+  parentNotification: { findMany: jest.fn(), createMany: jest.fn(), update: jest.fn() },
 };
 const mockSendPushToUsers = jest.fn();
 
@@ -17,7 +17,8 @@ jest.mock("@/lib/push", () => ({ sendPushToUsers: (...args: unknown[]) => mockSe
 
 import { notifyParents, notifyAllParents } from "@/lib/parentNotifications";
 
-const duplicate = () => Object.assign(new Error("Unique constraint"), { code: "P2002" });
+/** createMany({ skipDuplicates }) reports an already-recorded event as 0 rows. */
+const duplicate = { count: 0 };
 
 const base = {
   schoolId: "school-1",
@@ -35,7 +36,7 @@ beforeEach(() => {
     { parent: { id: "dad", userId: "user-dad" } },
   ]);
   mockPrisma.parentNotification.findMany.mockResolvedValue([]);
-  mockPrisma.parentNotification.create.mockResolvedValue({});
+  mockPrisma.parentNotification.createMany.mockResolvedValue({ count: 1 });
   mockPrisma.parentNotification.update.mockResolvedValue({});
   mockSendPushToUsers.mockResolvedValue(undefined);
 });
@@ -44,7 +45,7 @@ describe("notifyParents", () => {
   it("gives every linked parent their own row and push", async () => {
     await notifyParents({ ...base, dedupKey: "invoice-7" });
 
-    const keys = mockPrisma.parentNotification.create.mock.calls.map(([arg]) => arg.data.dedupKey);
+    const keys = mockPrisma.parentNotification.createMany.mock.calls.map(([arg]) => arg.data.dedupKey);
     expect(keys).toEqual(["invoice-7:mum", "invoice-7:dad"]);
     expect(mockSendPushToUsers).toHaveBeenCalledWith(
       ["user-mum", "user-dad"],
@@ -53,7 +54,7 @@ describe("notifyParents", () => {
   });
 
   it("refreshes a repeated event's text without pushing again", async () => {
-    mockPrisma.parentNotification.create.mockRejectedValueOnce(duplicate());
+    mockPrisma.parentNotification.createMany.mockResolvedValueOnce(duplicate);
 
     await notifyParents({ ...base, dedupKey: "invoice-7" });
 
@@ -68,14 +69,14 @@ describe("notifyParents", () => {
 
     await notifyParents({ ...base, dedupKey: "invoice-7" });
 
-    expect(mockPrisma.parentNotification.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.parentNotification.create.mock.calls[0][0].data.parentId).toBe("dad");
+    expect(mockPrisma.parentNotification.createMany).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.parentNotification.createMany.mock.calls[0][0].data.parentId).toBe("dad");
     expect(mockSendPushToUsers).toHaveBeenCalledWith(["user-dad"], expect.anything());
   });
 
   it("still notifies the other parents when one write fails", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
-    mockPrisma.parentNotification.create.mockRejectedValueOnce(new Error("connection reset"));
+    mockPrisma.parentNotification.createMany.mockRejectedValueOnce(new Error("connection reset"));
 
     await expect(notifyParents({ ...base, dedupKey: "invoice-7" })).resolves.toBeUndefined();
 
@@ -86,7 +87,7 @@ describe("notifyParents", () => {
     await notifyParents(base);
 
     expect(mockPrisma.parentNotification.findMany).not.toHaveBeenCalled();
-    const keys = mockPrisma.parentNotification.create.mock.calls.map(([arg]) => arg.data.dedupKey);
+    const keys = mockPrisma.parentNotification.createMany.mock.calls.map(([arg]) => arg.data.dedupKey);
     expect(keys).toEqual([null, null]);
   });
 
@@ -105,7 +106,7 @@ describe("notifyAllParents", () => {
       { id: "p1", userId: "u1" },
       { id: "p2", userId: "u2" },
     ]);
-    mockPrisma.parentNotification.create.mockRejectedValueOnce(duplicate());
+    mockPrisma.parentNotification.createMany.mockResolvedValueOnce(duplicate);
 
     const { studentId: _unused, ...params } = base;
     const count = await notifyAllParents({ ...params, module: "CALENDAR", dedupKey: "cal-1" });
