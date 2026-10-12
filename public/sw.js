@@ -11,20 +11,22 @@
  *   3. Web Push — shows notifications, routes taps into the app, and renews
  *      the subscription when the browser rotates it.
  *
- * Bump VERSION when this file's caching behaviour or any CORE_ASSETS file
- * (e.g. offline.html) changes — installed apps only re-download them when
- * this file's bytes change. activate() drops every cache from older versions.
+ * Bump CORE_VERSION when any CORE_ASSETS file (e.g. offline.html) changes —
+ * installed apps only re-download them when this file's bytes change. Bump
+ * DATA_VERSION only when cached pages/assets must be thrown away; that costs
+ * users their offline page copies. activate() drops caches of older versions.
  */
 /* eslint-disable no-undef */
 "use strict";
 
-const VERSION = "v2";
-const CORE_CACHE = `bidii-core-${VERSION}`;     // offline page, manifest, icons
-const STATIC_CACHE = `bidii-static-${VERSION}`; // /_next/static — content-hashed, immutable
+const CORE_VERSION = "v3";
+const DATA_VERSION = "v2";
+const CORE_CACHE = `bidii-core-${CORE_VERSION}`;     // offline pages, manifest, icons
+const STATIC_CACHE = `bidii-static-${DATA_VERSION}`; // /_next/static — content-hashed, immutable
 // User-specific — signOut() (src/lib/signOut.ts) deletes every "bidii-pages-*"
 // and "bidii-assets-*" cache, since images include uploads such as photos.
-const ASSET_CACHE = `bidii-assets-${VERSION}`;  // images, fonts and uploads
-const PAGE_CACHE = `bidii-pages-${VERSION}`;    // HTML documents
+const ASSET_CACHE = `bidii-assets-${DATA_VERSION}`;  // images, fonts and uploads
+const PAGE_CACHE = `bidii-pages-${DATA_VERSION}`;    // HTML documents
 
 const OFFLINE_URL = "/offline.html";
 /** Remembers the last signed-in page, so an offline launch from the home screen lands somewhere useful. */
@@ -32,6 +34,16 @@ const LAST_PAGE_KEY = "/__bidii/last-page";
 const PUBLIC_PAGE = /^\/(login|staff-login|signup|forgot-password|install)?(\/|$)/;
 const MAX_PAGES = 80;
 const MAX_ASSETS = 150;
+
+/**
+ * Offline student profiles. Any synced student must open offline, not only
+ * ones whose page was visited, so an uncached /<portal>/students/<id> is
+ * redirected to this static shell, which renders the on-device copy.
+ */
+const OFFLINE_STUDENT_URL = "/offline/student";
+const STUDENT_PAGE = /^\/(teacher|staff|principal)\/students\/([^/]+)\/?$/;
+const SHELL_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const SHELL_TIME_HEADER = "x-bidii-cached-at";
 
 const CORE_ASSETS = [
   OFFLINE_URL,
@@ -49,6 +61,8 @@ self.addEventListener("install", (event) => {
     caches
       .open(CORE_CACHE)
       .then((cache) => cache.addAll(CORE_ASSETS.map((url) => new Request(url, { cache: "reload" }))))
+      // Best-effort: a failure here must not block the worker from installing.
+      .then(() => cacheOfflineStudentShell().catch(() => {}))
       .then(() => self.skipWaiting())
   );
 });
@@ -66,6 +80,18 @@ self.addEventListener("activate", (event) => {
       }
       await self.clients.claim();
     })()
+  );
+});
+
+/** Pages a signed-in dashboard may ask to keep for offline use (see OfflineSyncRegistrar). */
+const WARMABLE_PAGE = /^\/(teacher|staff|principal)\/students\/?$/;
+
+self.addEventListener("message", (event) => {
+  const data = event.data || {};
+  if (data.type !== "CACHE_PAGES" || !Array.isArray(data.urls)) return;
+  const urls = data.urls.filter((u) => typeof u === "string" && WARMABLE_PAGE.test(u));
+  event.waitUntil(
+    Promise.all(urls.map((u) => cachePageWithAssets(u, PAGE_CACHE).catch(() => {})))
   );
 });
 
@@ -120,12 +146,28 @@ async function handleNavigation(event) {
           await trimCache(PAGE_CACHE, MAX_PAGES);
         })().catch(() => {})
       );
+      // Keep the offline student shell in step with new deploys.
+      event.waitUntil(refreshOfflineStudentShellIfStale().catch(() => {}));
     }
     return response;
   } catch {
     const cache = await caches.open(PAGE_CACHE);
     const cached = (await cache.match(request)) || (await cache.match(request, { ignoreSearch: true }));
     if (cached) return cached;
+
+    const url = new URL(request.url);
+    const core = await caches.open(CORE_CACHE);
+
+    // A student profile that was never opened here: show the on-device copy.
+    const student = url.pathname.match(STUDENT_PAGE);
+    if (student && (await core.match(OFFLINE_STUDENT_URL))) {
+      const [, portal, id] = student;
+      return Response.redirect(`${OFFLINE_STUDENT_URL}?id=${id}&portal=${portal}`, 302);
+    }
+    if (url.pathname === OFFLINE_STUDENT_URL) {
+      const shell = await core.match(OFFLINE_STUDENT_URL);
+      if (shell) return shell;
+    }
 
     // Home-screen launch while offline: "/" is only a redirect on the server,
     // so send the user to the last page they had open instead.
@@ -168,6 +210,44 @@ async function staleWhileRevalidate(request, cacheName, event) {
     return cached;
   }
   return (await network) || Response.error();
+}
+
+/**
+ * Fetches a page and caches it together with every /_next/static file its HTML
+ * references, so it renders and hydrates with no network. Old chunk files stay
+ * in STATIC_CACHE, so pages cached before a deploy keep working too.
+ * Skips redirects (e.g. to /login) so they never replace a real page.
+ */
+async function cachePageWithAssets(url, cacheName) {
+  const response = await fetch(url, { cache: "no-store", credentials: "same-origin" });
+  if (!response.ok || response.redirected || response.type !== "basic") return;
+  const html = await response.text();
+
+  const assets = [...new Set(html.match(/\/_next\/static\/[^"'\s)\\]+/g) || [])];
+  const staticCache = await caches.open(STATIC_CACHE);
+  await Promise.all(
+    assets.map(async (path) => {
+      if (await staticCache.match(path)) return;
+      const res = await fetch(path);
+      if (res.ok) await staticCache.put(path, res);
+    })
+  );
+
+  const headers = new Headers(response.headers);
+  headers.set(SHELL_TIME_HEADER, String(Date.now()));
+  const cache = await caches.open(cacheName);
+  await cache.put(url, new Response(html, { status: 200, headers }));
+}
+
+function cacheOfflineStudentShell() {
+  return cachePageWithAssets(OFFLINE_STUDENT_URL, CORE_CACHE);
+}
+
+async function refreshOfflineStudentShellIfStale() {
+  const cached = await (await caches.open(CORE_CACHE)).match(OFFLINE_STUDENT_URL);
+  const cachedAt = Number(cached && cached.headers.get(SHELL_TIME_HEADER));
+  if (cachedAt && Date.now() - cachedAt < SHELL_MAX_AGE_MS) return;
+  await cacheOfflineStudentShell();
 }
 
 /** Drops the oldest entries (Cache API keeps insertion order) beyond `max`. */

@@ -14,6 +14,7 @@ import { SkeletonTable }    from "@/components/ui/ProgressivePage";
 import WorkspaceToolbar from "@/components/workspace/WorkspaceToolbar";
 import { ExternalLink, Pencil } from "lucide-react";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { fetchJsonCached } from "@/lib/offline/cachedJson";
 import SchoolAdminLinks from "@/components/teacher/SchoolAdminLinks";
 
 // ---------------------------------------------------------------------------
@@ -134,16 +135,13 @@ export default function TeacherStudentsPage() {
   useEffect(() => {
     let cancelled = false;
     setPageLoading(true);
+    // Each source falls back on its own: offline, a failed class or "me"
+    // request must not discard the cached roster, or search shows nothing.
     Promise.all([
       fetchAllStudents(),
-      fetch("/api/classes"),
-      fetch("/api/teacher/me"),
+      fetchJsonCached<{ id: string; name: string }[]>("/api/classes", []),
+      fetchJsonCached<{ classTeacherOf?: { id: string } | null } | null>("/api/teacher/me", null),
     ])
-      .then(([stuData, clsRes, meRes]) => Promise.all([
-        stuData,
-        clsRes.ok ? clsRes.json() : [],
-        meRes.ok ? meRes.json() : null,
-      ]))
       .then(([stuData, clsData, meData]) => {
         if (cancelled) return;
         setRawStudents(stuData as Student[]);

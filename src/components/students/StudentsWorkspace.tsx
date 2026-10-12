@@ -26,6 +26,7 @@ import RemoveStudentDialog, { type RemoveStudentTarget } from "@/components/stud
 import { useFormDraft } from "@/lib/hooks/useFormDraft";
 import ClassWorkspaceDrawer from "@/components/entity-drawers/ClassWorkspaceDrawer";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { fetchJsonCached } from "@/lib/offline/cachedJson";
 import { classLevelLabel } from "@/lib/curriculum/classLabels";
 
 // ---------------------------------------------------------------------------
@@ -371,14 +372,12 @@ export default function StudentsWorkspace({
   const loadAll = useCallback(async () => {
     setPageLoading(true);
     try {
-      const [stuData, clsRes, subjRes] = await Promise.all([
+      // Each source falls back on its own: offline, a failed class or subject
+      // request must not discard the cached roster, or search shows nothing.
+      const [stuData, clsData, subjData] = await Promise.all([
         fetchAllStudents(),
-        fetch("/api/classes",  { cache: "no-store" }),
-        fetch("/api/subjects", { cache: "no-store" }),
-      ]);
-      const [clsData, subjData] = await Promise.all([
-        clsRes.ok ? clsRes.json() : [],
-        subjRes.ok ? subjRes.json() : [],
+        fetchJsonCached<SchoolClass[]>("/api/classes", []),
+        fetchJsonCached<Subject[]>("/api/subjects", []),
       ]);
       setRawStudents(stuData as Student[]);
       setRawClasses(clsData);

@@ -1,6 +1,8 @@
 "use client";
 
 import { clearOfflineDB } from "@/lib/offline/db";
+import { CACHED_JSON_PREFIX } from "@/lib/offline/cachedJson";
+import { WARM_KEY_PREFIX } from "@/lib/offline/useOfflineStudentSync";
 
 /** Service worker caches holding the signed-in user's pages and images (see public/sw.js). */
 const USER_CACHE_PREFIXES = ["bidii-pages-", "bidii-assets-"];
@@ -39,6 +41,10 @@ export async function signOut(): Promise<void> {
 
   await Promise.allSettled([
     clearOfflineDB(),
+    (async () => {
+      const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHED_JSON_PREFIX) || k.startsWith(WARM_KEY_PREFIX));
+      keys.forEach((k) => localStorage.removeItem(k));
+    })(),
     (async () => {
       if (!("caches" in window)) return;
       const names = await caches.keys();

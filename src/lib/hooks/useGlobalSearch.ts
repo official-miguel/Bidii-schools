@@ -18,6 +18,7 @@
 
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
+import { fetchJsonCached } from "@/lib/offline/cachedJson";
 import { usePermissions } from "@/components/PermissionProvider";
 import type { OptionalModule } from "@/lib/moduleAccess";
 
@@ -243,40 +244,22 @@ export function useGlobalSearch(query: string, role: string) {
       setLoading(true);
       try {
         if (isStaffRole) {
-          const [studentsData, teachersRes, departmentsRes, subjectsRes] = await Promise.all([
+          // Each source falls back on its own: offline, a failed staff or
+          // subject request must not discard the cached student roster.
+          const [studentsData, teachersData, departmentsData, subjectsData] = await Promise.all([
             fetchAllStudents(),
-            fetch("/api/staff"),
-            fetch("/api/departments"),
-            fetch("/api/subjects"),
+            fetchJsonCached<LocalTeacher[]>("/api/staff", []),
+            fetchJsonCached<LocalDepartment[]>("/api/departments", []),
+            fetchJsonCached<LocalSubject[]>("/api/subjects", []),
           ]);
 
-          // Process students response
-          {
-            const activeStudents = (studentsData as LocalStudent[]).filter(s => !s.archivedAt);
-            activeStudents.sort((a, b) => a.fullName.localeCompare(b.fullName));
-            setStudents(activeStudents);
-          }
+          const activeStudents = (studentsData as LocalStudent[]).filter(s => !s.archivedAt);
+          activeStudents.sort((a, b) => a.fullName.localeCompare(b.fullName));
+          setStudents(activeStudents);
 
-          // Process teachers response
-          if (teachersRes.ok) {
-            const teachersData: LocalTeacher[] = await teachersRes.json();
-            teachersData.sort((a, b) => a.fullName.localeCompare(b.fullName));
-            setTeachers(teachersData);
-          }
-
-          // Process departments response
-          if (departmentsRes.ok) {
-            const departmentsData: LocalDepartment[] = await departmentsRes.json();
-            departmentsData.sort((a, b) => a.name.localeCompare(b.name));
-            setDepartments(departmentsData);
-          }
-
-          // Process subjects response
-          if (subjectsRes.ok) {
-            const subjectsData: LocalSubject[] = await subjectsRes.json();
-            subjectsData.sort((a, b) => a.name.localeCompare(b.name));
-            setSubjects(subjectsData);
-          }
+          setTeachers([...teachersData].sort((a, b) => a.fullName.localeCompare(b.fullName)));
+          setDepartments([...departmentsData].sort((a, b) => a.name.localeCompare(b.name)));
+          setSubjects([...subjectsData].sort((a, b) => a.name.localeCompare(b.name)));
         }
       } catch (error) {
         console.error("Failed to fetch search data:", error);

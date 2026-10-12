@@ -5,6 +5,32 @@ import { fetchAllStudents } from "@/lib/utils/fetchAllStudents";
 import { cacheStudentProfile } from "@/lib/offline/studentsCache";
 import { getOfflineDB } from "@/lib/offline/db";
 
+export const WARM_KEY_PREFIX = "bidii_page_warmed_at:";
+const WARM_EVERY_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Ask the service worker to keep this portal's Students page for offline use,
+ * so search works offline even if the page was never opened on this device.
+ * (Student profiles need no warming: sw.js redirects any uncached one to the
+ * /offline/student shell.) At most every six hours per page.
+ */
+async function warmStudentsPage(): Promise<void> {
+  try {
+    const portal = window.location.pathname.split("/")[1];
+    if (portal !== "teacher" && portal !== "staff" && portal !== "principal") return;
+    const url = `/${portal}/students`;
+    const key = WARM_KEY_PREFIX + url;
+    if (Date.now() - Number(localStorage.getItem(key)) < WARM_EVERY_MS) return;
+
+    const registration = await navigator.serviceWorker?.ready;
+    if (!registration?.active || !navigator.onLine) return;
+    registration.active.postMessage({ type: "CACHE_PAGES", urls: [url] });
+    localStorage.setItem(key, String(Date.now()));
+  } catch {
+    // Best-effort — offline search still works for pages already visited.
+  }
+}
+
 /**
  * Background full-roster sync so ANY saved student — not just ones already
  * opened in this browser — can be searched and viewed with no internet.
@@ -60,7 +86,8 @@ export function useOfflineStudentSync() {
     }
 
     runSync();
-    const onOnline = () => runSync();
+    void warmStudentsPage();
+    const onOnline = () => { runSync(); void warmStudentsPage(); };
     window.addEventListener("online", onOnline);
     return () => {
       cancelled = true;

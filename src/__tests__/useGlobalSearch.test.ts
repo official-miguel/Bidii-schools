@@ -185,9 +185,9 @@ describe('useGlobalSearch Hook - Task 1.2 Verification', () => {
       // Verify API calls were made. Students go through the paginated helper,
       // so assert on the paged URL rather than a bare '/api/students'.
       expect(mockFetch).toHaveBeenCalledWith('/api/students?limit=500', { cache: 'no-store' });
-      expect(mockFetch).toHaveBeenCalledWith('/api/staff');
-      expect(mockFetch).toHaveBeenCalledWith('/api/departments');
-      expect(mockFetch).toHaveBeenCalledWith('/api/subjects');
+      expect(mockFetch).toHaveBeenCalledWith('/api/staff', { cache: 'no-store' });
+      expect(mockFetch).toHaveBeenCalledWith('/api/departments', { cache: 'no-store' });
+      expect(mockFetch).toHaveBeenCalledWith('/api/subjects', { cache: 'no-store' });
     });
 
     it('should handle API failures gracefully', async () => {
