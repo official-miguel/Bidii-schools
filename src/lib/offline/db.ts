@@ -51,3 +51,15 @@ export function getOfflineDB(): OfflineDB | null {
   if (!dbInstance) dbInstance = new OfflineDB();
   return dbInstance;
 }
+
+/**
+ * Deletes the whole on-device cache — called on sign-out so the next person
+ * to use a shared device can't browse the previous user's school records.
+ * The next getOfflineDB() call recreates an empty database.
+ */
+export async function clearOfflineDB(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const db = dbInstance ?? new OfflineDB();
+  dbInstance = null;
+  await db.delete();
+}

@@ -11,6 +11,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
@@ -98,7 +99,7 @@ export default function SuperAdminSidebar({ isOwner = false, mobileOpen = false,
 
   async function handleLogout() {
     onMobileClose?.();
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }

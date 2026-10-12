@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { NotificationPriority } from "@prisma/client";
 import type { ParentWithStudents } from "./parentAuth";
+import { sendPushToUsers } from "./push";
+import { PARENT_MODULE_HREF } from "./parentNotificationLinks";
 
 export interface NotifyParentsParams {
   schoolId: string;
@@ -14,126 +16,127 @@ export interface NotifyParentsParams {
   metadata?: Record<string, unknown>;
 }
 
+type ParentRecipient = { id: string; userId: string };
+
 /**
- * Writes a ParentNotification row for every parent linked to the given student.
+ * Writes one ParentNotification per recipient and pushes to the devices of
+ * every parent who got a NEW row. Re-delivery of an already-recorded event
+ * (same dedupKey) never re-pushes.
  *
- * - If dedupKey is provided, uses upsert on @@unique([schoolId, dedupKey])
- *   so duplicate events are idempotent (exactly one row per dedupKey per school).
- * - If dedupKey is omitted, always creates a new row.
- * - Wraps everything in try/catch: on error, logs to console and returns without
- *   throwing so the caller's primary operation is never affected.
+ * ParentNotification is unique on [schoolId, dedupKey], so the stored key is
+ * suffixed with the parent id — one shared key would let only the first of a
+ * child's parents ever be notified.
+ */
+async function deliverToParents(
+  recipients: ParentRecipient[],
+  params: Omit<NotifyParentsParams, "studentId">,
+  onDuplicate: "refresh" | "keep",
+  /** Parent ids that already hold a row under a pre-suffix (legacy) key. */
+  alreadyNotified: ReadonlySet<string> = new Set()
+): Promise<void> {
+  const { schoolId, module, priority, title, body, dedupKey, metadata } = params;
+  // Prisma requires Prisma.JsonNull (not plain null) for nullable JSON fields
+  const jsonMetadata = metadata !== undefined ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
+
+  const created = await Promise.all(
+    recipients.map(async (parent): Promise<string | null> => {
+      if (alreadyNotified.has(parent.id)) return null;
+      const key = dedupKey ? `${dedupKey}:${parent.id}` : null;
+      try {
+        await prisma.parentNotification.create({
+          data: { schoolId, parentId: parent.id, module, priority, title, body, metadata: jsonMetadata, dedupKey: key },
+        });
+        return parent.userId;
+      } catch (err) {
+        // P2002 = this event already notified this parent — idempotent.
+        if ((err as { code?: string }).code === "P2002" && key) {
+          if (onDuplicate === "refresh") {
+            await prisma.parentNotification.update({
+              where: { schoolId_dedupKey: { schoolId, dedupKey: key } },
+              data: { title, body, priority, metadata: jsonMetadata },
+            }).catch(() => {});
+          }
+        } else {
+          // One parent's failure must not cost the others their notification.
+          console.error("[notifyParents] write failed for parent", parent.id, err);
+        }
+        return null;
+      }
+    })
+  );
+
+  const userIds = created.filter((id): id is string => id !== null);
+  await sendPushToUsers(userIds, {
+    title,
+    body,
+    href: PARENT_MODULE_HREF[module] ?? "/parent/notifications",
+    tag: dedupKey,
+  });
+}
+
+/**
+ * Notifies every parent linked to the given student: an in-app
+ * ParentNotification plus a push to their installed app / browser.
  *
- * Usage (fire-and-forget outside primary transaction):
- *   void notifyParents({ ... }).catch(() => {});
- *   // or await it after the primary write completes:
- *   await notifyParents({ ... });
+ * - With a dedupKey the call is idempotent per parent: repeating the event
+ *   refreshes the existing row's text and does not push again.
+ * - Without one, every call creates a fresh row.
+ * - Never throws — a notification failure must not roll back the caller's
+ *   operation. Callers in request handlers should hand the promise to
+ *   waitUntil() rather than `void` it, or serverless may freeze before the
+ *   push is sent.
  */
 export async function notifyParents(params: NotifyParentsParams): Promise<void> {
-  const { schoolId, studentId, module, priority, title, body, dedupKey, metadata } = params;
+  const { schoolId, studentId, dedupKey, ...rest } = params;
 
   try {
-    // Find all parents linked to this student
-    const parentStudents = await prisma.parentStudent.findMany({
+    const links = await prisma.parentStudent.findMany({
       where: { studentId },
-      select: { parentId: true },
+      select: { parent: { select: { id: true, userId: true } } },
     });
+    if (links.length === 0) return;
 
-    // Bail early — no linked parents, nothing to notify
-    if (parentStudents.length === 0) return;
+    // Rows written before keys were suffixed per parent used the bare key.
+    // Whoever holds one was already notified about this event.
+    const legacy = dedupKey
+      ? await prisma.parentNotification.findMany({
+          where: { schoolId, dedupKey },
+          select: { parentId: true },
+        })
+      : [];
 
-    // Prisma requires Prisma.JsonNull (not plain null) for nullable JSON fields
-    const jsonMetadata = metadata !== undefined ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
-
-    // Fan out a notification write per linked parent
-    await Promise.all(
-      parentStudents.map((ps) => {
-        const data = {
-          schoolId,
-          parentId: ps.parentId,
-          module,
-          priority,
-          title,
-          body,
-          metadata: jsonMetadata,
-          dedupKey: dedupKey ?? null,
-        };
-
-        if (dedupKey) {
-          // Upsert on @@unique([schoolId, dedupKey]) — idempotent for duplicate events
-          return prisma.parentNotification.upsert({
-            where: { schoolId_dedupKey: { schoolId, dedupKey } },
-            create: data,
-            update: { title, body, priority, metadata: jsonMetadata },
-          });
-        }
-
-        // No dedupKey — always create a fresh row
-        return prisma.parentNotification.create({ data });
-      })
+    await deliverToParents(
+      links.map((l) => l.parent),
+      { schoolId, dedupKey, ...rest },
+      "refresh",
+      new Set(legacy.map((r) => r.parentId))
     );
   } catch (err) {
-    // Non-throwing: notification failure must not roll back the caller's operation
-    console.error("[notifyParents] Failed to write ParentNotification:", err);
+    console.error("[notifyParents] Failed to notify parents:", err);
   }
 }
 
-export interface NotifyAllParentsParams extends Omit<NotifyParentsParams, "studentId" | "dedupKey"> {
-  /**
-   * Base key for the event. A per-parent suffix is appended automatically —
-   * ParentNotification's unique index is [schoolId, dedupKey], so a school-wide
-   * fan-out that reused one key for every parent would write a single row and
-   * silently update it for each subsequent parent instead of notifying them.
-   */
-  dedupKey?: string;
-}
+export type NotifyAllParentsParams = Omit<NotifyParentsParams, "studentId">;
 
 /**
- * Writes a ParentNotification for EVERY parent in the school — for things that
- * are not about one child, such as a calendar announcement addressed to parents.
+ * Notifies EVERY parent in the school — for things that are not about one
+ * child, such as a calendar announcement addressed to parents.
  *
  * Like notifyParents, this never throws: a notification failure must not roll
  * back the caller's primary operation.
  */
 export async function notifyAllParents(params: NotifyAllParentsParams): Promise<number> {
-  const { schoolId, module, priority, title, body, dedupKey, metadata } = params;
-
   try {
     const parents = await prisma.parent.findMany({
-      where: { schoolId },
-      select: { id: true },
+      where: { schoolId: params.schoolId },
+      select: { id: true, userId: true },
     });
     if (parents.length === 0) return 0;
 
-    const jsonMetadata =
-      metadata !== undefined ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
-
-    await Promise.all(
-      parents.map((p) => {
-        const data = {
-          schoolId,
-          parentId: p.id,
-          module,
-          priority,
-          title,
-          body,
-          metadata: jsonMetadata,
-          dedupKey: dedupKey ? `${dedupKey}:${p.id}` : null,
-        };
-
-        if (dedupKey) {
-          return prisma.parentNotification.upsert({
-            where: { schoolId_dedupKey: { schoolId, dedupKey: `${dedupKey}:${p.id}` } },
-            create: data,
-            update: {},
-          });
-        }
-        return prisma.parentNotification.create({ data });
-      })
-    );
-
+    await deliverToParents(parents, params, "keep");
     return parents.length;
   } catch (err) {
-    console.error("[notifyAllParents] Failed to write ParentNotification:", err);
+    console.error("[notifyAllParents] Failed to notify parents:", err);
     return 0;
   }
 }

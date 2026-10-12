@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2C7F7E" />
   <title>Bidii — Offline</title>
+  <!--
+    Served by public/sw.js when a page can't be fetched and was never opened
+    before. Self-contained: only the precached icon is loaded.
+  -->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #F7F5EF;
-      color: #1a1a1a;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #F5F7FA;
+      color: #1F2933;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -18,71 +23,50 @@
     }
     .card {
       background: #ffffff;
-      border: 1px solid #e5e7eb;
       border-radius: 16px;
-      padding: 2.5rem 2rem;
+      padding: 2.25rem 1.75rem;
       max-width: 380px;
       width: 100%;
       text-align: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      box-shadow: 0 10px 30px rgba(31, 41, 51, .08), 0 0 0 1px rgba(0, 0, 0, .04);
     }
-    .logo {
-      display: inline-flex;
-      height: 52px;
-      width: 52px;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      background: #1E3A8A;
-      color: #F59E0B;
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      letter-spacing: -.5px;
-    }
-    h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1E3A8A;
-      margin-bottom: 0.625rem;
-    }
-    p {
-      font-size: 0.875rem;
-      color: #6b7280;
-      line-height: 1.65;
-      margin-bottom: 1.75rem;
-    }
+    .logo { width: 72px; height: 72px; border-radius: 16px; margin-bottom: 1.25rem; }
+    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: .5rem; }
+    p { font-size: .9rem; color: #667085; line-height: 1.6; }
+    .actions { display: grid; gap: .625rem; margin-top: 1.5rem; }
     button {
-      background: #1E3A8A;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 1.5rem;
-      font-size: 0.875rem;
-      font-weight: 500;
+      border: 0;
+      border-radius: 12px;
+      padding: .8rem 1.25rem;
+      font: inherit;
+      font-size: .9rem;
+      font-weight: 600;
       cursor: pointer;
-      width: 100%;
-      transition: background .15s;
+      min-height: 44px;
     }
-    button:hover { background: #1e40af; }
-    button:active { background: #1d3a8a; }
-    .hint {
-      margin-top: 1rem;
-      font-size: 0.75rem;
-      color: #9ca3af;
-    }
+    .primary { background: #2C7F7E; color: #fff; }
+    .primary:hover { background: #256b6a; }
+    .secondary { background: transparent; color: #2C7F7E; }
+    .secondary:hover { background: #EDF7F7; }
+    .hint { margin-top: 1rem; font-size: .75rem; color: #98A2B3; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">B</div>
+  <main class="card">
+    <img class="logo" src="/icons/icon-192.png" alt="Bidii" width="72" height="72" />
     <h1>You're offline</h1>
     <p>
-      Bidii can't reach the server right now.
-      Your changes are saved locally and will sync automatically when you reconnect.
+      This page hasn't been opened on this device yet, so it isn't available
+      without internet. Pages you've opened before still work offline.
     </p>
-    <button onclick="window.location.reload()">Try again</button>
-    <p class="hint">If this persists, check your internet connection.</p>
-  </div>
+    <div class="actions">
+      <button class="primary" type="button" onclick="location.reload()">Try again</button>
+      <button class="secondary" type="button" onclick="history.length > 1 ? history.back() : location.assign('/')">Go back</button>
+    </div>
+    <p class="hint">Saving changes needs a connection. This page reloads by itself when you're back online.</p>
+  </main>
+  <script>
+    window.addEventListener("online", function () { location.reload(); });
+  </script>
 </body>
 </html>

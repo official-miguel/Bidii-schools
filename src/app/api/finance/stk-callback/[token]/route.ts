@@ -29,6 +29,7 @@ import { postLedgerEntry } from "@/lib/finance/ledger";
 import { nextReceiptNumber } from "@/lib/finance/receipts";
 import { notifyParents } from "@/lib/parentNotifications";
 import { queryStkPush } from "@/lib/finance/daraja";
+import { waitUntil } from "@vercel/functions";
 
 // Daraja always expects HTTP 200 with this body — anything else triggers retries
 // A fresh response per call: a Response body can only be sent once, so a
@@ -290,9 +291,10 @@ export async function POST(
     return OK();
   }
 
-  // 9. Parent notification — fire-and-forget outside the transaction
+  // 9. Parent notification outside the transaction — waitUntil keeps the
+  //    function alive until it is pushed, without delaying Daraja's ACK.
   if (paymentId) {
-    void notifyParents({
+    waitUntil(notifyParents({
       schoolId,
       studentId,
       module:   "FEES",
@@ -300,7 +302,7 @@ export async function POST(
       title:    "Payment Received",
       body:     `KSh ${amount.toFixed(2)} received via M-Pesa. Thank you!`,
       dedupKey: `stk-payment-${paymentId}`,
-    }).catch(() => {});
+    }));
   }
 
   return OK();

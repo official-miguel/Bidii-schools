@@ -23,6 +23,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { SchoolBrandingProvider } from "@/components/SchoolBrandingProvider";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import { Logo } from "@/components/Logo";
 import {
   Home,
@@ -44,7 +45,7 @@ import {
 } from "lucide-react";
 import { useParentStore } from "@/lib/stores/parentStore";
 import NotificationCenter, { NotificationBell } from "@/components/NotificationCenter";
-import { usePushNotifications } from "@/lib/push/usePushNotifications";
+import PushRegistrar from "@/components/PushRegistrar";
 import ServerNotificationSync from "@/components/ServerNotificationSync";
 
 // ── Nav definitions ──────────────────────────────────────────────────────────
@@ -125,8 +126,6 @@ export default function ParentPortalShell({
   const activeSeg  = getActiveSeg(pathname);
   const userInits  = initials(parentName);
 
-  usePushNotifications();
-
   // Real, data-backed counts keyed by badgeKey — no hardcoded literals.
   const badgeCounts: Record<string, number> = { diary: diaryBadge, messages: messagesBadge };
 
@@ -189,7 +188,7 @@ export default function ParentPortalShell({
 
   async function handleLogout() {
     setDrawerOpen(false);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }
@@ -224,6 +223,7 @@ export default function ParentPortalShell({
     <SchoolBrandingProvider logoUrl={schoolLogoUrl ?? null} schoolName={schoolName ?? null}>
     <div className="min-h-screen bg-[#F5F7FA]">
       <ServerNotificationSync userScope={userEmail} includeParent />
+      <PushRegistrar />
 
       {/* ── Fixed top bar ──────────────────────────────────────────────── */}
       <header

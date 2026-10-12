@@ -1,9 +1,13 @@
 "use client";
 
 import { usePushNotifications } from "@/lib/push/usePushNotifications";
+import NotificationPrompt from "@/components/NotificationPrompt";
 
-/** Invisible — just mounts the push-subscription effect for this dashboard. */
+/**
+ * Mounted once per signed-in shell (DashboardShell, ParentPortalShell):
+ * keeps the push subscription in sync and offers the "Turn on" card.
+ */
 export default function PushRegistrar() {
   usePushNotifications();
-  return null;
+  return <NotificationPrompt />;
 }

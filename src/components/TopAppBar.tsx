@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Logo } from "@/components/Logo";
@@ -143,7 +144,7 @@ export default function TopAppBar({
 
   async function handleLogout() {
     setProfileOpen(false);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }

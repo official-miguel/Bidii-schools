@@ -5,6 +5,7 @@ import { requireRecordsPermission } from "@/lib/permissions";
 import { summarizeAchievement } from "@/lib/ai/recordsSummary";
 import { notifyParents } from "@/lib/parentNotifications";
 import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
+import { waitUntil } from "@vercel/functions";
 
 const categoryEnum = z.enum(["SPORTS", "LEADERSHIP", "MUSIC_FESTIVAL", "ACADEMICS", "INNOVATION", "OTHER"]);
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     // Notify linked parents for every student on this achievement when visible
     if (achievement.isVisibleToParent) {
       for (const as of achievement.students) {
-        void notifyParents({
+        waitUntil(notifyParents({
           schoolId: user.schoolId!,
           studentId: as.student.id,
           module: "ACHIEVEMENTS",
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
           title: "Achievement Recorded",
           body: `A new achievement has been added: ${achievement.title}`,
           dedupKey: `ach-${achievement.id}`,
-        }).catch(() => {});
+        }));
       }
     }
 

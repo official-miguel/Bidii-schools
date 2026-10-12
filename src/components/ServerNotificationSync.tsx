@@ -29,6 +29,7 @@ import {
   useProductivityStore,
   type NotificationCategory,
 } from "@/lib/stores/productivityStore";
+import { PARENT_MODULE_HREF } from "@/lib/parentNotificationLinks";
 
 /** Id prefixes — also the reconcile keys. */
 export const SRV_PREFIX = "srv:";
@@ -59,17 +60,6 @@ const MODULE_TO_CATEGORY: Record<string, NotificationCategory> = {
   BEHAVIOUR:    "administrative",
   ACHIEVEMENTS: "academic",
   CALENDAR:     "academic",
-};
-
-/** Where a parent notification should take you when tapped. */
-const MODULE_TO_HREF: Record<string, string> = {
-  DIARY:        "/parent/diary",
-  ACADEMIC:     "/parent/results",
-  ATTENDANCE:   "/parent/attendance",
-  FEES:         "/parent/fees",
-  BEHAVIOUR:    "/parent/behaviour",
-  ACHIEVEMENTS: "/parent/achievements",
-  CALENDAR:     "/parent/calendar",
 };
 
 interface ServerNotification {
@@ -160,7 +150,7 @@ export default function ServerNotificationSync({ userScope, includeParent }: Pro
             body:      n.body,
             timestamp: new Date(n.createdAt).getTime(),
             read:      n.isRead,
-            href:      MODULE_TO_HREF[n.module] ?? "/parent/notifications",
+            href:      PARENT_MODULE_HREF[n.module] ?? "/parent/notifications",
           })),
           PARENT_PREFIX
         );
@@ -174,9 +164,25 @@ export default function ServerNotificationSync({ userScope, includeParent }: Pro
       void pollParentInbox();
     }
 
+    // Refresh straight away when a push lands (sw.js posts PUSH_RECEIVED) or
+    // the installed app returns to the foreground, rather than on the next tick.
+    function onWorkerMessage(event: MessageEvent) {
+      if (event.data?.type === "PUSH_RECEIVED") poll();
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") poll();
+    }
+
     poll();
     const interval = setInterval(poll, POLL_MS);
-    return () => { cancelled = true; clearInterval(interval); };
+    navigator.serviceWorker?.addEventListener("message", onWorkerMessage);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      navigator.serviceWorker?.removeEventListener("message", onWorkerMessage);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [includeParent]);
 
   return null;

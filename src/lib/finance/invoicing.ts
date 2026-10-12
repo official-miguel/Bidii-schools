@@ -20,6 +20,7 @@ import { nextInvoiceNumber } from "./receipts";
 import { computeProratedAmount } from "./proration";
 import { notifyParents } from "@/lib/parentNotifications";
 import { CLASS_LABEL_SELECT, classLevelLabel } from "@/lib/curriculum/classLabels";
+import { waitUntil } from "@vercel/functions";
 
 export interface BatchInvoicingResult {
   succeeded:          number;
@@ -309,8 +310,9 @@ export async function runBatchInvoicing(
       const bal = balanceByStudent.get(student.id) ?? new Decimal(0);
       if (!bal.isZero()) result.carriedForward++;
 
-      // Fire parent notification outside the transaction (fire-and-forget)
-      void notifyParents({
+      // Parent notification outside the transaction. waitUntil keeps the
+      // function alive until it is written and pushed, without delaying the response.
+      waitUntil(notifyParents({
         schoolId,
         studentId:  student.id,
         module:     "FEES",
@@ -318,7 +320,7 @@ export async function runBatchInvoicing(
         title:      "Fee Invoice",
         body:       `A new invoice of KSh ${totalAmount.toFixed(2)} has been issued.`,
         dedupKey:   `invoice-${txResult.invoiceNumber}`,
-      }).catch(() => {});
+      }));
     } catch (err) {
       result.errors.push({
         studentId:       student.id,
@@ -465,8 +467,9 @@ export async function createProratedInvoice(opts: {
     });
   });
 
-  // Fire parent notification outside the transaction (fire-and-forget)
-  void notifyParents({
+  // Parent notification outside the transaction. waitUntil keeps the
+  // function alive until it is written and pushed, without delaying the response.
+  waitUntil(notifyParents({
     schoolId,
     studentId,
     module:   "FEES",
@@ -474,7 +477,7 @@ export async function createProratedInvoice(opts: {
     title:    "Fee Invoice",
     body:     `A new invoice of KSh ${invoiceAmount.toFixed(2)} has been issued.`,
     dedupKey: `invoice-${invoiceNumber}`,
-  }).catch(() => {});
+  }));
 
   return { invoiceNumber, amount: invoiceAmount };
 }

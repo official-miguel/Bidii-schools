@@ -6,6 +6,7 @@ import { emitSSE } from "@/lib/sse";
 import { notifyParents } from "@/lib/parentNotifications";
 import { notifyUser } from "@/lib/notifications";
 import { CLASS_LABEL_SELECT } from "@/lib/curriculum/classLabels";
+import { waitUntil } from "@vercel/functions";
 
 const createSchema = z.object({
   studentId: z.string().min(1),
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     // Notify linked parents when the record is visible to parents
     if (record.isVisibleToParent) {
-      void notifyParents({
+      waitUntil(notifyParents({
         schoolId: user.schoolId!,
         studentId: student.id,
         module: "BEHAVIOUR",
@@ -99,14 +100,14 @@ export async function POST(req: NextRequest) {
         title: "Behaviour Notice",
         body: "A behaviour matter has been recorded.",
         dedupKey: `disc-${record.id}`,
-      }).catch(() => {});
+      }));
     }
 
     // The student's class teacher should know about any case against one of
     // their own students, independent of parent visibility.
     const classTeacherUserId = student.schoolClass?.classTeacher?.userId;
     if (classTeacherUserId && classTeacherUserId !== user.id) {
-      void notifyUser({
+      waitUntil(notifyUser({
         schoolId: user.schoolId!,
         userId: classTeacherUserId,
         type: "DISCIPLINE_CASE",
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
         body: `${student.fullName} — ${d.offence}`,
         href: "/teacher/discipline",
         dedupKey: `discipline-classteacher:${record.id}`,
-      });
+      }));
     }
 
     // The Principal sees every case, regardless of who recorded it.

@@ -9,6 +9,8 @@ const subscribeSchema = z.object({
     p256dh: z.string().min(1),
     auth:   z.string().min(1),
   }),
+  /** Set when the service worker renews a subscription the browser rotated. */
+  oldEndpoint: z.string().url().optional(),
 });
 
 /** POST /api/push/subscribe — register this browser's PushSubscription. */
@@ -21,11 +23,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid subscription." }, { status: 400 });
   }
 
-  const { endpoint, keys } = parsed.data;
+  const { endpoint, keys, oldEndpoint } = parsed.data;
+
+  if (oldEndpoint && oldEndpoint !== endpoint) {
+    await prisma.pushSubscription.deleteMany({ where: { endpoint: oldEndpoint, userId: user.id } });
+  }
 
   await prisma.pushSubscription.upsert({
     where: { endpoint },
-    update: { userId: user.id, p256dh: keys.p256dh, auth: keys.auth },
+    // A shared device moves to whoever signed in on it most recently.
+    update: {
+      userId: user.id,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+      userAgent: req.headers.get("user-agent") ?? undefined,
+    },
     create: {
       userId: user.id,
       endpoint,

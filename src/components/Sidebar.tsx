@@ -12,6 +12,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import { LogOut } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
@@ -42,7 +43,7 @@ export default function Sidebar({
   const router = useRouter();
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }

@@ -21,6 +21,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import { Logo } from "@/components/Logo";
 import {
   Home,
@@ -154,7 +155,7 @@ export default function HubSidebar({
     !visibleHubs || hubId === "dashboard" || visibleHubs.has(hubId);
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }

@@ -10,6 +10,7 @@ import {
 import { notifyParents } from "@/lib/parentNotifications";
 import { randomBytes } from "crypto";
 import type { MessageChannel } from "@prisma/client";
+import { waitUntil } from "@vercel/functions";
 
 /** GET /api/messaging/exam-results?periodId=xxx — summary stats */
 export async function GET(req: NextRequest) {
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
 
           // Results Analysis is now visible in the app for this child — tell
           // their parent(s) via the in-app bell, not just the SMS itself.
-          void notifyParents({
+          waitUntil(notifyParents({
             schoolId: user.schoolId!,
             studentId,
             module:   "ACADEMIC",
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
             title:    `${period.name} results are ready to view`,
             body:     `Your child's results and analysis for ${period.name} (${period.academicYear}) are now available in the app.`,
             dedupKey: `results-analysis:${periodId}:${studentId}`,
-          }).catch(() => {});
+          }));
         } else {
           incrementFailed(batchId);
         }

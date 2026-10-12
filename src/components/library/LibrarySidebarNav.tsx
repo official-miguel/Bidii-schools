@@ -12,6 +12,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/signOut";
 import {
   LayoutDashboard, ArrowLeftRight, BarChart2, Settings2,
   LogOut, Menu, X,
@@ -70,7 +71,7 @@ function SidebarBody({
   const router = useRouter();
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
     router.refresh();
   }

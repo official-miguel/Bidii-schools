@@ -23,6 +23,22 @@ const nextConfig = {
           { key: "Referrer-Policy",         value: "strict-origin-when-cross-origin" },
         ],
       },
+      {
+        // Installed apps must always see the newest worker and manifest, or a
+        // fix to offline/push behaviour never reaches them.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        source: "/manifest.json",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Content-Type",  value: "application/manifest+json" },
+        ],
+      },
     ];
   },
   async rewrites() {
