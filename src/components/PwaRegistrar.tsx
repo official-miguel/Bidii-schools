@@ -44,14 +44,45 @@ export default function PwaRegistrar() {
     else window.addEventListener("load", register, { once: true });
     navigator.clearAppBadge?.().catch(() => {});
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("error", onChunkError, true);
+    window.addEventListener("unhandledrejection", onChunkError);
 
     return () => {
       window.removeEventListener("load", register);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("error", onChunkError, true);
+      window.removeEventListener("unhandledrejection", onChunkError);
     };
   }, []);
 
   return null;
+}
+
+const CHUNK_RELOAD_KEY = "bidii_chunk_reload_at";
+
+/**
+ * A deploy while the app is open: Next reloads into the new build on the next
+ * navigation, but a lazily loaded chunk requested before that still points at
+ * the old build, which Vercel no longer serves. Reload once into the new
+ * version instead of leaving the action broken. Skipped offline (the failure
+ * is the network, not the build) and at most once a minute, so it can't loop.
+ */
+function onChunkError(event: ErrorEvent | PromiseRejectionEvent | Event) {
+  const reason = "reason" in event ? event.reason : "error" in event ? event.error : null;
+  const target = event.target as HTMLScriptElement | null;
+  const isChunkFailure =
+    (reason && (reason.name === "ChunkLoadError" || /Loading (CSS )?chunk|dynamically imported module/i.test(String(reason.message)))) ||
+    (target?.tagName === "SCRIPT" && target.src.includes("/_next/static/"));
+  if (!isChunkFailure || !navigator.onLine) return;
+
+  try {
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY));
+    if (Date.now() - last < 60_000) return;
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch {
+    return; // Without a loop guard, don't risk reload loops.
+  }
+  window.location.reload();
 }
 
 /** Inline <head> script — see INSTALL_PROMPT_CAPTURE_SCRIPT. */
