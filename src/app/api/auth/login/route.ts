@@ -39,6 +39,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
   verifyPassword,
+  hashPassword,
   createSession,
   SESSION_COOKIE,
   SESSION_TTL_MS,
@@ -50,6 +51,7 @@ import {
   clearFailedLogins,
 } from "@/lib/rateLimit";
 import { phoneLookupVariants } from "@/lib/phone";
+import { tdAuthEnabled, verifyWithTd } from "@/lib/td-auth";
 
 // ── Explicit user shape (role as plain string — avoids generated-enum issues) ─
 type UserRow = {
@@ -66,6 +68,8 @@ type UserRow = {
   updatedAt:          Date;
   avatarUrl:          string | null;
   avatarStoragePath:  string | null;
+  /// Super admins only: when their password started coming from the TD app.
+  passwordFromTdAt?:  Date | null;
 };
 
 // ── Prisma select shape ───────────────────────────────────────────────────────
@@ -151,7 +155,7 @@ export async function POST(req: NextRequest) {
           id, email, "passwordHash", role::text AS role,
           "mustChangePassword", "isActive", "schoolId",
           "staffRoleId", "createdAt", "updatedAt",
-          "avatarUrl", "avatarStoragePath"
+          "avatarUrl", "avatarStoragePath", "passwordFromTdAt"
         FROM "User"
         WHERE email = ${identifier}
           AND role::text = 'SUPER_ADMIN'
@@ -161,11 +165,36 @@ export async function POST(req: NextRequest) {
 
       if (rows.length > 0) {
         const candidate = rows[0];
-        if (!candidate.passwordHash) return invalid();
-        const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
-        if (!ok) return invalid();
-        user = candidate;
-        passwordAlreadyVerified = true;
+
+        // Shared login: the Trillionaire Designs app keeps super admins'
+        // password. A match there is copied here, so the local hash only
+        // matters if that app can't be reached. Until someone's password has
+        // come from that app once, the password stored here still works, so
+        // nobody is locked out while the two apps are being linked.
+        if (tdAuthEnabled()) {
+          const td = await verifyWithTd(identifier, password);
+          if (td.ok) {
+            const newHash = await hashPassword(password);
+            await prisma.$executeRaw`
+              UPDATE "User"
+                 SET "passwordHash" = ${newHash},
+                     "mustChangePassword" = false,
+                     "passwordFromTdAt" = COALESCE("passwordFromTdAt", NOW())
+               WHERE id = ${candidate.id}`;
+            user = { ...candidate, mustChangePassword: false };
+            passwordAlreadyVerified = true;
+          } else if (td.reason !== "unavailable" && candidate.passwordFromTdAt) {
+            return invalid();
+          }
+        }
+
+        if (!user) {
+          if (!candidate.passwordHash) return invalid();
+          const ok = await verifyPassword(password, candidate.passwordHash).catch(() => false);
+          if (!ok) return invalid();
+          user = candidate;
+          passwordAlreadyVerified = true;
+        }
       }
     }
 

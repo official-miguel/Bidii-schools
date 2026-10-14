@@ -20,6 +20,7 @@ import { prisma }                               from "@/lib/prisma";
 import { resolveUserByIdentifier, resolveUserPhone } from "@/lib/identity";
 import { checkOtpRequestRateLimit }             from "@/lib/rateLimit";
 import { dispatchPlatformSms }                  from "@/lib/messaging/dispatch";
+import { tdAuthEnabled }                        from "@/lib/td-auth";
 
 const schema = z.object({
   identifier: z.string().trim().min(1),
@@ -61,6 +62,9 @@ export async function POST(req: NextRequest) {
   if (result.kind !== "found") return GENERIC_OK();
 
   const { user } = result;
+
+  // Super admins reset their shared password in the Trillionaire Designs app.
+  if (user.role === "SUPER_ADMIN" && tdAuthEnabled()) return GENERIC_OK();
 
   // ── Resolve phone ─────────────────────────────────────────────────────────
   const phone = await resolveUserPhone(user.id, user.role);

@@ -205,6 +205,10 @@ model User {
   /// the creation of other super admins, and the admin action history. Every
   /// other super admin sees the rest of the console but never that section.
   isPlatformOwner           Boolean                    @default(false)
+  /// When this super admin's password was first confirmed by the Trillionaire
+  /// Designs app (src/lib/td-auth.ts). Until then the password stored here
+  /// still works, so nobody is locked out while the two apps are linked.
+  passwordFromTdAt          DateTime?
   /// Only meaningful when role = ADMIN_STAFF. Governs which modules this
   /// login can see and manage (Staff Roles & Permissions). PRINCIPAL always
   /// has full access regardless of this field; TEACHER keeps its existing
@@ -4577,4 +4581,15 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// One-time sign-in passes from the Trillionaire Designs finance app that
+/// have already been used (src/app/api/auth/td-sso). Recording the jti stops a
+/// pass from being used twice; rows older than a day are cleared.
+model SsoTicketUse {
+  jti       String   @id
+  usedAt    DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
