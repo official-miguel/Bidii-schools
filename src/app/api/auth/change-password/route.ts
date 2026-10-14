@@ -25,6 +25,7 @@ import {
   SESSION_TTL_MS,
   getCurrentUser,
 } from "@/lib/auth";
+import { tdAuthEnabled } from "@/lib/td-auth";
 
 const schema = z.object({
   newPassword: z
@@ -47,6 +48,15 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  // Super admins share one password with the Trillionaire Designs app, and it
+  // is changed there; a change here would make the two disagree.
+  if (user.role === "SUPER_ADMIN" && tdAuthEnabled()) {
+    return NextResponse.json(
+      { error: "Your password is shared with the Trillionaire Designs app. Change it there." },
+      { status: 409 }
+    );
   }
 
   const body = await req.json().catch(() => null);
